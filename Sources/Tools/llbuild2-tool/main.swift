@@ -6,4 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-CevoBuildTool.main()
+import ArgumentParser
+
+import llbuild2Commands
+
+struct llbuild2Tool: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        abstract: "llbuild2 testing tool",
+        subcommands: [NinjaBuildTool.self])
+}
+
+llbuild2Tool.main()

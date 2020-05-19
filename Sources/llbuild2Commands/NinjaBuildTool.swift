@@ -9,11 +9,11 @@
 import ArgumentParser
 import NIO
 
-import CevoCore
-import NinjaBuild
+import llbuild2Ninja
 
-struct NinjaBuildTool: ParsableCommand {
-    static var configuration = CommandConfiguration(
+public struct NinjaBuildTool: ParsableCommand {
+    public static var configuration = CommandConfiguration(
+        commandName: "ninja",
         abstract: "NinjaBuild tool")
 
     @Flag(help: "Print verbose output")
@@ -25,7 +25,9 @@ struct NinjaBuildTool: ParsableCommand {
     @Option(help: "The name of the target to build")
     var target: String
 
-    func run() throws {
+    public init() { }
+
+    public func run() throws {
         let dryRunDelegate = NinjaDryRunDelegate()
         let nb = try NinjaBuild(manifest: manifest, delegate: dryRunDelegate)
         _ = try nb.build(target: target, as: Int.self)

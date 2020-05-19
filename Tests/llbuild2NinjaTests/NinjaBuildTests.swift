@@ -12,8 +12,7 @@ import NIO
 import NIOConcurrencyHelpers
 import TSCBasic
 
-import CevoCore
-import NinjaBuild
+import llbuild2Ninja
 
 extension Int: NinjaValue {}
 

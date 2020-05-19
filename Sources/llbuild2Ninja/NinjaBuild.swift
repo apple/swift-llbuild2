@@ -8,7 +8,7 @@
 
 import NIO
 
-import CevoCore
+import llbuild2
 import Ninja
 
 public typealias Command = Ninja.Command
@@ -47,7 +47,7 @@ public protocol NinjaBuildDelegate {
     func build(group: EventLoopGroup, command: Command, inputs: [NinjaValue]) -> EventLoopFuture<NinjaValue>
 }
 
-private extension EventLoopFuture where Value == CevoCore.Value {
+private extension EventLoopFuture where Value == llbuild2.Value {
     func asNinjaValue() -> EventLoopFuture<NinjaValue> {
         return self.flatMapThrowing { value in
             guard let ninjaValue = value as? NinjaValue else {

@@ -3,20 +3,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "cevobuild",
+    name: "llbuild2",
     platforms: [
        .macOS(.v10_15) 
     ],
     products: [
-        .executable(
-            name: "cevobuild",
-            targets: ["cevobuild"]),
-        .library(
-            name: "CevoCore",
-            targets: ["CevoCore"]),
-        .library(
-            name: "NinjaBuild",
-            targets: ["NinjaBuild"]),
+        .library(name: "llbuild2", targets: ["llbuild2"]),
+        .library(name: "llbuild2Ninja", targets: ["llbuild2Ninja"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
@@ -26,26 +19,38 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.0.1"),
     ],
     targets: [
+        // Core build functionality
         .target(
-            name: "cevobuild",
-            dependencies: [
-                "CevoCore", "NinjaBuild", "ArgumentParser"]),
-
-        .target(
-            name: "CevoCore",
-            dependencies: ["Crypto", "NIO"]),
+            name: "llbuild2",
+            dependencies: ["Crypto", "NIO"]
+        ),
         .testTarget(
-            name: "CevoCoreTests",
-            dependencies: ["CevoCore"]),
+            name: "llbuild2Tests",
+            dependencies: ["llbuild2"]
+        ),
 
         // Ninja Build support
         .target(
-            name: "NinjaBuild",
-            dependencies: [
-                "CevoCore", "Ninja", "llbuild"]),
+            name: "llbuild2Ninja",
+            dependencies: ["llbuild2", "Ninja"]
+        ),
         .testTarget(
-            name: "NinjaBuildTests",
-            dependencies: [
-                "NinjaBuild", "SwiftToolsSupport-auto"]),
+            name: "llbuild2NinjaTests",
+            dependencies: ["llbuild2Ninja", "SwiftToolsSupport-auto"]
+        ),
+
+
+        // Command line tools
+        .target(
+            name: "llbuild2Commands",
+            dependencies: ["llbuild2Ninja", "ArgumentParser"]
+        ),
+
+        // Executable multi-tool
+        .target(
+            name: "llbuild2-tool",
+            dependencies: ["llbuild2Commands", "ArgumentParser"],
+            path: "Sources/Tools/llbuild2-tool"
+        ),
     ]
 )

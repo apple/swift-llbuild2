@@ -8,9 +8,9 @@
 
 import XCTest
 
-import CevoCore
+import llbuild2
 
-final class CevoCoreTests: XCTestCase {
+final class EngineTests: XCTestCase {
     func testBasicMath() {
         let staticIntFunction = SimpleFunction { (fi, key) in
             guard let key = key as? String else {
