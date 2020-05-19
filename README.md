@@ -2,7 +2,7 @@ llbuild2
 =========
 
 **llbuild2** is an experimental, Swift native, fully async, NIO futures-based
-low level build system. Started as the **cevobuild** experiment in **llbuild**,
+low level build system. Started as the **cevobuild** experiment in [**llbuild**](https://github.com/apple/swift-llbuild),
 this repository aims to continue that exploration.
 
 
