@@ -26,17 +26,22 @@ let package = Package(
         ),
         .testTarget(
             name: "llbuild2Tests",
-            dependencies: ["llbuild2"]
+            dependencies: ["llbuild2", "llbuild2Util"]
         ),
 
         // Ninja Build support
         .target(
             name: "llbuild2Ninja",
-            dependencies: ["llbuild2", "Ninja"]
+            dependencies: ["llbuild2", "llbuild2Util", "Ninja"]
         ),
         .testTarget(
             name: "llbuild2NinjaTests",
             dependencies: ["llbuild2Ninja", "SwiftToolsSupport-auto"]
+        ),
+
+        .target(
+            name: "llbuild2Util",
+            dependencies: ["llbuild2"]
         ),
 
 

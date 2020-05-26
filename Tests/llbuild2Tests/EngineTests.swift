@@ -9,10 +9,11 @@
 import XCTest
 
 import llbuild2
+import llbuild2Util
 
 final class EngineTests: XCTestCase {
     func testBasicMath() {
-        let staticIntFunction = SimpleFunction { (fi, key) in
+        let staticIntFunction = LLBSimpleFunction { (fi, key) in
             guard let key = key as? String else {
                 fatalError("Expected a String key")
             }
@@ -24,22 +25,22 @@ final class EngineTests: XCTestCase {
             return fi.group.next().makeSucceededFuture(intValue)
         }
 
-        let sumFunction = SimpleFunction { (fi, key) in
+        let sumFunction = LLBSimpleFunction { (fi, key) in
             let v1 = fi.request("v1", as: Int.self)
             let v2 = fi.request("v2", as: Int.self)
             return v1.and(v2).map { r in
                 return r.0 + r.1
-            }.map { $0 as Value }
+            }.map { $0 as LLBValue }
         }
 
-        let keyMap: [String: Function] = [
+        let keyMap: [String: LLBFunction] = [
             "v1": staticIntFunction,
             "v2": staticIntFunction,
             "sum": sumFunction,
         ]
 
-        let delegate = StaticFunctionDelegate(keyMap: keyMap)
-        let engine = Engine(delegate: delegate)
+        let delegate = LLBStaticFunctionDelegate(keyMap: keyMap)
+        let engine = LLBEngine(delegate: delegate)
 
         do {
             let s = try engine.build(key: "sum", as: Int.self).wait()
@@ -50,4 +51,4 @@ final class EngineTests: XCTestCase {
     }
 }
 
-extension Int: Value {}
+extension Int: LLBValue {}

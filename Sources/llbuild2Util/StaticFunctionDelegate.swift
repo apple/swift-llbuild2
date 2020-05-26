@@ -6,18 +6,20 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import llbuild2
+
 import NIO
 
-extension String: Key {}
+extension String: LLBKey {}
 
-public class StaticFunctionDelegate: EngineDelegate {
-    let keyMap: [String: Function]
+public class LLBStaticFunctionDelegate: LLBEngineDelegate {
+    let keyMap: [String: LLBFunction]
 
-    public init(keyMap: [String: Function]) {
+    public init(keyMap: [String: LLBFunction]) {
         self.keyMap = keyMap
     }
 
-    public func lookupFunction(forKey key: Key, group: EventLoopGroup) -> EventLoopFuture<Function> {
+    public func lookupFunction(forKey key: LLBKey, group: EventLoopGroup) -> EventLoopFuture<LLBFunction> {
         let stringKey = key as! String
         return group.next().makeSucceededFuture(keyMap[stringKey]!)
     }

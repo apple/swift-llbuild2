@@ -12,10 +12,10 @@ import Crypto
 import NIO
 import NIOConcurrencyHelpers
 
-public protocol Key: Codable {}
-public protocol Value : Codable {}
+public protocol LLBKey: Codable {}
+public protocol LLBValue : Codable {}
 
-extension Key {
+extension LLBKey {
     public typealias KeyHash = Data
 
     public var stableHash: KeyHash {
@@ -43,27 +43,27 @@ extension Key {
 }
 
 
-public struct Result {
+public struct LLBResult {
     let changedAt: Int
-    let value: Value
-    let dependencies: [Key]
+    let value: LLBValue
+    let dependencies: [LLBKey]
 }
 
-public class FunctionInterface {
-    let engine: Engine
+public class LLBFunctionInterface {
+    let engine: LLBEngine
 
     public let group: EventLoopGroup
 
-    init(group: EventLoopGroup, engine: Engine) {
+    init(group: EventLoopGroup, engine: LLBEngine) {
         self.engine = engine
         self.group = group
     }
 
-    public func request(_ key: Key) -> EventLoopFuture<Value> {
+    public func request(_ key: LLBKey) -> EventLoopFuture<LLBValue> {
         return engine.buildKey(key: key)
     }
 
-    public func request<V: Value>(_ key: Key, as type: V.Type = V.self) -> EventLoopFuture<V> {
+    public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self) -> EventLoopFuture<V> {
         return engine.buildKey(key: key, as: type)
     }
 
@@ -72,27 +72,27 @@ public class FunctionInterface {
     //    func spawn(args: [String], env: [String: String]) -> EventLoopFuture<ProcessResult...>
 }
 
-public protocol Function {
-    func compute(key: Key, _ fi: FunctionInterface) -> EventLoopFuture<Value>
+public protocol LLBFunction {
+    func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> EventLoopFuture<LLBValue>
 }
 
-public protocol EngineDelegate {
-    func lookupFunction(forKey: Key, group: EventLoopGroup) -> EventLoopFuture<Function>
+public protocol LLBEngineDelegate {
+    func lookupFunction(forKey: LLBKey, group: EventLoopGroup) -> EventLoopFuture<LLBFunction>
 }
 
-public enum EngineError: Error {
+public enum LLBError: Error {
     case invalidValueType(String)
 }
 
-public class Engine {
+public class LLBEngine {
     public let group: EventLoopGroup
 
     fileprivate let lock = NIOConcurrencyHelpers.Lock()
-    fileprivate let delegate: EngineDelegate
-    fileprivate var pendingResults: [Key.KeyHash: EventLoopFuture<Value>] = [:]
+    fileprivate let delegate: LLBEngineDelegate
+    fileprivate var pendingResults: [LLBKey.KeyHash: EventLoopFuture<LLBValue>] = [:]
 
 
-    public enum Error: Swift.Error {
+    public enum InternalError: Swift.Error {
         case noPendingTask
         case missingBuildResult
     }
@@ -100,13 +100,13 @@ public class Engine {
 
     public init(
         group: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount),
-        delegate: EngineDelegate
+        delegate: LLBEngineDelegate
     ) {
         self.group = group
         self.delegate = delegate
     }
 
-    public func build(key: Key, inputs: [Key.KeyHash: Value]? = nil) -> EventLoopFuture<Value> {
+    public func build(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil) -> EventLoopFuture<LLBValue> {
         // Set static input results if needed
         if let inputs = inputs {
             lock.withLockVoid {
@@ -120,7 +120,7 @@ public class Engine {
         return buildKey(key: key)
     }
 
-    func buildKey(key: Key) -> EventLoopFuture<Value> {
+    func buildKey(key: LLBKey) -> EventLoopFuture<LLBValue> {
         return lock.withLock {
             let keyID = key.stableHash
             if let value = pendingResults[keyID] {
@@ -128,10 +128,10 @@ public class Engine {
             }
 
             // Create a promise to execute the body outside of the lock
-            let promise = group.next().makePromise(of: Value.self)
+            let promise = group.next().makePromise(of: LLBValue.self)
             group.next().flatSubmit {
                 return self.delegate.lookupFunction(forKey: key, group: self.group).flatMap { function in
-                    let fi = FunctionInterface(group: self.group, engine: self)
+                    let fi = LLBFunctionInterface(group: self.group, engine: self)
                     return function.compute(key: key, fi)
                 }
             }.cascade(to: promise)
@@ -142,20 +142,20 @@ public class Engine {
     }
 }
 
-extension Engine {
-    public func build<V: Value>(key: Key, inputs: [Key.KeyHash: Value]? = nil, as: V.Type) -> EventLoopFuture<V> {
+extension LLBEngine {
+    public func build<V: LLBValue>(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil, as: V.Type) -> EventLoopFuture<V> {
         return self.build(key: key, inputs: inputs).flatMapThrowing {
             guard let value = $0 as? V else {
-                throw EngineError.invalidValueType("Expected value of type \(V.self)")
+                throw LLBError.invalidValueType("Expected value of type \(V.self)")
             }
             return value
         }
     }
 
-    func buildKey<V: Value>(key: Key, as: V.Type) -> EventLoopFuture<V> {
+    func buildKey<V: LLBValue>(key: LLBKey, as: V.Type) -> EventLoopFuture<V> {
         return self.buildKey(key: key).flatMapThrowing {
             guard let value = $0 as? V else {
-                throw EngineError.invalidValueType("Expected value of type \(V.self)")
+                throw LLBError.invalidValueType("Expected value of type \(V.self)")
             }
             return value
         }

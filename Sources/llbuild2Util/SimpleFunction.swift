@@ -6,16 +6,18 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import llbuild2
+
 import NIO
 
-public class SimpleFunction: Function {
-    let action: (_ fi: FunctionInterface, _ key: Key) -> EventLoopFuture<Value>
+public class LLBSimpleFunction: LLBFunction {
+    let action: (_ fi: LLBFunctionInterface, _ key: LLBKey) -> EventLoopFuture<LLBValue>
 
-    public init(action: @escaping (_ fi: FunctionInterface, _ key: Key) -> EventLoopFuture<Value>) {
+    public init(action: @escaping (_ fi: LLBFunctionInterface, _ key: LLBKey) -> EventLoopFuture<LLBValue>) {
         self.action = action
     }
 
-    public func compute(key: Key, _ fi: FunctionInterface) -> EventLoopFuture<Value> {
+    public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> EventLoopFuture<LLBValue> {
         return action(fi, key)
     }
 }

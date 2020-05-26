@@ -6,14 +6,16 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import llbuild2
+import llbuild2Util
+
+import Ninja
 import NIO
 
-import llbuild2
-import Ninja
 
 public typealias Command = Ninja.Command
 
-public protocol NinjaValue: Value {}
+public protocol NinjaValue: LLBValue {}
 
 public class NinjaBuild {
     let manifest: NinjaManifest
@@ -30,7 +32,7 @@ public class NinjaBuild {
 
     public func build<V: NinjaValue>(target: String, as: V.Type) throws -> V {
         let engineDelegate = NinjaEngineDelegate(manifest: manifest, delegate: delegate)
-        let engine = Engine(delegate: engineDelegate)
+        let engine = LLBEngine(delegate: engineDelegate)
         return try engine.build(key: "T" + target, as: V.self).wait()
     }
 }
@@ -47,7 +49,7 @@ public protocol NinjaBuildDelegate {
     func build(group: EventLoopGroup, command: Command, inputs: [NinjaValue]) -> EventLoopFuture<NinjaValue>
 }
 
-private extension EventLoopFuture where Value == llbuild2.Value {
+private extension EventLoopFuture where Value == LLBValue {
     func asNinjaValue() -> EventLoopFuture<NinjaValue> {
         return self.flatMapThrowing { value in
             guard let ninjaValue = value as? NinjaValue else {
@@ -67,7 +69,7 @@ enum NinjaEngineDelegateError: Error {
     case commandNotFound(String)
 }
 
-private class NinjaEngineDelegate: EngineDelegate {
+private class NinjaEngineDelegate: LLBEngineDelegate {
     let manifest: NinjaManifest
     let commandMap: [String: Int]
     let delegate: NinjaBuildDelegate
@@ -86,7 +88,7 @@ private class NinjaEngineDelegate: EngineDelegate {
         self.commandMap = commandMap
     }
     
-    func lookupFunction(forKey rawKey: Key, group: EventLoopGroup) -> EventLoopFuture<Function> {
+    func lookupFunction(forKey rawKey: LLBKey, group: EventLoopGroup) -> EventLoopFuture<LLBFunction> {
         guard let key = rawKey as? String else {
             return group.next().makeFailedFuture(
                 NinjaEngineDelegateError.unexpectedKeyType(String(describing: type(of: rawKey)))
@@ -107,7 +109,7 @@ private class NinjaEngineDelegate: EngineDelegate {
             }
 
             return group.next().makeSucceededFuture(
-                SimpleFunction { (fi, key) in
+                LLBSimpleFunction { (fi, key) in
                     return fi.request("C" + String(i))
                 }
             )
@@ -120,7 +122,7 @@ private class NinjaEngineDelegate: EngineDelegate {
             let path = String(key.dropFirst(1))
             if let i = self.commandMap[path] {
                 return group.next().makeSucceededFuture(
-                    SimpleFunction { (fi, key) in
+                    LLBSimpleFunction { (fi, key) in
                         return fi.request("C" + String(i))
                     }
                 )
@@ -128,8 +130,8 @@ private class NinjaEngineDelegate: EngineDelegate {
 
             // Otherwise, it is an input file.
             return group.next().makeSucceededFuture(
-                SimpleFunction { (fi, key) in
-                    return self.delegate.build(group: fi.group, path: path).map { $0 as Value }
+                LLBSimpleFunction { (fi, key) in
+                    return self.delegate.build(group: fi.group, path: path).map { $0 as LLBValue }
                 }
             )
 
@@ -141,7 +143,7 @@ private class NinjaEngineDelegate: EngineDelegate {
             }
 
             return group.next().makeSucceededFuture(
-                SimpleFunction { (fi, key) in
+                LLBSimpleFunction { (fi, key) in
                     // Get the command.
                     let command = self.manifest.commands[i]
                     // FIXME: For now, we just merge all the inputs. This isn't
@@ -150,7 +152,7 @@ private class NinjaEngineDelegate: EngineDelegate {
                     inputs += command.implicitInputs.map{ fi.request("N" + $0).asNinjaValue() }
                     inputs += command.orderOnlyInputs.map{ fi.request("N" + $0).asNinjaValue() }
                     return EventLoopFuture.whenAllSucceed(inputs, on: fi.group.next()).flatMap { inputs in
-                        return self.delegate.build(group: fi.group.next(), command: command, inputs: inputs).map { $0 as Value }
+                        return self.delegate.build(group: fi.group.next(), command: command, inputs: inputs).map { $0 as LLBValue }
                     }
                 }
             )
