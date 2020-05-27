@@ -9,7 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
-        .library(name: "llbuild2Ninja", targets: ["llbuild2Ninja"]),
+        .library(name: "llbuild2Ninja", targets: ["LLBNinja"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
@@ -26,35 +26,35 @@ let package = Package(
         ),
         .testTarget(
             name: "llbuild2Tests",
-            dependencies: ["llbuild2", "llbuild2Util"]
+            dependencies: ["llbuild2", "LLBUtil"]
         ),
 
         // Ninja Build support
         .target(
-            name: "llbuild2Ninja",
-            dependencies: ["llbuild2", "llbuild2Util", "Ninja"]
+            name: "LLBNinja",
+            dependencies: ["llbuild2", "LLBUtil", "Ninja"]
         ),
         .testTarget(
-            name: "llbuild2NinjaTests",
-            dependencies: ["llbuild2Ninja", "SwiftToolsSupport-auto"]
+            name: "LLBNinjaTests",
+            dependencies: ["LLBNinja", "SwiftToolsSupport-auto"]
         ),
 
         .target(
-            name: "llbuild2Util",
+            name: "LLBUtil",
             dependencies: ["llbuild2"]
         ),
 
 
         // Command line tools
         .target(
-            name: "llbuild2Commands",
-            dependencies: ["llbuild2Ninja", "ArgumentParser"]
+            name: "LLBCommands",
+            dependencies: ["LLBNinja", "ArgumentParser"]
         ),
 
         // Executable multi-tool
         .target(
             name: "llbuild2-tool",
-            dependencies: ["llbuild2Commands", "ArgumentParser"],
+            dependencies: ["LLBCommands", "ArgumentParser"],
             path: "Sources/Tools/llbuild2-tool"
         ),
     ]

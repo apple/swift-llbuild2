@@ -9,7 +9,7 @@
 import ArgumentParser
 import NIO
 
-import llbuild2Ninja
+import LLBNinja
 
 public struct NinjaBuildTool: ParsableCommand {
     public static var configuration = CommandConfiguration(

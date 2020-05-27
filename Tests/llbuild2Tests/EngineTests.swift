@@ -9,7 +9,7 @@
 import XCTest
 
 import llbuild2
-import llbuild2Util
+import LLBUtil
 
 final class EngineTests: XCTestCase {
     func testBasicMath() {

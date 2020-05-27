@@ -8,7 +8,7 @@
 
 import ArgumentParser
 
-import llbuild2Commands
+import LLBCommands
 
 struct llbuild2Tool: ParsableCommand {
     static var configuration = CommandConfiguration(

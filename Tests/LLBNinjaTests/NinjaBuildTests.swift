@@ -12,7 +12,7 @@ import NIO
 import NIOConcurrencyHelpers
 import TSCBasic
 
-import llbuild2Ninja
+import LLBNinja
 
 extension Int: NinjaValue {}
 
