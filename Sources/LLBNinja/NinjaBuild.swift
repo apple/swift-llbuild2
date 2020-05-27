@@ -7,7 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-import llbuild2Util
+import LLBUtil
 
 import Ninja
 import NIO
