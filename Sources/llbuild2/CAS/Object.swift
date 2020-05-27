@@ -8,8 +8,6 @@
 
 import Foundation
 
-import NIO
-
 
 public struct LLBCASObject: Equatable {
     /// The list of references.

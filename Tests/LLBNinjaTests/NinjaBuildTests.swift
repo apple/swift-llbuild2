@@ -8,11 +8,11 @@
 
 import XCTest
 
-import NIO
+import llbuild2
+import LLBNinja
+
 import NIOConcurrencyHelpers
 import TSCBasic
-
-import LLBNinja
 
 extension Int: NinjaValue {}
 
@@ -56,12 +56,12 @@ private class LoggingNinjaDelegate: NinjaBuildDelegate {
     var log: [String] = []
     let lock = NIOConcurrencyHelpers.Lock()
     
-    func build(group: EventLoopGroup, path: String) -> EventLoopFuture<NinjaValue> {
+    func build(group: LLBFuturesDispatchGroup, path: String) -> LLBFuture<NinjaValue> {
         lock.withLockVoid { log.append("build input '\(path)'") }
         return group.next().makeSucceededFuture(0)
     }
     
-    func build(group: EventLoopGroup, command: Command, inputs: [NinjaValue]) -> EventLoopFuture<NinjaValue> {
+    func build(group: LLBFuturesDispatchGroup, command: Command, inputs: [NinjaValue]) -> LLBFuture<NinjaValue> {
         lock.withLockVoid { log.append("build command '\(command.command)'") }
         return group.next().makeSucceededFuture(0)
     }
