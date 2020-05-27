@@ -12,9 +12,13 @@
 # E: dmbryson@apple.com
 # D: Everything in llbuild2 not covered by someone else
 
+# N: Sergio Campamá
+# E: scampama@apple.com
+# D: Build system components
+
 ###
 
 # The following lines are used by GitHub to automatically recommend reviewers.
 
-* @dmbryson @ddunbar
+* @dmbryson @ddunbar @sergiocampama
 
