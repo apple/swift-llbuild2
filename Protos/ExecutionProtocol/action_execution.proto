@@ -30,7 +30,7 @@ message LLBActionInput {
     LLBPBDataID dataID = 2;
 
     /// The type of artifact that this input represents.
-    LLBArtifactType = 3;
+    LLBArtifactType type = 3;
 }
 
 /// Represents a remote action execution output artifact. This is the declaration of an artifact that is expected to be
@@ -40,7 +40,7 @@ message LLBActionOutput {
     string path = 1;
 
     /// The type of artifact expected to be produced by the action.
-    LLBArtifactType = 2;
+    LLBArtifactType type = 2;
 }
 
 /// An environment variable entry.
