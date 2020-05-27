@@ -8,16 +8,15 @@
 
 import llbuild2
 
-import NIO
 
 public class LLBSimpleFunction: LLBFunction {
-    let action: (_ fi: LLBFunctionInterface, _ key: LLBKey) -> EventLoopFuture<LLBValue>
+    let action: (_ fi: LLBFunctionInterface, _ key: LLBKey) -> LLBFuture<LLBValue>
 
-    public init(action: @escaping (_ fi: LLBFunctionInterface, _ key: LLBKey) -> EventLoopFuture<LLBValue>) {
+    public init(action: @escaping (_ fi: LLBFunctionInterface, _ key: LLBKey) -> LLBFuture<LLBValue>) {
         self.action = action
     }
 
-    public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> EventLoopFuture<LLBValue> {
+    public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
         return action(fi, key)
     }
 }

@@ -7,8 +7,8 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import ArgumentParser
-import NIO
 
+import llbuild2
 import LLBNinja
 
 public struct NinjaBuildTool: ParsableCommand {
@@ -37,12 +37,12 @@ public struct NinjaBuildTool: ParsableCommand {
 extension Int: NinjaValue {}
 
 private class NinjaDryRunDelegate: NinjaBuildDelegate {
-    func build(group: EventLoopGroup, path: String) -> EventLoopFuture<NinjaValue> {
+    func build(group: LLBFuturesDispatchGroup, path: String) -> LLBFuture<NinjaValue> {
         print("build input: \(path)")
         return group.next().makeSucceededFuture(0)
     }
     
-    func build(group: EventLoopGroup, command: Command, inputs: [NinjaValue]) -> EventLoopFuture<NinjaValue> {
+    func build(group: LLBFuturesDispatchGroup, command: Command, inputs: [NinjaValue]) -> LLBFuture<NinjaValue> {
         print("build command: \(command.command)")
         return group.next().makeSucceededFuture(0)
     }

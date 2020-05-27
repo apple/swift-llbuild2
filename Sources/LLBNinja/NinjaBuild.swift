@@ -10,7 +10,6 @@ import llbuild2
 import LLBUtil
 
 import Ninja
-import NIO
 
 
 public typealias Command = Ninja.Command
@@ -41,16 +40,16 @@ public protocol NinjaBuildDelegate {
     /// Build the given Ninja input.
     ///
     /// This will only be called when all inputs are available.
-    func build(group: EventLoopGroup, path: String) -> EventLoopFuture<NinjaValue>
+    func build(group: LLBFuturesDispatchGroup, path: String) -> LLBFuture<NinjaValue>
     
     /// Build the given Ninja command.
     ///
     /// This will only be called when all inputs are available.
-    func build(group: EventLoopGroup, command: Command, inputs: [NinjaValue]) -> EventLoopFuture<NinjaValue>
+    func build(group: LLBFuturesDispatchGroup, command: Command, inputs: [NinjaValue]) -> LLBFuture<NinjaValue>
 }
 
-private extension EventLoopFuture where Value == LLBValue {
-    func asNinjaValue() -> EventLoopFuture<NinjaValue> {
+private extension LLBFuture where Value == LLBValue {
+    func asNinjaValue() -> LLBFuture<NinjaValue> {
         return self.flatMapThrowing { value in
             guard let ninjaValue = value as? NinjaValue else {
                 throw NinjaBuild.Error.internalTypeError
@@ -88,7 +87,7 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
         self.commandMap = commandMap
     }
     
-    func lookupFunction(forKey rawKey: LLBKey, group: EventLoopGroup) -> EventLoopFuture<LLBFunction> {
+    func lookupFunction(forKey rawKey: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
         guard let key = rawKey as? String else {
             return group.next().makeFailedFuture(
                 NinjaEngineDelegateError.unexpectedKeyType(String(describing: type(of: rawKey)))
@@ -151,7 +150,7 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
                     var inputs = command.inputs.map{ fi.request("N" + $0).asNinjaValue() }
                     inputs += command.implicitInputs.map{ fi.request("N" + $0).asNinjaValue() }
                     inputs += command.orderOnlyInputs.map{ fi.request("N" + $0).asNinjaValue() }
-                    return EventLoopFuture.whenAllSucceed(inputs, on: fi.group.next()).flatMap { inputs in
+                    return LLBFuture.whenAllSucceed(inputs, on: fi.group.next()).flatMap { inputs in
                         return self.delegate.build(group: fi.group.next(), command: command, inputs: inputs).map { $0 as LLBValue }
                     }
                 }

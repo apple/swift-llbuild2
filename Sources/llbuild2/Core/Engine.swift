@@ -9,7 +9,6 @@
 import Foundation
 
 import Crypto
-import NIO
 import NIOConcurrencyHelpers
 
 public protocol LLBKey: Codable {}
@@ -52,32 +51,32 @@ public struct LLBResult {
 public class LLBFunctionInterface {
     let engine: LLBEngine
 
-    public let group: EventLoopGroup
+    public let group: LLBFuturesDispatchGroup
 
-    init(group: EventLoopGroup, engine: LLBEngine) {
+    init(group: LLBFuturesDispatchGroup, engine: LLBEngine) {
         self.engine = engine
         self.group = group
     }
 
-    public func request(_ key: LLBKey) -> EventLoopFuture<LLBValue> {
+    public func request(_ key: LLBKey) -> LLBFuture<LLBValue> {
         return engine.buildKey(key: key)
     }
 
-    public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self) -> EventLoopFuture<V> {
+    public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self) -> LLBFuture<V> {
         return engine.buildKey(key: key, as: type)
     }
 
     // FIXME - implement these
-    //    func spawn<T>(action: ()->T) -> EventLoopFuture<T>
-    //    func spawn(args: [String], env: [String: String]) -> EventLoopFuture<ProcessResult...>
+    //    func spawn<T>(action: ()->T) -> LLBFuture<T>
+    //    func spawn(args: [String], env: [String: String]) -> LLBFuture<ProcessResult...>
 }
 
 public protocol LLBFunction {
-    func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> EventLoopFuture<LLBValue>
+    func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue>
 }
 
 public protocol LLBEngineDelegate {
-    func lookupFunction(forKey: LLBKey, group: EventLoopGroup) -> EventLoopFuture<LLBFunction>
+    func lookupFunction(forKey: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction>
 }
 
 public enum LLBError: Error {
@@ -85,11 +84,11 @@ public enum LLBError: Error {
 }
 
 public class LLBEngine {
-    public let group: EventLoopGroup
+    public let group: LLBFuturesDispatchGroup
 
     fileprivate let lock = NIOConcurrencyHelpers.Lock()
     fileprivate let delegate: LLBEngineDelegate
-    fileprivate var pendingResults: [LLBKey.KeyHash: EventLoopFuture<LLBValue>] = [:]
+    fileprivate var pendingResults: [LLBKey.KeyHash: LLBFuture<LLBValue>] = [:]
 
 
     public enum InternalError: Swift.Error {
@@ -99,14 +98,14 @@ public class LLBEngine {
 
 
     public init(
-        group: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount),
+        group: LLBFuturesDispatchGroup = LLBMakeDefaultDispatchGroup(),
         delegate: LLBEngineDelegate
     ) {
         self.group = group
         self.delegate = delegate
     }
 
-    public func build(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil) -> EventLoopFuture<LLBValue> {
+    public func build(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil) -> LLBFuture<LLBValue> {
         // Set static input results if needed
         if let inputs = inputs {
             lock.withLockVoid {
@@ -120,7 +119,7 @@ public class LLBEngine {
         return buildKey(key: key)
     }
 
-    func buildKey(key: LLBKey) -> EventLoopFuture<LLBValue> {
+    func buildKey(key: LLBKey) -> LLBFuture<LLBValue> {
         return lock.withLock {
             let keyID = key.stableHash
             if let value = pendingResults[keyID] {
@@ -143,7 +142,7 @@ public class LLBEngine {
 }
 
 extension LLBEngine {
-    public func build<V: LLBValue>(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil, as: V.Type) -> EventLoopFuture<V> {
+    public func build<V: LLBValue>(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil, as: V.Type) -> LLBFuture<V> {
         return self.build(key: key, inputs: inputs).flatMapThrowing {
             guard let value = $0 as? V else {
                 throw LLBError.invalidValueType("Expected value of type \(V.self)")
@@ -152,7 +151,7 @@ extension LLBEngine {
         }
     }
 
-    func buildKey<V: LLBValue>(key: LLBKey, as: V.Type) -> EventLoopFuture<V> {
+    func buildKey<V: LLBValue>(key: LLBKey, as: V.Type) -> LLBFuture<V> {
         return self.buildKey(key: key).flatMapThrowing {
             guard let value = $0 as? V else {
                 throw LLBError.invalidValueType("Expected value of type \(V.self)")

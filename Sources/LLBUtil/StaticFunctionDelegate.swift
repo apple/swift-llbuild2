@@ -8,7 +8,6 @@
 
 import llbuild2
 
-import NIO
 
 extension String: LLBKey {}
 
@@ -19,7 +18,7 @@ public class LLBStaticFunctionDelegate: LLBEngineDelegate {
         self.keyMap = keyMap
     }
 
-    public func lookupFunction(forKey key: LLBKey, group: EventLoopGroup) -> EventLoopFuture<LLBFunction> {
+    public func lookupFunction(forKey key: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
         let stringKey = key as! String
         return group.next().makeSucceededFuture(keyMap[stringKey]!)
     }

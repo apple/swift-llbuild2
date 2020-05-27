@@ -8,8 +8,6 @@
 
 import Foundation
 
-import NIO
-
 
 /// Features supported by a CAS Database
 public struct LLBCASFeatures: Codable {
@@ -32,17 +30,17 @@ public struct LLBCASFeatures: Codable {
 public protocol LLBCASDatabase: class {
     
     /// Get the supported features of this database implementation
-    func supportedFeatures() -> EventLoopFuture<LLBCASFeatures>
+    func supportedFeatures() -> LLBFuture<LLBCASFeatures>
 
     /// Check if the database contains the given `id`.
-    func contains(_ id: LLBDataID) -> EventLoopFuture<Bool>
+    func contains(_ id: LLBDataID) -> LLBFuture<Bool>
     
     /// Get the object corresponding to the given `id`.
     ///
     /// - Parameters:
     ///   - id: The id of the object to look up
     /// - Returns: The object, or nil if not present in the database.
-    func get(_ id: LLBDataID) -> EventLoopFuture<LLBCASObject?>
+    func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?>
     
     /// Store an object.
     ///
@@ -50,7 +48,7 @@ public protocol LLBCASDatabase: class {
     ///    - refs: The list of objects references.
     ///    - data: The object contents.
     /// - Returns: The id representing the combination of contents and refs.
-    func put(refs: [LLBDataID], data: ByteBuffer) -> EventLoopFuture<LLBDataID>
+    func put(refs: [LLBDataID], data: ByteBuffer) -> LLBFuture<LLBDataID>
     
     /// Store an object with a known id.
     ///
@@ -69,5 +67,5 @@ public protocol LLBCASDatabase: class {
     ///    - id: The id of the object, if known.
     ///    - refs: The list of object references.
     ///    - data: The object contents.
-    func put(knownID id: LLBDataID, refs: [LLBDataID], data: ByteBuffer) -> EventLoopFuture<LLBDataID>
+    func put(knownID id: LLBDataID, refs: [LLBDataID], data: ByteBuffer) -> LLBFuture<LLBDataID>
 }
