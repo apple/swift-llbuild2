@@ -53,11 +53,14 @@ clone-external-protos: clone-external-repos
 .PHONY:
 generate-protos: proto-toolchain Protos/BazelRemoteAPI
 	mkdir -p Sources/LLBExecutionProtocol/Generated
-	Utilities/tools/bin/protoc -I=Protos Protos/ExecutionProtocol/*.proto \
+	Utilities/tools/bin/protoc \
+	    -I=Protos \
 		--plugin=Utilities/tools/bin/protoc-gen-swift \
 		--swift_out=Sources/LLBExecutionProtocol/Generated \
 		--swift_opt=Visibility=Public \
-		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb
+		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb \
+		$$(find Protos/ExecutionProtocol -name \*.proto)
+
 	mkdir -p Sources/BazelRemoteAPI/Generated
 	Utilities/tools/bin/protoc \
 		-I=Protos/BazelRemoteAPI/googleapis \
