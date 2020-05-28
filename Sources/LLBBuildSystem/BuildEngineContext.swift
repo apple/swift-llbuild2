@@ -11,14 +11,21 @@ import LLBExecutionProtocol
 
 /// LLBBuildEngineContext contains references to dependencies that may need to be used throught the evaluation of the
 /// functions.
-public class LLBBuildEngineContext {
+public protocol LLBBuildEngineContext {
     /// The dispatch group to be used as when processing the future blocks throught the build.
-    public let group: LLBFuturesDispatchGroup
+    var group: LLBFuturesDispatchGroup { get }
 
     /// The CAS database reference to use for interfacing with CAS systems.
-    public let db: LLBCASDatabase
+    var db: LLBCASDatabase { get }
 
     /// A reference to an executor that provides action execution support.
+    var executor: LLBExecutor { get }
+}
+
+/// Basic build engine context implementation.
+public class LLBBasicBuildEngineContext: LLBBuildEngineContext {
+    public let group: LLBFuturesDispatchGroup
+    public let db: LLBCASDatabase
     public let executor: LLBExecutor
 
     public init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase, executor: LLBExecutor) {

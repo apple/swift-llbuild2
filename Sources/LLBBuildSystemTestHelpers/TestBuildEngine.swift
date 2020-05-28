@@ -8,26 +8,47 @@
 
 import llbuild2
 import LLBBuildSystem
+import LLBExecutionProtocol
 import NIO
+
+/// Test implementation of a build engine context.
+public class LLBTestBuildEngineContext: LLBBuildEngineContext {
+    public let group: LLBFuturesDispatchGroup
+    public let testDB: LLBTestCASDatabase
+    public let testExecutor: LLBTestExecutor
+
+    public var db: LLBCASDatabase { testDB }
+    public var executor: LLBExecutor { testExecutor }
+
+    public init(
+        group: LLBFuturesDispatchGroup? = nil,
+        db: LLBTestCASDatabase? = nil,
+        executor: LLBTestExecutor? = nil
+    ) {
+        let group = group ?? MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        self.group = group
+        self.testDB = db ?? LLBTestCASDatabase(group: group)
+        self.testExecutor = executor ?? LLBTestExecutor(group: group)
+    }
+}
 
 /// Test implementation of a build engine to be used for inspection during tests. This class is a wrapper around an
 /// actual LLBBuildEngine.
 public class LLBTestBuildEngine {
-    public let group: LLBFuturesDispatchGroup
-    public let db: LLBTestCASDatabase
-    public let executor: LLBTestExecutor
-
+    public let engineContext: LLBTestBuildEngineContext
     private let engine: LLBBuildEngine
 
-    init(group: LLBFuturesDispatchGroup? = nil, db: LLBTestCASDatabase? = nil, executor: LLBTestExecutor? = nil) {
-        let group = group ?? MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.group = group
-        self.db = db ?? LLBTestCASDatabase(group: group)
-        self.executor = executor ?? LLBTestExecutor(group: group)
+    public init(
+        engineContext: LLBTestBuildEngineContext? = nil,
+        buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil
+    ) {
+        let engineContext = engineContext ?? LLBTestBuildEngineContext()
+        self.engineContext = engineContext
 
-        let engineContext = LLBBuildEngineContext(group: group, db: self.db, executor: self.executor)
-
-        self.engine = LLBBuildEngine(engineContext: engineContext)
+        self.engine = LLBBuildEngine(
+            engineContext: engineContext,
+            buildFunctionLookupDelegate: buildFunctionLookupDelegate
+        )
     }
 
     /// Requests the evaluation of a build key, returning an abstract build value.
