@@ -6,6 +6,10 @@ this repository aims to continue that exploration.
 
 Check the [docs](Docs/index.md) for more information about llbuild2.
 
+# Development
+
+Development documentation is available [here](Docs/Development.md).
+
 ## License
 
 Copyright (c) 2020 Apple Inc. and the Swift project authors.
