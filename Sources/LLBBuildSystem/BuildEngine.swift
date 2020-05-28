@@ -11,6 +11,7 @@ import llbuild2
 public enum LLBBuildEngineError: Error {
     case unknownBuildKeyIdentifier(String)
     case unknownKeyType(String)
+    case unexpectedValueType(String)
 }
 
 // Private delegate for implementing the LLBEngine delegate logic.
@@ -40,7 +41,7 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
 }
 
 /// LLBBuildEngine is the core piece for evaluating a build.
-public class LLBBuildEngine {
+public final class LLBBuildEngine {
     private let coreEngine: LLBEngine
     private let delegate: LLBEngineDelegate
     private let engineContext: LLBBuildEngineContext
@@ -49,5 +50,25 @@ public class LLBBuildEngine {
         self.engineContext = engineContext
         self.delegate = LLBBuildEngineDelegate(engineContext: engineContext)
         self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate)
+    }
+
+    /// Requests the evaluation of a build key, returning an abstract build value.
+    public func build(_ key: LLBBuildKey) -> LLBFuture<LLBBuildValue> {
+        return self.coreEngine.build(key: key).flatMapThrowing { value -> LLBBuildValue in
+            if let buildValue = value as? LLBBuildValue {
+                return buildValue
+            }
+            throw LLBBuildEngineError.unexpectedValueType("expecting an LLBuildValue but got: \(String(describing: type(of: value)))")
+        }
+    }
+
+    /// Requests the evaluation of a build key and attempts to cast the resulting value to the specified type.
+    public func build<V: LLBBuildValue>(_ key: LLBBuildKey, as valueType: V.Type = V.self) -> LLBFuture<V> {
+        return self.coreEngine.build(key: key).flatMapThrowing { value -> V in
+            if let buildValue = value as? V {
+                return buildValue
+            }
+            throw LLBBuildEngineError.unexpectedValueType("expecting \(String(describing: V.self)) but got: \(String(describing: type(of: value)))")
+        }
     }
 }
