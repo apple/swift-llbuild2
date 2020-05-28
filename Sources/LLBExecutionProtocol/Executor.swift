@@ -8,6 +8,10 @@
 
 import llbuild2
 
+public enum LLBExecutorError: Error {
+    case unimplemented
+}
+
 /// Protocol definition for an executor that can fullfil action execution requests.
 public protocol LLBExecutor {
     /// Requests the execution of an action, returning a future action response.
