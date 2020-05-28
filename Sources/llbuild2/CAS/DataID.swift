@@ -8,6 +8,8 @@
 
 import Foundation
 
+import TSCBasic
+
 
 /// An identifier that uniquely identifies a CAS object (i.e. a hash).
 public struct LLBDataID: Hashable, CustomDebugStringConvertible {
