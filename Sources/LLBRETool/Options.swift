@@ -14,7 +14,16 @@ public struct Options {
     /// The frontend target for all services (CAS, Action Cache, Execution).
     public var frontend: ConnectionTarget
 
-    public init(frontend: ConnectionTarget) {
+    /// Custom gRPC headers to send with each request.
+    public var grpcHeaders: [GRPCHeader]
+
+    public init(
+        frontend: ConnectionTarget,
+        grpcHeaders: [GRPCHeader] = []
+    ) {
         self.frontend = frontend
+        self.grpcHeaders = grpcHeaders
     }
 }
+
+public typealias GRPCHeader = (key: String, value: String)
