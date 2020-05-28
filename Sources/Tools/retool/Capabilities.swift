@@ -6,18 +6,21 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import GRPC
-import SwiftProtobuf
+import Foundation
+import ArgumentParser
 
-public final class RETool {
+import LLBRETool
 
-    public let options: Options
+struct Capabilities: ParsableCommand {
 
-    public init(_ options: Options) {
-        self.options = options
-    }
+    @Option()
+    var frontendURL: URL
 
-    // FIXME: Actually implement.
-    public func getCapabilities() {
+    func run() throws {
+        let options: LLBRETool.Options = .init(
+            frontendURL: frontendURL
+        )
+        let tool = RETool(options)
+        tool.getCapabilities()
     }
 }

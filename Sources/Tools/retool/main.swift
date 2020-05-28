@@ -7,15 +7,15 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import ArgumentParser
-import LLBRETool
 
-struct RETool: ParsableCommand {
+struct REToolCommand: ParsableCommand {
     static var configuration = CommandConfiguration(
-        abstract: "retool - remote execution tool"
+        commandName: "retool",
+        abstract: "retool - remote execution tool",
+        subcommands: [
+            Capabilities.self,
+        ]
     )
-
-    func run() throws {
-    }
 }
 
-RETool.main()
+REToolCommand.main()
