@@ -14,19 +14,25 @@ public enum LLBBuildEngineError: Error {
     case unexpectedValueType(String)
 }
 
+extension LLBBuildEngineError: Equatable {}
+
 // Private delegate for implementing the LLBEngine delegate logic.
 fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
     private let engineContext: LLBBuildEngineContext
     private let functionMap: LLBBuildFunctionMap
+    private let buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?
 
-    init(engineContext: LLBBuildEngineContext) {
+    init(engineContext: LLBBuildEngineContext, buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?) {
         self.engineContext = engineContext
+        self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
         self.functionMap = LLBBuildFunctionMap()
     }
 
     func lookupFunction(forKey key: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
         if let buildKey = key as? LLBBuildKey {
-            guard let function = functionMap.get(type(of: buildKey).identifier) else {
+            // First look in the build system function map, and if not found, resolve it using the delegate.
+            guard let function = functionMap.get(type(of: buildKey).identifier) ??
+                    buildFunctionLookupDelegate?.lookupBuildFunction(for: type(of: buildKey).identifier) else {
                 return engineContext.group.next().makeFailedFuture(
                     LLBBuildEngineError.unknownBuildKeyIdentifier(String(describing: type(of: buildKey)))
                 )
@@ -46,9 +52,19 @@ public final class LLBBuildEngine {
     private let delegate: LLBEngineDelegate
     private let engineContext: LLBBuildEngineContext
 
-    public init(engineContext: LLBBuildEngineContext) {
+    /// Builds a new instance of an LLBBuildEngine.
+    ///
+    /// - Parameters:
+    ///     - engineContext: The context for the engine.
+    ///     - buildFunctionLookupDelegate: An optional delegate for resolving build functions at runtime. The build
+    ///           engine will first look in the internal function map, and only resolve using the delegate if it can't
+    ///           find a function to use for a particular key.
+    public init(engineContext: LLBBuildEngineContext, buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil) {
         self.engineContext = engineContext
-        self.delegate = LLBBuildEngineDelegate(engineContext: engineContext)
+        self.delegate = LLBBuildEngineDelegate(
+            engineContext: engineContext,
+            buildFunctionLookupDelegate: buildFunctionLookupDelegate
+        )
         self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate)
     }
 
