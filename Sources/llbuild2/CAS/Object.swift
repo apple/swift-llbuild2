@@ -51,7 +51,7 @@ extension LLBCASObject: Codable {
 
         let allocator = ByteBufferAllocator()
         var buffer = allocator.buffer(capacity: bytes.count)
-        buffer.setBytes(bytes, at: 0)
+        buffer.writeBytes(bytes)
 
         self.data = buffer
     }

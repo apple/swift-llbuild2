@@ -38,6 +38,14 @@ let package = Package(
             dependencies: ["GRPC", "SwiftProtobuf", "SwiftProtobufPluginLibrary"]
         ),
 
+        .target(
+            name: "CBLAKE3",
+            dependencies: [],
+            cSettings: [
+                .headerSearchPath("./"),
+            ]
+        ),
+
         // Ninja Build support
         .target(
             name: "LLBNinja",
@@ -50,7 +58,11 @@ let package = Package(
 
         .target(
             name: "LLBUtil",
-            dependencies: ["llbuild2"]
+            dependencies: ["llbuild2", "CBLAKE3"]
+        ),
+        .testTarget(
+            name: "LLBUtilTests",
+            dependencies: ["LLBUtil"]
         ),
 
         .target(

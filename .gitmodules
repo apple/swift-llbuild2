@@ -1,0 +1,3 @@
+[submodule "ThirdParty/BLAKE3"]
+	path = ThirdParty/BLAKE3
+	url = https://github.com/BLAKE3-team/BLAKE3.git
