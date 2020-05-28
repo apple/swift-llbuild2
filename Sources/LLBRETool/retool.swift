@@ -38,6 +38,7 @@ public final class RETool {
     ) -> LLBFuture<ServerCapabilities> {
         let connection = makeClientConnection()
         let client = CapabilitiesClient(channel: connection)
+        client.defaultCallOptions.customMetadata.add(contentsOf: options.grpcHeaders)
 
         let request: GetCapabilitiesRequest
         if let instanceName = instanceName {

@@ -14,6 +14,9 @@ import GRPC
 import LLBRETool
 
 struct Capabilities: ParsableCommand {
+    static let configuration: CommandConfiguration = CommandConfiguration(
+        abstract: "Get the server capabilities of the remote server"
+    )
 
     @OptionGroup()
     var options: Options
@@ -22,12 +25,21 @@ struct Capabilities: ParsableCommand {
     var instanceName: String?
 
     func run() throws {
-        let toolOptions = try LLBRETool.Options(
-            frontend: self.options.url.toConnectionTarget()
-        )
-
+        let toolOptions = try self.options.toToolOptions()
         let tool = RETool(toolOptions)
+
         let response = try tool.getCapabilities(instanceName: instanceName).wait()
         print(response)
+    }
+}
+
+extension Options {
+    func toToolOptions() throws -> LLBRETool.Options {
+        let frontendTarget = try url.toConnectionTarget()
+
+        return LLBRETool.Options(
+            frontend: frontendTarget,
+            grpcHeaders: grpcHeader
+        )
     }
 }
