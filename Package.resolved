@@ -38,6 +38,15 @@
         }
       },
       {
+        "package": "SwiftProtobuf",
+        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
+        "state": {
+          "branch": "master",
+          "revision": "aaf0101617e4b896acbf24f671c1e6551f05063c",
+          "version": null
+        }
+      },
+      {
         "package": "swift-tools-support-core",
         "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
         "state": {
