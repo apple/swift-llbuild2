@@ -76,6 +76,10 @@ let package = Package(
             name: "LLBBuildSystemTestHelpers",
             dependencies: ["LLBBuildSystem"]
         ),
+        .testTarget(
+            name: "LLBBuildSystemTests",
+            dependencies: ["LLBBuildSystemTestHelpers"]
+        ),
 
         // Command line tools
         .target(
