@@ -10,6 +10,7 @@ let package = Package(
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
         .library(name: "llbuild2Ninja", targets: ["LLBNinja"]),
+        .library(name: "llbuild2BuildSystem", targets: ["LLBBuildSystem"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
@@ -46,6 +47,10 @@ let package = Package(
         ),
 
         // Build system support
+        .target(
+            name: "LLBBuildSystem",
+            dependencies: ["llbuild2", "LLBExecutionProtocol"]
+        ),
         .target(
             name: "LLBExecutionProtocol",
             dependencies: ["llbuild2", "SwiftProtobuf"]
