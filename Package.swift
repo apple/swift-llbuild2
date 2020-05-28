@@ -48,7 +48,7 @@ let package = Package(
         // Build system support
         .target(
             name: "LLBExecutionProtocol",
-            dependencies: ["SwiftProtobuf"]
+            dependencies: ["llbuild2", "SwiftProtobuf"]
         ),
 
         // Command line tools
