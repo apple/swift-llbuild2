@@ -59,10 +59,11 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 		--swift_opt=Visibility=Public \
 		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb
 	mkdir -p Sources/BazelRemoteAPI/Generated
-	PATH=$PATH:Utilities/tools/bin Utilities/tools/bin/protoc \
+	Utilities/tools/bin/protoc \
 		-I=Protos/BazelRemoteAPI/googleapis \
 		-I=Protos/BazelRemoteAPI/remote-apis \
 		--plugin=Utilities/tools/bin/protoc-gen-swift \
+		--plugin=Utilities/tools/bin/protoc-gen-grpc-swift \
 		--swift_out=Sources/BazelRemoteAPI/Generated \
 		--swift_opt=Visibility=Public \
 		--grpc-swift_opt=Visibility=Public \
