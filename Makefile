@@ -54,7 +54,7 @@ clone-external-protos: clone-external-repos
 generate-protos: proto-toolchain Protos/BazelRemoteAPI
 	mkdir -p Sources/LLBExecutionProtocol/Generated
 	Utilities/tools/bin/protoc \
-	    -I=Protos \
+		-I=Protos \
 		--plugin=Utilities/tools/bin/protoc-gen-swift \
 		--swift_out=Sources/LLBExecutionProtocol/Generated \
 		--swift_opt=Visibility=Public \
