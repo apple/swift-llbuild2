@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-crypto.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-llbuild.git", .branch("master")),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.8.0"),
-        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.0.1"),
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("master")),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.8.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", .branch("master")),
     ],
@@ -25,7 +25,7 @@ let package = Package(
         // Core build functionality
         .target(
             name: "llbuild2",
-            dependencies: ["Crypto", "NIO"]
+            dependencies: ["Crypto", "NIO", "SwiftToolsSupport-auto"]
         ),
         .testTarget(
             name: "llbuild2Tests",
