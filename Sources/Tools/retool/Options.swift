@@ -7,15 +7,9 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import ArgumentParser
+import Foundation
 
-struct REToolCommand: ParsableCommand {
-    static var configuration = CommandConfiguration(
-        commandName: "retool",
-        abstract: "retool — remote execution tool",
-        subcommands: [
-            Capabilities.self,
-        ]
-    )
+struct Options: ParsableArguments {
+    @Option(help: "The gRPC endpoint of the Bazel RE2 server")
+    var url: URL
 }
-
-REToolCommand.main()

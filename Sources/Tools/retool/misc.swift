@@ -24,7 +24,6 @@ extension URL: ExpressibleByArgument {
 extension URL {
     func toConnectionTarget() throws -> ConnectionTarget {
         // FIXME: Support unix scheme?
-
         guard let host = self.host else {
             throw StringError("no host in url \(self)")
         }

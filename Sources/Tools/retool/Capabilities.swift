@@ -15,18 +15,18 @@ import LLBRETool
 
 struct Capabilities: ParsableCommand {
 
-    @Option(help: "The gRPC endpoint of the Bazel RE2 server")
-    var url: URL
+    @OptionGroup()
+    var options: Options
 
     @Option(help: "The instance of the execution system to operate against")
     var instanceName: String?
 
     func run() throws {
-        let options = try LLBRETool.Options(
-            frontend: url.toConnectionTarget()
+        let toolOptions = try LLBRETool.Options(
+            frontend: self.options.url.toConnectionTarget()
         )
 
-        let tool = RETool(options)
+        let tool = RETool(toolOptions)
         let response = try tool.getCapabilities(instanceName: instanceName).wait()
         print(response)
     }
