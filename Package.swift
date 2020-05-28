@@ -70,6 +70,10 @@ let package = Package(
             name: "LLBExecutionProtocol",
             dependencies: ["llbuild2", "SwiftProtobuf"]
         ),
+        .target(
+            name: "LLBBuildSystemTestHelpers",
+            dependencies: ["LLBBuildSystem"]
+        ),
 
         // Command line tools
         .target(
