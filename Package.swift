@@ -58,6 +58,8 @@ let package = Package(
             dependencies: [
                 "GRPC",
                 "SwiftToolsSupport-auto",
+                "BazelRemoteAPI",
+                "llbuild2",
             ]
         ),
 

@@ -8,12 +8,29 @@
 
 import Foundation
 import ArgumentParser
+import GRPC
+import TSCBasic
 
 extension URL: ExpressibleByArgument {
     public init?(argument: String) {
         if let parsed = URL(string: argument) {
             self = parsed
+        } else {
+            return nil
         }
-        return nil
+    }
+}
+
+extension URL {
+    func toConnectionTarget() throws -> ConnectionTarget {
+        // FIXME: Support unix scheme?
+
+        guard let host = self.host else {
+            throw StringError("no host in url \(self)")
+        }
+        guard let port = self.port else {
+            throw StringError("no port in url \(self)")
+        }
+        return .hostAndPort(host, port)
     }
 }

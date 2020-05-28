@@ -6,14 +6,15 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import GRPC
 import Foundation
 
 public struct Options {
     // FIXME: We should also support specifying specific endpoints for individual services.
-    /// The frontend URL for all services (CAS, Action Cache, Execution).
-    public var frontendURL: URL
+    /// The frontend target for all services (CAS, Action Cache, Execution).
+    public var frontend: ConnectionTarget
 
-    public init(frontendURL: URL) {
-        self.frontendURL = frontendURL
+    public init(frontend: ConnectionTarget) {
+        self.frontend = frontend
     }
 }
