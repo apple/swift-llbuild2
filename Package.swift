@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "llbuild2",
     platforms: [
-       .macOS(.v10_15) 
+       .macOS(.v10_15)
     ],
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-llbuild.git", .branch("master")),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.8.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.0.1"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", .branch("master")),
     ],
     targets: [
         // Core build functionality
@@ -44,6 +45,11 @@ let package = Package(
             dependencies: ["llbuild2"]
         ),
 
+        // Build system support
+        .target(
+            name: "LLBExecutionProtocol",
+            dependencies: ["SwiftProtobuf"]
+        ),
 
         // Command line tools
         .target(

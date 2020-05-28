@@ -1,0 +1,5 @@
+mapping {
+    module_name: "LLBExecutionProtocol"
+    proto_file_path: "ExecutionProtocol/action_execution.proto"
+    proto_file_path: "ExecutionProtocol/data_id.proto"
+}
