@@ -59,12 +59,14 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 		--swift_opt=Visibility=Public \
 		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb
 	mkdir -p Sources/BazelRemoteAPI/Generated
-	Utilities/tools/bin/protoc \
+	PATH=$PATH:Utilities/tools/bin Utilities/tools/bin/protoc \
 		-I=Protos/BazelRemoteAPI/googleapis \
 		-I=Protos/BazelRemoteAPI/remote-apis \
 		--plugin=Utilities/tools/bin/protoc-gen-swift \
 		--swift_out=Sources/BazelRemoteAPI/Generated \
 		--swift_opt=Visibility=Public \
+		--grpc-swift_opt=Visibility=Public \
+		--grpc-swift_out=Sources/BazelRemoteAPI/Generated \
 		$$(find Protos/BazelRemoteAPI -name \*.proto)
 
 .PHONY:
