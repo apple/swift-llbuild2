@@ -6,18 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import GRPC
-import SwiftProtobuf
+import Foundation
+import ArgumentParser
 
-public final class RETool {
-
-    public let options: Options
-
-    public init(_ options: Options) {
-        self.options = options
-    }
-
-    // FIXME: Actually implement.
-    public func getCapabilities() {
+extension URL: ExpressibleByArgument {
+    public init?(argument: String) {
+        if let parsed = URL(string: argument) {
+            self = parsed
+        }
+        return nil
     }
 }

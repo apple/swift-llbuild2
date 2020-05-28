@@ -6,18 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import GRPC
-import SwiftProtobuf
+import Foundation
 
-public final class RETool {
+public struct Options {
+    // FIXME: We should also support specifying specific endpoints for individual services.
+    /// The frontend URL for all services (CAS, Action Cache, Execution).
+    public var frontendURL: URL
 
-    public let options: Options
-
-    public init(_ options: Options) {
-        self.options = options
-    }
-
-    // FIXME: Actually implement.
-    public func getCapabilities() {
+    public init(frontendURL: URL) {
+        self.frontendURL = frontendURL
     }
 }
