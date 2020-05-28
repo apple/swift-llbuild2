@@ -17,7 +17,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-llbuild.git", .branch("master")),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.8.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.0.1"),
-        .package(url: "https://github.com/apple/swift-protobuf.git", .branch("master")),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.8.0"),
+        .package(url: "https://github.com/grpc/grpc-swift.git", .branch("master")),
     ],
     targets: [
         // Core build functionality
@@ -45,6 +46,14 @@ let package = Package(
             dependencies: ["llbuild2"]
         ),
 
+        .target(
+            name: "LLBRETool",
+            dependencies: [
+                "GRPC",
+                "SwiftToolsSupport-auto",
+            ]
+        ),
+
         // Build system support
         .target(
             name: "LLBExecutionProtocol",
@@ -62,6 +71,13 @@ let package = Package(
             name: "llbuild2-tool",
             dependencies: ["LLBCommands", "ArgumentParser"],
             path: "Sources/Tools/llbuild2-tool"
+        ),
+
+        // `retool` executable.
+        .target(
+            name: "retool",
+            dependencies: ["LLBRETool", "ArgumentParser"],
+            path: "Sources/Tools/retool"
         ),
     ]
 )
