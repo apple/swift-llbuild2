@@ -32,6 +32,12 @@ let package = Package(
             dependencies: ["llbuild2", "LLBUtil"]
         ),
 
+        // Bazel RemoteAPI Protocol
+        .target(
+            name: "BazelRemoteAPI",
+            dependencies: ["GRPC", "SwiftProtobuf", "SwiftProtobufPluginLibrary"]
+        ),
+
         // Ninja Build support
         .target(
             name: "LLBNinja",

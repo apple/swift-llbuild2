@@ -20,6 +20,8 @@ notes.txt
 #==============================================================================#
 .build
 .swiftpm/xcode
+ExternalRepositories
 Packages
-xcuserdata
 Utilities/tools
+xcuserdata
+
