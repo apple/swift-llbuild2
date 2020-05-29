@@ -25,9 +25,9 @@ if [[ ! -f "$UTILITIES_DIR/tools/$PROTOC_ZIP" ]]; then
 fi
 
 if [[ -d "$GRPC_SWIFT_DIR" ]]; then
-    git -C "$GRPC_SWIFT_DIR" pull origin master --depth 1
+    git -C "$GRPC_SWIFT_DIR" pull origin master
 else
-    git clone --depth 1 "$GRPC_SWIFT_REPO" "$GRPC_SWIFT_DIR"
+    git clone "$GRPC_SWIFT_REPO" "$GRPC_SWIFT_DIR"
 fi
 
 make plugins -C "$GRPC_SWIFT_DIR"
