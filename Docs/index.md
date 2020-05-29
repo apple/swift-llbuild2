@@ -13,7 +13,7 @@ Functional systems are characterized by enforcing that the results (values) of e
 by the declared inputs (keys). Systems defined in such way can be smarter about the way evaluations are scheduled and
 cached. Some of the benefits of functional systems include:
 
-* If an evaluation is only affected by the input key, then the result can be memorized (cached) for future requests of
+* If an evaluation is only affected by the input key, then the result can be memoized (cached) for future requests of
   the same key.
 * If the value provided by an evaluation is not used as input to any other evaluation, then it can be skipped.
 * If there are no dependencies between evaluations, they can be reordered and/or evaluated in parallel.
