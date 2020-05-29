@@ -21,15 +21,14 @@ extension URL: ExpressibleByArgument {
     }
 }
 
-extension URL {
-    func toConnectionTarget() throws -> ConnectionTarget {
-        // FIXME: Support unix scheme?
-        guard let host = self.host else {
-            throw StringError("no host in url \(self)")
+extension AbsolutePath: ExpressibleByArgument {
+    public init?(argument: String) {
+        if let path = try? AbsolutePath(validating: argument) {
+            self = path
+        } else if let cwd = localFileSystem.currentWorkingDirectory {
+            self = AbsolutePath(argument, relativeTo: cwd)
+        } else {
+            return nil
         }
-        guard let port = self.port else {
-            throw StringError("no port in url \(self)")
-        }
-        return .hostAndPort(host, port)
     }
 }
