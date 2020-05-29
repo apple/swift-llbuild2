@@ -38,6 +38,7 @@ let package = Package(
             dependencies: ["GRPC", "SwiftProtobuf", "SwiftProtobufPluginLibrary"]
         ),
 
+        // BLAKE3 hash support
         .target(
             name: "CBLAKE3",
             dependencies: [],
@@ -56,6 +57,8 @@ let package = Package(
             dependencies: ["LLBNinja", "SwiftToolsSupport-auto"]
         ),
 
+        // Utility classes, including concrete/default implementations of core
+        // protocols that clients and/or tests may find useful.
         .target(
             name: "LLBUtil",
             dependencies: ["llbuild2", "CBLAKE3"]
@@ -65,6 +68,13 @@ let package = Package(
             dependencies: ["LLBUtil"]
         ),
 
+        // Bazel CAS/Execution Backend
+        .target(
+            name: "LLBBazelBackend",
+            dependencies: ["llbuild2", "BazelRemoteAPI", "GRPC"]
+        ),
+
+        // retool implementation
         .target(
             name: "LLBRETool",
             dependencies: [
