@@ -25,7 +25,7 @@ struct Capabilities: ParsableCommand {
     var instanceName: String?
 
     func run() throws {
-        let toolOptions = try self.options.toToolOptions()
+        let toolOptions = self.options.toToolOptions()
         let tool = RETool(toolOptions)
 
         let response = try tool.getCapabilities(instanceName: instanceName).wait()
@@ -34,11 +34,9 @@ struct Capabilities: ParsableCommand {
 }
 
 extension Options {
-    func toToolOptions() throws -> LLBRETool.Options {
-        let frontendTarget = try url.toConnectionTarget()
-
+    func toToolOptions() -> LLBRETool.Options {
         return LLBRETool.Options(
-            frontend: frontendTarget,
+            frontend: url,
             grpcHeaders: grpcHeader
         )
     }

@@ -14,6 +14,7 @@ struct REToolCommand: ParsableCommand {
         abstract: "retool — remote execution tool",
         subcommands: [
             Capabilities.self,
+            CAS.self,
         ]
     )
 }

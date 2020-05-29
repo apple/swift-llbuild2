@@ -72,6 +72,7 @@ let package = Package(
                 "SwiftToolsSupport-auto",
                 "BazelRemoteAPI",
                 "llbuild2",
+                "LLBUtil",
             ]
         ),
 
