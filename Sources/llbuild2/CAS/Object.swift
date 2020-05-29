@@ -14,9 +14,9 @@ public struct LLBCASObject: Equatable {
     public let refs: [LLBDataID]
 
     /// The object data.
-    public let data: ByteBuffer
+    public let data: LLBByteBuffer
 
-    public init(refs: [LLBDataID], data: ByteBuffer) {
+    public init(refs: [LLBDataID], data: LLBByteBuffer) {
         self.refs = refs
         self.data = data
     }
@@ -49,7 +49,7 @@ extension LLBCASObject: Codable {
 
         let bytes = try values.decode([UInt8].self, forKey: .data)
 
-        let allocator = ByteBufferAllocator()
+        let allocator = LLBByteBufferAllocator()
         var buffer = allocator.buffer(capacity: bytes.count)
         buffer.writeBytes(bytes)
 

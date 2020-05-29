@@ -11,33 +11,27 @@ import Foundation
 import Crypto
 import NIOConcurrencyHelpers
 
-public protocol LLBKey: Codable {}
-public protocol LLBValue : Codable {}
+public protocol LLBKey: LLBCodable {}
+public protocol LLBValue : LLBCodable {}
 
 extension LLBKey {
-    public typealias KeyHash = Data
+    public typealias Digest = [UInt8]
 
-    public var stableHash: KeyHash {
-        // Not super happy about this implementation, but this will get replaced anyways by the mechanism that will
-        // translate between Keys and CAS IDs.
-
+    public var digest: Digest {
         // An important note here is that we need to encode the type as well, otherwise we might get 2 different keys
         // that contain the same fields and values, but actually represent different values.
         var hash = SHA256()
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .sortedKeys
-        encoder.dateEncodingStrategy = .iso8601
+        var data = try! self.encode()
 
-        let data = try! encoder.encode(["key": self])
-
-        hash.update(data: data)
+        hash.update(data: data.readBytes(length: data.readableBytes)!)
 
         var digest = [UInt8]()
         hash.finalize().withUnsafeBytes { pointer in
             digest.append(contentsOf: pointer)
         }
-        return KeyHash(digest)
+
+        return digest
     }
 }
 
@@ -88,7 +82,7 @@ public class LLBEngine {
 
     fileprivate let lock = NIOConcurrencyHelpers.Lock()
     fileprivate let delegate: LLBEngineDelegate
-    fileprivate var pendingResults: [LLBKey.KeyHash: LLBFuture<LLBValue>] = [:]
+    fileprivate var pendingResults: [LLBKey.Digest: LLBFuture<LLBValue>] = [:]
 
 
     public enum InternalError: Swift.Error {
@@ -105,7 +99,7 @@ public class LLBEngine {
         self.delegate = delegate
     }
 
-    public func build(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil) -> LLBFuture<LLBValue> {
+    public func build(key: LLBKey, inputs: [LLBKey.Digest: LLBValue]? = nil) -> LLBFuture<LLBValue> {
         // Set static input results if needed
         if let inputs = inputs {
             lock.withLockVoid {
@@ -121,7 +115,7 @@ public class LLBEngine {
 
     func buildKey(key: LLBKey) -> LLBFuture<LLBValue> {
         return lock.withLock {
-            let keyID = key.stableHash
+            let keyID = key.digest
             if let value = pendingResults[keyID] {
                 return value
             }
@@ -142,7 +136,7 @@ public class LLBEngine {
 }
 
 extension LLBEngine {
-    public func build<V: LLBValue>(key: LLBKey, inputs: [LLBKey.KeyHash: LLBValue]? = nil, as: V.Type) -> LLBFuture<V> {
+    public func build<V: LLBValue>(key: LLBKey, inputs: [LLBKey.Digest: LLBValue]? = nil, as: V.Type) -> LLBFuture<V> {
         return self.build(key: key, inputs: inputs).flatMapThrowing {
             guard let value = $0 as? V else {
                 throw LLBError.invalidValueType("Expected value of type \(V.self)")

@@ -48,7 +48,7 @@ public protocol LLBCASDatabase: class {
     ///    - refs: The list of objects references.
     ///    - data: The object contents.
     /// - Returns: The id representing the combination of contents and refs.
-    func put(refs: [LLBDataID], data: ByteBuffer) -> LLBFuture<LLBDataID>
+    func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
     
     /// Store an object with a known id.
     ///
@@ -67,5 +67,5 @@ public protocol LLBCASDatabase: class {
     ///    - id: The id of the object, if known.
     ///    - refs: The list of object references.
     ///    - data: The object contents.
-    func put(knownID id: LLBDataID, refs: [LLBDataID], data: ByteBuffer) -> LLBFuture<LLBDataID>
+    func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
 }
