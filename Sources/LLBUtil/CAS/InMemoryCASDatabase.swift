@@ -72,11 +72,11 @@ extension LLBInMemoryCASDatabase: LLBCASDatabase {
         return group.next().makeSucceededFuture(result)
     }
 
-    public func put(refs: [LLBDataID] = [], data: ByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         return put(knownID: LLBDataID(blake3hash: data, refs: refs), refs: refs, data: data)
     }
 
-    public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: ByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         lock.withLockVoid {
             guard content[id] == nil else {
                 assert(content[id]?.data == data, "put data for id doesn't match")

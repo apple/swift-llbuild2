@@ -8,12 +8,12 @@
 
 import NIO
 
-public typealias ByteBuffer = NIO.ByteBuffer
-public typealias ByteBufferAllocator = NIO.ByteBufferAllocator
+public typealias LLBByteBuffer = NIO.ByteBuffer
+public typealias LLBByteBufferAllocator = NIO.ByteBufferAllocator
 
-public extension ByteBuffer {
-    static func withBytes(_ data: ArraySlice<UInt8>) -> ByteBuffer {
-        let allocator = ByteBufferAllocator()
+public extension LLBByteBuffer {
+    static func withBytes(_ data: ArraySlice<UInt8>) -> LLBByteBuffer {
+        let allocator = LLBByteBufferAllocator()
         var buffer = allocator.buffer(capacity: data.count)
         buffer.writeBytes(data)
         return buffer

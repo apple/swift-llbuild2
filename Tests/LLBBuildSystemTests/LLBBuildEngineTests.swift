@@ -9,14 +9,30 @@
 import llbuild2
 import LLBBuildSystem
 import LLBBuildSystemTestHelpers
+import LLBUtil
 
 import XCTest
 
 /// Key requesting the addition of some numbers. In order to maximize cacheability, the numbers should be sorted.
-struct SumKey: LLBBuildKey {
+struct SumKey: LLBBuildKey, Codable {
     static let identifier = String(describing: Self.self)
 
     let numbers: [Int]
+
+    init(numbers: [Int]) {
+        self.numbers = numbers
+    }
+
+    init(from bytes: LLBByteBuffer) throws {
+        self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
+    }
+
+    func encode() throws -> LLBByteBuffer {
+        let encoded = try JSONEncoder().encode(self)
+        var bytes = LLBByteBufferAllocator().buffer(capacity: encoded.count)
+        bytes.writeBytes(encoded)
+        return bytes
+    }
 }
 
 extension Int: LLBBuildValue {}

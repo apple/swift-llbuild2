@@ -32,11 +32,11 @@ public class LLBTestCASDatabase: LLBCASDatabase {
         return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
     }
 
-    public func put(refs: [LLBDataID], data: ByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
     }
 
-    public func put(knownID id: LLBDataID, refs: [LLBDataID], data: ByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
     }
 }

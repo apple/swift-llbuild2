@@ -19,14 +19,14 @@ class InMemoryCASDatabaseTests: XCTestCase {
     func testBasics() throws {
         let db = LLBInMemoryCASDatabase(group: group)
 
-        let id1 = try db.put(data: ByteBuffer.withBytes([1, 2, 3])).wait()
+        let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3])).wait()
         let obj1 = try db.get(id1).wait()!
         XCTAssertEqual(id1, LLBDataID(string: "0~sXfsG_Jt-ztwENRz5tRHE7KbdluZxuYOy_rnQt5JZUM="))
         XCTAssertEqual(obj1.size, 3)
         XCTAssertEqual(obj1.refs, [])
-        XCTAssertEqual(obj1.data, ByteBuffer.withBytes([1, 2, 3]))
+        XCTAssertEqual(obj1.data, LLBByteBuffer.withBytes([1, 2, 3]))
 
-        let id2 = try db.put(refs: [id1], data: ByteBuffer.withBytes([4, 5, 6])).wait()
+        let id2 = try db.put(refs: [id1], data: LLBByteBuffer.withBytes([4, 5, 6])).wait()
         let obj2 = try db.get(id2).wait()!
         XCTAssertEqual(id2, LLBDataID(string: "0~udZrZzFHJr8uovWT5dOWtKz95ZqKi-vBkpiH0mJfjM4="))
         XCTAssertEqual(obj2.size, 3)
@@ -35,7 +35,7 @@ class InMemoryCASDatabaseTests: XCTestCase {
         XCTAssertEqual(try db.contains(id1).wait(), true)
 
         // Check contains on a missing object.
-        let missingID = try LLBInMemoryCASDatabase(group: group).put(data: ByteBuffer.withBytes([])).wait()
+        let missingID = try LLBInMemoryCASDatabase(group: group).put(data: LLBByteBuffer.withBytes([])).wait()
         XCTAssertEqual(try db.contains(missingID).wait(), false)
     }
 
@@ -44,14 +44,14 @@ class InMemoryCASDatabaseTests: XCTestCase {
         let queue = DispatchQueue(label: "sync")
 
         // Insert one object.
-        let id1 = try db.put(data: ByteBuffer.withBytes([1, 2, 3])).wait()
+        let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3])).wait()
 
         // Insert a bunch of objects concurrently.
         //
         // We take care here to do this in a way that no references to the
         // object data is held (other than in the database).
-        let allocator = ByteBufferAllocator()
-        func makeData(i: Int, objectSize: Int = 16) -> ByteBuffer {
+        let allocator = LLBByteBufferAllocator()
+        func makeData(i: Int, objectSize: Int = 16) -> LLBByteBuffer {
             var buffer = allocator.buffer(capacity: objectSize)
             for j in 0 ..< objectSize {
                 buffer.writeInteger(UInt8((i + j) & 0xFF))

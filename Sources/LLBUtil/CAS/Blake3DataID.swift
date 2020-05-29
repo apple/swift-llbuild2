@@ -13,7 +13,7 @@ import CBLAKE3
 
 
 public extension LLBDataID {
-    init(blake3hash buffer: ByteBuffer, refs: [LLBDataID]) {
+    init(blake3hash buffer: LLBByteBuffer, refs: [LLBDataID]) {
         var hasher = blake3_hasher()
         blake3_hasher_init(&hasher)
 
