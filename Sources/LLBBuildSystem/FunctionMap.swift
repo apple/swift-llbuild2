@@ -13,9 +13,9 @@ import llbuild2
 class LLBBuildFunctionMap {
     private let functionMap: [LLBBuildKeyIdentifier: LLBFunction]
 
-    init() {
+    init(engineContext: LLBBuildEngineContext) {
         self.functionMap = [
-            :
+            Artifact.identifier: ArtifactFunction(engineContext: engineContext),
         ]
     }
 

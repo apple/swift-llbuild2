@@ -39,10 +39,14 @@ open class LLBBuildFunction<K: LLBBuildKey, V: LLBBuildValue>: LLBFunction {
 
 /// A wrapper for the LLBFunctionInterface build system and static type support for build functions.
 public final class LLBBuildFunctionInterface {
-    let fi: LLBFunctionInterface
+    private let fi: LLBFunctionInterface
 
-    init(fi: LLBFunctionInterface) {
+    fileprivate init(fi: LLBFunctionInterface) {
         self.fi = fi
+    }
+
+    var group: LLBFuturesDispatchGroup {
+        return fi.group
     }
 
     /// Requests the value for a build key.
