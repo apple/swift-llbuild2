@@ -7,36 +7,29 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-
-public enum LLBTestCASDatabaseError: Error {
-    case unimplemented
-}
+import LLBUtil
 
 /// Implementation of an LLBCASDatabase to be used for tests purposes.
 public class LLBTestCASDatabase: LLBCASDatabase {
     let group: LLBFuturesDispatchGroup
+    let db: LLBCASDatabase
 
-    init(group: LLBFuturesDispatchGroup) {
+    init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase? = nil) {
         self.group = group
+        self.db = db ?? LLBInMemoryCASDatabase(group: group)
     }
 
-    public func supportedFeatures() -> LLBFuture<LLBCASFeatures> {
-        return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
-    }
+    public func supportedFeatures() -> LLBFuture<LLBCASFeatures> { self.db.supportedFeatures() }
 
-    public func contains(_ id: LLBDataID) -> LLBFuture<Bool> {
-        return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
-    }
+    public func contains(_ id: LLBDataID) -> LLBFuture<Bool> { self.db.contains(id) }
 
-    public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> {
-        return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
-    }
+    public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> { self.db.get(id) }
 
     public func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
+        self.db.put(refs: refs, data: data)
     }
 
     public func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        return group.next().makeFailedFuture(LLBTestCASDatabaseError.unimplemented)
+        self.db.put(knownID: id, refs: refs, data: data)
     }
 }

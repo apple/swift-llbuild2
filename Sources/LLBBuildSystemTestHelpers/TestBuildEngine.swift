@@ -51,6 +51,10 @@ public class LLBTestBuildEngine {
         )
     }
 
+    public var group: LLBFuturesDispatchGroup { engineContext.group }
+    public var db: LLBCASDatabase { engineContext.testDB }
+    public var executor: LLBExecutor { engineContext.testExecutor }
+
     /// Requests the evaluation of a build key, returning an abstract build value.
     public func build(_ key: LLBBuildKey) -> LLBFuture<LLBBuildValue> {
         return self.engine.build(key)
