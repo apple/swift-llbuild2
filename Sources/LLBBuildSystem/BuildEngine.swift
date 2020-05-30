@@ -25,7 +25,7 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
     init(engineContext: LLBBuildEngineContext, buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?) {
         self.engineContext = engineContext
         self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
-        self.functionMap = LLBBuildFunctionMap()
+        self.functionMap = LLBBuildFunctionMap(engineContext: engineContext)
     }
 
     func lookupFunction(forKey key: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {

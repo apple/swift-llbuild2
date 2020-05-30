@@ -7,6 +7,8 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import SwiftProtobuf
+import Foundation
 
 /// Convenience protocol for referencing build system specific keys.
 public protocol LLBBuildKey: LLBKey {
@@ -19,3 +21,37 @@ public protocol LLBBuildValue: LLBValue {}
 
 /// Identifier type for each type of build system specific key.
 public typealias LLBBuildKeyIdentifier = String
+
+/// Convenience implementation for keys that extend SwiftProtobuf.Message.
+extension LLBBuildKey where Self: SwiftProtobuf.Message {
+    public static var identifier: LLBBuildKeyIdentifier {
+        return Self.protoMessageName
+    }
+
+    public init(from bytes: LLBByteBuffer) throws {
+        let data = Data(bytes.readableBytesView)
+        self = try Self.init(serializedData: data)
+    }
+
+    public func encode() throws -> LLBByteBuffer {
+        let data = try self.serializedData()
+        var bytes = LLBByteBufferAllocator().buffer(capacity: data.count)
+        bytes.writeBytes(data)
+        return bytes
+    }
+}
+
+/// Convenience implementation for values that extend SwiftProtobuf.Message.
+extension LLBBuildValue where Self: SwiftProtobuf.Message {
+    public init(from bytes: LLBByteBuffer) throws {
+        let data = Data(bytes.readableBytesView)
+        self = try Self.init(serializedData: data)
+    }
+
+    public func encode() throws -> LLBByteBuffer {
+        let data = try self.serializedData()
+        var bytes = LLBByteBufferAllocator().buffer(capacity: data.count)
+        bytes.writeBytes(data)
+        return bytes
+    }
+}
