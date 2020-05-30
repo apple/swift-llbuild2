@@ -89,10 +89,10 @@ let package = Package(
         // Build system support
         .target(
             name: "LLBBuildSystem",
-            dependencies: ["llbuild2", "LLBExecutionProtocol"]
+            dependencies: ["llbuild2", "LLBBuildSystemProtocol", "SwiftProtobuf"]
         ),
         .target(
-            name: "LLBExecutionProtocol",
+            name: "LLBBuildSystemProtocol",
             dependencies: ["llbuild2", "SwiftProtobuf"]
         ),
         .target(

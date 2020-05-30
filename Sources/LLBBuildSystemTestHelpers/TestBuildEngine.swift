@@ -8,7 +8,7 @@
 
 import llbuild2
 import LLBBuildSystem
-import LLBExecutionProtocol
+import LLBBuildSystemProtocol
 import NIO
 
 /// Test implementation of a build engine context.

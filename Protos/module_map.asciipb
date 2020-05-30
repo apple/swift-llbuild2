@@ -1,5 +1,10 @@
 mapping {
-    module_name: "LLBExecutionProtocol"
-    proto_file_path: "ExecutionProtocol/action_execution.proto"
-    proto_file_path: "ExecutionProtocol/data_id.proto"
+    module_name: "LLBBuildSystemProtocol"
+    proto_file_path: "BuildSystemProtocol/action_execution.proto"
+    proto_file_path: "BuildSystemProtocol/data_id.proto"
+}
+mapping {
+    module_name: "LLBBuildSystem"
+    proto_file_path: "BuildSystem/Evaluation/artifact_value.proto"
+    proto_file_path: "BuildSystem/Evaluation/artifact.proto"
 }
