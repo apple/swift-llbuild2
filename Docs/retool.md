@@ -11,7 +11,7 @@ $ retool capabilities --url grpc://localhost:8980 --instance-name remote-executi
 ```
 ## CAS
 
-The CAS subcommands allows performing operations on the CAS database.
+The CAS subcommand allows performing operations on the CAS database.
 
 In this example, we store a file in a file-backed CAS database and then retreive it using its CAS data id.
 
