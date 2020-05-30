@@ -6,6 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import NIO
 import llbuild2
 import GRPC
 import SwiftProtobuf
@@ -21,46 +22,96 @@ public final class RETool {
     public let options: Options
 
     public let group = LLBMakeDefaultDispatchGroup()
+    let threadPool: NIOThreadPool
+    let fileIO: NonBlockingFileIO
 
     public init(_ options: Options) {
         self.options = options
+
+        let threadPool = NIOThreadPool(numberOfThreads: 6)
+        self.threadPool = threadPool
+        threadPool.start()
+        self.fileIO = NonBlockingFileIO(threadPool: threadPool)
+    }
+
+    deinit {
+        try? group.syncShutdownGracefully()
+        try? threadPool.syncShutdownGracefully()
     }
 
     /// Put the given file into the CAS database.
-    public func casPut(file: AbsolutePath) throws {
-        let db = try openFileBackedCASDatabase()
-        let data = try localFileSystem.readFileContents(file)
-        let bytes = LLBByteBuffer.withBytes(data.contents[...])
+    public func casPut(file: AbsolutePath) -> LLBFuture<LLBDataID> {
+        let handleAndRegion = fileIO.openFile(
+            path: file.pathString, eventLoop: group.next()
+        )
 
-        let result = try db.put(refs: [], data: bytes).wait()
-        print(result)
+        let buffer: LLBFuture<LLBByteBuffer> = handleAndRegion.flatMap { (handle, region) in
+            let allocator = ByteBufferAllocator()
+            return self.fileIO.read(
+                fileRegion: region,
+                allocator: allocator,
+                eventLoop: self.group.next()
+            )
+        }
+
+        let dbFuture = openFileBackedCASDatabase()
+        return dbFuture.and(buffer).flatMap { (db, buf) in
+            db.put(refs: [], data: buf)
+        }
     }
 
     /// Get the contents of the given data id from CAS database.
-    public func casGet(id: LLBDataID, to outputFile: AbsolutePath) throws {
-        let db = try openFileBackedCASDatabase()
-        let result = try db.get(id).wait()
-        guard let data = result?.data else {
-            throw StringError("No data in \(id)")
-        }
-        guard let bytes = data.getBytes(at: 0, length: data.readableBytes) else {
-            return
+    public func casGet(
+        id: LLBDataID,
+        to outputFile: AbsolutePath
+    ) -> LLBFuture<Void> {
+        let object = openFileBackedCASDatabase().flatMap { db in
+            db.get(id)
         }
 
-        try localFileSystem.writeFileContents(outputFile, bytes: ByteString(bytes))
+        let data: LLBFuture<LLBByteBuffer> = object.flatMapThrowing {
+            guard let data = $0?.data else {
+                throw StringError("No object in CAS with id \(id)")
+            }
+            return data
+        }
+
+        let handle = fileIO.openFile(
+            path: outputFile.pathString,
+            mode: .write,
+            flags: .allowFileCreation(),
+            eventLoop: group.next()
+        )
+
+        return handle.and(data).flatMap { (handle, data) in
+            self.fileIO.write(
+                fileHandle: handle,
+                buffer: data,
+                eventLoop: self.group.next()
+            )
+        }
     }
 
     /// Open the file-backed CAS database.
-    func openFileBackedCASDatabase() throws -> LLBCASDatabase {
-        let casURL = options.frontend
-        // We only support file-backed database right now.
-        guard casURL.scheme == "file" else {
-            throw StringError("unsupported CAS url \(casURL)")
+    func openFileBackedCASDatabase() -> LLBFuture<LLBCASDatabase> {
+        do {
+            let casURL = options.frontend
+            // We only support file-backed database right now.
+            guard casURL.scheme == "file" else {
+                throw StringError("unsupported CAS url \(casURL)")
+            }
+
+            let casPath = try AbsolutePath(validating: casURL.path)
+            let db = LLBFileBackedCASDatabase(
+                group: group,
+                threadPool: threadPool,
+                fileIO: fileIO,
+                path: casPath
+            )
+            return group.next().makeSucceededFuture(db)
+        } catch {
+            return group.next().makeFailedFuture(error)
         }
-
-        let casPath = try AbsolutePath(validating: casURL.path)
-
-        return LLBFileBackedCASDatabase(group: group, path: casPath)
     }
 
     /// Create client connection using the input options.

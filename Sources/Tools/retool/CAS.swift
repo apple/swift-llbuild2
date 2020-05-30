@@ -36,9 +36,13 @@ struct CASPut: ParsableCommand {
     var path: AbsolutePath
 
     func run() throws {
+        let fileSize = try localFileSystem.getFileInfo(path).size
+        print("Importing \(path.basename)", prettyFileSize(fileSize))
+
         let toolOptions = self.options.toToolOptions()
         let tool = RETool(toolOptions)
-        try tool.casPut(file: path)
+        let dataID = try tool.casPut(file: path).wait()
+        print(dataID)
     }
 }
 
@@ -64,6 +68,16 @@ struct CASGet: ParsableCommand {
 
         let toolOptions = self.options.toToolOptions()
         let tool = RETool(toolOptions)
-        try tool.casGet(id: id, to: path)
+        try tool.casGet(id: id, to: path).wait()
+    }
+}
+
+func prettyFileSize(_ size: UInt64) -> String {
+    if size < 100_000 {
+        return "\(size) bytes"
+    } else if size < 100_000_000 {
+        return String(format: "%.1f MB", Double(size) / 1_000_000)
+    } else {
+        return String(format: "%.1f GB", Double(size) / 1_000_000_000)
     }
 }
