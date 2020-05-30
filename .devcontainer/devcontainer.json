@@ -1,0 +1,9 @@
+{
+    "name": "llbuild2Container",
+    "dockerFile": "Dockerfile",
+    "appPort": 3503,
+    "extensions": [],
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    }
+}
