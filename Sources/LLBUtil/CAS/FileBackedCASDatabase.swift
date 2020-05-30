@@ -10,6 +10,7 @@ import llbuild2
 import TSCBasic
 import TSCLibc
 import Foundation
+import NIO
 
 public final class LLBFileBackedCASDatabase: LLBCASDatabase {
     /// Prefix for files written to disk.
@@ -24,10 +25,17 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
     /// Threads capable of running futures.
     public let group: LLBFuturesDispatchGroup
 
+    let threadPool: NIOThreadPool
+    let fileIO: NonBlockingFileIO
+
     public init(
         group: LLBFuturesDispatchGroup,
+        threadPool: NIOThreadPool,
+        fileIO: NonBlockingFileIO,
         path: AbsolutePath
     ) {
+        self.threadPool = threadPool
+        self.fileIO = fileIO
         self.group = group
         self.path = path
         try? localFileSystem.createDirectory(path, recursive: true)
@@ -48,62 +56,100 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
         return group.next().makeSucceededFuture(contains)
     }
 
+    func readFile(file: AbsolutePath) -> LLBFuture<ByteBuffer> {
+        let handleAndRegion = fileIO.openFile(
+            path: file.pathString, eventLoop: group.next()
+        )
+
+        return handleAndRegion.flatMap { (handle, region) in
+            let allocator = ByteBufferAllocator()
+            return self.fileIO.read(
+                fileRegion: region,
+                allocator: allocator,
+                eventLoop: self.group.next()
+            )
+        }
+    }
+
     public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> {
         let refsFile = fileName(for: id, prefix: .refs)
         let dataFile = fileName(for: id, prefix: .data)
 
-        do {
-            let data = try fs.readFileContents(dataFile)
-            let refsData = try fs.readFileContents(refsFile)
-            let refs = try JSONDecoder().decode([LLBDataID].self, from: Data(refsData.contents))
-            let result = LLBCASObject(refs: refs, data: LLBByteBuffer.withBytes(data.contents[...]))
-            return group.next().makeSucceededFuture(result)
-        } catch {
-            return group.next().makeFailedFuture(error)
+        let refsBytes: LLBFuture<[UInt8]> = readFile(file: refsFile).map { refsData in
+            if let bytes = refsData.getBytes(at: 0, length: refsData.readableBytes) {
+                return bytes
+            }
+            return []
+        }
+
+        let refs = refsBytes.flatMapThrowing {
+            try JSONDecoder().decode([LLBDataID].self, from: Data($0))
+        }
+
+        let data = readFile(file: dataFile)
+
+        return refs.and(data).map {
+            LLBCASObject(refs: $0.0, data: $0.1)
         }
     }
 
     var fs: FileSystem { localFileSystem }
 
-    public func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        put(knownID: LLBDataID(blake3hash: data, refs: refs), refs: refs, data: data)
+    public func put(
+        refs: [LLBDataID],
+        data: LLBByteBuffer
+    ) -> LLBFuture<LLBDataID> {
+        let id = LLBDataID(blake3hash: data, refs: refs)
+        return put(knownID: id, refs: refs, data: data)
     }
 
-    public func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        do {
-            let refsFile = fileName(for: id, prefix: .refs)
-            let dataFile = fileName(for: id, prefix: .data)
+    public func put(
+        knownID id: LLBDataID,
+        refs: [LLBDataID],
+        data: LLBByteBuffer
+    ) -> LLBFuture<LLBDataID> {
+        let dataFile = fileName(for: id, prefix: .data)
+        let dataFuture = writeIfNeeded(data: data, path: dataFile)
 
-            var sbData = stat()
-            var sbRefs = stat()
-            if stat(dataFile.pathString, &sbData) != -1 && stat(refsFile.pathString, &sbRefs) != -1 {
-                // Assume some amount of file system atomicity, which means
-                // that if we have this file, then:
-                // 1. This file was properly written to completion, and reading
-                //    from it will result in getting all the data.
-                // 2. The references `refs` were written even earlier, and are
-                //    also available.
-                // One would only wish that these guarantees were available...
-                assert(sbData.st_size == data.readableBytes, "Replacing \(id) with data of different length")
-                return group.next().makeSucceededFuture(id)
+        let refsFile = fileName(for: id, prefix: .refs)
+        let refData = try! JSONEncoder().encode(refs)
+        let refBytes = LLBByteBuffer.withBytes(ArraySlice<UInt8>(refData))
+        let refFuture = writeIfNeeded(data: refBytes, path: refsFile)
+
+        return dataFuture.and(refFuture).map { _ in id }
+    }
+
+    /// Write the given data to the path if the size of data
+    /// differs from the size at path.
+    private func writeIfNeeded(
+        data: LLBByteBuffer,
+        path: AbsolutePath
+    ) -> LLBFuture<Void> {
+        let handle = fileIO.openFile(
+            path: path.pathString,
+            mode: .write,
+            flags: .allowFileCreation(),
+            eventLoop: group.next()
+        )
+
+        let size = handle.flatMap { handle in
+             self.fileIO.readFileSize(
+                fileHandle: handle,
+                eventLoop: self.group.next()
+            )
+        }
+
+        return size.and(handle).flatMap { (size, handle) in
+            if size == data.readableBytes {
+                return self.group.next().makeSucceededFuture(())
             }
 
-            let data = data.getBytes(at: 0, length: data.readableBytes)!
-            try localFileSystem.writeFileContents(
-                dataFile,
-                bytes: ByteString(data),
-                atomically: true
+            return self.fileIO.write(
+                fileHandle: handle,
+                buffer: data,
+                eventLoop: self.group.next()
             )
-
-            let refData = try JSONEncoder().encode(refs)
-            try localFileSystem.writeFileContents(
-                refsFile,
-                bytes: ByteString(refData),
-                atomically: true
-            )
-            return group.next().makeSucceededFuture(id)
-        } catch {
-            return group.next().makeFailedFuture(error)
         }
     }
+
 }
