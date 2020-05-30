@@ -18,12 +18,13 @@ extension LLBKey {
     public typealias Digest = [UInt8]
 
     public var digest: Digest {
-        // An important note here is that we need to encode the type as well, otherwise we might get 2 different keys
-        // that contain the same fields and values, but actually represent different values.
         var hash = SHA256()
 
         var data = try! self.encode()
 
+        // An important note here is that we need to encode the type as well, otherwise we might get 2 different keys
+        // that contain the same fields and values, but actually represent different values.
+        hash.update(data: String(describing: type(of: self)).data(using: .utf8)!)
         hash.update(data: data.readBytes(length: data.readableBytes)!)
 
         var digest = [UInt8]()
@@ -34,7 +35,6 @@ extension LLBKey {
         return digest
     }
 }
-
 
 public struct LLBResult {
     let changedAt: Int
