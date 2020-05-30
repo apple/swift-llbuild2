@@ -20,9 +20,9 @@ class ArtifactTests: XCTestCase {
 
         let bytes = LLBByteBuffer.withData(try XCTUnwrap(contents.data(using: .utf8)))
         let dataID = try testEngine.db.put(refs: [], data: bytes).wait()
-        let artifact = Artifact.source(shortPath: "someSource", dataID: LLBPBDataID(dataID))
+        let artifact = Artifact.source(shortPath: "someSource", dataID: dataID)
 
         let artifactValue: ArtifactValue = try testEngine.build(artifact).wait()
-        XCTAssertEqual(LLBPBDataID(dataID), artifactValue.dataID)
+        XCTAssertEqual(Data(dataID.bytes), artifactValue.dataID.bytes)
     }
 }

@@ -15,9 +15,9 @@ extension ArtifactValue: LLBBuildValue {}
 
 /// Convenience initializer.
 public extension Artifact {
-    static func source(shortPath: String, root: String? = nil, dataID: LLBPBDataID) -> Artifact {
+    static func source(shortPath: String, root: String? = nil, dataID: LLBDataID) -> Artifact {
         return Artifact.with {
-            $0.originType = .source(dataID)
+            $0.originType = .source(LLBPBDataID(dataID))
             $0.shortPath = shortPath
 
             if let root = root {
