@@ -19,7 +19,7 @@ In this example, we store a file in a file-backed CAS database and then retreive
 $ cd "$(mktemp -d /tmp/llb2_XXXXXX)"
 $ echo foo > foo.txt
 
-# Put the file in the databse.
+# Put the file in the database.
 $ retool cas put --url file://$PWD/cas foo.txt
 0~SdyHDfHef9YHlM685En1zNrlda_6pnoktirLA-A525I=
 
