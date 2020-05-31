@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystemProtocol/data_id.proto";
+import "CASProtocol/data_id.proto";
 
 /// An ArtifactValue contains a reference to the actual bytes that is expected to exist in a CAS database.
 message ArtifactValue {

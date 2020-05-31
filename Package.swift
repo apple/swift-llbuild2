@@ -57,11 +57,17 @@ let package = Package(
             dependencies: ["LLBNinja", "SwiftToolsSupport-auto"]
         ),
 
+        // CAS Protobuf Protocol
+        .target(
+            name: "LLBCASProtocol",
+            dependencies: ["llbuild2", "SwiftProtobuf"]
+        ),
+
         // Utility classes, including concrete/default implementations of core
         // protocols that clients and/or tests may find useful.
         .target(
             name: "LLBUtil",
-            dependencies: ["llbuild2", "CBLAKE3"]
+            dependencies: ["llbuild2", "LLBCASProtocol", "CBLAKE3"]
         ),
         .testTarget(
             name: "LLBUtilTests",
@@ -93,7 +99,7 @@ let package = Package(
         ),
         .target(
             name: "LLBBuildSystemProtocol",
-            dependencies: ["llbuild2", "SwiftProtobuf"]
+            dependencies: ["llbuild2", "LLBCASProtocol", "SwiftProtobuf"]
         ),
         .target(
             name: "LLBBuildSystemTestHelpers",
