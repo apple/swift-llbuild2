@@ -6,8 +6,6 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
-
 import Crypto
 import NIOConcurrencyHelpers
 
@@ -44,19 +42,31 @@ public struct LLBResult {
 
 public class LLBFunctionInterface {
     let engine: LLBEngine
+    let key: LLBKey
 
     public let group: LLBFuturesDispatchGroup
 
-    init(group: LLBFuturesDispatchGroup, engine: LLBEngine) {
+    init(group: LLBFuturesDispatchGroup, engine: LLBEngine, key: LLBKey) {
         self.engine = engine
         self.group = group
+        self.key = key
     }
 
     public func request(_ key: LLBKey) -> LLBFuture<LLBValue> {
+        do {
+            try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
+        } catch {
+            return group.next().makeFailedFuture(error)
+        }
         return engine.buildKey(key: key)
     }
 
     public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self) -> LLBFuture<V> {
+        do {
+            try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
+        } catch {
+            return group.next().makeFailedFuture(error)
+        }
         return engine.buildKey(key: key, as: type)
     }
 
@@ -83,6 +93,7 @@ public class LLBEngine {
     fileprivate let lock = NIOConcurrencyHelpers.Lock()
     fileprivate let delegate: LLBEngineDelegate
     fileprivate var pendingResults: [LLBKey.Digest: LLBFuture<LLBValue>] = [:]
+    fileprivate let keyDependencyGraph = LLBKeyDependencyGraph()
 
 
     public enum InternalError: Swift.Error {
@@ -124,7 +135,7 @@ public class LLBEngine {
             let promise = group.next().makePromise(of: LLBValue.self)
             group.next().flatSubmit {
                 return self.delegate.lookupFunction(forKey: key, group: self.group).flatMap { function in
-                    let fi = LLBFunctionInterface(group: self.group, engine: self)
+                    let fi = LLBFunctionInterface(group: self.group, engine: self, key: key)
                     return function.compute(key: key, fi)
                 }
             }.cascade(to: promise)
