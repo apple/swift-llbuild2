@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystemProtocol/data_id.proto";
+import "CASProtocol/data_id.proto";
 
 /// Enum representing the supported artifact types for remote action execution.
 enum LLBArtifactType {

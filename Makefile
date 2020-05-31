@@ -52,6 +52,14 @@ clone-external-protos: clone-external-repos
 # checking in the generated sources.
 .PHONY:
 generate-protos: proto-toolchain Protos/BazelRemoteAPI
+	mkdir -p Sources/LLBCASProtocol/Generated
+	Utilities/tools/bin/protoc \
+		-I=Protos \
+		--plugin=Utilities/tools/bin/protoc-gen-swift \
+		--swift_out=Sources/LLBCASProtocol/Generated \
+		--swift_opt=Visibility=Public \
+		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb \
+		$$(find Protos/CASProtocol -name \*.proto)
 	mkdir -p Sources/LLBBuildSystem/Generated
 	Utilities/tools/bin/protoc \
 		-I=Protos \
@@ -60,7 +68,6 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 		--swift_opt=Visibility=Public \
 		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb \
 		$$(find Protos/BuildSystem -name \*.proto)
-
 	mkdir -p Sources/LLBBuildSystemProtocol/Generated
 	Utilities/tools/bin/protoc \
 		-I=Protos \
@@ -69,7 +76,6 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 		--swift_opt=Visibility=Public \
 		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb \
 		$$(find Protos/BuildSystemProtocol -name \*.proto)
-
 	mkdir -p Sources/BazelRemoteAPI/Generated
 	Utilities/tools/bin/protoc \
 		-I=Protos/BazelRemoteAPI/googleapis \
@@ -89,6 +95,7 @@ proto-toolchain:
 .PHONY:
 clean:
 	rm -rf Sources/BazelRemoteAPI/Generated
+	rm -rf Sources/LLBCASProtocol/Generated
 	rm -rf Sources/LLBBuildSystem/Generated
 	rm -rf Sources/LLBBuildSystemProtocol/Generated
 
