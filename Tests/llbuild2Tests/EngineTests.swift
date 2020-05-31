@@ -49,6 +49,32 @@ final class EngineTests: XCTestCase {
             XCTFail("error \(error)")
         }
     }
+
+    func testDependencyCycles() {
+        let modFunction = LLBSimpleFunction { (fi, key) in
+            let intKey = Int(key as! String)!
+            return fi.request("\((intKey + 1) % 4)").map { _ in 42 }
+        }
+
+        let keyMap: [String: LLBFunction] = [
+            "0": modFunction,
+            "1": modFunction,
+            "2": modFunction,
+            "3": modFunction,
+        ]
+
+        let delegate = LLBStaticFunctionDelegate(keyMap: keyMap)
+        let engine = LLBEngine(delegate: delegate)
+
+        XCTAssertThrowsError(try engine.build(key: "1", as: Int.self).wait()) { error in
+            guard case let LLBKeyDependencyGraphError.cycleDetected(cycle) = error else {
+                XCTFail("Unexpected error type")
+                return
+            }
+
+            XCTAssertEqual(["0", "1", "2", "3", "0"], cycle as! [String])
+        }
+    }
 }
 
 extension Int: LLBValue {}
