@@ -11,11 +11,9 @@
 
 PROTOC_ZIP=protoc-3.12.2-osx-x86_64.zip
 PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v3.12.2/$PROTOC_ZIP"
-GRPC_SWIFT_REPO=https://github.com/grpc/grpc-swift.git
 
 UTILITIES_DIR="$(dirname "$0")"
 TOOLS_DIR="$UTILITIES_DIR/tools"
-GRPC_SWIFT_DIR="$TOOLS_DIR/grpc-swift"
 
 mkdir -p "$TOOLS_DIR"
 
@@ -24,12 +22,9 @@ if [[ ! -f "$UTILITIES_DIR/tools/$PROTOC_ZIP" ]]; then
     unzip -o "$TOOLS_DIR/$PROTOC_ZIP" -d "$TOOLS_DIR"
 fi
 
-if [[ -d "$GRPC_SWIFT_DIR" ]]; then
-    git -C "$GRPC_SWIFT_DIR" pull origin master
-else
-    git clone "$GRPC_SWIFT_REPO" "$GRPC_SWIFT_DIR"
-fi
+# Use swift build instead of cloning the repo to make sure that the generated code matches the SwiftProtobuf library
+# being used as a dependency in the build. This might be a bit slower, but it's correct.
+swift build -c release --product protoc-gen-swift --package-path "$UTILITIES_DIR/.."
+swift build -c release --product protoc-gen-grpc-swift --package-path "$UTILITIES_DIR/.."
 
-make plugins -C "$GRPC_SWIFT_DIR"
-
-cp -f "$TOOLS_DIR"/grpc-swift/.build/release/protoc-gen*swift "$TOOLS_DIR/bin"
+cp "$UTILITIES_DIR"/../.build/release/protoc-gen{-grpc,}-swift "$TOOLS_DIR/bin"
