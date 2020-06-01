@@ -1,7 +1,11 @@
 mapping {
-    module_name: "LLBCASProtocol"
+    module_name: "LLBCAS"
     proto_file_path: "CASProtocol/cas_object.proto"
     proto_file_path: "CASProtocol/data_id.proto"
+}
+mapping {
+    module_name: "LLBCASFileTree"
+    proto_file_path: "CASFileTreeProtocol/file_tree.proto"
 }
 mapping {
     module_name: "LLBBuildSystemProtocol"
