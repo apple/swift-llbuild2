@@ -6,15 +6,16 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-syntax = "proto3";
+extension LLBDirectoryEntry {
+    public init(name: String, type: LLBFileType, size: Int) {
+        self.name = name
+        self.type = type
+        self.size = .init(clamping: size)
+    }
 
-import "CASProtocol/data_id.proto";
-
-
-/// LLBPBCASObject represents the serialized from of CASObjects.  It encodes the
-/// combination of the raw data of the object and its dependendent references.
-message LLBPBCASObject {
-    repeated LLBPBDataID refs = 1;
-
-    bytes data = 2;
+    public init(name: String, type: LLBFileType, size: UInt64) {
+        self.name = name
+        self.type = type
+        self.size = size
+    }
 }

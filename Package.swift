@@ -22,10 +22,39 @@ let package = Package(
         .package(url: "https://github.com/grpc/grpc-swift.git", .branch("master")),
     ],
     targets: [
+        // ZSTD Compression support
+        .target(name: "CZSTD"),
+        .target(name: "ZSTD", dependencies: ["CZSTD"]),
+        .testTarget(name: "ZSTDTests", dependencies: ["ZSTD"]),
+
+        // Support types and methods
+        .target(
+            name: "LLBSupport",
+            dependencies: ["NIO", "SwiftToolsSupport-auto", "ZSTD"]
+        ),
+
+        // CAS Protocol
+        .target(
+            name: "LLBCAS",
+            dependencies: ["LLBSupport", "SwiftProtobuf"]
+        ),
+        .testTarget(
+            name: "LLBCASTests",
+            dependencies: ["LLBCAS", "LLBUtil"]
+        ),
+        .target(
+            name: "LLBCASFileTree",
+            dependencies: ["LLBCAS", "ZSTD"]
+        ),
+        .testTarget(
+            name: "LLBCASFileTreeTests",
+            dependencies: ["LLBCASFileTree", "LLBUtil"]
+        ),
+
         // Core build functionality
         .target(
             name: "llbuild2",
-            dependencies: ["Crypto", "NIO", "SwiftToolsSupport-auto"]
+            dependencies: ["LLBCASFileTree", "Crypto"]
         ),
         .testTarget(
             name: "llbuild2Tests",
@@ -57,17 +86,11 @@ let package = Package(
             dependencies: ["LLBNinja", "SwiftToolsSupport-auto"]
         ),
 
-        // CAS Protobuf Protocol
-        .target(
-            name: "LLBCASProtocol",
-            dependencies: ["llbuild2", "SwiftProtobuf"]
-        ),
-
         // Utility classes, including concrete/default implementations of core
         // protocols that clients and/or tests may find useful.
         .target(
             name: "LLBUtil",
-            dependencies: ["llbuild2", "LLBCASProtocol", "CBLAKE3"]
+            dependencies: ["llbuild2", "LLBCAS", "CBLAKE3"]
         ),
         .testTarget(
             name: "LLBUtilTests",
@@ -99,7 +122,7 @@ let package = Package(
         ),
         .target(
             name: "LLBBuildSystemProtocol",
-            dependencies: ["llbuild2", "LLBCASProtocol", "SwiftProtobuf"]
+            dependencies: ["llbuild2", "LLBCAS", "SwiftProtobuf"]
         ),
         .target(
             name: "LLBBuildSystemTestHelpers",

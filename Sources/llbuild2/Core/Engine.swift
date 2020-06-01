@@ -6,8 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+
 import Crypto
 import NIOConcurrencyHelpers
+
+@_exported import LLBCAS
+@_exported import LLBCASFileTree
+@_exported import LLBSupport
+
 
 public protocol LLBKey: LLBCodable {}
 public protocol LLBValue : LLBCodable {}

@@ -11,7 +11,8 @@ import LLBUtil
 
 /// Implementation of an LLBCASDatabase to be used for tests purposes.
 public class LLBTestCASDatabase: LLBCASDatabase {
-    let group: LLBFuturesDispatchGroup
+    public let group: LLBFuturesDispatchGroup
+
     let db: LLBCASDatabase
 
     init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase? = nil) {
