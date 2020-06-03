@@ -15,7 +15,7 @@ public class LLBTestCASDatabase: LLBCASDatabase {
 
     let db: LLBCASDatabase
 
-    init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase? = nil) {
+    public init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase? = nil) {
         self.group = group
         self.db = db ?? LLBInMemoryCASDatabase(group: group)
     }

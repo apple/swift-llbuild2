@@ -9,6 +9,7 @@
 import llbuild2
 import LLBBuildSystem
 import LLBBuildSystemProtocol
+import LLBUtil
 import NIO
 
 /// Test implementation of a build engine context.
@@ -22,13 +23,13 @@ public class LLBTestBuildEngineContext: LLBBuildEngineContext {
 
     public init(
         group: LLBFuturesDispatchGroup? = nil,
-        db: LLBTestCASDatabase? = nil,
-        executor: LLBTestExecutor? = nil
+        db: LLBCASDatabase? = nil,
+        executor: LLBExecutor? = nil
     ) {
         let group = group ?? MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.group = group
-        self.testDB = db ?? LLBTestCASDatabase(group: group)
-        self.testExecutor = executor ?? LLBTestExecutor(group: group)
+        self.testDB = LLBTestCASDatabase(group: group, db: db ?? LLBInMemoryCASDatabase(group: group))
+        self.testExecutor = LLBTestExecutor(group: group, executor: executor)
     }
 }
 

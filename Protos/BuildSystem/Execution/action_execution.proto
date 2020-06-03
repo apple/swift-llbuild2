@@ -1,0 +1,51 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+import "BuildSystemProtocol/action_execution.proto";
+import "CASProtocol/data_id.proto";
+
+/// Key that represents the execution of an action after the input artifacts have been resolved into concrete data IDs,
+/// used to resolve the data IDs of the requested outputs.
+message ActionExecutionKey {
+
+    /// Represents what type of action execution this key represents.
+    oneof actionExecutionType {
+
+        /// A command line based action execution key.
+        CommandActionExecution command = 1;
+    }
+}
+
+/// The value for an ActionExecutionKey.
+message ActionExecutionValue {
+
+    /// The list of outputs IDs that the action produced. This will be in the same order as requested in
+    /// actionExecutionType.
+    repeated LLBPBDataID outputs = 1;
+
+    /// The data ID for the stdout of the action.
+    LLBPBDataID stdoutID = 2;
+
+    /// The data ID for the stderr of the action.
+    LLBPBDataID stderrID = 3;
+}
+
+/// An action execution description for a command line invocation.
+message CommandActionExecution {
+
+    /// The spec for the action to execute.
+    LLBActionSpec actionSpec = 1;
+
+    /// The list of inputs required for this action execution.
+    repeated LLBActionInput inputs = 2;
+
+    /// The list of outputs expected from this action execution.
+    repeated LLBActionOutput outputs = 3;
+}

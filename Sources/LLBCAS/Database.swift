@@ -13,14 +13,14 @@ import LLBSupport
 
 /// Features supported by a CAS Database
 public struct LLBCASFeatures: Codable {
-    
+
     /// Whether a database is "ID preserving"
     ///
     /// An ID preserving database will *always* honor the id passed to a
     /// `put(knownID: ...)` request. i.e. on success the returned
     /// DataID will match.
     public let preservesIDs: Bool
-    
+
     public init(preservesIDs: Bool = true) {
         self.preservesIDs = preservesIDs
     }
@@ -37,14 +37,14 @@ public protocol LLBCASDatabase: class {
 
     /// Check if the database contains the given `id`.
     func contains(_ id: LLBDataID) -> LLBFuture<Bool>
-    
+
     /// Get the object corresponding to the given `id`.
     ///
     /// - Parameters:
     ///   - id: The id of the object to look up
     /// - Returns: The object, or nil if not present in the database.
     func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?>
-    
+
     /// Calculate the DataID for the given CAS object.
     ///
     /// The implementation *MUST* return a valid content-address, such
@@ -69,7 +69,7 @@ public protocol LLBCASDatabase: class {
     ///    - data: The object contents.
     /// - Returns: The id representing the combination of contents and refs.
     func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
-    
+
     /// Store an object with a known id.
     ///
     /// In such situations, the `id` *MUST* be a valid content-address for the
@@ -92,13 +92,15 @@ public protocol LLBCASDatabase: class {
 
 public extension LLBCASDatabase {
     func identify(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
-
         return identify(refs: refs, data: LLBByteBuffer(data))
     }
 
     func put(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
-
         return put(refs: refs, data: LLBByteBuffer(data))
+    }
+
+    func put(data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+        return self.put(refs: [], data: data)
     }
 
     func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
