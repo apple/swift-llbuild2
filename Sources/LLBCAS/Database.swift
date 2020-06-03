@@ -45,6 +45,23 @@ public protocol LLBCASDatabase: class {
     /// - Returns: The object, or nil if not present in the database.
     func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?>
     
+    /// Calculate the DataID for the given CAS object.
+    ///
+    /// The implementation *MUST* return a valid content-address, such
+    /// that a subsequent call to `put(knownID:...` will return an identical
+    /// `id`. This method should be implemented as efficiently as possible,
+    /// ideally locally.
+    ///
+    /// NOTE: The implementations *MAY* store the content, as if it were `put`.
+    /// Clients *MAY NOT* assume the data has been written.
+    ///
+    ///
+    /// - Parameters:
+    ///    - refs: The list of objects references.
+    ///    - data: The object contents.
+    /// - Returns: The id representing the combination of contents and refs.
+    func identify(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
+
     /// Store an object.
     ///
     /// - Parameters:
@@ -71,4 +88,20 @@ public protocol LLBCASDatabase: class {
     ///    - refs: The list of object references.
     ///    - data: The object contents.
     func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
+}
+
+public extension LLBCASDatabase {
+    func identify(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
+
+        return identify(refs: refs, data: LLBByteBuffer(data))
+    }
+
+    func put(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
+
+        return put(refs: refs, data: LLBByteBuffer(data))
+    }
+
+    func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
+        return put(knownID: id, refs: refs, data: LLBByteBuffer(data))
+    }
 }

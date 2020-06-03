@@ -15,29 +15,6 @@ import LLBCAS
 import LLBSupport
 
 
-public enum LLBCASFileTreeFormatError: Error {
-    /// The given id was referenced as a directory, but the object encoding didn't match expectations.
-    case unexpectedDirectoryData(LLBDataID)
-
-    /// The given id was referenced as a file, but the object encoding didn't match expectations.
-    case unexpectedFileData(LLBDataID)
-
-    /// The given id was referenced as a symlink, but the object encoding didn't match expectations.
-    case unexpectedSymlinkData(LLBDataID)
-
-    /// An unexpected error was thrown while communicating with the database.
-    case unexpectedDatabaseError(Error)
-
-    /// Formatting/protocol error.
-    case formatError(reason: String)
-
-    /// File size exceeds internal limits
-    case fileTooLarge(path: AbsolutePath)
-
-    /// Decompression failed
-    case decompressFailed(path: AbsolutePath)
-}
-
 struct CASFileTreeParser {
     let exportPath: AbsolutePath
     let allocator: LLBByteBufferAllocator?
@@ -78,16 +55,16 @@ struct CASFileTreeParser {
         }
     }
 
-    private func decompress(compressedData: ArraySlice<UInt8>, kind: AnnotatedCASTreeChunk.ItemKind, debugPath: AbsolutePath) throws -> LLBFastData {
+    private func decompress(compressedData: LLBByteBuffer, kind: AnnotatedCASTreeChunk.ItemKind, debugPath: AbsolutePath) throws -> LLBFastData {
         guard let allocator = self.allocator else {
             throw LLBCASFileTreeFormatError.decompressFailed(path: debugPath)
         }
 
         let zstd = ZSTDStream()
         try zstd.startDecompression()
-        var decompressed = allocator.buffer(capacity: max(3 * (1 + compressedData.count), Int(clamping: kind.overestimatedSize)))
+        var decompressed = allocator.buffer(capacity: max(3 * (1 + compressedData.readableBytes), Int(clamping: kind.overestimatedSize)))
         var isDone = false
-        try compressedData.withUnsafeBytes { ptr in
+        try compressedData.withUnsafeReadableBytes { ptr in
             _ = try zstd.decompress(input: ptr, into: &decompressed, isDone: &isDone)
         }
         guard isDone else {
@@ -98,6 +75,21 @@ struct CASFileTreeParser {
 
     private func parseFile(id: LLBDataID, path: AbsolutePath, casObject: LLBCASObject, kind: AnnotatedCASTreeChunk.ItemKind) throws -> (LLBFilesystemObject, [AnnotatedCASTreeChunk]) {
         let exe: Bool = kind.type == .executable ? true : false
+
+        guard casObject.refs.isEmpty == false else {
+            let uncompressed: LLBFastData
+            if kind.compressed {
+                uncompressed = try decompress(compressedData: casObject.data, kind: kind, debugPath: path)
+            } else {
+                uncompressed = .init(casObject.data)
+            }
+
+            guard let offset = kind.saveOffset else {
+                return (LLBFilesystemObject(path, .file(data: uncompressed, executable: exe), permissions: kind.permissions), [])
+            }
+
+            return (LLBFilesystemObject(path, .partial(data: uncompressed, offset: offset)), [])
+        }
 
         // Complex file. Parse it.
         let info = try LLBFileInfo.deserialize(from: casObject.data)
@@ -150,7 +142,7 @@ struct CASFileTreeParser {
 
         // Detect protocol enhancements at compile time.
         case .inlineChildren?, .referencedChildrenTree?:
-            throw LLBCASFileTreeFormatError.formatError(reason: "\(id): bad format")
+            throw LLBCASFileTreeFormatError.formatError(reason: "\(id): bad format \(info.payload)")
         case nil:
             throw LLBCASFileTreeFormatError.formatError(reason: "\(id): unrecognized format")
         }

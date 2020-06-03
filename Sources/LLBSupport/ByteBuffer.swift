@@ -12,6 +12,8 @@ import ZSTD
 
 public typealias LLBByteBuffer = NIO.ByteBuffer
 public typealias LLBByteBufferAllocator = NIO.ByteBufferAllocator
+public typealias LLBByteBufferView = NIO.ByteBufferView
+
 
 public extension LLBByteBuffer {
     static func withBytes(_ data: ArraySlice<UInt8>) -> LLBByteBuffer {

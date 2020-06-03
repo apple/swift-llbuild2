@@ -61,13 +61,18 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
             path: file.pathString, eventLoop: group.next()
         )
 
-        return handleAndRegion.flatMap { (handle, region) in
+        let data: LLBFuture<LLBByteBuffer> = handleAndRegion.flatMap { (handle, region) in
             let allocator = ByteBufferAllocator()
             return self.fileIO.read(
                 fileRegion: region,
                 allocator: allocator,
                 eventLoop: self.group.next()
             )
+        }
+
+        return handleAndRegion.and(data).flatMapThrowing { (handle, data) in
+            try handle.0.close()
+            return data
         }
     }
 
@@ -95,8 +100,15 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
 
     var fs: FileSystem { localFileSystem }
 
+    public func identify(
+        refs: [LLBDataID] = [],
+        data: LLBByteBuffer
+    ) -> LLBFuture<LLBDataID> {
+        return group.next().makeSucceededFuture(LLBDataID(blake3hash: data, refs: refs))
+    }
+
     public func put(
-        refs: [LLBDataID],
+        refs: [LLBDataID] = [],
         data: LLBByteBuffer
     ) -> LLBFuture<LLBDataID> {
         let id = LLBDataID(blake3hash: data, refs: refs)
@@ -105,7 +117,7 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
 
     public func put(
         knownID id: LLBDataID,
-        refs: [LLBDataID],
+        refs: [LLBDataID] = [],
         data: LLBByteBuffer
     ) -> LLBFuture<LLBDataID> {
         let dataFile = fileName(for: id, prefix: .data)
@@ -139,7 +151,7 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
             )
         }
 
-        return size.and(handle).flatMap { (size, handle) in
+        let result = size.and(handle).flatMap { (size, handle) -> LLBFuture<Void> in
             if size == data.readableBytes {
                 return self.group.next().makeSucceededFuture(())
             }
@@ -149,6 +161,10 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
                 buffer: data,
                 eventLoop: self.group.next()
             )
+        }
+
+        return handle.and(result).flatMapThrowing { (handle, _) in
+            try handle.close()
         }
     }
 

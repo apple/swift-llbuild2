@@ -27,6 +27,12 @@ public struct LLBCASObject: Equatable {
 }
 
 public extension LLBCASObject {
+    init(refs: [LLBDataID], data: LLBByteBufferView) {
+        self.init(refs: refs, data: LLBByteBuffer(data))
+    }
+}
+
+public extension LLBCASObject {
     /// The size of the object data.
     var size: Int {
         return data.readableBytes
