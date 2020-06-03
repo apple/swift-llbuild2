@@ -155,6 +155,12 @@ public extension LLBDataID {
     var asProto: LLBPBDataID {
         return LLBPBDataID.with { $0.bytes = Data(self.bytes) }
     }
+
+    /// Unsafe initializer only to be used for converting an LLBPBDataID that is known to have originated from
+    /// and LLBDataID instance.
+    init(_ proto: LLBPBDataID) {
+        self = Self.init(bytes: Array(proto.bytes))!
+    }
 }
 
 public extension LLBPBDataID {
@@ -164,4 +170,3 @@ public extension LLBPBDataID {
         }
     }
 }
-

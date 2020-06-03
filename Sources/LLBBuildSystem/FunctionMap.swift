@@ -16,6 +16,9 @@ class LLBBuildFunctionMap {
     init(engineContext: LLBBuildEngineContext) {
         self.functionMap = [
             Artifact.identifier: ArtifactFunction(engineContext: engineContext),
+
+            // Execution
+            ActionExecutionKey.identifier: ActionExecutionFunction(engineContext: engineContext),
         ]
     }
 

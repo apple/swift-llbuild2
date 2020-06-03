@@ -9,15 +9,20 @@
 import llbuild2
 import LLBBuildSystemProtocol
 
-/// Implemenetation of an action executor to be used for test purposes.
+/// Implementation of an action executor to be used for test purposes.
 public class LLBTestExecutor : LLBExecutor {
     let group: LLBFuturesDispatchGroup
+    let executor: LLBExecutor?
 
-    init(group: LLBFuturesDispatchGroup) {
+    init(group: LLBFuturesDispatchGroup, executor: LLBExecutor?) {
         self.group = group
+        self.executor = executor
     }
 
     public func execute(request: LLBActionExecutionRequest) -> LLBFuture<LLBActionExecutionResponse> {
-        group.next().makeFailedFuture(LLBExecutorError.unimplemented)
+        if let executor = executor {
+            return executor.execute(request: request)
+        }
+        return group.next().makeFailedFuture(LLBExecutorError.unimplemented)
     }
 }

@@ -18,7 +18,7 @@ class ArtifactTests: XCTestCase {
 
         let contents = "Hello, world!"
 
-        let bytes = LLBByteBuffer.withData(try XCTUnwrap(contents.data(using: .utf8)))
+        let bytes = LLBByteBuffer.withData(Data(contents.utf8))
         let dataID = try testEngine.db.put(refs: [], data: bytes).wait()
         let artifact = Artifact.source(shortPath: "someSource", dataID: dataID)
 
