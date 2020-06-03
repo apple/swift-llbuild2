@@ -6,13 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import NIO
+import Foundation
 
-public typealias LLBFuture<T> = NIO.EventLoopFuture<T>
-public typealias LLBPromise<T> = NIO.EventLoopPromise<T>
-public typealias LLBFuturesDispatchGroup = NIO.EventLoopGroup
-
-
-public func LLBMakeDefaultDispatchGroup() -> LLBFuturesDispatchGroup {
-    return MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+public extension OperationQueue {
+    convenience init(llbWithName: String, maxConcurrentOperationCount: Int) {
+        self.init()
+        self.name = name
+        self.maxConcurrentOperationCount = maxConcurrentOperationCount
+    }
 }

@@ -64,6 +64,10 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         return group.next().makeFailedFuture(Error.Unimplemented)
     }
 
+    public func identify(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+        return group.next().makeFailedFuture(Error.Unimplemented)
+    }
+
     public func put(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         return group.next().makeFailedFuture(Error.Unimplemented)
     }

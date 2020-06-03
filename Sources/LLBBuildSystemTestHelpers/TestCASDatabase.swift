@@ -26,6 +26,10 @@ public class LLBTestCASDatabase: LLBCASDatabase {
 
     public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> { self.db.get(id) }
 
+    public func identify(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+        self.db.identify(refs: refs, data: data)
+    }
+
     public func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         self.db.put(refs: refs, data: data)
     }

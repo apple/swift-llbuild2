@@ -11,6 +11,21 @@ import Foundation
 import LLBSupport
 
 
+extension LLBFileInfo: LLBSerializable {
+    /// Decode the given block back into a message.
+    @inlinable
+    public init(rawBytes: LLBByteBuffer) throws {
+        self = try Self.deserialize(from: rawBytes)
+    }
+
+    /// Produce an encoded blob that fully defines the structure contents.
+    @inlinable
+    public func toBytes(into buffer: inout LLBByteBuffer) {
+        buffer.writeBytes(try! serializedData())
+    }
+}
+
+
 extension LLBFileInfo {
     @inlinable
     public static func deserialize(from array: [UInt8]) throws -> Self {
