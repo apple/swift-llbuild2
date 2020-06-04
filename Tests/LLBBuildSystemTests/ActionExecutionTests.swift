@@ -34,8 +34,6 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
             let stderrFuture = db.put(data: LLBByteBuffer.withData(Data("".utf8)))
 
             return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
-                print(stdoutID.debugDescription)
-                print(LLBDataID(LLBPBDataID(stdoutID)))
                 return LLBActionExecutionResponse.with {
                     $0.exitCode = 0
                     // Map the input contents as the outputs.
@@ -111,7 +109,6 @@ class ActionExecutionTests: XCTestCase {
         }
 
         let actionExecutionValue: ActionExecutionValue = try testEngine.build(actionExecutionKey).wait()
-        print(LLBDataID(actionExecutionValue.stdoutID).debugDescription)
         let stdoutData = try XCTUnwrap(testDB.get(LLBDataID(actionExecutionValue.stdoutID)).wait()?.data)
         XCTAssertEqual(String(data: Data(stdoutData.readableBytesView), encoding: .utf8), "Success")
     }

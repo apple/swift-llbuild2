@@ -15,4 +15,6 @@ mapping {
     module_name: "LLBBuildSystem"
     proto_file_path: "BuildSystem/Evaluation/artifact_value.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact.proto"
+    proto_file_path: "BuildSystem/Execution/action_execution.proto"
+    proto_file_path: "BuildSystem/Execution/action.proto"
 }
