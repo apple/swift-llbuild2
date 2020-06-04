@@ -17,7 +17,7 @@ class ArtifactTests: XCTestCase {
         let testEngine = LLBTestBuildEngine()
 
         let bytes = LLBByteBuffer.withString("Hello, world!")
-        let dataID = try testEngine.db.put(refs: [], data: bytes).wait()
+        let dataID = try testEngine.db.put(data: bytes).wait()
         let artifact = Artifact.source(shortPath: "someSource", dataID: dataID)
 
         let artifactValue: ArtifactValue = try testEngine.build(artifact).wait()

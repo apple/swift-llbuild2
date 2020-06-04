@@ -129,12 +129,20 @@ let package = Package(
             dependencies: ["llbuild2", "LLBCAS", "SwiftProtobuf"]
         ),
         .target(
+            name: "LLBBuildSystemUtil",
+            dependencies: ["LLBBuildSystemProtocol", "SwiftToolsSupport-auto", "LLBCASFileTree"]
+        ),
+        .target(
             name: "LLBBuildSystemTestHelpers",
             dependencies: ["LLBBuildSystem", "LLBUtil"]
         ),
         .testTarget(
             name: "LLBBuildSystemTests",
             dependencies: ["LLBBuildSystemTestHelpers", "LLBUtil"]
+        ),
+        .testTarget(
+            name: "LLBBuildSystemUtilTests",
+            dependencies: ["LLBBuildSystemUtil", "LLBBuildSystemTestHelpers", "LLBUtil"]
         ),
 
         // Command line tools

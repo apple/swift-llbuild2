@@ -100,8 +100,8 @@ class ActionExecutionTests: XCTestCase {
         }
 
         let actionExecutionValue: ActionExecutionValue = try testEngine.build(actionExecutionKey).wait()
-        let stdoutData = try XCTUnwrap(testDB.get(LLBDataID(actionExecutionValue.stdoutID)).wait()?.data)
-        XCTAssertEqual(String(data: Data(stdoutData.readableBytesView), encoding: .utf8), "Success")
+        let stdout = try XCTUnwrap(testDB.get(LLBDataID(actionExecutionValue.stdoutID)).wait()?.data.asString())
+        XCTAssertEqual(stdout, "Success")
     }
 
     func testActionExecutionFailure() throws {
@@ -133,7 +133,7 @@ class ActionExecutionTests: XCTestCase {
         }
     }
 
-    func testActionExecutionSchedulingError() throws {
+    func testActionExecutionExecutorError() throws {
         let actionExecutionKey = ActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
                 $0.actionSpec = .with {
@@ -146,7 +146,7 @@ class ActionExecutionTests: XCTestCase {
             do {
                 let actionExecutionError = try XCTUnwrap(error as? ActionExecutionError)
 
-                guard case let .schedulingError(underlyingError) = actionExecutionError else {
+                guard case let .executorError(underlyingError) = actionExecutionError else {
                     XCTFail("Expected a schedulingError")
                     return
                 }

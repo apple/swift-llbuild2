@@ -9,6 +9,10 @@
 import llbuild2
 import LLBBuildSystemProtocol
 
+enum LLBTestExecutorError: Error {
+    case unimplemented
+}
+
 /// Implementation of an action executor to be used for test purposes.
 public class LLBTestExecutor : LLBExecutor {
     let group: LLBFuturesDispatchGroup
@@ -23,6 +27,6 @@ public class LLBTestExecutor : LLBExecutor {
         if let executor = executor {
             return executor.execute(request: request, engineContext: engineContext)
         }
-        return group.next().makeFailedFuture(LLBExecutorError.unimplemented)
+        return group.next().makeFailedFuture(LLBTestExecutorError.unimplemented)
     }
 }
