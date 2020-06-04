@@ -26,6 +26,15 @@ public extension Artifact {
             }
         }
     }
+
+    /// Returns the full path for the artifact, including the root.
+    var path: String {
+        if root.isEmpty {
+            return shortPath
+        } else {
+            return [root, shortPath].joined(separator: "/")
+        }
+    }
 }
 
 /// Convenience initializer.

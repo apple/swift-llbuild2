@@ -58,4 +58,18 @@ public final class LLBBuildFunctionInterface {
     func request<K: LLBBuildKey, V: LLBBuildValue>(_ key: K, as valueType: V.Type = V.self) -> LLBFuture<V> {
         return self.fi.request(key).map { $0 as! V }
     }
+
+    /// Requests the values for a list of keys of the same type, returned as a tuple containing the key and the value.
+    func requestKeyed<K: LLBBuildKey, V: LLBBuildValue>(_ keys: [K], as valueType: V.Type = V.self) -> LLBFuture<[(K, V)]> {
+        let requestFutures = keys.map { key in
+            self.request(key, as: V.self).map { (key, $0) }
+        }
+        return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
+    }
+
+    /// Requests the values for a list of keys of the same type.
+    func request<K: LLBBuildKey, V: LLBBuildValue>(_ keys: [K], as valueType: V.Type = V.self) -> LLBFuture<[V]> {
+        let requestFutures = keys.map { self.request($0, as: V.self) }
+        return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
+    }
 }

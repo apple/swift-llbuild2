@@ -24,3 +24,22 @@ public extension LLBActionExecutionResponse {
         self.stderrID = stderrID
     }
 }
+
+public extension LLBActionInput {
+    init(path: String, dataID: LLBPBDataID, type: LLBArtifactType) {
+        self = Self.with {
+            $0.path = path
+            $0.dataID = dataID
+            $0.type = type
+        }
+    }
+}
+
+public extension LLBActionOutput {
+    init(path: String, type: LLBArtifactType) {
+        self = Self.with {
+            $0.path = path
+            $0.type = type
+        }
+    }
+}

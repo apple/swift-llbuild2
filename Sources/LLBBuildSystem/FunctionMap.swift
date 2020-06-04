@@ -18,6 +18,7 @@ class LLBBuildFunctionMap {
             Artifact.identifier: ArtifactFunction(engineContext: engineContext),
 
             // Execution
+            ActionKey.identifier: ActionFunction(engineContext: engineContext),
             ActionExecutionKey.identifier: ActionExecutionFunction(engineContext: engineContext),
         ]
     }
