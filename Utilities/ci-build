@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -eu
+
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "${__dir}/.."
+echo "Current directory is ${PWD}"
+
+CONFIGURATION=debug
+
+set -x
+
+swift build -c $CONFIGURATION
+# swift test -c $CONFIGURATION --parallel --enable-test-discovery
