@@ -16,7 +16,7 @@ extension ActionValue: LLBBuildValue {}
 
 /// Convenience initializer.
 public extension ActionKey {
-    static func command(actionSpec: LLBActionSpec, inputs: [Artifact], outputs: [Artifact]) -> Self {
+    static func command(actionSpec: LLBActionSpec, inputs: [Artifact], outputs: [LLBActionOutput]) -> Self {
         return ActionKey.with {
             $0.actionType = .command(CommandAction.with {
                 $0.actionSpec = actionSpec
@@ -56,7 +56,7 @@ final class ActionFunction: LLBBuildFunction<ActionKey, ActionValue> {
                 inputs: inputs.map { (artifact, artifactValue) in
                     LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
                 },
-                outputs: commandKey.outputs.map { LLBActionOutput(path: $0.path, type: $0.type) }
+                outputs: commandKey.outputs
             )
 
             return fi.request(actionExecutionKey)

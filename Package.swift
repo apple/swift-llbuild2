@@ -138,7 +138,7 @@ let package = Package(
         ),
         .testTarget(
             name: "LLBBuildSystemTests",
-            dependencies: ["LLBBuildSystemTestHelpers", "LLBUtil"]
+            dependencies: ["LLBBuildSystemTestHelpers", "LLBUtil", "LLBBuildSystemUtil"]
         ),
         .testTarget(
             name: "LLBBuildSystemUtilTests",

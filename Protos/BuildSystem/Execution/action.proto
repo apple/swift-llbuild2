@@ -41,6 +41,6 @@ message CommandAction {
     /// The list of artifact inputs required for this action evaluation.
     repeated Artifact inputs = 2;
 
-    /// The list of artifact outputs expected from this action evaluation.
-    repeated Artifact outputs = 3;
+    /// The list of outputs expected from this action evaluation.
+    repeated LLBActionOutput outputs = 3;
 }

@@ -103,8 +103,8 @@ public struct CommandAction {
   //// The list of artifact inputs required for this action evaluation.
   public var inputs: [Artifact] = []
 
-  //// The list of artifact outputs expected from this action evaluation.
-  public var outputs: [Artifact] = []
+  //// The list of outputs expected from this action evaluation.
+  public var outputs: [LLBBuildSystemProtocol.LLBActionOutput] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 

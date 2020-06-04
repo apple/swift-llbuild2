@@ -41,9 +41,10 @@ public class LLBTestBuildEngine {
 
     public init(
         engineContext: LLBTestBuildEngineContext? = nil,
-        buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil
+        buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
+        executor: LLBExecutor? = nil
     ) {
-        let engineContext = engineContext ?? LLBTestBuildEngineContext()
+        let engineContext = engineContext ?? LLBTestBuildEngineContext(executor: executor)
         self.engineContext = engineContext
 
         self.engine = LLBBuildEngine(
@@ -53,8 +54,8 @@ public class LLBTestBuildEngine {
     }
 
     public var group: LLBFuturesDispatchGroup { engineContext.group }
-    public var db: LLBCASDatabase { engineContext.testDB }
-    public var executor: LLBExecutor { engineContext.testExecutor }
+    public var testDB: LLBTestCASDatabase { engineContext.testDB }
+    public var testExecutor: LLBTestExecutor { engineContext.testExecutor }
 
     /// Requests the evaluation of a build key, returning an abstract build value.
     public func build(_ key: LLBBuildKey) -> LLBFuture<LLBBuildValue> {

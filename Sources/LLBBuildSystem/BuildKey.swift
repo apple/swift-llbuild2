@@ -27,12 +27,10 @@ extension LLBBuildKey where Self: SwiftProtobuf.Message {
     public static var identifier: LLBBuildKeyIdentifier {
         return Self.protoMessageName
     }
+}
 
-    public init(from bytes: LLBByteBuffer) throws {
-        let data = Data(bytes.readableBytesView)
-        self = try Self.init(serializedData: data)
-    }
-
+/// Convenience implementation for types that extend SwiftProtobuf.Message.
+extension LLBEncodable where Self: SwiftProtobuf.Message {
     public func encode() throws -> LLBByteBuffer {
         let data = try self.serializedData()
         var bytes = LLBByteBufferAllocator().buffer(capacity: data.count)
@@ -41,17 +39,12 @@ extension LLBBuildKey where Self: SwiftProtobuf.Message {
     }
 }
 
-/// Convenience implementation for values that extend SwiftProtobuf.Message.
-extension LLBBuildValue where Self: SwiftProtobuf.Message {
+/// Convenience implementation for types that extend SwiftProtobuf.Message.
+extension LLBDecodable where Self: SwiftProtobuf.Message {
     public init(from bytes: LLBByteBuffer) throws {
         let data = Data(bytes.readableBytesView)
         self = try Self.init(serializedData: data)
     }
-
-    public func encode() throws -> LLBByteBuffer {
-        let data = try self.serializedData()
-        var bytes = LLBByteBufferAllocator().buffer(capacity: data.count)
-        bytes.writeBytes(data)
-        return bytes
-    }
 }
+
+
