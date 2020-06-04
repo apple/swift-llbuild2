@@ -19,9 +19,9 @@ public class LLBTestExecutor : LLBExecutor {
         self.executor = executor
     }
 
-    public func execute(request: LLBActionExecutionRequest) -> LLBFuture<LLBActionExecutionResponse> {
+    public func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
         if let executor = executor {
-            return executor.execute(request: request)
+            return executor.execute(request: request, engineContext: engineContext)
         }
         return group.next().makeFailedFuture(LLBExecutorError.unimplemented)
     }

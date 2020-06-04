@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import LLBBuildSystemProtocol
 
 public enum LLBBuildEngineError: Error {
     case unknownBuildKeyIdentifier(String)

@@ -19,17 +19,9 @@ enum ActionDummyError: Error, Equatable {
 }
 
 private class ActionDummyExecutor: LLBExecutor {
-    let group: LLBFuturesDispatchGroup
-    let db: LLBCASDatabase
-
-    init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase) {
-        self.group = group
-        self.db = db
-    }
-
-    func execute(request: LLBActionExecutionRequest) -> LLBFuture<LLBActionExecutionResponse> {
-        let stdoutFuture = db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
-        let stderrFuture = db.put(data: LLBByteBuffer.withData(Data("".utf8)))
+    func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+        let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
+        let stderrFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("".utf8)))
 
         return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
             return LLBActionExecutionResponse.with {
@@ -43,23 +35,23 @@ private class ActionDummyExecutor: LLBExecutor {
 }
 
 class ActionTests: XCTestCase {
-    private var testDB: LLBCASDatabase! = nil
     private var testExecutor: LLBExecutor! = nil
+    private var testEngineContext: LLBTestBuildEngineContext! = nil
     private var testEngine: LLBTestBuildEngine! = nil
 
     override func setUp() {
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.testDB = LLBTestCASDatabase(group: group)
-        self.testExecutor = ActionDummyExecutor(group: group, db: testDB)
-
-        let testEngineContext = LLBTestBuildEngineContext(group: group, db: testDB, executor: testExecutor)
+        self.testExecutor = ActionDummyExecutor()
+        self.testEngineContext = LLBTestBuildEngineContext(executor: testExecutor)
         self.testEngine = LLBTestBuildEngine(engineContext: testEngineContext)
     }
 
     override func tearDown() {
-        self.testDB = nil
         self.testExecutor = nil
         self.testEngine = nil
+    }
+
+    private var testDB: LLBTestCASDatabase {
+        return testEngineContext.testDB
     }
 
     func testSimpleActionNoOutputs() throws {

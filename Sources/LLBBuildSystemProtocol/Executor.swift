@@ -15,5 +15,5 @@ public enum LLBExecutorError: Error {
 /// Protocol definition for an executor that can fullfil action execution requests.
 public protocol LLBExecutor {
     /// Requests the execution of an action, returning a future action response.
-    func execute(request: LLBActionExecutionRequest) -> LLBFuture<LLBActionExecutionResponse>
+    func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse>
 }

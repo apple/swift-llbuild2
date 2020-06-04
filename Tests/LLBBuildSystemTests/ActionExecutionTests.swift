@@ -19,19 +19,11 @@ enum ActionExecutionDummyError: Error, Equatable {
 }
 
 private class ActionExecutionDummyExecutor: LLBExecutor {
-    let group: LLBFuturesDispatchGroup
-    let db: LLBCASDatabase
-
-    init(group: LLBFuturesDispatchGroup, db: LLBCASDatabase) {
-        self.group = group
-        self.db = db
-    }
-
-    func execute(request: LLBActionExecutionRequest) -> LLBFuture<LLBActionExecutionResponse> {
+    func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
         let command = request.actionSpec.arguments[0]
         if command == "success" {
-            let stdoutFuture = db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
-            let stderrFuture = db.put(data: LLBByteBuffer.withData(Data("".utf8)))
+            let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
+            let stderrFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("".utf8)))
 
             return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
                 return LLBActionExecutionResponse.with {
@@ -43,8 +35,8 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
                 }
             }
         } else if command == "failure" {
-            let stdoutFuture = db.put(data: LLBByteBuffer.withData(Data("".utf8)))
-            let stderrFuture = db.put(data: LLBByteBuffer.withData(Data("Failure".utf8)))
+            let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("".utf8)))
+            let stderrFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Failure".utf8)))
 
             return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
                 return LLBActionExecutionResponse.with {
@@ -54,31 +46,31 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
                 }
             }
         } else if command == "schedule-error" {
-            return group.next().makeFailedFuture(ActionExecutionDummyError.expectedError)
+            return engineContext.group.next().makeFailedFuture(ActionExecutionDummyError.expectedError)
         }
 
-        return group.next().makeFailedFuture(ActionExecutionDummyError.unsupportedCommand(command))
+        return engineContext.group.next().makeFailedFuture(ActionExecutionDummyError.unsupportedCommand(command))
     }
 }
 
 class ActionExecutionTests: XCTestCase {
-    private var testDB: LLBCASDatabase! = nil
     private var testExecutor: LLBExecutor! = nil
+    private var testEngineContext: LLBTestBuildEngineContext! = nil
     private var testEngine: LLBTestBuildEngine! = nil
 
     override func setUp() {
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.testDB = LLBTestCASDatabase(group: group)
-        self.testExecutor = ActionExecutionDummyExecutor(group: group, db: testDB)
-
-        let testEngineContext = LLBTestBuildEngineContext(group: group, db: testDB, executor: testExecutor)
+        self.testExecutor = ActionExecutionDummyExecutor()
+        self.testEngineContext = LLBTestBuildEngineContext(executor: testExecutor)
         self.testEngine = LLBTestBuildEngine(engineContext: testEngineContext)
     }
 
     override func tearDown() {
-        self.testDB = nil
         self.testExecutor = nil
         self.testEngine = nil
+    }
+
+    private var testDB: LLBTestCASDatabase {
+        return testEngineContext.testDB
     }
 
     func testActionExecution() throws {

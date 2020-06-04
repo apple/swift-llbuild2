@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import LLBBuildSystemProtocol
 
 /// The LLBBuildFunctionMap contains a map of each type of supported build key to the function that implements the logic
 /// for evaluating it.

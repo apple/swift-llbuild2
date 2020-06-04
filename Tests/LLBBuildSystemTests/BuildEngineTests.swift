@@ -8,6 +8,7 @@
 
 import llbuild2
 import LLBBuildSystem
+import LLBBuildSystemProtocol
 import LLBBuildSystemTestHelpers
 import LLBUtil
 

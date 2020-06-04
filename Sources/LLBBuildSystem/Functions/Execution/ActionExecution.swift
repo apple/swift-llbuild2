@@ -63,7 +63,7 @@ final class ActionExecutionFunction: LLBBuildFunction<ActionExecutionKey, Action
             actionSpec: commandKey.actionSpec, inputs: commandKey.inputs, outputs: commandKey.outputs
         )
 
-        return engineContext.executor.execute(request: actionExecutionRequest).flatMapErrorThrowing { error in
+        return engineContext.executor.execute(request: actionExecutionRequest, engineContext: engineContext).flatMapErrorThrowing { error in
             // Action failures do not throw from the executor, so any errors at this stage must be scheduling errors
             // from the executor.
             throw ActionExecutionError.schedulingError(error)
