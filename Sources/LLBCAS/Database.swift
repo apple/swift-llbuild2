@@ -11,6 +11,17 @@ import Foundation
 import LLBSupport
 
 
+/// Error wrappers that implementations may use to communicate desired higher
+/// level responses.
+public enum LLBCASDatabaseError: Error {
+    /// The database encountered a network related error that may resolve if the
+    /// operation is tried again (with some delay).
+    case retryableNetworkError(Error)
+
+    /// The database encountered a network related error that is not recoverable.
+    case terminalNetworkError(Error)
+}
+
 /// Features supported by a CAS Database
 public struct LLBCASFeatures: Codable {
 
