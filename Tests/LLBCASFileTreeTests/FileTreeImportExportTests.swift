@@ -126,4 +126,23 @@ class ImportExportTests: XCTestCase {
 
         XCTAssertNoThrow(try group.syncShutdownGracefully())
     }
+
+    func testImportMissingDirectory() throws {
+        let group = LLBMakeDefaultDispatchGroup()
+
+        try withTemporaryDirectory(prefix: #function, removeTreeOnDeinit: true) { dir in
+            let somedir = dir.appending(component: "some")
+
+            // Create sample file system content.
+            let fs = TSCBasic.localFileSystem
+            try fs.createDirectory(somedir)
+
+            let nonexistDir = somedir.appending(component: "nonexist")
+            let db = LLBInMemoryCASDatabase(group: group)
+            XCTAssertThrowsError(try LLBCASFileTree.import(path: nonexistDir, to: db, options: testOptions).wait()) { error in
+                XCTAssertEqual(error as? FileSystemError, FileSystemError.noEntry)
+            }
+        }
+    }
+
 }

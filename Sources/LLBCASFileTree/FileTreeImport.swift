@@ -276,11 +276,14 @@ public extension LLBCASFileTree {
         }
     }
 
-    // Retry with lesser concurrency if we see unexpected errors.
-    // This is to overcome Cassandra driver problems.
+    // Retry with lesser concurrency if we see unexpected network errors.
     private static func recursivelyDecreasingLimit<T>(on loop: LLBFuturesDispatchLoop, limit: Int, _ body: @escaping (Int) -> LLBFuture<T>) -> LLBFuture<T> {
         return body(limit).flatMapError { error -> LLBFuture<T> in
-            // All connections on all I/O threads are busy
+            // Check if something retryable happened.
+            guard case LLBCASDatabaseError.retryableNetworkError(_) = error else {
+                return loop.makeFailedFuture(error)
+            }
+
             guard limit > 10 else {
                 return loop.makeFailedFuture(error)
             }
