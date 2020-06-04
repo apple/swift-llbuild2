@@ -63,8 +63,7 @@ class ActionTests: XCTestCase {
     }
 
     func testSimpleActionNoOutputs() throws {
-        let contents = "Hello, world!"
-        let bytes = LLBByteBuffer.withData(Data(contents.utf8))
+        let bytes = LLBByteBuffer.withString("Hello, world!")
 
         let dataID = try testDB.put(data: bytes).wait()
 

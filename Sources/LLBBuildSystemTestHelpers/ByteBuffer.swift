@@ -9,9 +9,14 @@
 import llbuild2
 import Foundation
 
+/// Helper extension for creating LLBByteBuffers from Data.
 public extension LLBByteBuffer {
-    /// Helper extension for creating LLBByteBuffers from Data.
+
     static func withData(_ data: Data) -> LLBByteBuffer {
         return self.withBytes(ArraySlice<UInt8>(data))
+    }
+
+    static func withString(_ string: String) -> LLBByteBuffer {
+        return self.withBytes(ArraySlice<UInt8>(string.utf8))
     }
 }
