@@ -142,7 +142,7 @@ struct CASFileTreeParser {
 
         // Detect protocol enhancements at compile time.
         case .inlineChildren?, .referencedChildrenTree?:
-            throw LLBCASFileTreeFormatError.formatError(reason: "\(id): bad format \(info.payload)")
+            throw LLBCASFileTreeFormatError.formatError(reason: "\(id): bad format \(String(describing: info.payload))")
         case nil:
             throw LLBCASFileTreeFormatError.formatError(reason: "\(id): unrecognized format")
         }
