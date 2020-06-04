@@ -31,11 +31,19 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+// llbuild2 Note: The Artifact struct was manually edited to be a class instead of a struct. This was made on purpose
+// to allow for a nice API when using Artifacts to construct action graphs, since it means that users can use a single
+// reference to the Artifact object that can get updated dynamically to reference the artifact owner that generates it
+// after the Artifact was created and moved around. I agree that this is a signal that SwiftProtobuf might be a bad fit
+// for this problem, but the benefits that we get around serialization and interface definition through proto files
+// outweighs this cost and we're ok with having this technical debt in the time being. If we ever move to a nicer
+// serialization mechanism, we can remove this restriction (Artifact just needs to be a class for the API to be nice).
+
 //// An Artifact is the unit with which files and directories are represented in llbuild2. It contains not the contents
 //// of the sources or intermediate files and directories, but instead contains the necessary data required to resolve
 //// a particular input (or output) artifact during execution time. In some ways, it can be viewed as a future where
 //// the result (ArtifactValue) is a reference to the actual built contents of the artifact.
-public struct Artifact {
+public class Artifact {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -50,6 +58,15 @@ public struct Artifact {
       return LLBCAS.LLBPBDataID()
     }
     set {originType = .source(newValue)}
+  }
+
+  //// Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
+  public var derived: LLBArtifactOwner {
+    get {
+      if case .derived(let v)? = originType {return v}
+      return LLBArtifactOwner()
+    }
+    set {originType = .derived(newValue)}
   }
 
   //// A short path representation of the artifact. This usually includes the configuration independent paths.
@@ -68,17 +85,21 @@ public struct Artifact {
   public enum OneOf_OriginType: Equatable {
     //// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
     case source(LLBCAS.LLBPBDataID)
+    //// Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
+    case derived(LLBArtifactOwner)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Artifact.OneOf_OriginType, rhs: Artifact.OneOf_OriginType) -> Bool {
       switch (lhs, rhs) {
       case (.source(let l), .source(let r)): return l == r
+      case (.derived(let l), .derived(let r)): return l == r
+      default: return false
       }
     }
   #endif
   }
 
-  public init() {}
+  required public init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -87,12 +108,13 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
   public static let protoMessageName: String = "Artifact"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "source"),
+    5: .same(proto: "derived"),
     2: .same(proto: "shortPath"),
     3: .same(proto: "root"),
     4: .same(proto: "type"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1:
@@ -106,6 +128,14 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
       case 2: try decoder.decodeSingularStringField(value: &self.shortPath)
       case 3: try decoder.decodeSingularStringField(value: &self.root)
       case 4: try decoder.decodeSingularEnumField(value: &self.type)
+      case 5:
+        var v: LLBArtifactOwner?
+        if let current = self.originType {
+          try decoder.handleConflictingOneOf()
+          if case .derived(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {self.originType = .derived(v)}
       default: break
       }
     }
@@ -123,6 +153,9 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
     }
     if self.type != .file {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 4)
+    }
+    if case .derived(let v)? = self.originType {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

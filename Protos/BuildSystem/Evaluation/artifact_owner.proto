@@ -1,0 +1,22 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+import "CASProtocol/data_id.proto";
+
+/// An ArtifactOwner contains the reference to the action that generates an artifact, effectively providing the link
+/// between artifacts and actions that make up the action graph.
+message LLBArtifactOwner {
+
+    /// The dataID that contains the actionKey that produces this artifact.
+    LLBPBDataID actionID = 1;
+
+    /// The index of the artifact in the list of outputs.
+    int32 outputIndex = 2;
+}

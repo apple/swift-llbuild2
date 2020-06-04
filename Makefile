@@ -96,6 +96,11 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 		--grpc-swift_out=Sources/BazelRemoteAPI/Generated \
 		$$(find Protos/BazelRemoteAPI -name \*.proto)
 
+	@# Check out the comment on artifact.pb.swift on why we remove any changes to that file. If you need to edit
+	@# artifact.proto, please comment this line, and convert the generated struct to a class as it was before. Check
+	@# that file for the reasoning behind this manual edit.
+	@git checkout Sources/LLBBuildSystem/Generated/BuildSystem/Evaluation/artifact.pb.swift > /dev/null 2>&1
+
 .PHONY:
 proto-toolchain:
 	Utilities/build_proto_toolchain.sh

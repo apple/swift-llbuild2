@@ -122,11 +122,11 @@ class ActionExecutionTests: XCTestCase {
                     return
                 }
 
-                let stdoutData = try XCTUnwrap(testDB.get(stdoutID).wait()?.data)
-                XCTAssertEqual(String(data: Data(stdoutData.readableBytesView), encoding: .utf8), "")
+                let stdout = try XCTUnwrap(testDB.get(stdoutID).wait()?.data.asString())
+                XCTAssertEqual(stdout, "")
 
-                let stderrData = try XCTUnwrap(testDB.get(stderrID).wait()?.data)
-                XCTAssertEqual(String(data: Data(stderrData.readableBytesView), encoding: .utf8), "Failure")
+                let stderr = try XCTUnwrap(testDB.get(stderrID).wait()?.data.asString())
+                XCTAssertEqual(stderr, "Failure")
             } catch {
                 XCTFail("Unexpected error: \(error)")
             }
