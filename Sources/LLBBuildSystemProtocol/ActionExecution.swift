@@ -43,3 +43,12 @@ public extension LLBActionOutput {
         }
     }
 }
+
+public extension LLBEnvironmentVariable {
+    init(name: String, value: String) {
+        self = Self.with {
+            $0.name = name
+            $0.value = value
+        }
+    }
+}

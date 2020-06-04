@@ -19,4 +19,8 @@ public extension LLBByteBuffer {
     static func withString(_ string: String) -> LLBByteBuffer {
         return self.withBytes(ArraySlice<UInt8>(string.utf8))
     }
+
+    func asString() -> String? {
+        return String(data: Data(self.readableBytesView), encoding: .utf8)
+    }
 }

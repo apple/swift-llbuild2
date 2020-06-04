@@ -41,7 +41,7 @@ public enum ActionExecutionError: Error {
     case unimplemented
 
     /// Error related to the scheduling of an action.
-    case schedulingError(Error)
+    case executorError(Error)
 
     /// Error related to an actual action (i.e. action completed but did not finish successfully).
     case actionExecutionError(LLBDataID, LLBDataID)
@@ -64,9 +64,8 @@ final class ActionExecutionFunction: LLBBuildFunction<ActionExecutionKey, Action
         )
 
         return engineContext.executor.execute(request: actionExecutionRequest, engineContext: engineContext).flatMapErrorThrowing { error in
-            // Action failures do not throw from the executor, so any errors at this stage must be scheduling errors
-            // from the executor.
-            throw ActionExecutionError.schedulingError(error)
+            // Action failures do not throw from the executor, so this must be an executor specific error.
+            throw ActionExecutionError.executorError(error)
         }.flatMapThrowing { executionResponse in
             // If the action failed, convert it into an actual error with the dataIDs of the output logs.
             if executionResponse.exitCode != 0 {
