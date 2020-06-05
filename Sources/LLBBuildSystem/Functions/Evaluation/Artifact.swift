@@ -16,6 +16,7 @@ extension ArtifactValue: LLBBuildValue {}
 
 /// Convenience initializer.
 public extension Artifact {
+    /// Returns a source artifact with a reference to the data ID containing artifact's contents.
     static func source(shortPath: String, root: String? = nil, dataID: LLBDataID) -> Artifact {
         return Artifact.with {
             $0.originType = .source(LLBPBDataID(dataID))
@@ -27,6 +28,7 @@ public extension Artifact {
         }
     }
 
+    /// Returns a derived artifact that doesn't have any artifact owner information configured.
     static func derivedUninitialized(shortPath: String, root: String? = nil) -> Artifact {
         return Artifact.with {
             $0.originType = nil
