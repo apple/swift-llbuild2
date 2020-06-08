@@ -46,5 +46,3 @@ extension LLBDecodable where Self: SwiftProtobuf.Message {
         self = try Self.init(serializedData: data)
     }
 }
-
-
