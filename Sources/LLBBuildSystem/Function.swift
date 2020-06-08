@@ -46,7 +46,7 @@ public final class LLBBuildFunctionInterface {
         self.fi = fi
     }
 
-    var group: LLBFuturesDispatchGroup {
+    public var group: LLBFuturesDispatchGroup {
         return fi.group
     }
 

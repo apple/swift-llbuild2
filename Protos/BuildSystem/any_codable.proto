@@ -1,0 +1,19 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+/// AnyCodable is a wrapper type for polymorphic codables, in which the type of the serialized data is not known at
+/// compile time.
+message LLBAnyCodable {
+    /// A string identifier to map the runtime bytes into a specific type, for deserialization.
+    string typeIdentifier = 1;
+
+    /// The serialized bytes of the underlying data structure.
+    bytes serializedCodable = 2;
+}

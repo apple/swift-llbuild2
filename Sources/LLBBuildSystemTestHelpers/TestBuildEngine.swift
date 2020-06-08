@@ -42,6 +42,7 @@ public class LLBTestBuildEngine {
     public init(
         engineContext: LLBTestBuildEngineContext? = nil,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
+        configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         executor: LLBExecutor? = nil
     ) {
         let engineContext = engineContext ?? LLBTestBuildEngineContext(executor: executor)
@@ -49,7 +50,8 @@ public class LLBTestBuildEngine {
 
         self.engine = LLBBuildEngine(
             engineContext: engineContext,
-            buildFunctionLookupDelegate: buildFunctionLookupDelegate
+            buildFunctionLookupDelegate: buildFunctionLookupDelegate,
+            configuredTargetDelegate: configuredTargetDelegate
         )
     }
 

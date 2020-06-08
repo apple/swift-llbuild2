@@ -23,10 +23,17 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
     private let functionMap: LLBBuildFunctionMap
     private let buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?
 
-    init(engineContext: LLBBuildEngineContext, buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?) {
+    init(
+        engineContext: LLBBuildEngineContext,
+        buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?,
+        configuredTargetDelegate: LLBConfiguredTargetDelegate?
+    ) {
         self.engineContext = engineContext
         self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
-        self.functionMap = LLBBuildFunctionMap(engineContext: engineContext)
+        self.functionMap = LLBBuildFunctionMap(
+            engineContext: engineContext,
+            configuredTargetDelegate: configuredTargetDelegate
+        )
     }
 
     func lookupFunction(forKey key: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
@@ -60,11 +67,16 @@ public final class LLBBuildEngine {
     ///     - buildFunctionLookupDelegate: An optional delegate for resolving build functions at runtime. The build
     ///           engine will first look in the internal function map, and only resolve using the delegate if it can't
     ///           find a function to use for a particular key.
-    public init(engineContext: LLBBuildEngineContext, buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil) {
+    public init(
+        engineContext: LLBBuildEngineContext,
+        buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
+        configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil
+    ) {
         self.engineContext = engineContext
         self.delegate = LLBBuildEngineDelegate(
             engineContext: engineContext,
-            buildFunctionLookupDelegate: buildFunctionLookupDelegate
+            buildFunctionLookupDelegate: buildFunctionLookupDelegate,
+            configuredTargetDelegate: configuredTargetDelegate
         )
         self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate)
     }
