@@ -16,6 +16,7 @@ mapping {
     proto_file_path: "BuildSystem/Evaluation/artifact_owner.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact_value.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact.proto"
+    proto_file_path: "BuildSystem/Evaluation/label.proto"
     proto_file_path: "BuildSystem/Execution/action_execution.proto"
     proto_file_path: "BuildSystem/Execution/action.proto"
 }
