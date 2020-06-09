@@ -6,6 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Foundation
+
 import llbuild2
 
 import NIOConcurrencyHelpers
@@ -90,5 +92,17 @@ extension LLBInMemoryCASDatabase: LLBCASDatabase {
             content[id] = LLBCASObject(refs: refs, data: data)
         }
         return group.next().makeSucceededFuture(id)
+    }
+}
+
+public struct LLBInMemoryCASDatabaseScheme: LLBCASDatabaseScheme {
+    public static let scheme = "mem"
+
+    public static func isValid(host: String?, port: Int?, path: String, query: String?) -> Bool {
+        return host == nil && port == nil && path == "" && query == nil
+    }
+
+    public static func open(group: LLBFuturesDispatchGroup, url: URL) throws -> LLBCASDatabase {
+        return LLBInMemoryCASDatabase(group: group)
     }
 }

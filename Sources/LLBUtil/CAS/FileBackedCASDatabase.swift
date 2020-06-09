@@ -30,15 +30,18 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
 
     public init(
         group: LLBFuturesDispatchGroup,
-        threadPool: NIOThreadPool,
-        fileIO: NonBlockingFileIO,
         path: AbsolutePath
     ) {
-        self.threadPool = threadPool
-        self.fileIO = fileIO
+        self.threadPool = NIOThreadPool(numberOfThreads: 6)
+        threadPool.start()
+        self.fileIO = NonBlockingFileIO(threadPool: threadPool)
         self.group = group
         self.path = path
         try? localFileSystem.createDirectory(path, recursive: true)
+    }
+
+    deinit {
+        try? threadPool.syncShutdownGracefully()
     }
 
     private func fileName(for id: LLBDataID, prefix: FileNamePrefix) -> AbsolutePath {
@@ -169,3 +172,16 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
     }
 
 }
+
+public struct LLBFileBackedCASDatabaseScheme: LLBCASDatabaseScheme {
+    public static let scheme = "file"
+
+    public static func isValid(host: String?, port: Int?, path: String, query: String?) -> Bool {
+        return host == nil && port == nil && path != "" && query == nil
+    }
+
+    public static func open(group: LLBFuturesDispatchGroup, url: URL) throws -> LLBCASDatabase {
+        return LLBFileBackedCASDatabase(group: group, path: AbsolutePath(url.path))
+    }
+}
+

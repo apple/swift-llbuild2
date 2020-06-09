@@ -6,12 +6,15 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import TSCBasic
 import Foundation
-import ArgumentParser
 
+import ArgumentParser
 import GRPC
-import LLBRETool
+import TSCBasic
+
+import LLBCASTool
+import LLBSupport
+
 
 struct Capabilities: ParsableCommand {
     static let configuration: CommandConfiguration = CommandConfiguration(
@@ -19,25 +22,15 @@ struct Capabilities: ParsableCommand {
     )
 
     @OptionGroup()
-    var options: Options
-
-    @Option(help: "The instance of the execution system to operate against")
-    var instanceName: String?
+    var options: CommonOptions
 
     func run() throws {
+        let group = LLBMakeDefaultDispatchGroup()
         let toolOptions = self.options.toToolOptions()
-        let tool = RETool(toolOptions)
+        let tool = try LLBCASTool(group: group, toolOptions)
 
-        let response = try tool.getCapabilities(instanceName: instanceName).wait()
+        let response = try tool.getCapabilities().wait()
         print(response)
     }
 }
 
-extension Options {
-    func toToolOptions() -> LLBRETool.Options {
-        return LLBRETool.Options(
-            frontend: url,
-            grpcHeaders: grpcHeader
-        )
-    }
-}

@@ -45,7 +45,7 @@ class FileBackedCASDatabaseTests: XCTestCase {
 
     func testBasics() throws {
         try withTemporaryDirectory(dir: temporaryPath, prefix: "LLBUtilTests" + #function, removeTreeOnDeinit: true) { tmpDir in
-            let db = LLBFileBackedCASDatabase(group: group, threadPool: threadPool, fileIO: fileIO, path: tmpDir)
+            let db = LLBFileBackedCASDatabase(group: group, path: tmpDir)
 
             let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3])).wait()
             let obj1 = try db.get(id1).wait()!
@@ -70,7 +70,7 @@ class FileBackedCASDatabaseTests: XCTestCase {
 
     func testPutStressTest() throws {
         try withTemporaryDirectory(dir: temporaryPath, prefix: "LLBUtilTests" + #function, removeTreeOnDeinit: true) { tmpDir in
-            let db = LLBFileBackedCASDatabase(group: group, threadPool: threadPool, fileIO: fileIO, path: tmpDir)
+            let db = LLBFileBackedCASDatabase(group: group, path: tmpDir)
             let queue = DispatchQueue(label: "sync")
 
             // Insert one object.
