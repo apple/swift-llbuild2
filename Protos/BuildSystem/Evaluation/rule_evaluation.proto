@@ -1,0 +1,37 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+import "BuildSystem/Evaluation/label.proto";
+import "BuildSystem/Evaluation/evaluated_target.proto";
+import "CASProtocol/data_id.proto";
+
+/// A RuleEvaluationKey represents the evaluation of the rule for a particular configured target. The evaluation of a
+/// rule results in a list of providers which represent the interface that a configured target offers to dependencies.
+/// This is different from EvaluatedTargetKey in that it is a scoped down version of evaluation, since it does not
+/// require the presence of the rootID field, which effectively changes with any change in the workspace. The digest of
+/// a RuleEvaluationKey should be stable to the _contents_ of a configured target. This means that if a source file
+/// changed, it should not invalidate the cache of a RuleEvaluationKey.
+message RuleEvaluationKey {
+
+    /// The label for the configured target being evaluated.
+    Label label = 1;
+    
+    /// A dataID representing the contents of a ConfigurationTarget. ConfiguredTargets may be quite large depending on
+    /// the number of dependencies and how providers are used. Instead of using the ConfiguredTargetValue in the key,
+    /// we store the contents in the CAS and retrieve it using this ID.
+    LLBPBDataID configuredTargetID = 2;
+}
+
+/// The result of evaluating a configured target under a rule. 
+message RuleEvaluationValue {
+
+    /// The providers returned by the evaluation of the rule
+    LLBProviderMap providerMap = 1;
+}
