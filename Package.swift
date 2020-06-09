@@ -107,18 +107,6 @@ let package = Package(
             dependencies: ["llbuild2", "BazelRemoteAPI", "GRPC"]
         ),
 
-        // retool implementation
-        .target(
-            name: "LLBRETool",
-            dependencies: [
-                "GRPC",
-                "SwiftToolsSupport-auto",
-                "BazelRemoteAPI",
-                "llbuild2",
-                "LLBUtil",
-            ]
-        ),
-
         // Build system support
         .target(
             name: "LLBBuildSystem",
@@ -151,6 +139,20 @@ let package = Package(
             dependencies: ["LLBNinja", "ArgumentParser"]
         ),
 
+        // llcastool implementation
+        .target(
+            name: "LLBCASTool",
+            dependencies: [
+                "GRPC",
+                "SwiftToolsSupport-auto",
+                "BazelRemoteAPI",
+                "llbuild2",
+                "LLBBazelBackend",
+                "LLBUtil",
+            ]
+        ),
+
+
         // Executable multi-tool
         .target(
             name: "llbuild2-tool",
@@ -158,11 +160,11 @@ let package = Package(
             path: "Sources/Tools/llbuild2-tool"
         ),
 
-        // `retool` executable.
+        // `llcastool` executable.
         .target(
-            name: "retool",
-            dependencies: ["LLBRETool", "ArgumentParser"],
-            path: "Sources/Tools/retool"
+            name: "llcastool",
+            dependencies: ["LLBCASTool", "ArgumentParser"],
+            path: "Sources/Tools/llcastool"
         ),
     ]
 )

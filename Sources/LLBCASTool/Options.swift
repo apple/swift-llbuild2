@@ -6,17 +6,16 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import ArgumentParser
+import Foundation
 
-struct REToolCommand: ParsableCommand {
-    static var configuration = CommandConfiguration(
-        commandName: "retool",
-        abstract: "retool — remote execution tool",
-        subcommands: [
-            Capabilities.self,
-            CAS.self,
-        ]
-    )
+public struct LLBCASToolOptions {
+    /// The frontend URL for the CAS
+    public var url: URL
+
+    public init(
+        url: URL
+    ) {
+        self.url = url
+    }
 }
 
-REToolCommand.main()

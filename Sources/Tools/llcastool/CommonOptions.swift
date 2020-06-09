@@ -8,18 +8,18 @@
 
 import ArgumentParser
 import Foundation
-import LLBRETool
+import LLBCASTool
 import TSCUtility
 
-struct Options: ParsableArguments {
-    @Option(help: "The gRPC endpoint of the Bazel RE2 server")
+struct CommonOptions: ParsableArguments {
+    @Option(help: "The CAS database URL to use")
     var url: Foundation.URL
-
-    @Option(help: "Custom gRPC headers to send with each request", transform: headerTransformer)
-    var grpcHeader: [GRPCHeader]
 }
 
-let headerTransformer: (String) -> (key: String, value: String) = { arg in
-    let (key, value) = arg.spm_split(around: "=")
-    return (key, value ?? "")
+extension CommonOptions {
+    func toToolOptions() -> LLBCASToolOptions {
+        return LLBCASToolOptions(
+            url: url
+        )
+    }
 }

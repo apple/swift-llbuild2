@@ -6,22 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import TSCBasic
 import Foundation
-import ArgumentParser
-import llbuild2
-import GRPC
-import LLBRETool
 
-struct CAS: ParsableCommand {
-    static let configuration: CommandConfiguration = CommandConfiguration(
-        abstract: "Perform operations of the CAS database",
-        subcommands: [
-            CASGet.self,
-            CASPut.self,
-        ]
-    )
-}
+import ArgumentParser
+import TSCBasic
+
+import llbuild2
+import LLBCASTool
+
 
 struct CASPut: ParsableCommand {
     static let configuration: CommandConfiguration = CommandConfiguration(
@@ -30,17 +22,19 @@ struct CASPut: ParsableCommand {
     )
 
     @OptionGroup()
-    var options: Options
+    var options: CommonOptions
 
     @Argument()
     var path: AbsolutePath
 
     func run() throws {
         let fileSize = try localFileSystem.getFileInfo(path).size
-        print("Importing \(path.basename)", prettyFileSize(fileSize))
+        stderrStream <<< "importing \(path.basename), \(prettyFileSize(fileSize))\n"
+        stderrStream.flush()
 
+        let group = LLBMakeDefaultDispatchGroup()
         let toolOptions = self.options.toToolOptions()
-        let tool = RETool(toolOptions)
+        let tool = try LLBCASTool(group: group, toolOptions)
         let dataID = try tool.casPut(file: path).wait()
         print(dataID)
     }
@@ -53,7 +47,7 @@ struct CASGet: ParsableCommand {
     )
 
     @OptionGroup()
-    var options: Options
+    var options: CommonOptions
 
     @Option()
     var id: String
@@ -66,8 +60,9 @@ struct CASGet: ParsableCommand {
             throw StringError("Invalid data id \(self.id)")
         }
 
+        let group = LLBMakeDefaultDispatchGroup()
         let toolOptions = self.options.toToolOptions()
-        let tool = RETool(toolOptions)
+        let tool = try LLBCASTool(group: group, toolOptions)
         try tool.casGet(id: id, to: path).wait()
     }
 }
