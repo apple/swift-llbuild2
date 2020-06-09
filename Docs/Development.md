@@ -9,7 +9,7 @@ This document contains information on how to develop `llbuild2`.
 [Buildbarn](https://github.com/buildbarn) is one such build server which can be run locally with Docker. Follow the instructions on [this](https://github.com/buildbarn/bb-deployments#recommended-setup) page to setup your server for development and then test the connection using [`retool`](./retool.md):
 
 ```sh
-$ swift run retool capabilities --url grpc://localhost:8980 --instance-name remote-execution
+$ swift run llcastool capabilities --url bazel://localhost:8980/remote-execution
 
 BazelRemoteAPI.Build_Bazel_Remote_Execution_V2_ServerCapabilities:
 cache_capabilities {
