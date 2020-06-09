@@ -70,7 +70,8 @@ public struct ConfiguredTargetKey {
 
 //// A ConfiguredTargetValue wraps the contents of the user specified configured target. llbuild2 handles the runtime
 //// components of serialization and deserialization in order to provide a simpler interface for llbuild2 clients to
-//// integrate.
+//// integrate. A ConfiguredTarget value represents the state of a target after the target has been parsed from its
+//// project description file and after the configuration has been applied, but before the target has been evaluated.
 public struct ConfiguredTargetValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for

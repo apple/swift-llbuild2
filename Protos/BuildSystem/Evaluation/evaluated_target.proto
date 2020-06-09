@@ -1,0 +1,39 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+import "BuildSystem/any_codable.proto";
+import "BuildSystem/Evaluation/configured_target.proto";
+
+/// An EvaluatedTargetKey is used to request the evaluation of a ConfiguredTarget, as identified by the
+/// ConfiguredTargetKey field.
+message EvaluatedTargetKey {
+
+    /// The ConfiguredTargetKey that identifies the target to be evaluated.
+    ConfiguredTargetKey configuredTargetKey = 1;
+}
+
+/// An EvaluatedTargetValue contains the result of evaluating a target, which can be used to interface between targets
+/// in order to coordinate the construction of the action graph in dependency order. The evaluation of a target follows
+/// the dependency graph as specified by the build system project description, meaning that if a ConfiguredTarget
+/// declares a dependency on another target, it will have a reference to those dependencies EvaluatedTargetValues in
+/// order to use those results in the construction of its action graph.
+message EvaluatedTargetValue {
+
+    /// A container for providers which are the result of the evaluation of a target.
+    LLBProviderMap providerMap = 1;
+}
+
+/// A provider map contains a list of providers. There can only be 1 of each type of provider, as identified by the type
+/// of the LLBAnyCodable.
+message LLBProviderMap {
+
+    /// The list of providers returned from the evaluation of a target.
+    repeated LLBAnyCodable providers = 1;
+}

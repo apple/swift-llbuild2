@@ -23,6 +23,8 @@ class LLBBuildFunctionMap {
                 engineContext: engineContext,
                 configuredTargetDelegate: configuredTargetDelegate
             ),
+            EvaluatedTargetKey.identifier: EvaluatedTargetFunction(engineContext: engineContext),
+            RuleEvaluationKey.identifier: RuleEvaluationFunction(engineContext: engineContext),
 
             // Execution
             ActionIDKey.identifier: ActionIDFunction(engineContext: engineContext),
