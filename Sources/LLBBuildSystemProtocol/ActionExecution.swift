@@ -8,6 +8,25 @@
 
 import LLBCAS
 
+public extension LLBActionSpec {
+    init(arguments: [String], environment: [String: String], workingDirectory: String?, preActions: [LLBPreActionSpec]) {
+        self.arguments = arguments
+        self.environment = environment.map { LLBEnvironmentVariable(name: $0, value: $1) }.sorted { $0.name < $1.name }
+        if let workingDirectory = workingDirectory {
+            self.workingDirectory = workingDirectory
+        }
+        self.preActions = preActions
+    }
+}
+
+public extension LLBPreActionSpec {
+    init(arguments: [String], environment: [String: String], background: Bool) {
+        self.arguments = arguments
+        self.environment = environment.map { LLBEnvironmentVariable(name: $0, value: $1) }.sorted { $0.name < $1.name }
+        self.background = background
+    }
+}
+
 public extension LLBActionExecutionRequest {
     init(actionSpec: LLBActionSpec, inputs: [LLBActionInput], outputs: [LLBActionOutput]) {
         self.actionSpec = actionSpec

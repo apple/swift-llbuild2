@@ -74,3 +74,15 @@ public final class LLBBuildFunctionInterface {
         return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
     }
 }
+
+extension LLBBuildFunctionInterface {
+    public func requestDependency(_ key: ConfiguredTargetKey) -> LLBFuture<LLBProviderMap> {
+        let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: key)
+        return self.request(evaluatedTargetKey, as: EvaluatedTargetValue.self).map { $0.providerMap }
+    }
+
+    public func requestDependencies(_ keys: [ConfiguredTargetKey]) -> LLBFuture<[LLBProviderMap]> {
+        let evaluatedTargetKeys = keys.map { EvaluatedTargetKey(configuredTargetKey: $0) }
+        return self.request(evaluatedTargetKeys, as: EvaluatedTargetValue.self).map { $0.map(\.providerMap) }
+    }
+}

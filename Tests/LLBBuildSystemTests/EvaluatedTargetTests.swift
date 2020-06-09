@@ -15,7 +15,7 @@ import TSCBasic
 import XCTest
 
 // Dummy configured target data structure.
-struct DummyConfiguredTarget: ConfiguredTarget {
+private struct DummyConfiguredTarget: ConfiguredTarget {
     let name: String
     
     init(name: String) {
@@ -32,8 +32,8 @@ struct DummyConfiguredTarget: ConfiguredTarget {
 }
 
 private final class DummyBuildRule: LLBBuildRule<DummyConfiguredTarget> {
-    override func evaluate(configuredTarget: DummyConfiguredTarget) -> [LLBProvider] {
-        return [DummyProvider(simpleString: "black lives matter")]
+    override func evaluate(configuredTarget: DummyConfiguredTarget, _ ruleContext: RuleContext) -> LLBFuture<[LLBProvider]> {
+        return ruleContext.group.next().makeSucceededFuture([DummyProvider(simpleString: "black lives matter")])
     }
 }
 

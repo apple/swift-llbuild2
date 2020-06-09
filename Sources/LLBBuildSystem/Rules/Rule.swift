@@ -21,7 +21,7 @@ public protocol LLBRuleLookupDelegate {
 /// as the interface for downstream dependents of the target.
 public protocol LLBRule {
     /// Computes a configured target and returns a list of providers.
-    func compute(configuredTarget: ConfiguredTarget) throws -> [LLBProvider]
+    func compute(configuredTarget: ConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]>
 }
 
 public enum LLBBuildRuleError: Error {
@@ -32,17 +32,17 @@ public enum LLBBuildRuleError: Error {
 open class LLBBuildRule<C: ConfiguredTarget>: LLBRule {
     public init() {}
     
-    public final func compute(configuredTarget: ConfiguredTarget) throws -> [LLBProvider] {
+    public final func compute(configuredTarget: ConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
         guard let typedConfiguredTarget = configuredTarget as? C else {
             throw LLBBuildRuleError.unexpectedType
         }
         
-        return evaluate(configuredTarget: typedConfiguredTarget)
+        return try evaluate(configuredTarget: typedConfiguredTarget, ruleContext)
     }
 
     /// Evaluates a configured target to return a list of providers. This method is required to be overridden by
     /// subclasses of LLBBuildRule.
-    open func evaluate(configuredTarget: C) -> [LLBProvider] {
+    open func evaluate(configuredTarget: C, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
         fatalError("This should be overridden by a subclass")
     }
 }
