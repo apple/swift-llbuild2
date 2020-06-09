@@ -24,6 +24,9 @@ public enum ConfiguredTargetError: Error {
 
     /// Unexpected type when deserializing the configured target
     case unexpectedType(String)
+
+    /// Case when the delegate errored when evaluating a configured target.
+    case delegateError(Error)
 }
 
 // Convenience initializer.
@@ -80,18 +83,21 @@ final class ConfiguredTargetFunction: LLBBuildFunction<ConfiguredTargetKey, Conf
         guard let delegate = configuredTargetDelegate else {
             return fi.group.next().makeFailedFuture(ConfiguredTargetError.noDelegate)
         }
-
-        return delegate.configuredTarget(for: key, fi).flatMapThrowing { configuredTarget in
-            // Wrap the ConfiguredTarget into an LLBAnyCodable and store that.
-            let serializedConfiguredTarget = try LLBAnyCodable(from: configuredTarget)
-            return ConfiguredTargetValue(serializedConfiguredTarget: serializedConfiguredTarget)
-        }.flatMapErrorThrowing { error in
-            // Convert any non ConfiguredTargetErrors into ConfiguredTargetError.
-            if error is ConfiguredTargetError {
-                throw error
-            } else {
-                throw ConfiguredTargetError.unexpectedError(error)
+        do {
+            return try delegate.configuredTarget(for: key, fi).flatMapThrowing { configuredTarget in
+                // Wrap the ConfiguredTarget into an LLBAnyCodable and store that.
+                let serializedConfiguredTarget = try LLBAnyCodable(from: configuredTarget)
+                return ConfiguredTargetValue(serializedConfiguredTarget: serializedConfiguredTarget)
+            }.flatMapErrorThrowing { error in
+                // Convert any non ConfiguredTargetErrors into ConfiguredTargetError.
+                if error is ConfiguredTargetError {
+                    throw error
+                } else {
+                    throw ConfiguredTargetError.unexpectedError(error)
+                }
             }
+        } catch {
+            return fi.group.next().makeFailedFuture(ConfiguredTargetError.delegateError(error))
         }
     }
 }

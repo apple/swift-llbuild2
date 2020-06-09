@@ -36,6 +36,12 @@ public enum RuleEvaluationError: Error {
     
     /// Error thrown if no rule was found for evaluating a configured target.
     case ruleNotFound
+
+    /// Error thrown when an artifact was already initialized when it was not expected.
+    case artifactAlreadyInitialized
+
+    /// Error thrown when an artifact did not get registered as an output to an action.
+    case unassignedOutput(Artifact)
 }
 
 final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEvaluationValue> {
@@ -60,15 +66,53 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
             
             // Return the decoded ConfiguredTarget.
             return try configuredTargetValue.configuredTarget()
-        }.flatMapThrowing { (configuredTarget: ConfiguredTarget) in
+        }.flatMap { (configuredTarget: ConfiguredTarget) in
             guard let rule = ruleLookupDelegate.rule(for: type(of: configuredTarget)) else {
-                throw RuleEvaluationError.ruleNotFound
+                return fi.group.next().makeFailedFuture(RuleEvaluationError.ruleNotFound)
             }
-            
-            // Evaluate the rule with the configured target.
-            return try rule.compute(configuredTarget: configuredTarget)
-        }.flatMapThrowing {
-            try RuleEvaluationValue(providerMap: LLBProviderMap(providers: $0))
+
+            let ruleContext = RuleContext(group: fi.group, label: key.label)
+
+            let providersFuture: LLBFuture<[LLBProvider]>
+            let actionKeysFuture: LLBFuture<[LLBDataID]>
+            do {
+                // Evaluate the rule with the configured target.
+                providersFuture = try rule.compute(configuredTarget: configuredTarget, ruleContext)
+
+                // Store the action keys in the CAS
+                let actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
+                    self.engineContext.db.put(data: try actionKey.encode())
+                }
+                actionKeysFuture = LLBFuture.whenAllSucceed(actionKeyFutures, on: fi.group.next())
+            } catch {
+                return fi.group.next().makeFailedFuture(error)
+            }
+
+            return actionKeysFuture.flatMap { actionKeyIDs in
+                // Associate the actionKey dataIDs to the artifacts that they produce.
+                for (path, actionOutputIndex) in ruleContext.artifactActionMap {
+                    guard let artifact = ruleContext.declaredArtifacts[path],
+                          artifact.originType == nil else {
+                        return fi.group.next().makeFailedFuture(RuleEvaluationError.artifactAlreadyInitialized)
+                    }
+
+                    let artifactOwner = LLBArtifactOwner(
+                        actionID: LLBPBDataID(actionKeyIDs[actionOutputIndex.actionIndex]),
+                        outputIndex: Int32(actionOutputIndex.outputIndex)
+                    )
+                    artifact.updateOwner(owner: artifactOwner)
+                }
+
+                for artifact in ruleContext.declaredArtifacts.values {
+                    guard artifact.originType != nil else {
+                        return fi.group.next().makeFailedFuture(RuleEvaluationError.unassignedOutput(artifact))
+                    }
+                }
+
+                return providersFuture
+            }
+        }.flatMapThrowing { (providers: [LLBProvider]) in
+            try RuleEvaluationValue(providerMap: LLBProviderMap(providers: providers))
         }
     }
 }

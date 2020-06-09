@@ -9,10 +9,24 @@
 import llbuild2
 import LLBCAS
 import LLBBuildSystemProtocol
+import Foundation
 
 extension Artifact: LLBBuildKey {}
 
 extension ArtifactValue: LLBBuildValue {}
+
+
+extension Artifact: Codable {
+    convenience public init(from decoder: Swift.Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        try self.init(serializedData: container.decode(Data.self))
+    }
+
+    public func encode(to encoder: Swift.Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.serializedData())
+    }
+}
 
 /// Convenience initializer.
 public extension Artifact {

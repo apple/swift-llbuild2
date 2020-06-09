@@ -43,7 +43,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 //// of the sources or intermediate files and directories, but instead contains the necessary data required to resolve
 //// a particular input (or output) artifact during execution time. In some ways, it can be viewed as a future where
 //// the result (ArtifactValue) is a reference to the actual built contents of the artifact.
-public class Artifact {
+public final class Artifact {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
