@@ -31,17 +31,55 @@ struct DummyConfiguredTarget: ConfiguredTarget {
     }
 }
 
+private final class DummyBuildRule: LLBBuildRule<DummyConfiguredTarget> {
+    override func evaluate(configuredTarget: DummyConfiguredTarget) -> [LLBProvider] {
+        return [DummyProvider(simpleString: "black lives matter")]
+    }
+}
+
+fileprivate struct DummyProvider: LLBProvider {
+    let simpleString: String
+    
+    init(simpleString: String) {
+        self.simpleString = simpleString
+    }
+    
+    init(from bytes: LLBByteBuffer) throws {
+        self.simpleString = try String(from: bytes)
+    }
+    
+    func encode() throws -> LLBByteBuffer {
+        return LLBByteBuffer.withString(simpleString)
+    }
+}
+
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(for key: ConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ConfiguredTarget> {
         return fi.group.next().makeSucceededFuture(DummyConfiguredTarget(name: key.label.targetName))
     }
 }
 
+private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
+    let ruleMap: [String: LLBRule] = [
+        DummyConfiguredTarget.polymorphicIdentifier: DummyBuildRule(),
+    ]
+    
+    func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule? {
+        return ruleMap[configuredTargetType.polymorphicIdentifier]
+    }
+}
+
 class EvaluatedTargetTests: XCTestCase {
     func testEvaluatedTarget() throws {
         try withTemporaryDirectory { tempDir in
+            ConfiguredTargetValue.register(configuredTargetType: DummyConfiguredTarget.self)
+            
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
-            let testEngine = LLBTestBuildEngine(configuredTargetDelegate: configuredTargetDelegate)
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let testEngine = LLBTestBuildEngine(
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate
+            )
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -52,7 +90,8 @@ class EvaluatedTargetTests: XCTestCase {
 
             let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
-            XCTAssertEqual(evaluatedTargetValue.providerMap, LLBProviderMap())
+            XCTAssertEqual(evaluatedTargetValue.providerMap.count, 1)
+            XCTAssertEqual(try evaluatedTargetValue.providerMap.get(DummyProvider.self).simpleString, "black lives matter")
         }
     }
 }

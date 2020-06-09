@@ -14,7 +14,7 @@ import LLBBuildSystemProtocol
 class LLBBuildFunctionMap {
     private let functionMap: [LLBBuildKeyIdentifier: LLBFunction]
 
-    init(engineContext: LLBBuildEngineContext, configuredTargetDelegate: LLBConfiguredTargetDelegate?) {
+    init(engineContext: LLBBuildEngineContext, configuredTargetDelegate: LLBConfiguredTargetDelegate?, ruleLookupDelegate: LLBRuleLookupDelegate?) {
         self.functionMap = [
             Artifact.identifier: ArtifactFunction(engineContext: engineContext),
 
@@ -24,7 +24,10 @@ class LLBBuildFunctionMap {
                 configuredTargetDelegate: configuredTargetDelegate
             ),
             EvaluatedTargetKey.identifier: EvaluatedTargetFunction(engineContext: engineContext),
-            RuleEvaluationKey.identifier: RuleEvaluationFunction(engineContext: engineContext),
+            RuleEvaluationKey.identifier: RuleEvaluationFunction(
+                engineContext: engineContext,
+                ruleLookupDelegate: ruleLookupDelegate
+            ),
 
             // Execution
             ActionIDKey.identifier: ActionIDFunction(engineContext: engineContext),

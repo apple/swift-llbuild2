@@ -26,13 +26,15 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
     init(
         engineContext: LLBBuildEngineContext,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?,
-        configuredTargetDelegate: LLBConfiguredTargetDelegate?
+        configuredTargetDelegate: LLBConfiguredTargetDelegate?,
+        ruleLookupDelegate: LLBRuleLookupDelegate?
     ) {
         self.engineContext = engineContext
         self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
         self.functionMap = LLBBuildFunctionMap(
             engineContext: engineContext,
-            configuredTargetDelegate: configuredTargetDelegate
+            configuredTargetDelegate: configuredTargetDelegate,
+            ruleLookupDelegate: ruleLookupDelegate
         )
     }
 
@@ -67,16 +69,23 @@ public final class LLBBuildEngine {
     ///     - buildFunctionLookupDelegate: An optional delegate for resolving build functions at runtime. The build
     ///           engine will first look in the internal function map, and only resolve using the delegate if it can't
     ///           find a function to use for a particular key.
+    ///     - configuredTargetDelegate: An optional delegate used for finding a configured target from the workspace. If
+    ///           not specified, will trigger an error when a ConfiguredTargetKey is requested.
+    ///     - ruleLookupDelegate: An optional rule lookup delegate used for retrieving the rule implementation to
+    ///           evaluate a configured target. If not specified, will trigger an error if an EvaluatedTargetKey is
+    ///           requested.
     public init(
         engineContext: LLBBuildEngineContext,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
-        configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil
+        configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
+        ruleLookupDelegate: LLBRuleLookupDelegate? = nil
     ) {
         self.engineContext = engineContext
         self.delegate = LLBBuildEngineDelegate(
             engineContext: engineContext,
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
-            configuredTargetDelegate: configuredTargetDelegate
+            configuredTargetDelegate: configuredTargetDelegate,
+            ruleLookupDelegate: ruleLookupDelegate
         )
         self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate)
     }

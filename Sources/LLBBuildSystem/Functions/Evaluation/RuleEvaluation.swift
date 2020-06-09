@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import LLBBuildSystemProtocol
 
 extension RuleEvaluationKey: LLBBuildKey {}
 extension RuleEvaluationValue: LLBBuildValue {}
@@ -26,10 +27,49 @@ extension RuleEvaluationValue {
     }
 }
 
+public enum RuleEvaluationError: Error {
+    /// Error thrown when no rule lookup delegate is specified.
+    case noRuleLookupDelegate
+    
+    /// Error thrown when deserialization of the configured target failed.
+    case configuredTargetDeserializationError
+    
+    /// Error thrown if no rule was found for evaluating a configured target.
+    case ruleNotFound
+}
+
 final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEvaluationValue> {
+    let ruleLookupDelegate: LLBRuleLookupDelegate?
+    
+    init(engineContext: LLBBuildEngineContext, ruleLookupDelegate: LLBRuleLookupDelegate?) {
+        self.ruleLookupDelegate = ruleLookupDelegate
+        super.init(engineContext: engineContext)
+    }
+    
     override func evaluate(key: RuleEvaluationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<RuleEvaluationValue> {
-        // FIXME: Implement rule evaluation and provider infrastructure.
-        return fi.group.next().makeSucceededFuture(RuleEvaluationValue(providerMap: LLBProviderMap()))
+        guard let ruleLookupDelegate = ruleLookupDelegate else {
+            return fi.group.next().makeFailedFuture(RuleEvaluationError.noRuleLookupDelegate)
+        }
+        
+        // Read the ConfiguredTargetValue from the database.
+        return engineContext.db.get(LLBDataID(key.configuredTargetID)).flatMapThrowing { (object: LLBCASObject?) in
+            guard let data = object?.data,
+                  let configuredTargetValue = try? ConfiguredTargetValue(from: data) else {
+                throw RuleEvaluationError.configuredTargetDeserializationError
+            }
+            
+            // Return the decoded ConfiguredTarget.
+            return try configuredTargetValue.configuredTarget()
+        }.flatMapThrowing { (configuredTarget: ConfiguredTarget) in
+            guard let rule = ruleLookupDelegate.rule(for: type(of: configuredTarget)) else {
+                throw RuleEvaluationError.ruleNotFound
+            }
+            
+            // Evaluate the rule with the configured target.
+            return try rule.compute(configuredTarget: configuredTarget)
+        }.flatMapThrowing {
+            try RuleEvaluationValue(providerMap: LLBProviderMap(providers: $0))
+        }
     }
 }
 
