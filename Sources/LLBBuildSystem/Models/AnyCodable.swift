@@ -45,7 +45,9 @@ extension LLBAnyCodable {
 extension LLBAnyCodable {
     internal static func register(type: LLBPolymorphicCodable.Type) {
         queue.sync {
-            registeredTypes[type.polymorphicIdentifier] = type
+            if registeredTypes[type.polymorphicIdentifier] == nil {
+                registeredTypes[type.polymorphicIdentifier] = type
+            }
         }
     }
 
