@@ -33,6 +33,10 @@ public extension LLBProviderMap {
         }
         self.providers = validProviders
     }
+    
+    var count: Int {
+        return providers.count
+    }
 }
 
 extension LLBProviderMap {
