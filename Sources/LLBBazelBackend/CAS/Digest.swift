@@ -13,18 +13,11 @@ import BazelRemoteAPI
 import Crypto
 import SwiftProtobuf
 
+typealias Digest = Build_Bazel_Remote_Execution_V2_Digest
 
 /// A Bazel digest.
-struct Digest: Hashable {
-    let hash: String
-    let size: Int64
-
-    init(hash: String, size: Int64) {
-        self.hash = hash
-        self.size = size
-    }
-
-    init<D>(with bytes: D) where D : DataProtocol {
+extension Digest {
+    public init<D>(with bytes: D) where D : DataProtocol {
         // Translate to SHA256.
         var hashFunction = Crypto.SHA256()
         hashFunction.update(data: bytes)
@@ -35,36 +28,21 @@ struct Digest: Hashable {
             hashBytes.append(contentsOf: ptr)
         }
 
-        self.hash = hexEncode(hashBytes)
-        self.size = Int64(bytes.count)
-    }
-
-    func asBytes() throws -> [UInt8] {
-        return Array(try self.asBazelDigest.serializedData())
-    }
-
-    var asBazelDigest: Build_Bazel_Remote_Execution_V2_Digest {
-        return .with {
-            $0.hash = self.hash
-            $0.sizeBytes = self.size
+        self = .with {
+            $0.hash = hexEncode(hashBytes)
+            $0.sizeBytes = Int64(bytes.count)
         }
     }
 
     func asDataID() throws -> LLBDataID {
-        return LLBDataID(directHash: try self.asBytes())
-    }
-}
-
-extension Build_Bazel_Remote_Execution_V2_Digest {
-    var asDigest: Digest {
-        return Digest(hash: hash, size: sizeBytes)
+        return LLBDataID(directHash: Array(try self.serializedData()))
     }
 }
 
 extension LLBDataID {
-    func asBazelDigest() throws -> Build_Bazel_Remote_Execution_V2_Digest {
+    func asBazelDigest() throws -> Digest {
         return try bytes.dropFirst().withUnsafeBytes {
-            try Build_Bazel_Remote_Execution_V2_Digest.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none)) }
+            try Digest.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none)) }
     }
 }
 
