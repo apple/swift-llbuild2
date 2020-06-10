@@ -13,20 +13,24 @@ import Foundation
 /// into a buffer of bytes, and deserialized back from the buffer of bytes.
 public typealias LLBSerializable = LLBSerializableIn & LLBSerializableOut
 
+public enum LLBSerializableError: Error {
+    case unknownError(String)
+}
+
 public protocol LLBSerializableIn {
     /// Decode the given block back into a message.
-    init(rawBytes: LLBByteBuffer) throws
+    init(from rawBytes: LLBByteBuffer) throws
 }
 
 public protocol LLBSerializableOut {
     /// Produce an encoded blob that fully defines the structure contents.
-    func toBytes(into buffer: inout LLBByteBuffer)
+    func toBytes(into buffer: inout LLBByteBuffer) throws
 }
 
 extension LLBSerializableOut {
-    public func toBytes() -> LLBByteBuffer {
+    public func toBytes() throws -> LLBByteBuffer {
         var buffer = LLBByteBufferAllocator().buffer(capacity: 0)
-        toBytes(into: &buffer)
+        try toBytes(into: &buffer)
         return buffer
     }
 }

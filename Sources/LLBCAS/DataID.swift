@@ -119,7 +119,7 @@ extension LLBDataID: LLBSerializable {
     }
 
     @inlinable
-    public init(rawBytes: ArraySlice<UInt8>) throws {
+    public init(from rawBytes: ArraySlice<UInt8>) throws {
         guard let dataId = LLBDataID(bytes: Array(rawBytes)) else {
             throw LLBDataIDSliceError.decoding("from slice of size \(rawBytes.count)")
         }
@@ -127,7 +127,7 @@ extension LLBDataID: LLBSerializable {
     }
 
     @inlinable
-    public init(rawBytes: LLBByteBuffer) throws {
+    public init(from rawBytes: LLBByteBuffer) throws {
         guard let bytes = rawBytes.getBytes(at: 0, length: rawBytes.readableBytes), let dataId = LLBDataID(bytes: bytes) else {
             throw LLBDataIDSliceError.decoding("from slice of size \(rawBytes.readableBytes)")
         }
@@ -145,7 +145,7 @@ extension LLBDataID: LLBSerializable {
     }
 
     @inlinable
-    public func toBytes(into buffer: inout LLBByteBuffer) {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
         buffer.writeBytes(bytes)
     }
 

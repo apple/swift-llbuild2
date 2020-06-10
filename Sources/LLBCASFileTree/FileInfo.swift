@@ -14,14 +14,14 @@ import LLBSupport
 extension LLBFileInfo: LLBSerializable {
     /// Decode the given block back into a message.
     @inlinable
-    public init(rawBytes: LLBByteBuffer) throws {
+    public init(from rawBytes: LLBByteBuffer) throws {
         self = try Self.deserialize(from: rawBytes)
     }
 
     /// Produce an encoded blob that fully defines the structure contents.
     @inlinable
-    public func toBytes(into buffer: inout LLBByteBuffer) {
-        buffer.writeBytes(try! serializedData())
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeBytes(try serializedData())
     }
 }
 

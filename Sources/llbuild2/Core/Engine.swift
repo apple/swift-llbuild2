@@ -15,8 +15,8 @@ import NIOConcurrencyHelpers
 @_exported import LLBSupport
 
 
-public protocol LLBKey: LLBCodable {}
-public protocol LLBValue : LLBCodable {}
+public protocol LLBKey: LLBSerializable {}
+public protocol LLBValue: LLBSerializable {}
 
 extension LLBKey {
     public typealias Digest = [UInt8]
@@ -24,7 +24,7 @@ extension LLBKey {
     public var digest: Digest {
         var hash = SHA256()
 
-        var data = try! self.encode()
+        var data = try! self.toBytes()
 
         // An important note here is that we need to encode the type as well, otherwise we might get 2 different keys
         // that contain the same fields and values, but actually represent different values.

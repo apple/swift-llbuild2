@@ -54,7 +54,7 @@ class ArtifactTests: XCTestCase {
                 outputs: [derivedArtifact.asActionOutput()]
             )
 
-            let actionID = try testEngine.testDB.put(data: try actionKey.encode()).wait()
+            let actionID = try testEngine.testDB.put(data: try actionKey.toBytes()).wait()
 
             derivedArtifact._updateOwner(owner: LLBArtifactOwner(actionID: actionID, outputIndex: 0))
 

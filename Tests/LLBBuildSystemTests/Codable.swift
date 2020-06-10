@@ -25,9 +25,9 @@ extension Artifact: Codable {
 
 /// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable
 extension LLBConfigurationFragmentKey where Self: Encodable {
-    public func encode() throws -> LLBByteBuffer {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
-        return LLBByteBuffer.withBytes(ArraySlice<UInt8>(data))
+        buffer.writeBytes(ArraySlice<UInt8>(data))
     }
 }
 
@@ -40,9 +40,9 @@ extension LLBConfigurationFragmentKey where Self: Decodable {
 
 /// Convenience implementation for LLBConfigurationFragment that conform to Codable
 extension LLBConfigurationFragment where Self: Encodable {
-    public func encode() throws -> LLBByteBuffer {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
-        return LLBByteBuffer.withBytes(ArraySlice<UInt8>(data))
+        buffer.writeBytes(ArraySlice<UInt8>(data))
     }
 }
 
@@ -55,9 +55,9 @@ extension LLBConfigurationFragment where Self: Decodable {
 
 /// Convenience implementation for LLBProviders that conform to Codable
 extension LLBProvider where Self: Encodable {
-    public func encode() throws -> LLBByteBuffer {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
-        return LLBByteBuffer.withBytes(ArraySlice<UInt8>(data))
+        buffer.writeBytes(ArraySlice<UInt8>(data))
     }
 }
 
@@ -83,9 +83,9 @@ extension LLBProviderMap: Codable {
 
 /// Convenience implementation for ConfiguredTargets that conform to Codable
 extension ConfiguredTarget where Self: Encodable {
-    public func encode() throws -> LLBByteBuffer {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
-        return LLBByteBuffer.withBytes(ArraySlice<UInt8>(data))
+        buffer.writeBytes(ArraySlice<UInt8>(data))
     }
 }
 

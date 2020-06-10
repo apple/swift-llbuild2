@@ -159,7 +159,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
                     return nil
                 }
 
-                return try LLBCASObject(rawBytes: buffer)
+                return try LLBCASObject(from: buffer)
             }
         } catch {
             return group.next().makeFailedFuture(error)

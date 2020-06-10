@@ -30,7 +30,7 @@ final class EvaluatedTargetFunction: LLBBuildFunction<EvaluatedTargetKey, Evalua
         return fi.request(key.configuredTargetKey).flatMap { (configuredTargetValue: ConfiguredTargetValue) in
             // Request the configured target value and upload it to the CAS.
             do {
-                let byteBuffer = try configuredTargetValue.encode()
+                let byteBuffer = try configuredTargetValue.toBytes()
                 return self.engineContext.db.put(data: byteBuffer)
             } catch {
                 return fi.group.next().makeFailedFuture(error)
