@@ -23,13 +23,16 @@ public final class LLBBazelCASDatabase {
 
     private let connection: ClientConnection
     private let headers: [GRPCHeader]
+    private let bytestreamClient: Google_Bytestream_ByteStreamClient
+    private let bytestreamUUID = UUID()
     private let casClient: ContentAddressableStorageClient
     private let instance: String?
 
     public enum Error: Swift.Error {
-        case Unimplemented
+        case callFailed(GRPCStatus)
         case unexpectedConnectionString(String)
         case badURL
+        case incompleteWrite
     }
 
     private typealias GRPCHeader = (key: String, value: String)
@@ -65,6 +68,8 @@ public final class LLBBazelCASDatabase {
             eventLoopGroup: group
         )
         self.connection = ClientConnection(configuration: configuration)
+        self.bytestreamClient = Google_Bytestream_ByteStreamClient(channel: connection)
+        self.bytestreamClient.defaultCallOptions.customMetadata.add(contentsOf: headers)
         self.casClient = ContentAddressableStorageClient(channel: connection)
         self.casClient.defaultCallOptions.customMetadata.add(contentsOf: headers)
     }
@@ -118,23 +123,93 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         } else {
             request = FindMissingBlobsRequest()
         }
-        request.blobDigests.append(id.asBazelDigest)
+        do {
+            request.blobDigests.append(try id.asBazelDigest())
 
-        return casClient.findMissingBlobs(request).response.map {
-            return $0.missingBlobDigests.isEmpty
+            return casClient.findMissingBlobs(request).response.map {
+                return $0.missingBlobDigests.isEmpty
+            }
+        } catch {
+            return group.next().makeFailedFuture(error)
         }
     }
 
     public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> {
-        return group.next().makeFailedFuture(Error.Unimplemented)
+        do {
+            let resourcePrefix: String
+            if let instance = instance {
+                resourcePrefix = "\(instance)/"
+            } else {
+                resourcePrefix = ""
+            }
+            let digest = try id.asBazelDigest()
+            let resource = "\(resourcePrefix)blobs/\(digest.hash)/\(digest.sizeBytes)"
+
+            let request =  Google_Bytestream_ReadRequest.with {
+                $0.resourceName = resource
+                $0.readOffset = 0
+            }
+
+            var buffer = LLBByteBufferAllocator().buffer(capacity: Int(digest.sizeBytes))
+            let call = bytestreamClient.read(request) { response in
+                buffer.writeBytes(response.data)
+            }
+            return call.status.flatMapThrowing { status -> LLBCASObject? in
+                guard status.code == .ok else {
+                    return nil
+                }
+
+                return try LLBCASObject(rawBytes: buffer)
+            }
+        } catch {
+            return group.next().makeFailedFuture(error)
+        }
     }
 
     public func identify(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        return group.next().makeFailedFuture(Error.Unimplemented)
+        do {
+            let id = try Digest(with: data.readableBytesView).asDataID()
+            return group.next().makeSucceededFuture(id)
+        } catch {
+            return group.next().makeFailedFuture(error)
+        }
     }
 
     public func put(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        return group.next().makeFailedFuture(Error.Unimplemented)
+        do {
+            let resourcePrefix: String
+            if let instance = instance {
+                resourcePrefix = "\(instance)/"
+            } else {
+                resourcePrefix = ""
+            }
+
+            let object = LLBCASObject(refs: refs, data: data)
+            let objData = try object.toData()
+
+            let digest = Digest(with: objData)
+            let resource = "\(resourcePrefix)uploads/\(bytestreamUUID)/blobs/\(digest.hash)/\(digest.size)"
+
+            let request =  Google_Bytestream_WriteRequest.with {
+                $0.resourceName = resource
+                $0.writeOffset = 0
+                $0.finishWrite = true
+                $0.data = objData
+            }
+
+            let call = bytestreamClient.write()
+            _ = call.sendMessage(request)
+            _ = call.sendEnd()
+            return call.response.flatMapThrowing { response in
+                guard response.committedSize == objData.count else {
+                    throw Error.incompleteWrite
+                }
+
+                return try digest.asDataID()
+            }
+        } catch {
+            return group.next().makeFailedFuture(error)
+        }
     }
 
     public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {

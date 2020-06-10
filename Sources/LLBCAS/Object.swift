@@ -69,23 +69,39 @@ extension LLBCASObject: Codable {
 }
 
 
-// MARK:- CASObject <-> Proto -
+// MARK:- CASObject Serializeable -
 
 public extension LLBCASObject {
-    var asProto: LLBPBCASObject {
+    init(rawBytes: Data) throws {
+        let pb = try LLBPBCASObject.init(serializedData: rawBytes)
+        let refs = pb.refs.map { LLBDataID($0) }
+        var data = LLBByteBufferAllocator().buffer(capacity: pb.data.count)
+        data.writeBytes(pb.data)
+        self.init(refs: refs, data: data)
+    }
+
+    func toData() throws -> Data {
         var pb = LLBPBCASObject()
         pb.refs = self.refs.map { $0.asProto }
         pb.data = Data(self.data.getBytes(at: 0, length: self.data.readableBytes)!)
-        return pb
+        return try pb.serializedData()
     }
 }
 
-public extension LLBPBCASObject {
-    init(_ casObject: LLBCASObject) {
-        self = Self.with {
-            $0.refs = casObject.refs.map { $0.asProto }
-            $0.data = Data(casObject.data.getBytes(at: 0, length: casObject.data.readableBytes)!)
+extension LLBCASObject: LLBSerializable {
+    public init(rawBytes: LLBByteBuffer) throws {
+        let pb = try rawBytes.withUnsafeReadableBytes {
+            try LLBPBCASObject.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none))
         }
+        let refs = pb.refs.map { LLBDataID($0) }
+        var data = LLBByteBufferAllocator().buffer(capacity: pb.data.count)
+        data.writeBytes(pb.data)
+        self.init(refs: refs, data: data)
     }
+
+    public func toBytes(into buffer: inout LLBByteBuffer) {
+        buffer.writeBytes(try! self.toData())
+    }
+
 }
 
