@@ -30,7 +30,7 @@ private struct RuleEvaluationConfiguredTarget: ConfiguredTarget, Codable {
 private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget> {
     override func evaluate(configuredTarget: RuleEvaluationConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
         if configuredTarget.name == "single_artifact_valid" {
-            let output = ruleContext.declareArtifact("single_artifact_valid")
+            let output = try ruleContext.declareArtifact("single_artifact_valid")
 
             try ruleContext.registerAction(
                 arguments: ["/bin/bash", "-c", "echo black lives matter > \(output.path)"],
@@ -40,8 +40,8 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
         } else if configuredTarget.name == "2_outputs_2_actions" {
-            let output1 = ruleContext.declareArtifact("output_1")
-            let output2 = ruleContext.declareArtifact("output_2")
+            let output1 = try ruleContext.declareArtifact("output_1")
+            let output2 = try ruleContext.declareArtifact("output_2")
 
             try ruleContext.registerAction(
                 arguments: ["/bin/bash", "-c", "echo black lives matter > \(output1.path)"],
@@ -57,7 +57,7 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output1, output2])])
         } else if configuredTarget.name == "2_actions_1_output" {
-            let output = ruleContext.declareArtifact("2_actions_1_output")
+            let output = try ruleContext.declareArtifact("2_actions_1_output")
 
             try ruleContext.registerAction(
                 arguments: ["/bin/bash", "-c", "echo black lives matter > \(output.path)"],
@@ -71,10 +71,10 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
                 outputs: [output]
             )
         } else if configuredTarget.name == "unregistered_output"{
-            _ = ruleContext.declareArtifact("unregistered_output")
+            _ = try ruleContext.declareArtifact("unregistered_output")
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [])])
         } else if configuredTarget.name == "bottom_level_target" {
-            let output = ruleContext.declareArtifact("bottom_level_artifact")
+            let output = try ruleContext.declareArtifact("bottom_level_artifact")
 
             try ruleContext.registerAction(
                 arguments: ["/bin/bash", "-c", "echo black lives matter > \(output.path)"],
@@ -84,7 +84,7 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
         } else if configuredTarget.name == "top_level_target" {
-            let output = ruleContext.declareArtifact("top_level_artifact")
+            let output = try ruleContext.declareArtifact("top_level_artifact")
 
             guard let bottomArtifact = try configuredTarget.dependency?.get(RuleEvaluationProvider.self).artifacts[0] else {
                 throw StringError("Dependency did not have artifact.")
@@ -98,9 +98,35 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
         } else if configuredTarget.name == "static_write" {
-            let output = ruleContext.declareArtifact("static_write")
+            let output = try ruleContext.declareArtifact("static_write")
 
             try ruleContext.write(contents: "black lives matter", to: output)
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+        } else if configuredTarget.name == "tree_merge" {
+            let directory1 = try ruleContext.declareDirectoryArtifact("directory1")
+            let directory2 = try ruleContext.declareDirectoryArtifact("directory2")
+            let output = try ruleContext.declareDirectoryArtifact("output")
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo I cant breathe > \(directory1.path)/file1.txt"],
+                inputs: [],
+                outputs: [directory1]
+            )
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo black lives matter > \(directory2.path)/file2.txt"],
+                inputs: [],
+                outputs: [directory2]
+            )
+
+            try ruleContext.registerMergeDirectories(
+                [
+                    (directory1, "directory1"),
+                    (directory2, "directory2"),
+                ],
+                output: output
+            )
+
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
         }
 
@@ -334,4 +360,31 @@ class RuleEvaluationTests: XCTestCase {
             XCTAssertEqual(artifactContents, "black lives matter")
         }
     }
+
+//    func testRuleEvaluationTreeMerge() throws {
+//        try withTemporaryDirectory { tempDir in
+//            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+//
+//            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+//            let ruleLookupDelegate = DummyRuleLookupDelegate()
+//            let testEngine = LLBTestBuildEngine(
+//                configuredTargetDelegate: configuredTargetDelegate,
+//                ruleLookupDelegate: ruleLookupDelegate
+//            )
+//
+//            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+//
+//            let label = try Label("//some:tree_merge")
+//            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+//
+//            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+//
+//            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+//
+//            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
+//
+//            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+//            XCTFail("finish this test")
+//        }
+//    }
 }

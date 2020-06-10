@@ -12,35 +12,62 @@ import "BuildSystem/Evaluation/artifact.proto";
 import "BuildSystemProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
-/// Key that represents the evaluation of an action's outputs. The inputs to this action have not been resolved at this
-/// stage, so the purpose of the ActionFunction is to resolve the inputs and request the execution of the action.
+// Key that represents the evaluation of an action's outputs. The inputs to this action have not been resolved at this
+// stage, so the purpose of the ActionFunction is to resolve the inputs and request the execution of the action.
 message ActionKey {
 
-    /// Represents what type of action this key represents.
+    // Represents what type of action this key represents.
     oneof actionType {
 
-        /// A command line based action key.
+        // A command line based action key.
         CommandAction command = 1;
+
+        // A merge trees based action key.
+        MergeTreesAction mergeTrees = 2;
     }
 }
 
-/// The value for an ActionKey.
+// The value for an ActionKey.
 message ActionValue {
 
-    /// The list of outputs IDs that the action produced. This will be in the same order as requested in
-    /// actionType.
+    // The list of outputs IDs that the action produced. This will be in the same order as requested in
+    // actionType.
     repeated LLBDataID outputs = 1;
 }
 
-/// An action execution description for a command line invocation.
+// An action execution description for a command line invocation.
 message CommandAction {
 
-    /// The spec for the action to execute.
+    // The spec for the action to execute.
     LLBActionSpec actionSpec = 1;
 
-    /// The list of artifact inputs required for this action evaluation.
+    // The list of artifact inputs required for this action evaluation.
     repeated Artifact inputs = 2;
 
-    /// The list of outputs expected from this action evaluation.
+    // The list of outputs expected from this action evaluation.
     repeated LLBActionOutput outputs = 3;
+}
+
+// An action that merges artifacts into a single tree artifact. There is no output specification since that lies in the
+// artifact itself. The ActionValue will have a single dataID as output corresponding to the dataID of the tree
+// artifact containing the inputs. If there are tree artifacts with colliding subdirectories, they will be merged. For
+// colliding files, the last one "wins".
+message MergeTreesAction {
+
+    // The list of inputs into the merge action. Each input contains the artifact to merge and the root it should be
+    // merged under.
+    repeated MergeTreesActionInput inputs = 1;
+}
+
+// A single input into a merge trees action.
+message MergeTreesActionInput {
+
+    // The artifact to merge into a tree. It can be any kind of artifact.
+    Artifact artifact = 1;
+
+    // The path under which the artifact should be placed. For instance, if artifact points to a file, and path points
+    // to `some/path`, then the merge trees action output will contain the file at that path. Note that this overrides
+    // the artifact's own path. If you'd like to preserve the path of the artifact in the output directory tree, set
+    // path to the artifact's path.
+    string path = 2;
 }

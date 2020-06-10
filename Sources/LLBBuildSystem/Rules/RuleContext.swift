@@ -16,6 +16,7 @@ public typealias PreAction = (arguments: [String], environment: [String: String]
 public enum RuleContextError: Error {
     case outputAlreadyRegistered
     case writeError
+    case invalidRedeclarationOfArtifact
 }
 
 public class RuleContext {
@@ -65,12 +66,32 @@ public class RuleContext {
 
     /// Declares an output artifact from the target. If another artifact was declared with the same path, the same
     /// artifact instance will be returned (i.e. it is free to declare the same artifact path anywhere in the rule).
-    public func declareArtifact(_ path: String) -> Artifact {
-        return queue.sync {
+    public func declareArtifact(_ path: String) throws -> Artifact {
+        return try queue.sync {
             if let artifact = declaredArtifacts[path] {
+                guard case .file = artifact.type else {
+                    throw RuleContextError.invalidRedeclarationOfArtifact
+                }
                 return artifact
             }
             let artifact = Artifact.derivedUninitialized(shortPath: path, root: label.asRoot)
+            declaredArtifacts[path] = artifact
+            return artifact
+        }
+    }
+
+    /// Declares an output directory artifact from the target. If another artifact was declared with the same path, the
+    /// same artifact instance will be returned (i.e. it is free to declare the same artifact path anywhere in the rule
+    /// ).
+    public func declareDirectoryArtifact(_ path: String) throws -> Artifact {
+        return try queue.sync {
+            if let artifact = declaredArtifacts[path] {
+                guard case .directory = artifact.type else {
+                    throw RuleContextError.invalidRedeclarationOfArtifact
+                }
+                return artifact
+            }
+            let artifact = Artifact.derivedUninitializedDirectory(shortPath: path, root: label.asRoot)
             declaredArtifacts[path] = artifact
             return artifact
         }
@@ -120,6 +141,24 @@ public class RuleContext {
             for (index, output) in outputs.enumerated() {
                 artifactActionMap[output.shortPath] = ActionOutputIndex(actionIndex: actionIndex, outputIndex: index)
             }
+        }
+    }
+
+    /// Registers an action that merges the given artifacts into a single directory artifact.
+    public func registerMergeDirectories(_ inputs: [(artifact: Artifact, path: String?)], output: Artifact) throws {
+        try queue.sync {
+            guard output.originType == nil,
+                  declaredArtifacts[output.shortPath] == output,
+                  artifactActionMap[output.shortPath] == nil else {
+                throw RuleContextError.outputAlreadyRegistered
+            }
+
+            let actionKey = ActionKey.mergeTrees(inputs: inputs)
+
+            registeredActions.append(actionKey)
+            let actionIndex = registeredActions.count - 1
+
+            artifactActionMap[output.shortPath] = ActionOutputIndex(actionIndex: actionIndex, outputIndex: 0)
         }
     }
 
