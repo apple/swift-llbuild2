@@ -24,7 +24,7 @@ struct Digest: Hashable {
         self.size = size
     }
 
-    init(with bytes: [UInt8]) {
+    init<D>(with bytes: D) where D : DataProtocol {
         // Translate to SHA256.
         var hashFunction = Crypto.SHA256()
         hashFunction.update(data: bytes)
@@ -39,9 +39,8 @@ struct Digest: Hashable {
         self.size = Int64(bytes.count)
     }
 
-    var asBytes: [UInt8] {
-        // FIXME: This is not efficient.
-        return Array((hash + String(size)).utf8)
+    func asBytes() throws -> [UInt8] {
+        return Array(try self.asBazelDigest.serializedData())
     }
 
     var asBazelDigest: Build_Bazel_Remote_Execution_V2_Digest {
@@ -49,6 +48,10 @@ struct Digest: Hashable {
             $0.hash = self.hash
             $0.sizeBytes = self.size
         }
+    }
+
+    func asDataID() throws -> LLBDataID {
+        return LLBDataID(directHash: try self.asBytes())
     }
 }
 
@@ -59,11 +62,9 @@ extension Build_Bazel_Remote_Execution_V2_Digest {
 }
 
 extension LLBDataID {
-    var asBazelDigest: Build_Bazel_Remote_Execution_V2_Digest {
-        return .with {
-            $0.hash = hexEncode(self.bytes.dropFirst())
-            $0.sizeBytes = Int64(self.bytes.count - 1)
-        }
+    func asBazelDigest() throws -> Build_Bazel_Remote_Execution_V2_Digest {
+        return try bytes.dropFirst().withUnsafeBufferPointer {
+            try Build_Bazel_Remote_Execution_V2_Digest.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none)) }
     }
 }
 
