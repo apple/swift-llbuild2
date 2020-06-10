@@ -11,41 +11,52 @@ syntax = "proto3";
 import "BuildSystemProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
-/// Key that represents the execution of an action after the input artifacts have been resolved into concrete data IDs,
-/// used to resolve the data IDs of the requested outputs.
+// Key that represents the execution of an action after the input artifacts have been resolved into concrete data IDs,
+// used to resolve the data IDs of the requested outputs.
 message ActionExecutionKey {
 
-    /// Represents what type of action execution this key represents.
+    // Represents what type of action execution this key represents.
     oneof actionExecutionType {
 
-        /// A command line based action execution key.
+        // A command line based action execution key.
         CommandActionExecution command = 1;
+
+        // A merge trees based action execution key.
+        MergeTreesActionExecution mergeTrees = 2;
     }
 }
 
-/// The value for an ActionExecutionKey.
+// The value for an ActionExecutionKey.
 message ActionExecutionValue {
 
-    /// The list of outputs IDs that the action produced. This will be in the same order as requested in
-    /// actionExecutionType.
+    // The list of outputs IDs that the action produced. This will be in the same order as requested in
+    // actionExecutionType.
     repeated LLBDataID outputs = 1;
 
-    /// The data ID for the stdout of the action.
+    // The data ID for the stdout of the action.
     LLBDataID stdoutID = 2;
 
-    /// The data ID for the stderr of the action.
+    // The data ID for the stderr of the action.
     LLBDataID stderrID = 3;
 }
 
-/// An action execution description for a command line invocation.
+// An action execution description for a command line invocation.
 message CommandActionExecution {
 
-    /// The spec for the action to execute.
+    // The spec for the action to execute.
     LLBActionSpec actionSpec = 1;
 
-    /// The list of inputs required for this action execution.
+    // The list of inputs required for this action execution.
     repeated LLBActionInput inputs = 2;
 
-    /// The list of outputs expected from this action execution.
+    // The list of outputs expected from this action execution.
     repeated LLBActionOutput outputs = 3;
+}
+
+// An action execution description for a merge trees action.
+message MergeTreesActionExecution {
+
+    // The list of inputs to be merged together. In this context, the path in LLBActionInput is considered to be the
+    // root under which the artifact will be placed into.
+    repeated LLBActionInput inputs = 1;
 }

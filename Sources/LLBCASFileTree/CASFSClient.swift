@@ -10,6 +10,7 @@ import Foundation
 
 import LLBCAS
 import LLBSupport
+import TSCBasic
 
 
 /// A main API struct
@@ -21,6 +22,7 @@ public struct LLBCASFSClient {
         case noEntry(LLBDataID)
         case notSupportedYet
         case invalidUse
+        case unexpectedNode
     }
 
     /// Remembers db
@@ -92,5 +94,33 @@ extension LLBCASFSClient {
 
     public func store(_ data: Data, type: LLBFileType = .plainFile) -> LLBFuture<LLBDataID> {
         LLBCASBlob.import(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(data)), isExecutable: type == .executable, in: db).flatMap { $0.export() }
+    }
+}
+
+extension LLBCASFSClient {
+    /// Creates a new LLBCASFileTree node by prepending the tree with the given graph. For example, if the given id
+    /// contains a reference to a CASFileTree containing [a.txt, b.txt], and path was 'some/path', the resulting
+    /// CASFileTree would contain [some/path/a.txt, some/path/b.txt] (where both `some` and `path` represent
+    /// CASFileTrees).
+    public func wrap(_ id: LLBDataID, path: String) -> LLBFuture<LLBCASFileTree> {
+        return self.load(id).flatMap { node in
+            return AbsolutePath(path, relativeTo: .root)
+                .components
+                .dropFirst()
+                .reversed()
+                .reduce(self.db.group.next().makeSucceededFuture(node)) { future, pathComponent in
+                    future.flatMap { node in
+                        let entry = node.asDirectoryEntry(filename: pathComponent)
+                        return LLBCASFileTree.create(files: [entry], in: self.db).map {
+                            return LLBCASFSNode(tree: $0, db: self.db)
+                        }
+                    }
+                }
+        }.flatMapThrowing {
+            guard let tree = $0.tree else {
+                throw Error.unexpectedNode
+            }
+            return tree
+        }
     }
 }

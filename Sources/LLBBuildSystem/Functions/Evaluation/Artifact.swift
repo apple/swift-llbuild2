@@ -20,6 +20,7 @@ public extension Artifact {
         return Artifact.with {
             $0.originType = .source(dataID)
             $0.shortPath = shortPath
+            $0.type = .file
 
             if let root = root {
                 $0.root = root
@@ -32,6 +33,20 @@ public extension Artifact {
         return Artifact.with {
             $0.originType = nil
             $0.shortPath = shortPath
+            $0.type = .file
+
+            if let root = root {
+                $0.root = root
+            }
+        }
+    }
+
+    /// Returns a derived artifact that doesn't have any artifact owner information configured.
+    static func derivedUninitializedDirectory(shortPath: String, root: String? = nil) -> Artifact {
+        return Artifact.with {
+            $0.originType = nil
+            $0.shortPath = shortPath
+            $0.type = .directory
 
             if let root = root {
                 $0.root = root
