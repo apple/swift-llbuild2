@@ -188,7 +188,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
             let objData = try object.toData()
 
             let digest = Digest(with: objData)
-            let resource = "\(resourcePrefix)uploads/\(bytestreamUUID)/blobs/\(digest.hash)/\(digest.size)"
+            let resource = "\(resourcePrefix)uploads/\(bytestreamUUID)/blobs/\(digest.hash)/\(digest.sizeBytes)"
 
             let request =  Google_Bytestream_WriteRequest.with {
                 $0.resourceName = resource
