@@ -60,12 +60,24 @@ public struct ConfiguredTargetKey {
   /// Clears the value of `label`. Subsequent reads from it will return its default value.
   public mutating func clearLabel() {self._label = nil}
 
+  //// The configuration key under which this target should be evaluated. Each configured target will be requested
+  //// exactly once for each combination of rootID, label and configuration key.
+  public var configurationKey: ConfigurationKey {
+    get {return _configurationKey ?? ConfigurationKey()}
+    set {_configurationKey = newValue}
+  }
+  /// Returns true if `configurationKey` has been explicitly set.
+  public var hasConfigurationKey: Bool {return self._configurationKey != nil}
+  /// Clears the value of `configurationKey`. Subsequent reads from it will return its default value.
+  public mutating func clearConfigurationKey() {self._configurationKey = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _rootID: LLBCAS.LLBDataID? = nil
   fileprivate var _label: Label? = nil
+  fileprivate var _configurationKey: ConfigurationKey? = nil
 }
 
 //// A ConfiguredTargetValue wraps the contents of the user specified configured target. llbuild2 handles the runtime
@@ -101,6 +113,7 @@ extension ConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "rootID"),
     2: .same(proto: "label"),
+    3: .same(proto: "configurationKey"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -108,6 +121,7 @@ extension ConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       switch fieldNumber {
       case 1: try decoder.decodeSingularMessageField(value: &self._rootID)
       case 2: try decoder.decodeSingularMessageField(value: &self._label)
+      case 3: try decoder.decodeSingularMessageField(value: &self._configurationKey)
       default: break
       }
     }
@@ -120,12 +134,16 @@ extension ConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     if let v = self._label {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
+    if let v = self._configurationKey {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: ConfiguredTargetKey, rhs: ConfiguredTargetKey) -> Bool {
     if lhs._rootID != rhs._rootID {return false}
     if lhs._label != rhs._label {return false}
+    if lhs._configurationKey != rhs._configurationKey {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

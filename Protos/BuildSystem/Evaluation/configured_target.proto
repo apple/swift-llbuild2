@@ -9,6 +9,7 @@
 syntax = "proto3";
 
 import "BuildSystem/any_codable.proto";
+import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
 import "CASProtocol/data_id.proto";
 
@@ -24,6 +25,10 @@ message ConfiguredTargetKey {
     /// The label for the target that is being requested. It is up to the build system implementation to interpret the
     /// label in order to associate it with a target.
     Label label = 2;
+
+    /// The configuration key under which this target should be evaluated. Each configured target will be requested
+    /// exactly once for each combination of rootID, label and configuration key.
+    ConfigurationKey configurationKey = 3;
 }
 
 /// A ConfiguredTargetValue wraps the contents of the user specified configured target. llbuild2 handles the runtime

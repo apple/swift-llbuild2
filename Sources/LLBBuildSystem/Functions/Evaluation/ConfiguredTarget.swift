@@ -31,9 +31,10 @@ public enum ConfiguredTargetError: Error {
 
 // Convenience initializer.
 public extension ConfiguredTargetKey {
-    init(rootID: LLBDataID, label: Label) {
+    init(rootID: LLBDataID, label: Label, configurationKey: ConfigurationKey? = nil) {
         self.rootID = rootID
         self.label = label
+        self.configurationKey = configurationKey ?? ConfigurationKey()
     }
 }
 

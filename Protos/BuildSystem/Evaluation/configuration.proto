@@ -1,0 +1,26 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+import "BuildSystem/any_codable.proto";
+
+// A ConfigurationKey represents the configuration to use while evaluating a project. It should contain the minimum set
+// of data required in order to construct a full configuration fragment. Each configuration fragment key should be
+// considered as a build key where the build value is the evaluated configuration for the key. The ConfigurationFunction
+// requests the value for each of the fragment keys, and it will be up to the client implementation to provide functions
+// that evaluate those keys into ConfigurationFragments.
+message ConfigurationKey {
+    repeated LLBAnyCodable fragmentKeys = 1;
+}
+
+// A collection of configuration fragments as requested by a ConfigurationKey. The ConfigurationValue will be made
+// available at rule evaluation time from the rule context.
+message ConfigurationValue {
+    repeated LLBAnyCodable fragments = 1;
+}

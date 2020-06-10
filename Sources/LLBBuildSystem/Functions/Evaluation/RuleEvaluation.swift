@@ -14,9 +14,10 @@ extension RuleEvaluationValue: LLBBuildValue {}
 
 // Convenience initializer.
 extension RuleEvaluationKey {
-    init(label: Label, configuredTargetID: LLBDataID) {
+    init(label: Label, configuredTargetID: LLBDataID, configurationKey: ConfigurationKey? = nil) {
         self.label = label
         self.configuredTargetID = configuredTargetID
+        self.configurationKey = configurationKey ?? ConfigurationKey()
     }
 }
 
@@ -30,10 +31,10 @@ extension RuleEvaluationValue {
 public enum RuleEvaluationError: Error {
     /// Error thrown when no rule lookup delegate is specified.
     case noRuleLookupDelegate
-    
+
     /// Error thrown when deserialization of the configured target failed.
     case configuredTargetDeserializationError
-    
+
     /// Error thrown if no rule was found for evaluating a configured target.
     case ruleNotFound
 
@@ -46,32 +47,34 @@ public enum RuleEvaluationError: Error {
 
 final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEvaluationValue> {
     let ruleLookupDelegate: LLBRuleLookupDelegate?
-    
+
     init(engineContext: LLBBuildEngineContext, ruleLookupDelegate: LLBRuleLookupDelegate?) {
         self.ruleLookupDelegate = ruleLookupDelegate
         super.init(engineContext: engineContext)
     }
-    
+
     override func evaluate(key: RuleEvaluationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<RuleEvaluationValue> {
         guard let ruleLookupDelegate = ruleLookupDelegate else {
             return fi.group.next().makeFailedFuture(RuleEvaluationError.noRuleLookupDelegate)
         }
-        
+
+        let configurationFuture: LLBFuture<ConfigurationValue> = fi.request(key.configurationKey)
+
         // Read the ConfiguredTargetValue from the database.
         return engineContext.db.get(key.configuredTargetID).flatMapThrowing { (object: LLBCASObject?) in
             guard let data = object?.data,
                   let configuredTargetValue = try? ConfiguredTargetValue(from: data) else {
                 throw RuleEvaluationError.configuredTargetDeserializationError
             }
-            
+
             // Return the decoded ConfiguredTarget.
             return try configuredTargetValue.configuredTarget()
-        }.flatMap { (configuredTarget: ConfiguredTarget) in
+        }.and(configurationFuture).flatMap { (configuredTarget: ConfiguredTarget, configurationValue: ConfigurationValue) in
             guard let rule = ruleLookupDelegate.rule(for: type(of: configuredTarget)) else {
                 return fi.group.next().makeFailedFuture(RuleEvaluationError.ruleNotFound)
             }
 
-            let ruleContext = RuleContext(group: fi.group, label: key.label)
+            let ruleContext = RuleContext(group: fi.group, label: key.label, configurationValue: configurationValue)
 
             let providersFuture: LLBFuture<[LLBProvider]>
             let actionKeysFuture: LLBFuture<[LLBDataID]>
@@ -116,4 +119,3 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
         }
     }
 }
-

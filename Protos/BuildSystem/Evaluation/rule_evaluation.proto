@@ -8,6 +8,7 @@
 
 syntax = "proto3";
 
+import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
 import "BuildSystem/Evaluation/evaluated_target.proto";
 import "CASProtocol/data_id.proto";
@@ -22,14 +23,18 @@ message RuleEvaluationKey {
 
     /// The label for the configured target being evaluated.
     Label label = 1;
-    
+
     /// A dataID representing the contents of a ConfigurationTarget. ConfiguredTargets may be quite large depending on
     /// the number of dependencies and how providers are used. Instead of using the ConfiguredTargetValue in the key,
     /// we store the contents in the CAS and retrieve it using this ID.
     LLBDataID configuredTargetID = 2;
+
+    // The configuration key under which this should be evaluated under. The ConfigurationValue fragments will be made
+    // available in the rule context.
+    ConfigurationKey configurationKey = 3;
 }
 
-/// The result of evaluating a configured target under a rule. 
+/// The result of evaluating a configured target under a rule.
 message RuleEvaluationValue {
 
     /// The providers returned by the evaluation of the rule

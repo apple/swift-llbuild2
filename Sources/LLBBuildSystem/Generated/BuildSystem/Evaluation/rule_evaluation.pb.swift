@@ -63,15 +63,27 @@ public struct RuleEvaluationKey {
   /// Clears the value of `configuredTargetID`. Subsequent reads from it will return its default value.
   public mutating func clearConfiguredTargetID() {self._configuredTargetID = nil}
 
+  /// The configuration key under which this should be evaluated under. The ConfigurationValue fragments will be made
+  /// available in the rule context.
+  public var configurationKey: ConfigurationKey {
+    get {return _configurationKey ?? ConfigurationKey()}
+    set {_configurationKey = newValue}
+  }
+  /// Returns true if `configurationKey` has been explicitly set.
+  public var hasConfigurationKey: Bool {return self._configurationKey != nil}
+  /// Clears the value of `configurationKey`. Subsequent reads from it will return its default value.
+  public mutating func clearConfigurationKey() {self._configurationKey = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _label: Label? = nil
   fileprivate var _configuredTargetID: LLBCAS.LLBDataID? = nil
+  fileprivate var _configurationKey: ConfigurationKey? = nil
 }
 
-//// The result of evaluating a configured target under a rule. 
+//// The result of evaluating a configured target under a rule.
 public struct RuleEvaluationValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -101,6 +113,7 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "label"),
     2: .same(proto: "configuredTargetID"),
+    3: .same(proto: "configurationKey"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -108,6 +121,7 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
       switch fieldNumber {
       case 1: try decoder.decodeSingularMessageField(value: &self._label)
       case 2: try decoder.decodeSingularMessageField(value: &self._configuredTargetID)
+      case 3: try decoder.decodeSingularMessageField(value: &self._configurationKey)
       default: break
       }
     }
@@ -120,12 +134,16 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     if let v = self._configuredTargetID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
+    if let v = self._configurationKey {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: RuleEvaluationKey, rhs: RuleEvaluationKey) -> Bool {
     if lhs._label != rhs._label {return false}
     if lhs._configuredTargetID != rhs._configuredTargetID {return false}
+    if lhs._configurationKey != rhs._configurationKey {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

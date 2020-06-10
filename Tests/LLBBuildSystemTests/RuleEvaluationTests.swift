@@ -126,11 +126,11 @@ private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
 
 private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
     let ruleMap: [String: LLBRule] = [
-        RuleEvaluationConfiguredTarget.polymorphicIdentifier: DummyBuildRule(),
+        RuleEvaluationConfiguredTarget.identifier: DummyBuildRule(),
     ]
 
     func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule? {
-        return ruleMap[configuredTargetType.polymorphicIdentifier]
+        return ruleMap[configuredTargetType.identifier]
     }
 }
 
