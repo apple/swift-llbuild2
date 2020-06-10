@@ -97,6 +97,11 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
             )
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+        } else if configuredTarget.name == "static_write" {
+            let output = ruleContext.declareArtifact("static_write")
+
+            try ruleContext.write(contents: "black lives matter", to: output)
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
         }
 
         return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [])])
@@ -298,6 +303,35 @@ class RuleEvaluationTests: XCTestCase {
 
             let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter\nI cant breathe\n")
+        }
+    }
+
+    func testRuleEvaluationStaticWrite() throws {
+        try withTemporaryDirectory { tempDir in
+            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+
+            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let testEngine = LLBTestBuildEngine(
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate
+            )
+
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+
+            let label = try Label("//some:static_write")
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+
+            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+
+            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+
+            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
+
+            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+
+            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
+            XCTAssertEqual(artifactContents, "black lives matter")
         }
     }
 }

@@ -58,6 +58,11 @@ extension Artifact {
         precondition(originType == nil, "Artifact was already associated to an action")
         self.originType = .derived(owner)
     }
+
+    func updateID(dataID: LLBDataID) {
+        precondition(originType == nil, "Artifact was already associated to an action")
+        self.originType = .derivedStatic(dataID)
+    }
 }
 
 public extension LLBArtifactOwner {
@@ -90,6 +95,8 @@ final class ArtifactFunction: LLBBuildFunction<Artifact, ArtifactValue> {
         case .none:
             return fi.group.next().makeFailedFuture(ArtifactError.invalidOriginType)
         case let .source(dataID):
+            return fi.group.next().makeSucceededFuture(ArtifactValue(dataID: dataID))
+        case let .derivedStatic(dataID):
             return fi.group.next().makeSucceededFuture(ArtifactValue(dataID: dataID))
         default:
             break

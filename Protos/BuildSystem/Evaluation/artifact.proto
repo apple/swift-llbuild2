@@ -12,29 +12,33 @@ import "BuildSystem/Evaluation/artifact_owner.proto";
 import "BuildSystemProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
-/// An Artifact is the unit with which files and directories are represented in llbuild2. It contains not the contents
-/// of the sources or intermediate files and directories, but instead contains the necessary data required to resolve
-/// a particular input (or output) artifact during execution time. In some ways, it can be viewed as a future where
-/// the result (ArtifactValue) is a reference to the actual built contents of the artifact.
+// An Artifact is the unit with which files and directories are represented in llbuild2. It contains not the contents
+// of the sources or intermediate files and directories, but instead contains the necessary data required to resolve
+// a particular input (or output) artifact during execution time. In some ways, it can be viewed as a future where
+// the result (ArtifactValue) is a reference to the actual built contents of the artifact.
 message Artifact {
 
-    /// Represents what type of Artifact reference this is.
+    // Represents what type of Artifact reference this is.
     oneof originType {
 
-        /// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
+        // Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
         LLBDataID source = 1;
 
-        /// Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
+        // Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
         LLBArtifactOwner derived = 5;
+
+        // Derived static artifacts are artifacts populated directly in the rule implementation, such as file writes
+        // that do not require a heavyweight action to run.
+        LLBDataID derivedStatic = 6;
     }
 
-    /// A short path representation of the artifact. This usually includes the configuration independent paths.
+    // A short path representation of the artifact. This usually includes the configuration independent paths.
     string shortPath = 2;
 
-    /// A root under which to make the short path relative to. This usually includes configuration elements to use for
-    /// deduplication when the a target is evaluated multiple times during a build under different configurations.
+    // A root under which to make the short path relative to. This usually includes configuration elements to use for
+    // deduplication when the a target is evaluated multiple times during a build under different configurations.
     string root = 3;
 
-    /// The type of artifact that this represents.
+    // The type of artifact that this represents.
     LLBArtifactType type = 4;
 }
