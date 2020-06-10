@@ -17,6 +17,7 @@ mapping {
     proto_file_path: "BuildSystem/Evaluation/artifact_owner.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact_value.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact.proto"
+    proto_file_path: "BuildSystem/Evaluation/configuration.proto"
     proto_file_path: "BuildSystem/Evaluation/configured_target.proto"
     proto_file_path: "BuildSystem/Evaluation/evaluated_target.proto"
     proto_file_path: "BuildSystem/Evaluation/rule_evaluation.proto"

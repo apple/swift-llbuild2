@@ -28,6 +28,7 @@ class LLBBuildFunctionMap {
                 engineContext: engineContext,
                 ruleLookupDelegate: ruleLookupDelegate
             ),
+            ConfigurationKey.identifier: ConfigurationFunction(engineContext: engineContext),
 
             // Execution
             ActionIDKey.identifier: ActionIDFunction(engineContext: engineContext),

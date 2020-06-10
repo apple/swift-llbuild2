@@ -7,24 +7,8 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-import Foundation
 
 public protocol LLBProvider: LLBPolymorphicCodable {}
-
-/// Convenience implementation for LLBProviders that conform to Codable
-extension LLBProvider where Self: Encodable {
-    public func encode() throws -> LLBByteBuffer {
-        let data = try JSONEncoder().encode(self)
-        return LLBByteBuffer.withBytes(ArraySlice<UInt8>(data))
-    }
-}
-
-/// Convenience implementation for LLBProviders that conform to Codable
-extension LLBProvider where Self: Decodable {
-    public init(from bytes: LLBByteBuffer) throws {
-        self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
-    }
-}
 
 public enum LLBProviderMapError: Error {
     /// Thrown when there are multiple providers of the same type being added to a ProviderMap.
@@ -52,19 +36,6 @@ public extension LLBProviderMap {
     
     var count: Int {
         return providers.count
-    }
-}
-
-/// Convenience implementation of LLBProviderMap as Codable for use by clients of llbuild2.
-extension LLBProviderMap: Codable {
-    public init(from decoder: Swift.Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        try self.init(serializedData: container.decode(Data.self))
-    }
-
-    public func encode(to encoder: Swift.Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(self.serializedData())
     }
 }
 

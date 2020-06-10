@@ -73,6 +73,11 @@ public final class LLBBuildFunctionInterface {
         let requestFutures = keys.map { self.request($0, as: V.self) }
         return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
     }
+
+    internal func request(_ keys: [LLBBuildKey]) -> LLBFuture<[LLBBuildValue]> {
+        let requestFutures = keys.map { self.fi.request($0).map { $0 as! LLBBuildValue} }
+        return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
+    }
 }
 
 extension LLBBuildFunctionInterface {

@@ -7,26 +7,15 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-import Foundation
 
 /// Protocol that configured target instances must conform to.
 public protocol ConfiguredTarget: LLBPolymorphicCodable {}
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
-extension ConfiguredTarget where Self: Encodable {
-    public func encode() throws -> LLBByteBuffer {
-        let data = try JSONEncoder().encode(self)
-        return LLBByteBuffer.withBytes(ArraySlice<UInt8>(data))
+public extension ConfiguredTarget {
+    static var identifier: String {
+        return self.polymorphicIdentifier
     }
 }
-
-/// Convenience implementation for ConfiguredTargets that conform to Codable
-extension ConfiguredTarget where Self: Decodable {
-    public init(from bytes: LLBByteBuffer) throws {
-        self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
-    }
-}
-
 
 /// Protocol definition for a delegate that provides an LLBFuture<ConfiguredTarget> instance.
 public protocol LLBConfiguredTargetDelegate {

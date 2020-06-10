@@ -39,7 +39,8 @@ final class EvaluatedTargetFunction: LLBBuildFunction<EvaluatedTargetKey, Evalua
             // With the dataID for the configured target value, request the evaluation of the rule for that target.
             let ruleEvaluationKey = RuleEvaluationKey(
                 label: key.configuredTargetKey.label,
-                configuredTargetID: configuredTargetID
+                configuredTargetID: configuredTargetID,
+                configurationKey: key.configuredTargetKey.configurationKey
             )
             return fi.request(ruleEvaluationKey)
         }.map { (ruleEvaluationValue: RuleEvaluationValue) in
@@ -48,4 +49,3 @@ final class EvaluatedTargetFunction: LLBBuildFunction<EvaluatedTargetKey, Evalua
         }
     }
 }
-

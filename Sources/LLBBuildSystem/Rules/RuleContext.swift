@@ -37,9 +37,25 @@ public class RuleContext {
     // Private queue for concurrent access to the declared artifacts and actions.
     private let queue = DispatchQueue(label: "org.swift.llbuild2.rulecontext")
 
-    init(group: LLBFuturesDispatchGroup, label: Label) {
+    private let configurationValue: ConfigurationValue
+
+    init(group: LLBFuturesDispatchGroup, label: Label, configurationValue: ConfigurationValue) {
         self.group = group
         self.label = label
+        self.configurationValue = configurationValue
+    }
+
+    /// Returns a the requested configuration fragment if available on the configuration, or nil otherwise.
+    public func maybeGetFragment<C: LLBConfigurationFragment>(_ configurationType: C.Type = C.self) -> C? {
+        if let fragment = try? getFragment(configurationType) {
+            return fragment
+        }
+        return nil
+    }
+
+    /// Returns the requested configuration fragment or throws otherwise.
+    public func getFragment<C: LLBConfigurationFragment>(_ configurationType: C.Type = C.self) throws -> C {
+        return try configurationValue.get(configurationType)
     }
 
     /// Declares an output artifact from the target. If another artifact was declared with the same path, the same
