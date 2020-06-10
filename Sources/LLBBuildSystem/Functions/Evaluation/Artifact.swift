@@ -33,7 +33,7 @@ public extension Artifact {
     /// Returns a source artifact with a reference to the data ID containing artifact's contents.
     static func source(shortPath: String, root: String? = nil, dataID: LLBDataID) -> Artifact {
         return Artifact.with {
-            $0.originType = .source(LLBPBDataID(dataID))
+            $0.originType = .source(dataID)
             $0.shortPath = shortPath
 
             if let root = root {
@@ -76,7 +76,7 @@ extension Artifact {
 }
 
 public extension LLBArtifactOwner {
-    init(actionID: LLBPBDataID, outputIndex: Int32) {
+    init(actionID: LLBDataID, outputIndex: Int32) {
         self = Self.with {
             $0.actionID = actionID
             $0.outputIndex = outputIndex
@@ -86,7 +86,7 @@ public extension LLBArtifactOwner {
 
 /// Convenience initializer.
 fileprivate extension ArtifactValue {
-    init(dataID: LLBPBDataID) {
+    init(dataID: LLBDataID) {
         self.dataID = dataID
     }
 }

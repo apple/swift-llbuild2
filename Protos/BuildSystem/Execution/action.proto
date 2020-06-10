@@ -29,7 +29,7 @@ message ActionValue {
 
     /// The list of outputs IDs that the action produced. This will be in the same order as requested in
     /// actionType.
-    repeated LLBPBDataID outputs = 1;
+    repeated LLBDataID outputs = 1;
 }
 
 /// An action execution description for a command line invocation.

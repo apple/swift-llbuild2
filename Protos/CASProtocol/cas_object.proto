@@ -14,7 +14,7 @@ import "CASProtocol/data_id.proto";
 /// LLBPBCASObject represents the serialized from of CASObjects.  It encodes the
 /// combination of the raw data of the object and its dependendent references.
 message LLBPBCASObject {
-    repeated LLBPBDataID refs = 1;
+    repeated LLBDataID refs = 1;
 
     bytes data = 2;
 }

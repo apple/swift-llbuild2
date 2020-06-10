@@ -54,8 +54,8 @@ public struct RuleEvaluationKey {
   //// A dataID representing the contents of a ConfigurationTarget. ConfiguredTargets may be quite large depending on
   //// the number of dependencies and how providers are used. Instead of using the ConfiguredTargetValue in the key,
   //// we store the contents in the CAS and retrieve it using this ID.
-  public var configuredTargetID: LLBCAS.LLBPBDataID {
-    get {return _configuredTargetID ?? LLBCAS.LLBPBDataID()}
+  public var configuredTargetID: LLBCAS.LLBDataID {
+    get {return _configuredTargetID ?? LLBCAS.LLBDataID()}
     set {_configuredTargetID = newValue}
   }
   /// Returns true if `configuredTargetID` has been explicitly set.
@@ -68,7 +68,7 @@ public struct RuleEvaluationKey {
   public init() {}
 
   fileprivate var _label: Label? = nil
-  fileprivate var _configuredTargetID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _configuredTargetID: LLBCAS.LLBDataID? = nil
 }
 
 //// The result of evaluating a configured target under a rule. 

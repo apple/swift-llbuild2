@@ -151,7 +151,7 @@ class RuleEvaluationTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:single_artifact_valid")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
@@ -162,7 +162,7 @@ class RuleEvaluationTests: XCTestCase {
 
             let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
 
-            let artifactContents = try XCTUnwrap(testEngine.testDB.get(LLBDataID(artifactValue.dataID)).wait()?.data.asString())
+            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter\n")
         }
     }
@@ -183,7 +183,7 @@ class RuleEvaluationTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:2_outputs_2_actions")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
@@ -192,7 +192,7 @@ class RuleEvaluationTests: XCTestCase {
             for (index, artifact) in try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts.enumerated() {
                 let artifactValue: ArtifactValue = try testEngine.build(artifact).wait()
 
-                let artifactContents = try XCTUnwrap(testEngine.testDB.get(LLBDataID(artifactValue.dataID)).wait()?.data.asString())
+                let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
 
                 switch index {
                 case 0:
@@ -220,7 +220,7 @@ class RuleEvaluationTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:2_actions_1_output")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
@@ -251,7 +251,7 @@ class RuleEvaluationTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:unregistered_output")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
@@ -286,7 +286,7 @@ class RuleEvaluationTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:top_level_target")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
@@ -296,7 +296,7 @@ class RuleEvaluationTests: XCTestCase {
 
             let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
 
-            let artifactContents = try XCTUnwrap(testEngine.testDB.get(LLBDataID(artifactValue.dataID)).wait()?.data.asString())
+            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter\nI cant breathe\n")
         }
     }

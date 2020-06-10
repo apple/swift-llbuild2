@@ -56,11 +56,11 @@ class ArtifactTests: XCTestCase {
 
             let actionID = try testEngine.testDB.put(data: try actionKey.encode()).wait()
 
-            derivedArtifact._updateOwner(owner: LLBArtifactOwner(actionID: LLBPBDataID(actionID), outputIndex: 0))
+            derivedArtifact._updateOwner(owner: LLBArtifactOwner(actionID: actionID, outputIndex: 0))
 
             let derivedArtifactValue: ArtifactValue = try testEngine.build(derivedArtifact).wait()
 
-            let derivedContents = try XCTUnwrap(testEngine.testDB.get(LLBDataID(derivedArtifactValue.dataID)).wait()?.data.asString())
+            let derivedContents = try XCTUnwrap(testEngine.testDB.get(derivedArtifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(derivedContents, "black lives matter")
 
         }

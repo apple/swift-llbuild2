@@ -84,7 +84,7 @@ class EvaluatedTargetTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:valid")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
             
             let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 

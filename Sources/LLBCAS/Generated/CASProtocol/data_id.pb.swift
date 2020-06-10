@@ -28,10 +28,10 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// LLBPBDataID represents the digest of arbitrary data, and its purpose is to be a handler for interfacing with CAS
-//// systems. LLBPBDataID does not require the encoding of any particular hash function. Instead, it is expected that the
+//// LLBDataID represents the digest of arbitrary data, and its purpose is to be a handler for interfacing with CAS
+//// systems. LLBDataID does not require the encoding of any particular hash function. Instead, it is expected that the
 //// CAS system itself that provides the digest.
-public struct LLBPBDataID {
+public struct LLBDataID {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -46,8 +46,8 @@ public struct LLBPBDataID {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension LLBPBDataID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "LLBPBDataID"
+extension LLBDataID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBDataID"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "bytes"),
   ]
@@ -68,7 +68,7 @@ extension LLBPBDataID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: LLBPBDataID, rhs: LLBPBDataID) -> Bool {
+  public static func ==(lhs: LLBDataID, rhs: LLBDataID) -> Bool {
     if lhs.bytes != rhs.bytes {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

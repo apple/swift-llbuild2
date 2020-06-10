@@ -87,8 +87,8 @@ public struct LLBActionInput {
 
   //// The dataID representing the contents of the input. The remote execution service should be able to retrieve the
   //// contents of the input from the CAS system.
-  public var dataID: LLBCAS.LLBPBDataID {
-    get {return _dataID ?? LLBCAS.LLBPBDataID()}
+  public var dataID: LLBCAS.LLBDataID {
+    get {return _dataID ?? LLBCAS.LLBDataID()}
     set {_dataID = newValue}
   }
   /// Returns true if `dataID` has been explicitly set.
@@ -103,7 +103,7 @@ public struct LLBActionInput {
 
   public init() {}
 
-  fileprivate var _dataID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _dataID: LLBCAS.LLBDataID? = nil
 }
 
 //// Represents a remote action execution output artifact. This is the declaration of an artifact that is expected to be
@@ -236,14 +236,14 @@ public struct LLBActionExecutionResponse {
   //// The list of dataIDs representing the contents of the outputs. This list is expected to contain 1 dataID per
   //// output requested, in the same order as they appear in the action execution request. This value is expected to be
   //// populated only if the action completed successfully.
-  public var outputs: [LLBCAS.LLBPBDataID] = []
+  public var outputs: [LLBCAS.LLBDataID] = []
 
   //// The exit code for the action execution.
   public var exitCode: Int32 = 0
 
   //// The dataID for the contents of the stdout of the action.
-  public var stdoutID: LLBCAS.LLBPBDataID {
-    get {return _stdoutID ?? LLBCAS.LLBPBDataID()}
+  public var stdoutID: LLBCAS.LLBDataID {
+    get {return _stdoutID ?? LLBCAS.LLBDataID()}
     set {_stdoutID = newValue}
   }
   /// Returns true if `stdoutID` has been explicitly set.
@@ -252,8 +252,8 @@ public struct LLBActionExecutionResponse {
   public mutating func clearStdoutID() {self._stdoutID = nil}
 
   //// The dataID for the contents of the stderr of the action.
-  public var stderrID: LLBCAS.LLBPBDataID {
-    get {return _stderrID ?? LLBCAS.LLBPBDataID()}
+  public var stderrID: LLBCAS.LLBDataID {
+    get {return _stderrID ?? LLBCAS.LLBDataID()}
     set {_stderrID = newValue}
   }
   /// Returns true if `stderrID` has been explicitly set.
@@ -265,8 +265,8 @@ public struct LLBActionExecutionResponse {
 
   public init() {}
 
-  fileprivate var _stdoutID: LLBCAS.LLBPBDataID? = nil
-  fileprivate var _stderrID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _stdoutID: LLBCAS.LLBDataID? = nil
+  fileprivate var _stderrID: LLBCAS.LLBDataID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.

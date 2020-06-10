@@ -77,7 +77,7 @@ public struct ActionValue {
 
   //// The list of outputs IDs that the action produced. This will be in the same order as requested in
   //// actionType.
-  public var outputs: [LLBCAS.LLBPBDataID] = []
+  public var outputs: [LLBCAS.LLBDataID] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 

@@ -38,8 +38,8 @@ public struct LLBArtifactOwner {
   // methods supported on all messages.
 
   //// The dataID that contains the actionKey that produces this artifact.
-  public var actionID: LLBCAS.LLBPBDataID {
-    get {return _actionID ?? LLBCAS.LLBPBDataID()}
+  public var actionID: LLBCAS.LLBDataID {
+    get {return _actionID ?? LLBCAS.LLBDataID()}
     set {_actionID = newValue}
   }
   /// Returns true if `actionID` has been explicitly set.
@@ -54,7 +54,7 @@ public struct LLBArtifactOwner {
 
   public init() {}
 
-  fileprivate var _actionID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _actionID: LLBCAS.LLBDataID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.

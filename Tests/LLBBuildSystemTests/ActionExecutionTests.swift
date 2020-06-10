@@ -30,8 +30,8 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
                     $0.exitCode = 0
                     // Map the input contents as the outputs.
                     $0.outputs = request.inputs.map { $0.dataID }
-                    $0.stdoutID = LLBPBDataID(stdoutID)
-                    $0.stderrID = LLBPBDataID(stderrID)
+                    $0.stdoutID = stdoutID
+                    $0.stderrID = stderrID
                 }
             }
         } else if command == "failure" {
@@ -41,8 +41,8 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
             return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
                 return LLBActionExecutionResponse.with {
                     $0.exitCode = 1
-                    $0.stdoutID = LLBPBDataID(stdoutID)
-                    $0.stderrID = LLBPBDataID(stderrID)
+                    $0.stdoutID = stdoutID
+                    $0.stderrID = stderrID
                 }
             }
         } else if command == "schedule-error" {
@@ -85,7 +85,7 @@ class ActionExecutionTests: XCTestCase {
                 }
                 $0.inputs = [
                     .with {
-                        $0.dataID = LLBPBDataID(dataID)
+                        $0.dataID = dataID
                         $0.path = "some/path"
                         $0.type = .file
                     },
@@ -100,7 +100,7 @@ class ActionExecutionTests: XCTestCase {
         }
 
         let actionExecutionValue: ActionExecutionValue = try testEngine.build(actionExecutionKey).wait()
-        let stdout = try XCTUnwrap(testDB.get(LLBDataID(actionExecutionValue.stdoutID)).wait()?.data.asString())
+        let stdout = try XCTUnwrap(testDB.get(actionExecutionValue.stdoutID).wait()?.data.asString())
         XCTAssertEqual(stdout, "Success")
     }
 

@@ -27,7 +27,7 @@ message LLBActionInput {
 
     /// The dataID representing the contents of the input. The remote execution service should be able to retrieve the
     /// contents of the input from the CAS system.
-    LLBPBDataID dataID = 2;
+    LLBDataID dataID = 2;
 
     /// The type of artifact that this input represents.
     LLBArtifactType type = 3;
@@ -110,14 +110,14 @@ message LLBActionExecutionResponse {
     /// The list of dataIDs representing the contents of the outputs. This list is expected to contain 1 dataID per
     /// output requested, in the same order as they appear in the action execution request. This value is expected to be
     /// populated only if the action completed successfully.
-    repeated LLBPBDataID outputs = 1;
+    repeated LLBDataID outputs = 1;
 
     /// The exit code for the action execution.
     int32 exitCode = 2;
 
     /// The dataID for the contents of the stdout of the action.
-    LLBPBDataID stdoutID = 3;
+    LLBDataID stdoutID = 3;
 
     /// The dataID for the contents of the stderr of the action.
-    LLBPBDataID stderrID = 4;
+    LLBDataID stderrID = 4;
 }

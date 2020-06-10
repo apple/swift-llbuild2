@@ -70,8 +70,8 @@ final class ActionExecutionFunction: LLBBuildFunction<ActionExecutionKey, Action
             // If the action failed, convert it into an actual error with the dataIDs of the output logs.
             if executionResponse.exitCode != 0 {
                 throw ActionExecutionError.actionExecutionError(
-                    LLBDataID(executionResponse.stdoutID),
-                    LLBDataID(executionResponse.stderrID)
+                    executionResponse.stdoutID,
+                    executionResponse.stderrID
                 )
             }
 

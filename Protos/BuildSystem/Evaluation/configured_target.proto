@@ -19,7 +19,7 @@ import "CASProtocol/data_id.proto";
 message ConfiguredTargetKey {
 
     /// The data ID for the workspace root on where to find the target definition.
-    LLBPBDataID rootID = 1;
+    LLBDataID rootID = 1;
 
     /// The label for the target that is being requested. It is up to the build system implementation to interpret the
     /// label in order to associate it with a target.

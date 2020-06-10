@@ -29,7 +29,7 @@ public extension ActionKey {
 
 /// Convenience initializer.
 fileprivate extension ActionValue {
-    init(outputs: [LLBPBDataID]) {
+    init(outputs: [LLBDataID]) {
         self.outputs = outputs
     }
 }
