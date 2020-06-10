@@ -26,7 +26,7 @@ message RuleEvaluationKey {
     /// A dataID representing the contents of a ConfigurationTarget. ConfiguredTargets may be quite large depending on
     /// the number of dependencies and how providers are used. Instead of using the ConfiguredTargetValue in the key,
     /// we store the contents in the CAS and retrieve it using this ID.
-    LLBPBDataID configuredTargetID = 2;
+    LLBDataID configuredTargetID = 2;
 }
 
 /// The result of evaluating a configured target under a rule. 

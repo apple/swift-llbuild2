@@ -33,7 +33,7 @@ class ConfiguredTargetTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:target")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             XCTAssertThrowsError(try testEngine.build(configuredTargetKey).wait()) { error in
                 guard let configuredTargetError = try? XCTUnwrap(error as? ConfiguredTargetError) else {
@@ -56,7 +56,7 @@ class ConfiguredTargetTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:notFound")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             XCTAssertThrowsError(try testEngine.build(configuredTargetKey).wait()) { error in
                 guard let configuredTargetError = try? XCTUnwrap(error as? ConfiguredTargetError) else {
@@ -82,7 +82,7 @@ class ConfiguredTargetTests: XCTestCase {
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
             let label = try Label("//some:valid")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: LLBPBDataID(dataID), label: label)
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
 
             let configuredTargetValue = try testEngine.build(configuredTargetKey, as: ConfiguredTargetValue.self).wait()
             let configuredTarget: Int = try configuredTargetValue.typedConfiguredTarget()

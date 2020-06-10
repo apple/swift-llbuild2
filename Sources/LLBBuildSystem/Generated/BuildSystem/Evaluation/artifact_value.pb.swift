@@ -37,8 +37,8 @@ public struct ArtifactValue {
   // methods supported on all messages.
 
   //// The dataID with a reference to the contents of the artifact.
-  public var dataID: LLBCAS.LLBPBDataID {
-    get {return _dataID ?? LLBCAS.LLBPBDataID()}
+  public var dataID: LLBCAS.LLBDataID {
+    get {return _dataID ?? LLBCAS.LLBDataID()}
     set {_dataID = newValue}
   }
   /// Returns true if `dataID` has been explicitly set.
@@ -50,7 +50,7 @@ public struct ArtifactValue {
 
   public init() {}
 
-  fileprivate var _dataID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _dataID: LLBCAS.LLBDataID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.

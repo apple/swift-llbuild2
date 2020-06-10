@@ -47,14 +47,14 @@ final public class LLBLocalExecutor: LLBExecutor {
                 if input.type == .directory {
                     inputFutures.append(
                         LLBCASFileTree.export(
-                            LLBDataID(input.dataID),
+                            input.dataID,
                             from: engineContext.db,
                             to: .init(fullInputPath.pathString)
                         )
                     )
                 } else {
                     inputFutures.append(
-                        client.load(LLBDataID(input.dataID)).flatMap { (node: LLBCASFSNode) -> LLBFuture<(LLBByteBufferView, LLBFileType)> in
+                        client.load(input.dataID).flatMap { (node: LLBCASFSNode) -> LLBFuture<(LLBByteBufferView, LLBFileType)> in
                             guard let blob = node.blob else {
                                 return engineContext.group.next().makeFailedFuture(LLBLocalExecutorError.missingInput(input))
                             }
@@ -173,10 +173,10 @@ final public class LLBLocalExecutor: LLBExecutor {
 
             return stdoutFuture.and(stderrFuture).and(uploadsFuture).map { stdouterrIDs, outputUploads in
                 return LLBActionExecutionResponse(
-                    outputs: outputUploads.map { LLBPBDataID($0) },
+                    outputs: outputUploads,
                     exitCode: exitCode,
-                    stdoutID: LLBPBDataID(stdouterrIDs.0),
-                    stderrID: LLBPBDataID(stdouterrIDs.1)
+                    stdoutID: stdouterrIDs.0,
+                    stderrID: stdouterrIDs.1
                 )
             }
         }.flatMapErrorThrowing { error in

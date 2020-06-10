@@ -33,7 +33,7 @@ class LocalExecutorTests: XCTestCase {
             }
 
             let response = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
-            let contents = try XCTUnwrap(testEngineContext.testDB.get(LLBDataID(response.outputs[0])).wait()?.data.asString())
+            let contents = try XCTUnwrap(testEngineContext.testDB.get(response.outputs[0]).wait()?.data.asString())
             XCTAssertEqual(contents, "black lives matter\n")
         }
     }
@@ -124,7 +124,7 @@ class LocalExecutorTests: XCTestCase {
             }
 
             let result = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
-            try LLBCASFSClient(testEngineContext.testDB).load(LLBDataID(result.outputs[0])).map { node in
+            try LLBCASFSClient(testEngineContext.testDB).load(result.outputs[0]).map { node in
                 guard let tree = node.tree else {
                     XCTFail("expected output to be a tree")
                     return
@@ -151,7 +151,7 @@ class LocalExecutorTests: XCTestCase {
                     .with {
                         $0.path = "some/input"
                         $0.type = .file
-                        $0.dataID = LLBPBDataID(dataID)
+                        $0.dataID = dataID
                     }
                 ]
                 $0.outputs = [
@@ -163,7 +163,7 @@ class LocalExecutorTests: XCTestCase {
             }
 
             let response = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
-            let contents = try XCTUnwrap(testEngineContext.testDB.get(LLBDataID(response.outputs[0])).wait()?.data.asString())
+            let contents = try XCTUnwrap(testEngineContext.testDB.get(response.outputs[0]).wait()?.data.asString())
             XCTAssertEqual(contents, "I can't breathe")
         }
     }

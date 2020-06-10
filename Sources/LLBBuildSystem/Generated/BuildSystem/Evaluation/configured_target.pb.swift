@@ -40,8 +40,8 @@ public struct ConfiguredTargetKey {
   // methods supported on all messages.
 
   //// The data ID for the workspace root on where to find the target definition.
-  public var rootID: LLBCAS.LLBPBDataID {
-    get {return _rootID ?? LLBCAS.LLBPBDataID()}
+  public var rootID: LLBCAS.LLBDataID {
+    get {return _rootID ?? LLBCAS.LLBDataID()}
     set {_rootID = newValue}
   }
   /// Returns true if `rootID` has been explicitly set.
@@ -64,7 +64,7 @@ public struct ConfiguredTargetKey {
 
   public init() {}
 
-  fileprivate var _rootID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _rootID: LLBCAS.LLBDataID? = nil
   fileprivate var _label: Label? = nil
 }
 

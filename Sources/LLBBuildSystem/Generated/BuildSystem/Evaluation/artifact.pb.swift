@@ -52,10 +52,10 @@ public final class Artifact {
   public var originType: Artifact.OneOf_OriginType? = nil
 
   //// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
-  public var source: LLBCAS.LLBPBDataID {
+  public var source: LLBCAS.LLBDataID {
     get {
       if case .source(let v)? = originType {return v}
-      return LLBCAS.LLBPBDataID()
+      return LLBCAS.LLBDataID()
     }
     set {originType = .source(newValue)}
   }
@@ -84,7 +84,7 @@ public final class Artifact {
   //// Represents what type of Artifact reference this is.
   public enum OneOf_OriginType: Equatable {
     //// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
-    case source(LLBCAS.LLBPBDataID)
+    case source(LLBCAS.LLBDataID)
     //// Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
     case derived(LLBArtifactOwner)
 
@@ -118,7 +118,7 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1:
-        var v: LLBCAS.LLBPBDataID?
+        var v: LLBCAS.LLBDataID?
         if let current = self.originType {
           try decoder.handleConflictingOneOf()
           if case .source(let m) = current {v = m}

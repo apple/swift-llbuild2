@@ -35,7 +35,7 @@ public struct LLBPBCASObject {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var refs: [LLBPBDataID] = []
+  public var refs: [LLBDataID] = []
 
   public var data: Data = SwiftProtobuf.Internal.emptyData
 

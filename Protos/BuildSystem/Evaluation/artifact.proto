@@ -22,7 +22,7 @@ message Artifact {
     oneof originType {
 
         /// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
-        LLBPBDataID source = 1;
+        LLBDataID source = 1;
 
         /// Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
         LLBArtifactOwner derived = 5;

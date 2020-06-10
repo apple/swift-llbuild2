@@ -14,5 +14,5 @@ import "CASProtocol/data_id.proto";
 message ArtifactValue {
 
     /// The dataID with a reference to the contents of the artifact.
-    LLBPBDataID dataID = 1;
+    LLBDataID dataID = 1;
 }

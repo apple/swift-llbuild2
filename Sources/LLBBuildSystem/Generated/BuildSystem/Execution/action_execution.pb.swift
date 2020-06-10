@@ -77,11 +77,11 @@ public struct ActionExecutionValue {
 
   //// The list of outputs IDs that the action produced. This will be in the same order as requested in
   //// actionExecutionType.
-  public var outputs: [LLBCAS.LLBPBDataID] = []
+  public var outputs: [LLBCAS.LLBDataID] = []
 
   //// The data ID for the stdout of the action.
-  public var stdoutID: LLBCAS.LLBPBDataID {
-    get {return _stdoutID ?? LLBCAS.LLBPBDataID()}
+  public var stdoutID: LLBCAS.LLBDataID {
+    get {return _stdoutID ?? LLBCAS.LLBDataID()}
     set {_stdoutID = newValue}
   }
   /// Returns true if `stdoutID` has been explicitly set.
@@ -90,8 +90,8 @@ public struct ActionExecutionValue {
   public mutating func clearStdoutID() {self._stdoutID = nil}
 
   //// The data ID for the stderr of the action.
-  public var stderrID: LLBCAS.LLBPBDataID {
-    get {return _stderrID ?? LLBCAS.LLBPBDataID()}
+  public var stderrID: LLBCAS.LLBDataID {
+    get {return _stderrID ?? LLBCAS.LLBDataID()}
     set {_stderrID = newValue}
   }
   /// Returns true if `stderrID` has been explicitly set.
@@ -103,8 +103,8 @@ public struct ActionExecutionValue {
 
   public init() {}
 
-  fileprivate var _stdoutID: LLBCAS.LLBPBDataID? = nil
-  fileprivate var _stderrID: LLBCAS.LLBPBDataID? = nil
+  fileprivate var _stdoutID: LLBCAS.LLBDataID? = nil
+  fileprivate var _stderrID: LLBCAS.LLBDataID? = nil
 }
 
 //// An action execution description for a command line invocation.

@@ -63,7 +63,7 @@ extension Build_Bazel_Remote_Execution_V2_Digest {
 
 extension LLBDataID {
     func asBazelDigest() throws -> Build_Bazel_Remote_Execution_V2_Digest {
-        return try bytes.dropFirst().withUnsafeBufferPointer {
+        return try bytes.dropFirst().withUnsafeBytes {
             try Build_Bazel_Remote_Execution_V2_Digest.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none)) }
     }
 }

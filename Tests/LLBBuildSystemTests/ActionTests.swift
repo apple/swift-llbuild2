@@ -27,8 +27,8 @@ private class ActionDummyExecutor: LLBExecutor {
             return LLBActionExecutionResponse.with {
                 $0.exitCode = 0
                 $0.outputs = []
-                $0.stdoutID = LLBPBDataID(stdoutID)
-                $0.stderrID = LLBPBDataID(stderrID)
+                $0.stdoutID = stdoutID
+                $0.stderrID = stderrID
             }
         }
     }

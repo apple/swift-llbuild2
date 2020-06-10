@@ -18,8 +18,9 @@ public extension LLBDataID {
         blake3_hasher_init(&hasher)
 
         for ref in refs {
-            let content = ref.bytes
-            blake3_hasher_update(&hasher, content, content.count)
+            ref.bytes.withUnsafeBytes { content in
+                blake3_hasher_update(&hasher, content.baseAddress, content.count)
+            }
         }
         buffer.withUnsafeReadableBytes { data in
             blake3_hasher_update(&hasher, data.baseAddress, data.count)

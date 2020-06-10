@@ -14,7 +14,7 @@ extension RuleEvaluationValue: LLBBuildValue {}
 
 // Convenience initializer.
 extension RuleEvaluationKey {
-    init(label: Label, configuredTargetID: LLBPBDataID) {
+    init(label: Label, configuredTargetID: LLBDataID) {
         self.label = label
         self.configuredTargetID = configuredTargetID
     }
@@ -58,7 +58,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
         }
         
         // Read the ConfiguredTargetValue from the database.
-        return engineContext.db.get(LLBDataID(key.configuredTargetID)).flatMapThrowing { (object: LLBCASObject?) in
+        return engineContext.db.get(key.configuredTargetID).flatMapThrowing { (object: LLBCASObject?) in
             guard let data = object?.data,
                   let configuredTargetValue = try? ConfiguredTargetValue(from: data) else {
                 throw RuleEvaluationError.configuredTargetDeserializationError
@@ -97,7 +97,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
                     }
 
                     let artifactOwner = LLBArtifactOwner(
-                        actionID: LLBPBDataID(actionKeyIDs[actionOutputIndex.actionIndex]),
+                        actionID: actionKeyIDs[actionOutputIndex.actionIndex],
                         outputIndex: Int32(actionOutputIndex.outputIndex)
                     )
                     artifact.updateOwner(owner: artifactOwner)

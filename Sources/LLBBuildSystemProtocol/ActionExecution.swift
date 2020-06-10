@@ -36,7 +36,7 @@ public extension LLBActionExecutionRequest {
 }
 
 public extension LLBActionExecutionResponse {
-    init(outputs: [LLBPBDataID], exitCode: Int, stdoutID: LLBPBDataID, stderrID: LLBPBDataID) {
+    init(outputs: [LLBDataID], exitCode: Int, stdoutID: LLBDataID, stderrID: LLBDataID) {
         self.outputs = outputs
         self.exitCode = Int32(exitCode)
         self.stdoutID = stdoutID
@@ -45,7 +45,7 @@ public extension LLBActionExecutionResponse {
 }
 
 public extension LLBActionInput {
-    init(path: String, dataID: LLBPBDataID, type: LLBArtifactType) {
+    init(path: String, dataID: LLBDataID, type: LLBArtifactType) {
         self = Self.with {
             $0.path = path
             $0.dataID = dataID

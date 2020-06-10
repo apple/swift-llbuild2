@@ -15,7 +15,7 @@ import "CASProtocol/data_id.proto";
 message LLBArtifactOwner {
 
     /// The dataID that contains the actionKey that produces this artifact.
-    LLBPBDataID actionID = 1;
+    LLBDataID actionID = 1;
 
     /// The index of the artifact in the list of outputs.
     int32 outputIndex = 2;

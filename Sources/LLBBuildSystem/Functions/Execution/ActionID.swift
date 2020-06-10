@@ -14,9 +14,9 @@ import LLBBuildSystemProtocol
 // subset of LLBBuildKey, any LLBBuildKey can be made to conform to LLBBuildValue for free.
 extension ActionKey: LLBBuildValue {}
 
-// Conformance to delegate serialization of ActionIDKeys to the underlying LLBPBDataID. Conformance of LLBCodable for
+// Conformance to delegate serialization of ActionIDKeys to the underlying LLBDataID. Conformance of LLBCodable for
 // SwiftProtobuf.Message is implemented in BuildKey.swift.
-extension LLBPBDataID: LLBCodable {}
+extension LLBDataID: LLBCodable {}
 
 /// An ActionID is a key used to retrieve the ActionKey referenced by its dataID. This key exists so that the retrieval
 /// and deserialization of previously deserialized instances of the same action are shared. Without this, each
@@ -26,14 +26,14 @@ struct ActionIDKey: LLBBuildKey {
     public static let identifier = "ActionIDKey"
 
     /// The data ID representing the serialized form of an ActionKey.
-    let dataID: LLBPBDataID
+    let dataID: LLBDataID
 
-    init(dataID: LLBPBDataID) {
+    init(dataID: LLBDataID) {
         self.dataID = dataID
     }
 
     init(from bytes: LLBByteBuffer) throws {
-        self.dataID = try LLBPBDataID(from: bytes)
+        self.dataID = try LLBDataID(from: bytes)
     }
 
     func encode() throws -> LLBByteBuffer {
@@ -47,7 +47,7 @@ public enum ActionIDError: Error {
 
 final class ActionIDFunction: LLBBuildFunction<ActionIDKey, ActionKey> {
     override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionKey> {
-        return engineContext.db.get(LLBDataID(actionIDKey.dataID)).flatMapThrowing { object in
+        return engineContext.db.get(actionIDKey.dataID).flatMapThrowing { object in
             guard let object = object else {
                 throw ActionIDError.notFound
             }
