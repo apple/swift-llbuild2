@@ -77,43 +77,64 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
             let ruleContext = RuleContext(group: fi.group, label: key.label, configurationValue: configurationValue)
 
             let providersFuture: LLBFuture<[LLBProvider]>
-            let actionKeysFuture: LLBFuture<[LLBDataID]>
             do {
                 // Evaluate the rule with the configured target.
-                providersFuture = try rule.compute(configuredTarget: configuredTarget, ruleContext)
+                providersFuture = try rule.compute(configuredTarget: configuredTarget, ruleContext).flatMap { providers in
+                    let actionKeyFutures: [LLBFuture<LLBDataID>]
+                    do {
+                        // Store the action keys in the CAS
+                        actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
+                            self.engineContext.db.put(data: try actionKey.encode())
+                        }
+                    } catch {
+                        return fi.group.next().makeFailedFuture(error)
+                    }
 
-                // Store the action keys in the CAS
-                let actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
-                    self.engineContext.db.put(data: try actionKey.encode())
+                    let actionKeysFuture: LLBFuture<Void> = LLBFuture.whenAllSucceed(actionKeyFutures, on: fi.group.next()).flatMapThrowing { actionKeyIDs in
+                        // Associate the actionKey dataIDs to the artifacts that they produce.
+                        for (path, actionOutputIndex) in ruleContext.artifactActionMap {
+                            guard let artifact = ruleContext.declaredArtifacts[path],
+                                  artifact.originType == nil else {
+                                throw RuleEvaluationError.artifactAlreadyInitialized
+                            }
+
+                            let artifactOwner = LLBArtifactOwner(
+                                actionID: actionKeyIDs[actionOutputIndex.actionIndex],
+                                outputIndex: Int32(actionOutputIndex.outputIndex)
+                            )
+                            artifact.updateOwner(owner: artifactOwner)
+                        }
+                    }
+
+                    // Upload the static write contents directly into the CAS and associate the dataIDs to the
+                    // artifacts.
+                    let staticWritesFutures: [LLBFuture<Void>] = ruleContext.staticWriteActions.map { (path, contents) in
+                        self.engineContext.db.put(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(contents))).flatMapThrowing { dataID in
+                            guard let artifact = ruleContext.declaredArtifacts[path],
+                                  artifact.originType == nil else {
+                                throw RuleEvaluationError.artifactAlreadyInitialized
+                            }
+                            artifact.updateID(dataID: dataID)
+                        }
+                    }
+                    let staticWritesFuture = LLBFuture.whenAllSucceed(staticWritesFutures, on: fi.group.next())
+
+                    return actionKeysFuture.and(staticWritesFuture).map { _ in providers }
+                }.flatMapThrowing { (providers: [LLBProvider]) in
+                    // Ensure all artifacts have been associated to an action.
+                    for artifact in ruleContext.declaredArtifacts.values {
+                        guard artifact.originType != nil else {
+                            throw RuleEvaluationError.unassignedOutput(artifact)
+                        }
+                    }
+
+                    return providers
                 }
-                actionKeysFuture = LLBFuture.whenAllSucceed(actionKeyFutures, on: fi.group.next())
             } catch {
                 return fi.group.next().makeFailedFuture(error)
             }
 
-            return actionKeysFuture.flatMap { actionKeyIDs in
-                // Associate the actionKey dataIDs to the artifacts that they produce.
-                for (path, actionOutputIndex) in ruleContext.artifactActionMap {
-                    guard let artifact = ruleContext.declaredArtifacts[path],
-                          artifact.originType == nil else {
-                        return fi.group.next().makeFailedFuture(RuleEvaluationError.artifactAlreadyInitialized)
-                    }
-
-                    let artifactOwner = LLBArtifactOwner(
-                        actionID: actionKeyIDs[actionOutputIndex.actionIndex],
-                        outputIndex: Int32(actionOutputIndex.outputIndex)
-                    )
-                    artifact.updateOwner(owner: artifactOwner)
-                }
-
-                for artifact in ruleContext.declaredArtifacts.values {
-                    guard artifact.originType != nil else {
-                        return fi.group.next().makeFailedFuture(RuleEvaluationError.unassignedOutput(artifact))
-                    }
-                }
-
-                return providersFuture
-            }
+            return providersFuture
         }.flatMapThrowing { (providers: [LLBProvider]) in
             try RuleEvaluationValue(providerMap: LLBProviderMap(providers: providers))
         }

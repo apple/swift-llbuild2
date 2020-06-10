@@ -9,11 +9,13 @@
 import llbuild2
 import Dispatch
 import LLBBuildSystemProtocol
+import Foundation
 
 public typealias PreAction = (arguments: [String], environment: [String: String], background: Bool)
 
 public enum RuleContextError: Error {
     case outputAlreadyRegistered
+    case writeError
 }
 
 public class RuleContext {
@@ -33,6 +35,9 @@ public class RuleContext {
 
     // List of registered actions.
     var registeredActions = [ActionKey]()
+
+    // Map of artifact to static contents that rule evaluations may have requested.
+    var staticWriteActions = [String: Data]()
 
     // Private queue for concurrent access to the declared artifacts and actions.
     private let queue = DispatchQueue(label: "org.swift.llbuild2.rulecontext")
@@ -116,6 +121,24 @@ public class RuleContext {
                 artifactActionMap[output.shortPath] = ActionOutputIndex(actionIndex: actionIndex, outputIndex: index)
             }
         }
+    }
+
+    /// Registers a static action that writes the specified contents into the given artifact output.
+    public func write(contents: Data, to output: Artifact) throws {
+        try queue.sync {
+            guard output.originType == nil,
+                  declaredArtifacts[output.shortPath] == output,
+                  staticWriteActions[output.shortPath] == nil else {
+                throw RuleContextError.outputAlreadyRegistered
+            }
+
+            staticWriteActions[output.shortPath] = contents
+        }
+    }
+
+    /// Registers a static action that writes the specified contents into the given artifact output.
+    public func write(contents: String, to output: Artifact) throws {
+        try write(contents: Data(contents.utf8), to: output)
     }
 }
 
