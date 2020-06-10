@@ -88,7 +88,7 @@ public extension LLBCASObject {
 }
 
 extension LLBCASObject: LLBSerializable {
-    public init(rawBytes: LLBByteBuffer) throws {
+    public init(from rawBytes: LLBByteBuffer) throws {
         let pb = try rawBytes.withUnsafeReadableBytes {
             try LLBPBCASObject.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none))
         }
@@ -98,8 +98,8 @@ extension LLBCASObject: LLBSerializable {
         self.init(refs: refs, data: data)
     }
 
-    public func toBytes(into buffer: inout LLBByteBuffer) {
-        buffer.writeBytes(try! self.toData())
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeBytes(try self.toData())
     }
 
 }

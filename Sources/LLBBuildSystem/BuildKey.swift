@@ -30,17 +30,14 @@ extension LLBBuildKey where Self: SwiftProtobuf.Message {
 }
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message.
-extension LLBEncodable where Self: SwiftProtobuf.Message {
-    public func encode() throws -> LLBByteBuffer {
-        let data = try self.serializedData()
-        var bytes = LLBByteBufferAllocator().buffer(capacity: data.count)
-        bytes.writeBytes(data)
-        return bytes
+extension LLBSerializableIn where Self: SwiftProtobuf.Message {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeBytes(try self.serializedData())
     }
 }
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message.
-extension LLBDecodable where Self: SwiftProtobuf.Message {
+extension LLBSerializableOut where Self: SwiftProtobuf.Message {
     public init(from bytes: LLBByteBuffer) throws {
         let data = Data(bytes.readableBytesView)
         self = try Self.init(serializedData: data)

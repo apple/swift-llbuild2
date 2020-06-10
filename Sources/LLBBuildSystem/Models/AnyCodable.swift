@@ -12,7 +12,7 @@ import Foundation
 
 /// Types conforming to LLBPolymorphicCodable are allowed to be serialized into LLBAnyCodables. They need to be
 /// registered in order to be deserialized at runtime without compile-time type information.
-public protocol LLBPolymorphicCodable: LLBCodable {
+public protocol LLBPolymorphicCodable: LLBSerializable {
     static var polymorphicIdentifier: String { get }
 }
 
@@ -35,7 +35,7 @@ fileprivate var registeredTypes: [String: LLBPolymorphicCodable.Type] = [:]
 extension LLBAnyCodable {
     internal init(from polymorphicCodable: LLBPolymorphicCodable) throws {
         self.typeIdentifier = type(of: polymorphicCodable).polymorphicIdentifier
-        self.serializedCodable = try Data(polymorphicCodable.encode().readableBytesView)
+        self.serializedCodable = try Data(polymorphicCodable.toBytes().readableBytesView)
     }
 }
 

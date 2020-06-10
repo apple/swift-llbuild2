@@ -553,16 +553,20 @@ private final class CASTreeImport {
                 }
 
                 return self.whenAllSucceed(subpathsFutures, on: dirLoop).flatMap { subpaths in
-                    let (refs, dirData, aggregateSize) = self.constructDirectoryContents(subpaths, wireFormat: self.options.wireFormat)
+                    do {
+                        let (refs, dirData, aggregateSize) = try self.constructDirectoryContents(subpaths, wireFormat: self.options.wireFormat)
 
-                    _ = stats.toImportBytes_.add(dirData.readableBytes)
-                    return self.dbPut(refs: refs, data: dirData, importSize: dirData.readableBytes).map { id in
-                        _ = stats.uploadedMetadataBytes_.add(dirData.readableBytes)
-                        var dirEntry = LLBDirectoryEntry()
-                        dirEntry.name = path.pathString
-                        dirEntry.type = .directory
-                        dirEntry.size = aggregateSize
-                        return (id, dirEntry)
+                        _ = stats.toImportBytes_.add(dirData.readableBytes)
+                        return self.dbPut(refs: refs, data: dirData, importSize: dirData.readableBytes).map { id in
+                            _ = stats.uploadedMetadataBytes_.add(dirData.readableBytes)
+                            var dirEntry = LLBDirectoryEntry()
+                            dirEntry.name = path.pathString
+                            dirEntry.type = .directory
+                            dirEntry.size = aggregateSize
+                            return (id, dirEntry)
+                        }
+                    } catch {
+                        return loop.makeFailedFuture(error)
                     }
                 }
               }
@@ -905,9 +909,13 @@ private final class CASTreeImport {
                 fileInfo.size = UInt64(segm.uncompressedSize)
                 fileInfo.compression = segm.isCompressed ? .zstd : .none
                 fileInfo.fixedChunkSize = UInt64(segm.uncompressedSize)
-                return dbPut(refs: [blobId], data: fileInfo.toBytes(), importSize: importSize).map { id in
+                do {
+                    return dbPut(refs: [blobId], data: try fileInfo.toBytes(), importSize: importSize).map { id in
                         encodeNextStep(for: id)
                     }
+                } catch {
+                    return loop.makeFailedFuture(error)
+                }
               }
 
               let containsRequestWireSizeEstimate = 64
@@ -1015,11 +1023,15 @@ private final class CASTreeImport {
                 // The top is not compressed when chunks are present.
                 fileInfo.compression = .none
                 fileInfo.fixedChunkSize = UInt64(chunkIds.count > 1 ? self.options.fileChunkSize : allSegmentsUncompressedDataSize)
-                let fileInfoBytes = fileInfo.toBytes()
-                return self.execute(on: self.netQueue, size: fileInfoBytes.readableBytes, default: .skipped) {
-                    self.dbPut(refs: chunkIds, data: fileInfoBytes, importSize: nil).map { id in
-                        return .singleFile(SingleFileInfo(path: path, id: id, type: type, size: UInt64(clamping: allSegmentsUncompressedDataSize)))
+                do {
+                    let fileInfoBytes = try fileInfo.toBytes()
+                    return self.execute(on: self.netQueue, size: fileInfoBytes.readableBytes, default: .skipped) {
+                        self.dbPut(refs: chunkIds, data: fileInfoBytes, importSize: nil).map { id in
+                            return .singleFile(SingleFileInfo(path: path, id: id, type: type, size: UInt64(clamping: allSegmentsUncompressedDataSize)))
+                        }
                     }
+                } catch {
+                    return loop.makeFailedFuture(error)
                 }
               }
             })
@@ -1040,7 +1052,7 @@ private final class CASTreeImport {
     }
 
     /// Construct the bytes representing the directory contents.
-    func constructDirectoryContents(_ subpaths: [(LLBDataID, LLBDirectoryEntry)?], wireFormat: LLBCASFileTree.WireFormat) -> (refs: [LLBDataID], dirData: LLBByteBuffer, aggregateSize: UInt64) {
+        func constructDirectoryContents(_ subpaths: [(LLBDataID, LLBDirectoryEntry)?], wireFormat: LLBCASFileTree.WireFormat) throws -> (refs: [LLBDataID], dirData: LLBByteBuffer, aggregateSize: UInt64) {
         var refs = [LLBDataID]()
         let dirData: LLBByteBuffer
         var aggregateSize: UInt64 = 0
@@ -1066,8 +1078,7 @@ private final class CASTreeImport {
             dirNode.size = aggregateSize
             dirNode.compression = .none
             dirNode.inlineChildren = dirEntries
-
-            dirData = dirNode.toBytes()
+            dirData = try dirNode.toBytes()
         }
 
         return (refs, dirData, aggregateSize)

@@ -84,7 +84,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
                     do {
                         // Store the action keys in the CAS
                         actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
-                            self.engineContext.db.put(data: try actionKey.encode())
+                            self.engineContext.db.put(data: try actionKey.toBytes())
                         }
                     } catch {
                         return fi.group.next().makeFailedFuture(error)

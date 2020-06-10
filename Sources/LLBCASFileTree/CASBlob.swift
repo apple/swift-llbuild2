@@ -260,11 +260,15 @@ public struct LLBCASBlob {
         fileInfo.compression = .none
         fileInfo.fixedChunkSize = UInt64(data.readableBytes) // TODO: Split
         return db.put(refs: [], data: data).flatMap { blobId in
-            db.put(refs: [blobId], data: fileInfo.toBytes()).map { outerId in
-                LLBCASBlob(db: db, receivedId: .outer(outerId),
-                    type: fileInfo.type,
-                    size: data.readableBytes,
-                    contents: .chunked(chunks: [blobId], chunkSize: Int(fileInfo.fixedChunkSize)))
+            do {
+                return db.put(refs: [blobId], data: try fileInfo.toBytes()).map { outerId in
+                    LLBCASBlob(db: db, receivedId: .outer(outerId),
+                        type: fileInfo.type,
+                        size: data.readableBytes,
+                        contents: .chunked(chunks: [blobId], chunkSize: Int(fileInfo.fixedChunkSize)))
+                }
+            } catch {
+                return db.group.next().makeFailedFuture(error)
             }
         }
     }
@@ -296,7 +300,11 @@ public struct LLBCASBlob {
             fileInfo.size = UInt64(size)
             fileInfo.compression = .none
             fileInfo.fixedChunkSize = UInt64(size) // TODO: Split
-            return db.put(refs: [id], data: fileInfo.toBytes())
+            do {
+                return db.put(refs: [id], data: try fileInfo.toBytes())
+            } catch {
+                return db.group.next().makeFailedFuture(error)
+            }
         }
     }
 

@@ -14,9 +14,6 @@ import LLBBuildSystemProtocol
 // subset of LLBBuildKey, any LLBBuildKey can be made to conform to LLBBuildValue for free.
 extension ActionKey: LLBBuildValue {}
 
-// Conformance to delegate serialization of ActionIDKeys to the underlying LLBDataID. Conformance of LLBCodable for
-// SwiftProtobuf.Message is implemented in BuildKey.swift.
-extension LLBDataID: LLBCodable {}
 
 /// An ActionID is a key used to retrieve the ActionKey referenced by its dataID. This key exists so that the retrieval
 /// and deserialization of previously deserialized instances of the same action are shared. Without this, each
@@ -36,8 +33,8 @@ struct ActionIDKey: LLBBuildKey {
         self.dataID = try LLBDataID(from: bytes)
     }
 
-    func encode() throws -> LLBByteBuffer {
-        return try dataID.encode()
+    func toBytes(into buffer: inout LLBByteBuffer) throws {
+        try dataID.toBytes(into: &buffer)
     }
 }
 

@@ -26,8 +26,8 @@ private struct DummyConfiguredTarget: ConfiguredTarget {
         self.name = try String(from: bytes)
     }
     
-    func encode() throws -> LLBByteBuffer {
-        return LLBByteBuffer.withString(name)
+    func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeString(name)
     }
 }
 
@@ -48,8 +48,8 @@ fileprivate struct DummyProvider: LLBProvider {
         self.simpleString = try String(from: bytes)
     }
     
-    func encode() throws -> LLBByteBuffer {
-        return LLBByteBuffer.withString(simpleString)
+    func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeString(simpleString)
     }
 }
 

@@ -10,7 +10,7 @@ import llbuild2
 import LLBBuildSystem
 import XCTest
 
-extension LLBProviderMap: LLBCodable {}
+extension LLBProviderMap: LLBSerializable {}
 
 fileprivate struct SimpleProvider: LLBProvider {
     let simpleString: String
@@ -23,8 +23,8 @@ fileprivate struct SimpleProvider: LLBProvider {
         self.simpleString = try String(from: bytes)
     }
     
-    func encode() throws -> LLBByteBuffer {
-        return LLBByteBuffer.withString(simpleString)
+    func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeString(simpleString)
     }
 }
 
@@ -39,8 +39,8 @@ fileprivate struct OtherProvider: LLBProvider {
         self.simpleString = try String(from: bytes)
     }
     
-    func encode() throws -> LLBByteBuffer {
-        return LLBByteBuffer.withString(simpleString)
+    func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeString(simpleString)
     }
 }
 
@@ -49,7 +49,7 @@ class ProviderTests: XCTestCase {
         let provider = SimpleProvider(simpleString: "black lives matter")
         
         let providerMap = try LLBProviderMap(providers: [provider])
-        let encoded = try providerMap.encode()
+        let encoded = try providerMap.toBytes()
         let decodedProviderMap = try LLBProviderMap(from: encoded)
         
         XCTAssertEqual(decodedProviderMap, providerMap)
@@ -82,7 +82,7 @@ class ProviderTests: XCTestCase {
         
         let providerMap1 = try LLBProviderMap(providers: [provider1, provider2])
         let providerMap2 = try LLBProviderMap(providers: [provider1, provider2])
-        XCTAssertEqual(try providerMap1.encode(), try providerMap2.encode())
+        XCTAssertEqual(try providerMap1.toBytes(), try providerMap2.toBytes())
     }
     
     func testUnknownProvider() throws {

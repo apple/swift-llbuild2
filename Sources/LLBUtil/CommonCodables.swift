@@ -13,17 +13,15 @@ import llbuild2
 // the POD types in Swift, just the ones that we are interested in in the short term, or that clients of llbuild2
 // request support of.
 
-extension String: LLBCodable {
-    public func encode() throws -> LLBByteBuffer {
-        var bytes = LLBByteBufferAllocator().buffer(capacity: self.count)
-        bytes.writeString(self)
-        return bytes
+extension String: LLBSerializable {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeString(self)
     }
 
     public init(from bytes: LLBByteBuffer) throws {
         var mutableBytes = bytes
         guard let decoded = mutableBytes.readString(length: bytes.readableBytes) else {
-            throw LLBCodableError.unknownError("could not decode String bytes")
+            throw LLBSerializableError.unknownError("could not decode String bytes")
         }
         self = decoded
 
@@ -32,18 +30,15 @@ extension String: LLBCodable {
 
 // Int currently support doesn't handle endian-ness. These are mostly used as basic data types for testing on local
 // systems. For more complex data types that use Ints, each type should account for the serialization mechanism.
-extension Int: LLBCodable {
-    public func encode() throws -> LLBByteBuffer {
-        let size = MemoryLayout<Int>.size
-        var bytes = LLBByteBufferAllocator().buffer(capacity: size)
-        bytes.writeInteger(self)
-        return bytes
+extension Int: LLBSerializable {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeInteger(self)
     }
 
     public init(from bytes: LLBByteBuffer) throws {
         var mutableBytes = bytes
         guard let decoded: Int = mutableBytes.readInteger() else {
-            throw LLBCodableError.unknownError("could not decode Int bytes")
+            throw LLBSerializableError.unknownError("could not decode Int bytes")
         }
         self = decoded
     }

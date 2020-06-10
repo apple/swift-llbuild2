@@ -23,7 +23,7 @@ final class CodableTests: XCTestCase {
         ]
 
         for testString in testStrings {
-            let bytes = try testString.encode()
+            let bytes = try testString.toBytes()
             let decoded = try String(from: bytes)
             XCTAssertEqual(decoded, testString)
         }
@@ -33,7 +33,7 @@ final class CodableTests: XCTestCase {
         let testInts: [Int] = [42, -23, 1024, Int.max, Int.min]
 
         for testInt in testInts {
-            let bytes = try testInt.encode()
+            let bytes = try testInt.toBytes()
             let decoded = try Int(from: bytes)
             XCTAssertEqual(decoded, testInt)
         }

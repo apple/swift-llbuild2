@@ -28,11 +28,9 @@ struct SumKey: LLBBuildKey, Codable {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
     }
 
-    func encode() throws -> LLBByteBuffer {
+    func toBytes(into buffer: inout LLBByteBuffer) throws {
         let encoded = try JSONEncoder().encode(self)
-        var bytes = LLBByteBufferAllocator().buffer(capacity: encoded.count)
-        bytes.writeBytes(encoded)
-        return bytes
+        buffer.writeBytes(encoded)
     }
 }
 
