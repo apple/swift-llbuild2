@@ -35,9 +35,10 @@ message Artifact {
     // A short path representation of the artifact. This usually includes the configuration independent paths.
     string shortPath = 2;
 
-    // A root under which to make the short path relative to. This usually includes configuration elements to use for
-    // deduplication when the a target is evaluated multiple times during a build under different configurations.
-    string root = 3;
+    // A list of root under which to make the short path relative to. This usually includes configuration elements to
+    // use for deduplication when the a target is evaluated multiple times during a build under different
+    // configurations.
+    repeated string roots = 3;
 
     // The type of artifact that this represents.
     LLBArtifactType type = 4;

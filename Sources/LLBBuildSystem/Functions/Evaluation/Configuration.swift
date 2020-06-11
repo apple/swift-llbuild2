@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import Crypto
 import LLBBuildSystemProtocol
 
 extension ConfigurationKey: LLBBuildKey {}
@@ -117,7 +118,18 @@ final class ConfigurationFunction: LLBBuildFunction<ConfigurationKey, Configurat
                     return fragment
                 }
             }.flatMapThrowing { (fragments: [LLBConfigurationFragment]) -> ConfigurationValue in
-                return try ConfigurationValue(fragments: fragments)
+                var configurationValue = try ConfigurationValue(fragments: fragments)
+
+                // If there are no fragments, do not calculate a root.
+                if fragments.count == 0 {
+                    return configurationValue
+                }
+
+                // Calculate the hash of the configuration and create a root value for it.
+                let hash = SHA256.hash(data: try! configurationValue.serializedData())
+                configurationValue.root = hash.compactMap { String(format: "%02x", $0) }.joined()
+
+                return configurationValue
 
             }
         } catch {

@@ -110,7 +110,7 @@ let package = Package(
         // Build system support
         .target(
             name: "LLBBuildSystem",
-            dependencies: ["llbuild2", "LLBBuildSystemProtocol", "SwiftProtobuf"]
+            dependencies: ["llbuild2", "LLBBuildSystemProtocol", "SwiftProtobuf", "Crypto"]
         ),
         .target(
             name: "LLBBuildSystemProtocol",

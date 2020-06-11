@@ -74,9 +74,10 @@ public final class Artifact {
   /// A short path representation of the artifact. This usually includes the configuration independent paths.
   public var shortPath: String = String()
 
-  /// A root under which to make the short path relative to. This usually includes configuration elements to use for
-  /// deduplication when the a target is evaluated multiple times during a build under different configurations.
-  public var root: String = String()
+  /// A list of root under which to make the short path relative to. This usually includes configuration elements to
+  /// use for deduplication when the a target is evaluated multiple times during a build under different
+  /// configurations.
+  public var roots: [String] = []
 
   /// The type of artifact that this represents.
   public var type: LLBBuildSystemProtocol.LLBArtifactType = .file
@@ -117,7 +118,7 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
     5: .same(proto: "derived"),
     6: .same(proto: "derivedStatic"),
     2: .same(proto: "shortPath"),
-    3: .same(proto: "root"),
+    3: .same(proto: "roots"),
     4: .same(proto: "type"),
   ]
 
@@ -133,7 +134,7 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.originType = .source(v)}
       case 2: try decoder.decodeSingularStringField(value: &self.shortPath)
-      case 3: try decoder.decodeSingularStringField(value: &self.root)
+      case 3: try decoder.decodeRepeatedStringField(value: &self.roots)
       case 4: try decoder.decodeSingularEnumField(value: &self.type)
       case 5:
         var v: LLBArtifactOwner?
@@ -163,8 +164,8 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
     if !self.shortPath.isEmpty {
       try visitor.visitSingularStringField(value: self.shortPath, fieldNumber: 2)
     }
-    if !self.root.isEmpty {
-      try visitor.visitSingularStringField(value: self.root, fieldNumber: 3)
+    if !self.roots.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.roots, fieldNumber: 3)
     }
     if self.type != .file {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 4)
@@ -183,7 +184,7 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
   public static func ==(lhs: Artifact, rhs: Artifact) -> Bool {
     if lhs.originType != rhs.originType {return false}
     if lhs.shortPath != rhs.shortPath {return false}
-    if lhs.root != rhs.root {return false}
+    if lhs.roots != rhs.roots {return false}
     if lhs.type != rhs.type {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

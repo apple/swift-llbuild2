@@ -54,6 +54,9 @@ public struct ConfigurationValue {
 
   public var fragments: [LLBAnyCodable] = []
 
+  /// Contains a hash of the fragments that can be used as a root for derived artifacts.
+  public var root: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -94,12 +97,14 @@ extension ConfigurationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
   public static let protoMessageName: String = "ConfigurationValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "fragments"),
+    2: .same(proto: "root"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeRepeatedMessageField(value: &self.fragments)
+      case 2: try decoder.decodeSingularStringField(value: &self.root)
       default: break
       }
     }
@@ -109,11 +114,15 @@ extension ConfigurationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
     if !self.fragments.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.fragments, fieldNumber: 1)
     }
+    if !self.root.isEmpty {
+      try visitor.visitSingularStringField(value: self.root, fieldNumber: 2)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: ConfigurationValue, rhs: ConfigurationValue) -> Bool {
     if lhs.fragments != rhs.fragments {return false}
+    if lhs.root != rhs.root {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

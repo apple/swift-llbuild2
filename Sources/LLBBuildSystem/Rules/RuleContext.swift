@@ -68,23 +68,17 @@ public class RuleContext {
     /// Declares an output artifact from the target. If another artifact was declared with the same path, the same
     /// artifact instance will be returned (i.e. it is free to declare the same artifact path anywhere in the rule).
     public func declareArtifact(_ path: String) throws -> Artifact {
-        return try queue.sync {
-            if let artifact = declaredArtifacts[path] {
-                guard case .file = artifact.type else {
-                    throw RuleContextError.invalidRedeclarationOfArtifact
-                }
-                return artifact
-            }
-            let artifact = Artifact.derivedUninitialized(shortPath: path, root: label.asRoot)
-            declaredArtifacts[path] = artifact
-            return artifact
-        }
+        return try self.declareArtifact(path, type: .file)
     }
 
     /// Declares an output directory artifact from the target. If another artifact was declared with the same path, the
     /// same artifact instance will be returned (i.e. it is free to declare the same artifact path anywhere in the rule
     /// ).
     public func declareDirectoryArtifact(_ path: String) throws -> Artifact {
+        return try self.declareArtifact(path, type: .directory)
+    }
+
+    private func declareArtifact(_ path: String, type: LLBArtifactType) throws -> Artifact {
         return try queue.sync {
             if let artifact = declaredArtifacts[path] {
                 guard case .directory = artifact.type else {
@@ -92,7 +86,24 @@ public class RuleContext {
                 }
                 return artifact
             }
-            let artifact = Artifact.derivedUninitializedDirectory(shortPath: path, root: label.asRoot)
+
+            let roots: [String]
+            if configurationValue.root.isEmpty {
+                roots = [label.asRoot]
+            } else {
+                roots = [configurationValue.root, label.asRoot]
+            }
+
+            let artifact: Artifact
+            switch type {
+            case .directory:
+                artifact = Artifact.derivedUninitializedDirectory(shortPath: path, roots: roots)
+            case .file:
+                artifact = Artifact.derivedUninitialized(shortPath: path, roots: roots)
+            default:
+                fatalError("No paths should lead to here")
+            }
+
             declaredArtifacts[path] = artifact
             return artifact
         }

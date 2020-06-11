@@ -23,4 +23,7 @@ message ConfigurationKey {
 // available at rule evaluation time from the rule context.
 message ConfigurationValue {
     repeated LLBAnyCodable fragments = 1;
+
+    // Contains a hash of the fragments that can be used as a root for derived artifacts.
+    string root = 2;
 }

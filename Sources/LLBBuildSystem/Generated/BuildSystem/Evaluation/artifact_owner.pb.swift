@@ -30,39 +30,6 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-public struct ArtifactOwnerKey {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  public var artifactOwnerID: LLBCAS.LLBDataID {
-    get {return _artifactOwnerID ?? LLBCAS.LLBDataID()}
-    set {_artifactOwnerID = newValue}
-  }
-  /// Returns true if `artifactOwnerID` has been explicitly set.
-  public var hasArtifactOwnerID: Bool {return self._artifactOwnerID != nil}
-  /// Clears the value of `artifactOwnerID`. Subsequent reads from it will return its default value.
-  public mutating func clearArtifactOwnerID() {self._artifactOwnerID = nil}
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-
-  fileprivate var _artifactOwnerID: LLBCAS.LLBDataID? = nil
-}
-
-public struct ArtifactOwnerValue {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  public var actionIds: [LLBCAS.LLBDataID] = []
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-}
-
 /// An ArtifactOwner contains the reference to the action that generates an artifact, effectively providing the link
 /// between artifacts and actions that make up the action graph.
 public struct LLBArtifactOwner {
@@ -95,64 +62,6 @@ public struct LLBArtifactOwner {
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
-
-extension ArtifactOwnerKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ArtifactOwnerKey"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "artifactOwnerID"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._artifactOwnerID)
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._artifactOwnerID {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: ArtifactOwnerKey, rhs: ArtifactOwnerKey) -> Bool {
-    if lhs._artifactOwnerID != rhs._artifactOwnerID {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension ArtifactOwnerValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ArtifactOwnerValue"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "actionIDs"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.actionIds)
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.actionIds.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.actionIds, fieldNumber: 1)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: ArtifactOwnerValue, rhs: ArtifactOwnerValue) -> Bool {
-    if lhs.actionIds != rhs.actionIds {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
 
 extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = "LLBArtifactOwner"

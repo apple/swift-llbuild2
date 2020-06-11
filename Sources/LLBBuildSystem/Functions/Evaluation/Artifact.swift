@@ -16,50 +16,41 @@ extension ArtifactValue: LLBBuildValue {}
 /// Convenience initializer.
 public extension Artifact {
     /// Returns a source artifact with a reference to the data ID containing artifact's contents.
-    static func source(shortPath: String, root: String? = nil, dataID: LLBDataID) -> Artifact {
+    static func source(shortPath: String, roots: [String] = [], dataID: LLBDataID) -> Artifact {
         return Artifact.with {
             $0.originType = .source(dataID)
             $0.shortPath = shortPath
             $0.type = .file
-
-            if let root = root {
-                $0.root = root
-            }
+            $0.roots = roots
         }
     }
 
     /// Returns a derived artifact that doesn't have any artifact owner information configured.
-    static func derivedUninitialized(shortPath: String, root: String? = nil) -> Artifact {
+    static func derivedUninitialized(shortPath: String, roots: [String] = []) -> Artifact {
         return Artifact.with {
             $0.originType = nil
             $0.shortPath = shortPath
             $0.type = .file
-
-            if let root = root {
-                $0.root = root
-            }
+            $0.roots = roots
         }
     }
 
     /// Returns a derived artifact that doesn't have any artifact owner information configured.
-    static func derivedUninitializedDirectory(shortPath: String, root: String? = nil) -> Artifact {
+    static func derivedUninitializedDirectory(shortPath: String, roots: [String] = []) -> Artifact {
         return Artifact.with {
             $0.originType = nil
             $0.shortPath = shortPath
             $0.type = .directory
-
-            if let root = root {
-                $0.root = root
-            }
+            $0.roots = roots
         }
     }
 
     /// Returns the full path for the artifact, including the root.
     var path: String {
-        if root.isEmpty {
+        if roots.isEmpty {
             return shortPath
         } else {
-            return [root, shortPath].joined(separator: "/")
+            return (roots + [shortPath]).joined(separator: "/")
         }
     }
 
