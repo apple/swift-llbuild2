@@ -2040,7 +2040,8 @@ public struct Build_Bazel_Remote_Execution_V2_ActionCacheUpdateCapabilities {
 }
 
 /// Allowed values for priority in
-/// [ResultsCachePolicy][google.devtools.remoteexecution.v2.ResultsCachePolicy]
+/// [ResultsCachePolicy][build.bazel.remoteexecution.v2.ResultsCachePolicy] and
+/// [ExecutionPolicy][build.bazel.remoteexecution.v2.ResultsCachePolicy]
 /// Used for querying both cache and execution valid priority ranges.
 public struct Build_Bazel_Remote_Execution_V2_PriorityCapabilities {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -2057,8 +2058,12 @@ public struct Build_Bazel_Remote_Execution_V2_PriorityCapabilities {
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
+    /// The minimum numeric value for this priority range, which represents the
+    /// most urgent task or longest retained item.
     public var minPriority: Int32 = 0
 
+    /// The maximum numeric value for this priority range, which represents the
+    /// least urgent task or shortest retained item.
     public var maxPriority: Int32 = 0
 
     public var unknownFields = SwiftProtobuf.UnknownStorage()
