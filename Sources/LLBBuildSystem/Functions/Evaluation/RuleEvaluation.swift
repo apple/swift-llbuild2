@@ -9,21 +9,29 @@
 import llbuild2
 import LLBBuildSystemProtocol
 
-extension RuleEvaluationKey: LLBBuildKey {}
+extension RuleEvaluationKeyID: LLBBuildKey {}
+extension RuleEvaluationKey: LLBSerializable {}
 extension RuleEvaluationValue: LLBBuildValue {}
+
+extension RuleEvaluationKeyID {
+    init(ruleEvaluationKeyID: LLBDataID) {
+        self.ruleEvaluationKeyID = ruleEvaluationKeyID
+    }
+}
 
 // Convenience initializer.
 extension RuleEvaluationKey {
-    init(label: Label, configuredTargetID: LLBDataID, configurationKey: ConfigurationKey? = nil) {
+    init(label: Label, configuredTargetValue: ConfiguredTargetValue, configurationKey: ConfigurationKey? = nil) {
         self.label = label
-        self.configuredTargetID = configuredTargetID
+        self.configuredTargetValue = configuredTargetValue
         self.configurationKey = configurationKey ?? ConfigurationKey()
     }
 }
 
 // Convenience initializer.
 extension RuleEvaluationValue {
-    init(providerMap: LLBProviderMap) {
+    init(actionIDs: [LLBDataID], providerMap: LLBProviderMap) {
+        self.actionIds = actionIDs
         self.providerMap = providerMap
     }
 }
@@ -32,8 +40,8 @@ public enum RuleEvaluationError: Error {
     /// Error thrown when no rule lookup delegate is specified.
     case noRuleLookupDelegate
 
-    /// Error thrown when deserialization of the configured target failed.
-    case configuredTargetDeserializationError
+    /// Error thrown when deserialization of the rule evaluatio key failed.
+    case ruleEvaluationKeyDeserializationError
 
     /// Error thrown if no rule was found for evaluating a configured target.
     case ruleNotFound
@@ -45,7 +53,7 @@ public enum RuleEvaluationError: Error {
     case unassignedOutput(Artifact)
 }
 
-final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEvaluationValue> {
+final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKeyID, RuleEvaluationValue> {
     let ruleLookupDelegate: LLBRuleLookupDelegate?
 
     init(engineContext: LLBBuildEngineContext, ruleLookupDelegate: LLBRuleLookupDelegate?) {
@@ -53,61 +61,48 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
         super.init(engineContext: engineContext)
     }
 
-    override func evaluate(key: RuleEvaluationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<RuleEvaluationValue> {
+    override func evaluate(key: RuleEvaluationKeyID, _ fi: LLBBuildFunctionInterface) -> LLBFuture<RuleEvaluationValue> {
         guard let ruleLookupDelegate = ruleLookupDelegate else {
             return fi.group.next().makeFailedFuture(RuleEvaluationError.noRuleLookupDelegate)
         }
 
-        let configurationFuture: LLBFuture<ConfigurationValue> = fi.request(key.configurationKey)
-
-        // Read the ConfiguredTargetValue from the database.
-        return engineContext.db.get(key.configuredTargetID).flatMapThrowing { (object: LLBCASObject?) in
+        return engineContext.db.get(key.ruleEvaluationKeyID).flatMapThrowing { (object: LLBCASObject?) -> RuleEvaluationKey in
             guard let data = object?.data,
-                  let configuredTargetValue = try? ConfiguredTargetValue(from: data) else {
-                throw RuleEvaluationError.configuredTargetDeserializationError
+                  let ruleEvaluationKey = try? RuleEvaluationKey(from: data) else {
+                throw RuleEvaluationError.ruleEvaluationKeyDeserializationError
             }
 
-            // Return the decoded ConfiguredTarget.
-            return try configuredTargetValue.configuredTarget()
-        }.and(configurationFuture).flatMap { (configuredTarget: ConfiguredTarget, configurationValue: ConfigurationValue) in
+            return ruleEvaluationKey
+        }.flatMap { ruleEvaluationKey in
+
+
+            let configurationFuture: LLBFuture<ConfigurationValue> = fi.request(ruleEvaluationKey.configurationKey)
+            return configurationFuture.map { (ruleEvaluationKey, $0) }
+        }.flatMap { (ruleEvaluationKey: RuleEvaluationKey, configurationValue: ConfigurationValue) in
+            let configuredTarget: ConfiguredTarget
+            do {
+                configuredTarget = try ruleEvaluationKey.configuredTargetValue.configuredTarget()
+            } catch {
+                return fi.group.next().makeFailedFuture(error)
+            }
             guard let rule = ruleLookupDelegate.rule(for: type(of: configuredTarget)) else {
                 return fi.group.next().makeFailedFuture(RuleEvaluationError.ruleNotFound)
             }
 
-            let ruleContext = RuleContext(group: fi.group, label: key.label, configurationValue: configurationValue)
+            let ruleContext = RuleContext(
+                group: fi.group,
+                label: ruleEvaluationKey.label,
+                configurationValue: configurationValue,
+                artifactOwnerID: key.ruleEvaluationKeyID
+            )
 
-            let providersFuture: LLBFuture<[LLBProvider]>
+            let providersFuture: LLBFuture<([LLBDataID], [LLBProvider])>
             do {
                 // Evaluate the rule with the configured target.
                 providersFuture = try rule.compute(configuredTarget: configuredTarget, ruleContext).flatMap { providers in
-                    let actionKeyFutures: [LLBFuture<LLBDataID>]
-                    do {
-                        // Store the action keys in the CAS
-                        actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
-                            self.engineContext.db.put(data: try actionKey.toBytes())
-                        }
-                    } catch {
-                        return fi.group.next().makeFailedFuture(error)
-                    }
-
-                    let actionKeysFuture: LLBFuture<Void> = LLBFuture.whenAllSucceed(actionKeyFutures, on: fi.group.next()).flatMapThrowing { actionKeyIDs in
-                        // Associate the actionKey dataIDs to the artifacts that they produce.
-                        for (path, actionOutputIndex) in ruleContext.artifactActionMap {
-                            guard let artifact = ruleContext.declaredArtifacts[path],
-                                  artifact.originType == nil else {
-                                throw RuleEvaluationError.artifactAlreadyInitialized
-                            }
-
-                            let artifactOwner = LLBArtifactOwner(
-                                actionID: actionKeyIDs[actionOutputIndex.actionIndex],
-                                outputIndex: Int32(actionOutputIndex.outputIndex)
-                            )
-                            artifact.updateOwner(owner: artifactOwner)
-                        }
-                    }
-
                     // Upload the static write contents directly into the CAS and associate the dataIDs to the
-                    // artifacts.
+                    // artifacts. This needs to happen before we serialize the actions, otherwise we risk actions
+                    // serializing artifacts that have not yet been updated to contain origin reference.
                     let staticWritesFutures: [LLBFuture<Void>] = ruleContext.staticWriteActions.map { (path, contents) in
                         self.engineContext.db.put(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(contents))).flatMapThrowing { dataID in
                             guard let artifact = ruleContext.declaredArtifacts[path],
@@ -117,26 +112,39 @@ final class RuleEvaluationFunction: LLBBuildFunction<RuleEvaluationKey, RuleEval
                             artifact.updateID(dataID: dataID)
                         }
                     }
-                    let staticWritesFuture = LLBFuture.whenAllSucceed(staticWritesFutures, on: fi.group.next())
-
-                    return actionKeysFuture.and(staticWritesFuture).map { _ in providers }
-                }.flatMapThrowing { (providers: [LLBProvider]) in
-                    // Ensure all artifacts have been associated to an action.
-                    for artifact in ruleContext.declaredArtifacts.values {
-                        guard artifact.originType != nil else {
-                            throw RuleEvaluationError.unassignedOutput(artifact)
+                    let actionKeysFuture: LLBFuture<[LLBDataID]> = LLBFuture.whenAllSucceed(staticWritesFutures, on: fi.group.next()).flatMapThrowing { _ in
+                        // Ensure all artifacts have been updated to contain an origin reference, before the actions
+                        // are serialized but after static writes have been uploaded.
+                        for artifact in ruleContext.declaredArtifacts.values {
+                            guard artifact.originType != nil else {
+                                throw RuleEvaluationError.unassignedOutput(artifact)
+                            }
                         }
+                    }.flatMap { _ in
+                        let actionKeyFutures: [LLBFuture<LLBDataID>]
+                        do {
+                            // Store the action keys in the CAS
+                            actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
+                                self.engineContext.db.put(data: try actionKey.toBytes())
+                            }
+                        } catch {
+                            return fi.group.next().makeFailedFuture(error)
+                        }
+
+                        return LLBFuture.whenAllSucceed(actionKeyFutures, on: fi.group.next())
                     }
 
-                    return providers
+                    return actionKeysFuture.flatMapThrowing { actionIDs in
+                        return (actionIDs, providers)
+                    }
                 }
             } catch {
                 return fi.group.next().makeFailedFuture(error)
             }
 
             return providersFuture
-        }.flatMapThrowing { (providers: [LLBProvider]) in
-            try RuleEvaluationValue(providerMap: LLBProviderMap(providers: providers))
+        }.flatMapThrowing { (actionIDs: [LLBDataID], providers: [LLBProvider]) in
+            try RuleEvaluationValue(actionIDs: actionIDs, providerMap: LLBProviderMap(providers: providers))
         }
     }
 }

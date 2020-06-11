@@ -10,13 +10,17 @@ syntax = "proto3";
 
 import "CASProtocol/data_id.proto";
 
-/// An ArtifactOwner contains the reference to the action that generates an artifact, effectively providing the link
-/// between artifacts and actions that make up the action graph.
+// An ArtifactOwner contains the reference to the action that generates an artifact, effectively providing the link
+// between artifacts and actions that make up the action graph.
 message LLBArtifactOwner {
 
-    /// The dataID that contains the actionKey that produces this artifact.
-    LLBDataID actionID = 1;
+    // The dataID that contains the list of actions where the artifact owner action resides. This corresponds to a
+    // dataID that can be used in a RuleEvaluationKeyID to obtain the list of actions.
+    LLBDataID actionsOwner = 1;
 
-    /// The index of the artifact in the list of outputs.
-    int32 outputIndex = 2;
+    // The index of the action in the action list.
+    int32 actionIndex = 2;
+
+    // The index of the artifact in the list of outputs.
+    int32 outputIndex = 3;
 }

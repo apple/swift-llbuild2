@@ -108,13 +108,13 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
             let output = try ruleContext.declareDirectoryArtifact("output")
 
             try ruleContext.registerAction(
-                arguments: ["/bin/bash", "-c", "echo I cant breathe > \(directory1.path)/file1.txt"],
+                arguments: ["/bin/bash", "-c", "mkdir -p \(directory1.path); echo I cant breathe > \(directory1.path)/file1.txt"],
                 inputs: [],
                 outputs: [directory1]
             )
 
             try ruleContext.registerAction(
-                arguments: ["/bin/bash", "-c", "echo black lives matter > \(directory2.path)/file2.txt"],
+                arguments: ["/bin/bash", "-c", "mkdir -p \(directory2.path); echo black lives matter > \(directory2.path)/file2.txt"],
                 inputs: [],
                 outputs: [directory2]
             )
@@ -361,30 +361,55 @@ class RuleEvaluationTests: XCTestCase {
         }
     }
 
-//    func testRuleEvaluationTreeMerge() throws {
-//        try withTemporaryDirectory { tempDir in
-//            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-//
-//            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
-//            let ruleLookupDelegate = DummyRuleLookupDelegate()
-//            let testEngine = LLBTestBuildEngine(
-//                configuredTargetDelegate: configuredTargetDelegate,
-//                ruleLookupDelegate: ruleLookupDelegate
-//            )
-//
-//            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
-//
-//            let label = try Label("//some:tree_merge")
-//            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
-//
-//            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
-//
-//            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
-//
-//            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
-//
-//            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
-//            XCTFail("finish this test")
-//        }
-//    }
+    func testRuleEvaluationTreeMerge() throws {
+        try withTemporaryDirectory { tempDir in
+            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+
+            let localExecutor = LLBLocalExecutor(outputBase: tempDir)
+            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let testEngine = LLBTestBuildEngine(
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate,
+                executor: localExecutor
+            )
+
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+
+            let label = try Label("//some:tree_merge")
+            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+
+            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+
+            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+
+            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
+
+            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+
+            let client = LLBCASFSClient(testEngine.testDB)
+
+            // FIXME: There should be an easier way to read files from a CASFileTree, perhaps using a CAS based
+            // FileSystem protocol implementation?
+            let (file1Contents, file2Contents): (String, String) = try client.load(artifactValue.dataID).flatMap { node in
+                let tree = node.tree!
+                let file1Contents = client.load(try! XCTUnwrap(tree.lookup("directory1")).id).flatMap { node -> LLBFuture<String> in
+                    let tree = node.tree!
+                    return client.load(try! XCTUnwrap(tree.lookup("file1.txt")).id).flatMap { node in
+                        return node.blob!.read().map { String(data: Data($0), encoding: .utf8)! }
+                    }
+                }
+                let file2Contents = client.load(try! XCTUnwrap(tree.lookup("directory2")).id).flatMap { node -> LLBFuture<String> in
+                    let tree = node.tree!
+                    return client.load(try! XCTUnwrap(tree.lookup("file2.txt")).id).flatMap { node in
+                        return node.blob!.read().map { String(data: Data($0), encoding: .utf8)! }
+                    }
+                }
+                return file1Contents.and(file2Contents)
+            }.wait()
+
+            XCTAssertEqual(file1Contents, "I cant breathe\n")
+            XCTAssertEqual(file2Contents, "black lives matter\n")
+        }
+    }
 }

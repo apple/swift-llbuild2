@@ -31,9 +31,6 @@ public class RuleContext {
     // on the rule evaluation context.
     var declaredArtifacts = [String: Artifact]()
 
-    // Map of declared short path to
-    var artifactActionMap = [String: ActionOutputIndex]()
-
     // List of registered actions.
     var registeredActions = [ActionKey]()
 
@@ -45,10 +42,14 @@ public class RuleContext {
 
     private let configurationValue: ConfigurationValue
 
-    init(group: LLBFuturesDispatchGroup, label: Label, configurationValue: ConfigurationValue) {
+    // Private reference to the artifact owner ID to associate in ArtifactOwners.
+    private let artifactOwnerID: LLBDataID
+
+    init(group: LLBFuturesDispatchGroup, label: Label, configurationValue: ConfigurationValue, artifactOwnerID: LLBDataID) {
         self.group = group
         self.label = label
         self.configurationValue = configurationValue
+        self.artifactOwnerID = artifactOwnerID
     }
 
     /// Returns a the requested configuration fragment if available on the configuration, or nil otherwise.
@@ -115,8 +116,7 @@ public class RuleContext {
             // slow, we can store more runtime info and validate after rule evaluation is done.
             for output in outputs {
                 guard output.originType == nil,
-                      declaredArtifacts[output.shortPath] == output,
-                      artifactActionMap[output.shortPath] == nil else {
+                      declaredArtifacts[output.shortPath] == output else {
                     throw RuleContextError.outputAlreadyRegistered
                 }
             }
@@ -139,7 +139,13 @@ public class RuleContext {
 
             // Mark each of the outputs with the action and output index they were registered with.
             for (index, output) in outputs.enumerated() {
-                artifactActionMap[output.shortPath] = ActionOutputIndex(actionIndex: actionIndex, outputIndex: index)
+                output.updateOwner(
+                    owner: LLBArtifactOwner(
+                        actionsOwner: artifactOwnerID,
+                        actionIndex: Int32(actionIndex),
+                        outputIndex: Int32(index)
+                    )
+                )
             }
         }
     }
@@ -148,8 +154,7 @@ public class RuleContext {
     public func registerMergeDirectories(_ inputs: [(artifact: Artifact, path: String?)], output: Artifact) throws {
         try queue.sync {
             guard output.originType == nil,
-                  declaredArtifacts[output.shortPath] == output,
-                  artifactActionMap[output.shortPath] == nil else {
+                  declaredArtifacts[output.shortPath] == output else {
                 throw RuleContextError.outputAlreadyRegistered
             }
 
@@ -158,7 +163,13 @@ public class RuleContext {
             registeredActions.append(actionKey)
             let actionIndex = registeredActions.count - 1
 
-            artifactActionMap[output.shortPath] = ActionOutputIndex(actionIndex: actionIndex, outputIndex: 0)
+            output.updateOwner(
+                owner: LLBArtifactOwner(
+                    actionsOwner: artifactOwnerID,
+                    actionIndex: Int32(actionIndex),
+                    outputIndex: 0
+                )
+            )
         }
     }
 

@@ -11,7 +11,6 @@ import LLBCAS
 import LLBBuildSystemProtocol
 
 extension ActionKey: LLBBuildKey {}
-
 extension ActionValue: LLBBuildValue {}
 
 /// Convenience initializer.

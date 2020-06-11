@@ -28,21 +28,21 @@ extension EvaluatedTargetValue {
 final class EvaluatedTargetFunction: LLBBuildFunction<EvaluatedTargetKey, EvaluatedTargetValue> {
     override func evaluate(key: EvaluatedTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<EvaluatedTargetValue> {
         return fi.request(key.configuredTargetKey).flatMap { (configuredTargetValue: ConfiguredTargetValue) in
-            // Request the configured target value and upload it to the CAS.
+            let ruleEvaluationKey = RuleEvaluationKey(
+                label: key.configuredTargetKey.label,
+                configuredTargetValue: configuredTargetValue,
+                configurationKey: key.configuredTargetKey.configurationKey
+            )
+
+            // Upload the rule evaluation key to the CAS and get the dataID.
             do {
-                let byteBuffer = try configuredTargetValue.toBytes()
+                let byteBuffer = try ruleEvaluationKey.toBytes()
                 return self.engineContext.db.put(data: byteBuffer)
             } catch {
                 return fi.group.next().makeFailedFuture(error)
             }
-        }.flatMap { (configuredTargetID: LLBDataID) in
-            // With the dataID for the configured target value, request the evaluation of the rule for that target.
-            let ruleEvaluationKey = RuleEvaluationKey(
-                label: key.configuredTargetKey.label,
-                configuredTargetID: configuredTargetID,
-                configurationKey: key.configuredTargetKey.configurationKey
-            )
-            return fi.request(ruleEvaluationKey)
+        }.flatMap { dataID in
+            return fi.request(RuleEvaluationKeyID(ruleEvaluationKeyID: dataID))
         }.map { (ruleEvaluationValue: RuleEvaluationValue) in
             // Retrieve the RuleEvaluationValue's provider map and return it as the EvaluatedTargetValue.
             return EvaluatedTargetValue(providerMap: ruleEvaluationValue.providerMap)

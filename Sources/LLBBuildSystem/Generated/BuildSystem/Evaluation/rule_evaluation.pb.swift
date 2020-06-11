@@ -30,18 +30,47 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// A RuleEvaluationKey represents the evaluation of the rule for a particular configured target. The evaluation of a
-//// rule results in a list of providers which represent the interface that a configured target offers to dependencies.
-//// This is different from EvaluatedTargetKey in that it is a scoped down version of evaluation, since it does not
-//// require the presence of the rootID field, which effectively changes with any change in the workspace. The digest of
-//// a RuleEvaluationKey should be stable to the _contents_ of a configured target. This means that if a source file
-//// changed, it should not invalidate the cache of a RuleEvaluationKey.
+/// The reference to a rule evaluation key. This is used for 2 purposes: to avoid having a large rule evaluation key
+/// since the configured target might be large in size (potentially avoidable with proper CAS architecture) and to use
+/// as a reference for artifact ownership. Artifacts then get a reference to the rule evaluation that registered them in
+/// order to find the action that generates it. Initially this was solved by uploading the action itself into the CAS and
+/// having the artifact ownership point to that, but there was a cycle issue when uploading the action keys as some input
+/// artifacts had not been updated yet. With this approach, artifacts get the ownership during action registration,
+/// avoiding that particular issue.
+public struct RuleEvaluationKeyID {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The data ID for the rule evaluation key.
+  public var ruleEvaluationKeyID: LLBCAS.LLBDataID {
+    get {return _ruleEvaluationKeyID ?? LLBCAS.LLBDataID()}
+    set {_ruleEvaluationKeyID = newValue}
+  }
+  /// Returns true if `ruleEvaluationKeyID` has been explicitly set.
+  public var hasRuleEvaluationKeyID: Bool {return self._ruleEvaluationKeyID != nil}
+  /// Clears the value of `ruleEvaluationKeyID`. Subsequent reads from it will return its default value.
+  public mutating func clearRuleEvaluationKeyID() {self._ruleEvaluationKeyID = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _ruleEvaluationKeyID: LLBCAS.LLBDataID? = nil
+}
+
+/// A RuleEvaluationKey represents the evaluation of the rule for a particular configured target. The evaluation of a
+/// rule results in a list of providers which represent the interface that a configured target offers to dependencies.
+/// This is different from EvaluatedTargetKey in that it is a scoped down version of evaluation, since it does not
+/// require the presence of the rootID field, which effectively changes with any change in the workspace. The digest of
+/// a RuleEvaluationKey should be stable to the _contents_ of a configured target. This means that if a source file
+/// changed, it should not invalidate the cache of a RuleEvaluationKey.
 public struct RuleEvaluationKey {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The label for the configured target being evaluated.
+  /// The label for the configured target being evaluated.
   public var label: Label {
     get {return _label ?? Label()}
     set {_label = newValue}
@@ -51,17 +80,15 @@ public struct RuleEvaluationKey {
   /// Clears the value of `label`. Subsequent reads from it will return its default value.
   public mutating func clearLabel() {self._label = nil}
 
-  //// A dataID representing the contents of a ConfigurationTarget. ConfiguredTargets may be quite large depending on
-  //// the number of dependencies and how providers are used. Instead of using the ConfiguredTargetValue in the key,
-  //// we store the contents in the CAS and retrieve it using this ID.
-  public var configuredTargetID: LLBCAS.LLBDataID {
-    get {return _configuredTargetID ?? LLBCAS.LLBDataID()}
-    set {_configuredTargetID = newValue}
+  /// The configured target value to evaluate in the rule.
+  public var configuredTargetValue: ConfiguredTargetValue {
+    get {return _configuredTargetValue ?? ConfiguredTargetValue()}
+    set {_configuredTargetValue = newValue}
   }
-  /// Returns true if `configuredTargetID` has been explicitly set.
-  public var hasConfiguredTargetID: Bool {return self._configuredTargetID != nil}
-  /// Clears the value of `configuredTargetID`. Subsequent reads from it will return its default value.
-  public mutating func clearConfiguredTargetID() {self._configuredTargetID = nil}
+  /// Returns true if `configuredTargetValue` has been explicitly set.
+  public var hasConfiguredTargetValue: Bool {return self._configuredTargetValue != nil}
+  /// Clears the value of `configuredTargetValue`. Subsequent reads from it will return its default value.
+  public mutating func clearConfiguredTargetValue() {self._configuredTargetValue = nil}
 
   /// The configuration key under which this should be evaluated under. The ConfigurationValue fragments will be made
   /// available in the rule context.
@@ -79,17 +106,20 @@ public struct RuleEvaluationKey {
   public init() {}
 
   fileprivate var _label: Label? = nil
-  fileprivate var _configuredTargetID: LLBCAS.LLBDataID? = nil
+  fileprivate var _configuredTargetValue: ConfiguredTargetValue? = nil
   fileprivate var _configurationKey: ConfigurationKey? = nil
 }
 
-//// The result of evaluating a configured target under a rule.
+/// The result of evaluating a configured target under a rule.
 public struct RuleEvaluationValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The providers returned by the evaluation of the rule
+  /// The list of IDs that correspond to ActionKeys in the CAS.
+  public var actionIds: [LLBCAS.LLBDataID] = []
+
+  /// The providers returned by the evaluation of the rule
   public var providerMap: LLBProviderMap {
     get {return _providerMap ?? LLBProviderMap()}
     set {_providerMap = newValue}
@@ -108,11 +138,40 @@ public struct RuleEvaluationValue {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
+extension RuleEvaluationKeyID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "RuleEvaluationKeyID"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "ruleEvaluationKeyID"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularMessageField(value: &self._ruleEvaluationKeyID)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if let v = self._ruleEvaluationKeyID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: RuleEvaluationKeyID, rhs: RuleEvaluationKeyID) -> Bool {
+    if lhs._ruleEvaluationKeyID != rhs._ruleEvaluationKeyID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = "RuleEvaluationKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "label"),
-    2: .same(proto: "configuredTargetID"),
+    2: .same(proto: "configuredTargetValue"),
     3: .same(proto: "configurationKey"),
   ]
 
@@ -120,7 +179,7 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try decoder.decodeSingularMessageField(value: &self._label)
-      case 2: try decoder.decodeSingularMessageField(value: &self._configuredTargetID)
+      case 2: try decoder.decodeSingularMessageField(value: &self._configuredTargetValue)
       case 3: try decoder.decodeSingularMessageField(value: &self._configurationKey)
       default: break
       }
@@ -131,7 +190,7 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     if let v = self._label {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     }
-    if let v = self._configuredTargetID {
+    if let v = self._configuredTargetValue {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
     if let v = self._configurationKey {
@@ -142,7 +201,7 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 
   public static func ==(lhs: RuleEvaluationKey, rhs: RuleEvaluationKey) -> Bool {
     if lhs._label != rhs._label {return false}
-    if lhs._configuredTargetID != rhs._configuredTargetID {return false}
+    if lhs._configuredTargetValue != rhs._configuredTargetValue {return false}
     if lhs._configurationKey != rhs._configurationKey {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -152,26 +211,32 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 extension RuleEvaluationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = "RuleEvaluationValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "providerMap"),
+    1: .same(proto: "actionIDs"),
+    2: .same(proto: "providerMap"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._providerMap)
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.actionIds)
+      case 2: try decoder.decodeSingularMessageField(value: &self._providerMap)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.actionIds.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.actionIds, fieldNumber: 1)
+    }
     if let v = self._providerMap {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: RuleEvaluationValue, rhs: RuleEvaluationValue) -> Bool {
+    if lhs.actionIds != rhs.actionIds {return false}
     if lhs._providerMap != rhs._providerMap {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
