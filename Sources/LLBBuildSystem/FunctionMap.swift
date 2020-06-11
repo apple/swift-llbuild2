@@ -24,7 +24,7 @@ class LLBBuildFunctionMap {
                 configuredTargetDelegate: configuredTargetDelegate
             ),
             EvaluatedTargetKey.identifier: EvaluatedTargetFunction(engineContext: engineContext),
-            RuleEvaluationKey.identifier: RuleEvaluationFunction(
+            RuleEvaluationKeyID.identifier: RuleEvaluationFunction(
                 engineContext: engineContext,
                 ruleLookupDelegate: ruleLookupDelegate
             ),

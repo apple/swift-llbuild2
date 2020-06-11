@@ -80,10 +80,12 @@ extension Artifact {
     }
 }
 
+/// Convenience initializer.
 public extension LLBArtifactOwner {
-    init(actionID: LLBDataID, outputIndex: Int32) {
+    init(actionsOwner: LLBDataID, actionIndex: Int32, outputIndex: Int32) {
         self = Self.with {
-            $0.actionID = actionID
+            $0.actionsOwner = actionsOwner
+            $0.actionIndex = actionIndex
             $0.outputIndex = outputIndex
         }
     }
@@ -124,9 +126,11 @@ final class ArtifactFunction: LLBBuildFunction<Artifact, ArtifactValue> {
 
         // Request the ActionKey, then request its ActionValue and retrieve the data ID from the ActionValue to
         // associate to this artifact.
-        return fi.request(ActionIDKey(dataID: artifactOwner.actionID)).flatMap { (actionKey: ActionKey) -> LLBFuture<ActionValue> in
+        return fi.request(RuleEvaluationKeyID(ruleEvaluationKeyID: artifactOwner.actionsOwner)).flatMap { (ruleEvaluationValue: RuleEvaluationValue) -> LLBFuture<ActionKey> in
+            return fi.request(ActionIDKey(dataID: ruleEvaluationValue.actionIds[Int(artifactOwner.actionIndex)]))
+        }.flatMap { (actionKey: ActionKey) -> LLBFuture<ActionValue> in
             return fi.request(actionKey)
-        }.flatMapThrowing { actionValue in
+        }.flatMapThrowing { (actionValue: ActionValue) -> ArtifactValue in
             guard actionValue.outputs.count >= artifactOwner.outputIndex + 1 else {
                 throw ArtifactError.actionWithTooFewOutputs
             }

@@ -10,33 +10,48 @@ syntax = "proto3";
 
 import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
+import "BuildSystem/Evaluation/configured_target.proto";
 import "BuildSystem/Evaluation/evaluated_target.proto";
 import "CASProtocol/data_id.proto";
 
-/// A RuleEvaluationKey represents the evaluation of the rule for a particular configured target. The evaluation of a
-/// rule results in a list of providers which represent the interface that a configured target offers to dependencies.
-/// This is different from EvaluatedTargetKey in that it is a scoped down version of evaluation, since it does not
-/// require the presence of the rootID field, which effectively changes with any change in the workspace. The digest of
-/// a RuleEvaluationKey should be stable to the _contents_ of a configured target. This means that if a source file
-/// changed, it should not invalidate the cache of a RuleEvaluationKey.
+// The reference to a rule evaluation key. This is used for 2 purposes: to avoid having a large rule evaluation key
+// since the configured target might be large in size (potentially avoidable with proper CAS architecture) and to use
+// as a reference for artifact ownership. Artifacts then get a reference to the rule evaluation that registered them in
+// order to find the action that generates it. Initially this was solved by uploading the action itself into the CAS and
+// having the artifact ownership point to that, but there was a cycle issue when uploading the action keys as some input
+// artifacts had not been updated yet. With this approach, artifacts get the ownership during action registration,
+// avoiding that particular issue.
+message RuleEvaluationKeyID {
+
+    // The data ID for the rule evaluation key.
+    LLBDataID ruleEvaluationKeyID = 1;
+}
+
+// A RuleEvaluationKey represents the evaluation of the rule for a particular configured target. The evaluation of a
+// rule results in a list of providers which represent the interface that a configured target offers to dependencies.
+// This is different from EvaluatedTargetKey in that it is a scoped down version of evaluation, since it does not
+// require the presence of the rootID field, which effectively changes with any change in the workspace. The digest of
+// a RuleEvaluationKey should be stable to the _contents_ of a configured target. This means that if a source file
+// changed, it should not invalidate the cache of a RuleEvaluationKey.
 message RuleEvaluationKey {
 
-    /// The label for the configured target being evaluated.
+    // The label for the configured target being evaluated.
     Label label = 1;
 
-    /// A dataID representing the contents of a ConfigurationTarget. ConfiguredTargets may be quite large depending on
-    /// the number of dependencies and how providers are used. Instead of using the ConfiguredTargetValue in the key,
-    /// we store the contents in the CAS and retrieve it using this ID.
-    LLBDataID configuredTargetID = 2;
+    // The configured target value to evaluate in the rule.
+    ConfiguredTargetValue configuredTargetValue = 2;
 
     // The configuration key under which this should be evaluated under. The ConfigurationValue fragments will be made
     // available in the rule context.
     ConfigurationKey configurationKey = 3;
 }
 
-/// The result of evaluating a configured target under a rule.
+// The result of evaluating a configured target under a rule.
 message RuleEvaluationValue {
 
-    /// The providers returned by the evaluation of the rule
-    LLBProviderMap providerMap = 1;
+    // The list of IDs that correspond to ActionKeys in the CAS.
+    repeated LLBDataID actionIDs = 1;
+
+    // The providers returned by the evaluation of the rule
+    LLBProviderMap providerMap = 2;
 }
