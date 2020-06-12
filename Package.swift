@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "llbuild2", targets: ["llbuild2"]),
         .library(name: "llbuild2Ninja", targets: ["LLBNinja"]),
         .library(name: "llbuild2BuildSystem", targets: ["LLBBuildSystem"]),
+        .library(name: "llbuild2Util", targets: ["LLBUtil", "LLBBuildSystemUtil"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),

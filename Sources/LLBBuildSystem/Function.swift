@@ -81,6 +81,10 @@ public final class LLBBuildFunctionInterface {
 }
 
 extension LLBBuildFunctionInterface {
+    public func requestArtifact(_ artifact: Artifact) -> LLBFuture<ArtifactValue> {
+        return self.request(artifact, as: ArtifactValue.self).map { $0 }
+    }
+
     public func requestDependency(_ key: ConfiguredTargetKey) -> LLBFuture<LLBProviderMap> {
         let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: key)
         return self.request(evaluatedTargetKey, as: EvaluatedTargetValue.self).map { $0.providerMap }
