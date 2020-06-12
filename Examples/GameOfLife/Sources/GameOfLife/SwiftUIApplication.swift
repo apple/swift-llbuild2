@@ -9,7 +9,8 @@
 import Cocoa
 import SwiftUI
 
-/// Simple application wrapper to create a command line UI application.
+/// Simple application wrapper to create a command line UI application based on the excelent post in
+/// https://www.objc.io/blog/2020/05/19/swiftui-without-an-xcodeproj
 class SwiftUIApplication<V: View, O: ObservableObject>: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var window: NSWindow!
 

@@ -24,4 +24,5 @@ ExternalRepositories
 Packages
 Utilities/tools
 xcuserdata
-
+Examples/*/.build
+Examples/*/.swiftpm
