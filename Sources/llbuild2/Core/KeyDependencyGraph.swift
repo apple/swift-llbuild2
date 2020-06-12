@@ -23,11 +23,15 @@ public class LLBKeyDependencyGraph {
     // they can be useful when debugging.
     private var knownKeys: [Int: LLBKey]
 
-    private let queue = DispatchQueue.global(qos: .userInteractive)
+    private let lock = os_unfair_lock_t.allocate(capacity: 1)
 
     public init() {
         self.edges = [:]
         self.knownKeys = [:]
+    }
+
+    deinit {
+        lock.deallocate()
     }
 
     /// Attempts to add a detected dependency edge to the graph, but throws if a cycle is detected.
@@ -36,35 +40,37 @@ public class LLBKeyDependencyGraph {
         let destinationID = destination.digest.hashValue
 
         // Populate the knownKeys store with the new edge nodes, in case it doesn't exist.
-        queue.sync {
-            if self.knownKeys[originID] == nil {
-                self.knownKeys[originID] = origin
-            }
-            if self.knownKeys[destinationID] == nil {
-                self.knownKeys[destinationID] = destination
-            }
+        os_unfair_lock_lock(lock)
+        if self.knownKeys[originID] == nil {
+            self.knownKeys[originID] = origin
         }
+        if self.knownKeys[destinationID] == nil {
+            self.knownKeys[destinationID] = destination
+        }
+        os_unfair_lock_unlock(lock)
 
         // Check if there's a path from the destination to the origin, as that would be a clear indication that adding
         // the edge from the origin to the destination would introduce a cycle. This works because the graph starts
         // by definition without cycles, so cycles can only be introduced if a new edge would create it.
         if let path = anyPath(from: destinationID, to: originID) {
-            let keyPath = queue.sync { path.map { self.knownKeys[$0]! } }
+            os_unfair_lock_lock(lock)
+            let keyPath = path.map { self.knownKeys[$0]! }
+            os_unfair_lock_unlock(lock)
             throw LLBKeyDependencyGraphError.cycleDetected([origin] + keyPath)
         }
 
-        // Update the edges using the serial queue to avoid race conditions. The fact that this lock is separate from
-        // the lock in anyPath does seem to imply that there could be some race condition where 2 threads might not
-        // find cycles independently when run in parallel but would indeed find one if they were done serially. In
-        // practice, because of the nature of how edges are added (they are not random, but in fact constructed in
-        // dependency order) I _believe_ this should not be a problem. Of course, I could be wrong and someone could
-        // find such an edge case in the wild. But until then, not having the locks mixed seems to make sense to me
-        // from a performance perspective, to avoid unnecessary delays when processing.
-        queue.sync {
-            var destinations = self.edges[originID, default: Set()]
-            destinations.insert(destinationID)
-            self.edges[originID] = destinations
-        }
+        // Update the edges using the lock to avoid race conditions. The fact that this lock is separate from the lock
+        // in anyPath does seem to imply that there could be some race condition where 2 threads might not find cycles
+        // independently when run in parallel but would indeed find one if they were done serially. In practice, because
+        // of the nature of how edges are added (they are not random, but in fact constructed in dependency order) I
+        // _believe_ this should not be a problem. Of course, I could be wrong and someone could find such an edge case
+        // in the wild. But until then, not having the locks mixed seems to make sense to me from a performance
+        // perspective, to avoid unnecessary delays when processing.
+        os_unfair_lock_lock(lock)
+        var destinations = self.edges[originID, default: Set()]
+        destinations.insert(destinationID)
+        self.edges[originID] = destinations
+        os_unfair_lock_unlock(lock)
     }
 
     /// Simple mechanism to find a path between 2 nodes. It doesn't care if its the shortest path, only whether a path
@@ -76,7 +82,9 @@ public class LLBKeyDependencyGraph {
         }
 
         // Make a thread local copy since this method may be invoked from multiple threads.
-        let localEdges = queue.sync { self.edges }
+        os_unfair_lock_lock(lock)
+        let localEdges = self.edges
+        os_unfair_lock_unlock(lock)
 
         // Keeps track of the path between the nodes as it searches through.
         var path = [Int]()
