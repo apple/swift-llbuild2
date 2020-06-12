@@ -60,7 +60,7 @@ struct CellTarget: ConfiguredTarget, Codable {
             )
         }
 
-        let boardSize = try key.configurationKey.get(ConwayConfigurationKey.self).size
+        let boardSize = try key.configurationKey.get(GameOfLifeConfigurationKey.self).size
 
         var dependencyFutures = [LLBFuture<LLBProviderMap>]()
 
@@ -127,7 +127,7 @@ class CellRule: LLBBuildRule<CellTarget> {
         // If the requested generation is 0, read the configuration's initial state and write the artifact statically.
         if configuredTarget.generation == 0 {
             let state: String
-            if try ruleContext.getFragment(ConwayConfigurationFragment.self).initialBoard.isAlive(configuredTarget.position) {
+            if try ruleContext.getFragment(GameOfLifeConfigurationFragment.self).initialBoard.isAlive(configuredTarget.position) {
                 state = "1"
             } else {
                 state = "0"

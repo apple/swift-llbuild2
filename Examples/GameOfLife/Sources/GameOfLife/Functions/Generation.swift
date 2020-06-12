@@ -36,9 +36,9 @@ struct GenerationValue: LLBBuildValue, Codable {
 class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
     override func evaluate(key: GenerationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<GenerationValue> {
         do {
-            // Construct the conway configuration key with the initial board and board size.
+            // Construct the GameOfLife configuration key with the initial board and board size.
             let configurationKey = try ConfigurationKey(
-                fragmentKeys: [ConwayConfigurationKey(initialBoard: key.initialBoard, size: key.size)]
+                fragmentKeys: [GameOfLifeConfigurationKey(initialBoard: key.initialBoard, size: key.size)]
             )
 
             // Request the BoardTarget for the specified generation, with the configuration key.

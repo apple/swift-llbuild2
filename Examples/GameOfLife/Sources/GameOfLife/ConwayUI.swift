@@ -12,7 +12,7 @@ import Dispatch
 import llbuild2
 
 /// Environment object with a reference to the engine and database.
-class ConwayEnvironment: ObservableObject {
+class GameOfLifeEnvironment: ObservableObject {
     let engine: LLBBuildEngine
 
     let db: LLBCASDatabase
@@ -26,9 +26,9 @@ class ConwayEnvironment: ObservableObject {
     }
 }
 
-struct ConwayView: View {
+struct GameOfLifeView: View {
     @EnvironmentObject
-    var environment: ConwayEnvironment
+    var environment: GameOfLifeEnvironment
 
     @State
     var boardState = Set<Point>()

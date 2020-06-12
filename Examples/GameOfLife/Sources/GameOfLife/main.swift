@@ -16,17 +16,17 @@ import LLBBuildSystemUtil
 import TSCBasic
 
 // Register the build system related types as required for polymorphic encoding.
-ConfigurationKey.register(fragmentKeyType: ConwayConfigurationKey.self)
-ConfigurationValue.register(fragmentType: ConwayConfigurationFragment.self)
+ConfigurationKey.register(fragmentKeyType: GameOfLifeConfigurationKey.self)
+ConfigurationValue.register(fragmentType: GameOfLifeConfigurationFragment.self)
 ConfiguredTargetValue.register(configuredTargetType: CellTarget.self)
 ConfiguredTargetValue.register(configuredTargetType: BoardTarget.self)
 
 // Create the build engine's dependencies.
 let group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
 let db = LLBInMemoryCASDatabase(group: group)
-let executor = LLBLocalExecutor(outputBase: AbsolutePath("/tmp/conway"))
+let executor = LLBLocalExecutor(outputBase: AbsolutePath("/tmp/game_of_life"))
 let engineContext = LLBBasicBuildEngineContext(group: group, db: db, executor: executor)
-let buildSystemDelegate = ConwayBuildSystemDelegate(engineContext: engineContext)
+let buildSystemDelegate = GameOfLifeBuildSystemDelegate(engineContext: engineContext)
 
 // Construct the build engine instance and
 let engine = LLBBuildEngine(
@@ -37,7 +37,7 @@ let engine = LLBBuildEngine(
 )
 
 // Construct the SwiftUI environment object to access the build engine and database.
-let environment = ConwayEnvironment(engine: engine, db: db)
+let environment = GameOfLifeEnvironment(engine: engine, db: db)
 
 // Run the UI.
-SwiftUIApplication(ConwayView(), observable: environment).run()
+SwiftUIApplication(GameOfLifeView(), observable: environment).run()

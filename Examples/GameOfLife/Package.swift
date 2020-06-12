@@ -4,21 +4,21 @@
 import PackageDescription
 
 let package = Package(
-    name: "conway",
+    name: "GameOfLife",
     platforms: [
        .macOS(.v10_15)
     ],
     products: [
         .executable(
-            name: "conway",
-            targets: ["Conway"]),
+            name: "game_of_life",
+            targets: ["GameOfLife"]),
     ],
     dependencies: [
         .package(path: "../.."),
     ],
     targets: [
         .target(
-            name: "Conway",
+            name: "GameOfLife",
             dependencies: ["llbuild2BuildSystem", "llbuild2Util"]),
     ]
 )

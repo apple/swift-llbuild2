@@ -20,9 +20,9 @@ struct InitialBoard: Codable {
 }
 
 /// The configuration key represents the minimum amount of data needed to construct a full configuration fragment. For
-/// Conways purpose, we just need to store the initial board state and the size of the board. All cell and board targets
+/// GameOfLife purpose, we just need to store the initial board state and the size of the board. All cell and board targets
 /// at any generation derived from to this initial state.
-struct ConwayConfigurationKey: LLBConfigurationFragmentKey, Codable {
+struct GameOfLifeConfigurationKey: LLBConfigurationFragmentKey, Codable {
     static let identifier = String(describing: Self.self)
 
     let initialBoard: InitialBoard
@@ -34,9 +34,9 @@ struct ConwayConfigurationKey: LLBConfigurationFragmentKey, Codable {
     }
 }
 
-/// The configuration fragment for the configuration key. For Conway, since the key is mostly static data, the fragment
+/// The configuration fragment for the configuration key. For GameOfLife, since the key is mostly static data, the fragment
 /// just copies the values from the keys.
-struct ConwayConfigurationFragment: LLBConfigurationFragment, Codable {
+struct GameOfLifeConfigurationFragment: LLBConfigurationFragment, Codable {
     let initialBoard: InitialBoard
     let size: Point
 
@@ -46,15 +46,15 @@ struct ConwayConfigurationFragment: LLBConfigurationFragment, Codable {
     }
 
     /// Convenience constructor for the fragment from the key.
-    static func fromKey(_ key: ConwayConfigurationKey) -> ConwayConfigurationFragment {
+    static func fromKey(_ key: GameOfLifeConfigurationKey) -> GameOfLifeConfigurationFragment {
         return Self.init(initialBoard: key.initialBoard, size: key.size)
     }
 }
 
 /// The configuration key to configuration fragment function. Since the key has mostly static data, the function just
 /// copies the results into the fragment.
-class ConwayConfigurationFunction: LLBBuildFunction<ConwayConfigurationKey, ConwayConfigurationFragment> {
-    override func evaluate(key: ConwayConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ConwayConfigurationFragment> {
+class GameOfLifeConfigurationFunction: LLBBuildFunction<GameOfLifeConfigurationKey, GameOfLifeConfigurationFragment> {
+    override func evaluate(key: GameOfLifeConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<GameOfLifeConfigurationFragment> {
         return fi.group.next().makeSucceededFuture(.fromKey(key))
     }
 }

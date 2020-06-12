@@ -10,14 +10,14 @@ import LLBBuildSystem
 import LLBBuildSystemProtocol
 import llbuild2
 
-enum ConwayConfiguredTargetError: Error {
+enum GameOfLifeConfiguredTargetError: Error {
     case notFound
 }
 
 /// Implementation of the LLBBuildEngine delegates for extending the engine with our custom functions, rules and
 /// targets.
-class ConwayBuildSystemDelegate {
-    /// Registry of available rules in the Conway build system. This means that CellTarget targets are evaluated using
+class GameOfLifeBuildSystemDelegate {
+    /// Registry of available rules in the GameOfLife build system. This means that CellTarget targets are evaluated using
     /// the CellRule implementation. Same for the BoardTarget and BoardRule. Rules are used mostly for processing
     /// artifact related computations, since it has access to APIs for managing inputs, outputs and action registration.
     let rules: [String: LLBRule] = [
@@ -31,13 +31,13 @@ class ConwayBuildSystemDelegate {
 
     init(engineContext: LLBBuildEngineContext) {
         self.functions = [
-            ConwayConfigurationKey.identifier: ConwayConfigurationFunction(engineContext: engineContext),
+            GameOfLifeConfigurationKey.identifier: GameOfLifeConfigurationFunction(engineContext: engineContext),
             GenerationKey.identifier: GenerationFunction(engineContext: engineContext),
         ]
     }
 }
 
-extension ConwayBuildSystemDelegate: LLBConfiguredTargetDelegate {
+extension GameOfLifeBuildSystemDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(
         for key: ConfiguredTargetKey,
         _ fi: LLBBuildFunctionInterface
@@ -53,17 +53,17 @@ extension ConwayBuildSystemDelegate: LLBConfiguredTargetDelegate {
         }
 
         // Only cell and board targets are supported.
-        throw ConwayConfiguredTargetError.notFound
+        throw GameOfLifeConfiguredTargetError.notFound
     }
 }
 
-extension ConwayBuildSystemDelegate: LLBRuleLookupDelegate {
+extension GameOfLifeBuildSystemDelegate: LLBRuleLookupDelegate {
     func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule? {
         return rules[configuredTargetType.identifier]
     }
 }
 
-extension ConwayBuildSystemDelegate: LLBBuildFunctionLookupDelegate {
+extension GameOfLifeBuildSystemDelegate: LLBBuildFunctionLookupDelegate {
     func lookupBuildFunction(for identifier: LLBBuildKeyIdentifier) -> LLBFunction? {
         return functions[identifier]
     }

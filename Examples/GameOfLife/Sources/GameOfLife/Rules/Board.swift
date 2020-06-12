@@ -29,9 +29,9 @@ struct BoardTarget: ConfiguredTarget, Codable {
         let label = key.label
         let generation = Int(label.targetName)!
 
-        // This target is evaluated with a ConwayConfiguration containing the global parameters of the build, like the
+        // This target is evaluated with a GameOfLifeConfigurationKey containing the global parameters of the build, like the
         // size of the board and the initial state.
-        let boardSize = try key.configurationKey.get(ConwayConfigurationKey.self).size
+        let boardSize = try key.configurationKey.get(GameOfLifeConfigurationKey.self).size
 
         var dependencyFutures = [LLBFuture<LLBProviderMap>]()
 
@@ -80,7 +80,7 @@ class BoardRule: LLBBuildRule<BoardTarget> {
         // Make a dictionary lookup of the cell's point to the artifact containing that state.
         let boardMap = dependencies.reduce(into: [:]) { (dict, dep) in dict[dep.position] = dep.state }
 
-        let boardSize = try ruleContext.getFragment(ConwayConfigurationFragment.self).size
+        let boardSize = try ruleContext.getFragment(GameOfLifeConfigurationFragment.self).size
 
         var matrix = [[Artifact]]()
 
