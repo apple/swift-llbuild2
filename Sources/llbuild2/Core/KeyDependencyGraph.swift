@@ -36,8 +36,19 @@ public class LLBKeyDependencyGraph {
 
     /// Attempts to add a detected dependency edge to the graph, but throws if a cycle is detected.
     public func addEdge(from origin: LLBKey, to destination: LLBKey) throws {
+        // This is the biggest expense in this method. We need to find a way to identify keys in a faster way than
+        // serializing and hashing.
         let originID = origin.digest.hashValue
         let destinationID = destination.digest.hashValue
+
+        // Check if the direct dependency is already known, in which case, skip the check since the edge is already
+        // been proven to not have a cycle.
+        os_unfair_lock_lock(lock)
+        if self.edges[originID]?.contains(destinationID) != nil {
+            defer { os_unfair_lock_unlock(lock) }
+            return
+        }
+        os_unfair_lock_unlock(lock)
 
         // Populate the knownKeys store with the new edge nodes, in case it doesn't exist.
         os_unfair_lock_lock(lock)
