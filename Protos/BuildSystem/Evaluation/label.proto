@@ -16,7 +16,7 @@ syntax = "proto3";
 /// users. Labels are used in llbuild2 as a differentiator between targets, to aide in the deduplication of processing
 /// targets and as a cross-build system coordination system, for example, if llbuild2 build systems chose to integrate
 /// other build systems into the mix.
-message Label {
+message LLBLabel {
 
     /// The logical path components that represent a target grouping. It is the path-like components between `//` and
     /// `:` in the canonical form. Components cannot have spaces or `/` characters in them. Check Label.swift for more

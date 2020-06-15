@@ -36,7 +36,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 //// users. Labels are used in llbuild2 as a differentiator between targets, to aide in the deduplication of processing
 //// targets and as a cross-build system coordination system, for example, if llbuild2 build systems chose to integrate
 //// other build systems into the mix.
-public struct Label {
+public struct LLBLabel {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -57,8 +57,8 @@ public struct Label {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension Label: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "Label"
+extension LLBLabel: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBLabel"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "logicalPathComponents"),
     2: .same(proto: "targetName"),
@@ -84,7 +84,7 @@ extension Label: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Label, rhs: Label) -> Bool {
+  public static func ==(lhs: LLBLabel, rhs: LLBLabel) -> Bool {
     if lhs.logicalPathComponents != rhs.logicalPathComponents {return false}
     if lhs.targetName != rhs.targetName {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

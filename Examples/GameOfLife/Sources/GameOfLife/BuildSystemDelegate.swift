@@ -39,9 +39,9 @@ class GameOfLifeBuildSystemDelegate {
 
 extension GameOfLifeBuildSystemDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(
-        for key: ConfiguredTargetKey,
+        for key: LLBConfiguredTargetKey,
         _ fi: LLBBuildFunctionInterface
-    ) throws -> LLBFuture<ConfiguredTarget> {
+    ) throws -> LLBFuture<LLBConfiguredTarget> {
         let label = key.label
 
         if label.logicalPathComponents[0] == "cell" {
@@ -58,7 +58,7 @@ extension GameOfLifeBuildSystemDelegate: LLBConfiguredTargetDelegate {
 }
 
 extension GameOfLifeBuildSystemDelegate: LLBRuleLookupDelegate {
-    func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule? {
+    func rule(for configuredTargetType: LLBConfiguredTarget.Type) -> LLBRule? {
         return rules[configuredTargetType.identifier]
     }
 }

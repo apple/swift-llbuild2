@@ -14,21 +14,21 @@ import "CASProtocol/data_id.proto";
 
 // Key that represents the evaluation of an action's outputs. The inputs to this action have not been resolved at this
 // stage, so the purpose of the ActionFunction is to resolve the inputs and request the execution of the action.
-message ActionKey {
+message LLBActionKey {
 
     // Represents what type of action this key represents.
     oneof actionType {
 
         // A command line based action key.
-        CommandAction command = 1;
+        LLBCommandAction command = 1;
 
         // A merge trees based action key.
-        MergeTreesAction mergeTrees = 2;
+        LLBMergeTreesAction mergeTrees = 2;
     }
 }
 
 // The value for an ActionKey.
-message ActionValue {
+message LLBActionValue {
 
     // The list of outputs IDs that the action produced. This will be in the same order as requested in
     // actionType.
@@ -36,13 +36,13 @@ message ActionValue {
 }
 
 // An action execution description for a command line invocation.
-message CommandAction {
+message LLBCommandAction {
 
     // The spec for the action to execute.
     LLBActionSpec actionSpec = 1;
 
     // The list of artifact inputs required for this action evaluation.
-    repeated Artifact inputs = 2;
+    repeated LLBArtifact inputs = 2;
 
     // The list of outputs expected from this action evaluation.
     repeated LLBActionOutput outputs = 3;
@@ -52,18 +52,18 @@ message CommandAction {
 // artifact itself. The ActionValue will have a single dataID as output corresponding to the dataID of the tree
 // artifact containing the inputs. If there are tree artifacts with colliding subdirectories, they will be merged. For
 // colliding files, the last one "wins".
-message MergeTreesAction {
+message LLBMergeTreesAction {
 
     // The list of inputs into the merge action. Each input contains the artifact to merge and the root it should be
     // merged under.
-    repeated MergeTreesActionInput inputs = 1;
+    repeated LLBMergeTreesActionInput inputs = 1;
 }
 
 // A single input into a merge trees action.
-message MergeTreesActionInput {
+message LLBMergeTreesActionInput {
 
     // The artifact to merge into a tree. It can be any kind of artifact.
-    Artifact artifact = 1;
+    LLBArtifact artifact = 1;
 
     // The path under which the artifact should be placed. For instance, if artifact points to a file, and path points
     // to `some/path`, then the merge trees action output will contain the file at that path. Note that this overrides

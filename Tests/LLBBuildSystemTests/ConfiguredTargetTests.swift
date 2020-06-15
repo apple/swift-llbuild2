@@ -14,12 +14,12 @@ import LLBCASFileTree
 import TSCBasic
 import XCTest
 
-extension Int: ConfiguredTarget {}
+extension Int: LLBConfiguredTarget {}
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: ConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ConfiguredTarget> {
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfiguredTarget> {
         if key.label.targetName == "notFound" {
-            return fi.group.next().makeFailedFuture(ConfiguredTargetError.notFound(key.label))
+            return fi.group.next().makeFailedFuture(LLBConfiguredTargetError.notFound(key.label))
         }
         return fi.group.next().makeSucceededFuture(1)
     }
@@ -32,11 +32,11 @@ class ConfiguredTargetTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:target")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:target")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             XCTAssertThrowsError(try testEngine.build(configuredTargetKey).wait()) { error in
-                guard let configuredTargetError = try? XCTUnwrap(error as? ConfiguredTargetError) else {
+                guard let configuredTargetError = try? XCTUnwrap(error as? LLBConfiguredTargetError) else {
                     XCTFail("unexpected error type")
                     return
                 }
@@ -55,11 +55,11 @@ class ConfiguredTargetTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:notFound")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:notFound")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             XCTAssertThrowsError(try testEngine.build(configuredTargetKey).wait()) { error in
-                guard let configuredTargetError = try? XCTUnwrap(error as? ConfiguredTargetError) else {
+                guard let configuredTargetError = try? XCTUnwrap(error as? LLBConfiguredTargetError) else {
                     XCTFail("unexpected error type")
                     return
                 }
@@ -75,16 +75,16 @@ class ConfiguredTargetTests: XCTestCase {
 
     func testConfiguredTarget() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: Int.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: Int.self)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let testEngine = LLBTestBuildEngine(configuredTargetDelegate: configuredTargetDelegate)
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:valid")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:valid")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let configuredTargetValue = try testEngine.build(configuredTargetKey, as: ConfiguredTargetValue.self).wait()
+            let configuredTargetValue = try testEngine.build(configuredTargetKey, as: LLBConfiguredTargetValue.self).wait()
             let configuredTarget: Int = try configuredTargetValue.typedConfiguredTarget()
             XCTAssertEqual(configuredTarget, 1)
         }

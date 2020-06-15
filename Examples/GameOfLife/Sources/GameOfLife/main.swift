@@ -16,10 +16,10 @@ import LLBBuildSystemUtil
 import TSCBasic
 
 // Register the build system related types as required for polymorphic encoding.
-ConfigurationKey.register(fragmentKeyType: GameOfLifeConfigurationKey.self)
-ConfigurationValue.register(fragmentType: GameOfLifeConfigurationFragment.self)
-ConfiguredTargetValue.register(configuredTargetType: CellTarget.self)
-ConfiguredTargetValue.register(configuredTargetType: BoardTarget.self)
+LLBConfigurationKey.register(fragmentKeyType: GameOfLifeConfigurationKey.self)
+LLBConfigurationValue.register(fragmentType: GameOfLifeConfigurationFragment.self)
+LLBConfiguredTargetValue.register(configuredTargetType: CellTarget.self)
+LLBConfiguredTargetValue.register(configuredTargetType: BoardTarget.self)
 
 // Create the build engine's dependencies.
 let group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)

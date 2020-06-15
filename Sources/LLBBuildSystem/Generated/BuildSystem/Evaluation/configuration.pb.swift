@@ -33,7 +33,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 /// considered as a build key where the build value is the evaluated configuration for the key. The ConfigurationFunction
 /// requests the value for each of the fragment keys, and it will be up to the client implementation to provide functions
 /// that evaluate those keys into ConfigurationFragments.
-public struct ConfigurationKey {
+public struct LLBConfigurationKey {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -47,7 +47,7 @@ public struct ConfigurationKey {
 
 /// A collection of configuration fragments as requested by a ConfigurationKey. The ConfigurationValue will be made
 /// available at rule evaluation time from the rule context.
-public struct ConfigurationValue {
+public struct LLBConfigurationValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -64,8 +64,8 @@ public struct ConfigurationValue {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension ConfigurationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ConfigurationKey"
+extension LLBConfigurationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBConfigurationKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "fragmentKeys"),
   ]
@@ -86,15 +86,15 @@ extension ConfigurationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ConfigurationKey, rhs: ConfigurationKey) -> Bool {
+  public static func ==(lhs: LLBConfigurationKey, rhs: LLBConfigurationKey) -> Bool {
     if lhs.fragmentKeys != rhs.fragmentKeys {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension ConfigurationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ConfigurationValue"
+extension LLBConfigurationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBConfigurationValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "fragments"),
     2: .same(proto: "root"),
@@ -120,7 +120,7 @@ extension ConfigurationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ConfigurationValue, rhs: ConfigurationValue) -> Bool {
+  public static func ==(lhs: LLBConfigurationValue, rhs: LLBConfigurationValue) -> Bool {
     if lhs.fragments != rhs.fragments {return false}
     if lhs.root != rhs.root {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

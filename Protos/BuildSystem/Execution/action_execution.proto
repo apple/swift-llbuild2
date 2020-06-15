@@ -13,21 +13,21 @@ import "CASProtocol/data_id.proto";
 
 // Key that represents the execution of an action after the input artifacts have been resolved into concrete data IDs,
 // used to resolve the data IDs of the requested outputs.
-message ActionExecutionKey {
+message LLBActionExecutionKey {
 
     // Represents what type of action execution this key represents.
     oneof actionExecutionType {
 
         // A command line based action execution key.
-        CommandActionExecution command = 1;
+        LLBCommandActionExecution command = 1;
 
         // A merge trees based action execution key.
-        MergeTreesActionExecution mergeTrees = 2;
+        LLBMergeTreesActionExecution mergeTrees = 2;
     }
 }
 
 // The value for an ActionExecutionKey.
-message ActionExecutionValue {
+message LLBActionExecutionValue {
 
     // The list of outputs IDs that the action produced. This will be in the same order as requested in
     // actionExecutionType.
@@ -41,7 +41,7 @@ message ActionExecutionValue {
 }
 
 // An action execution description for a command line invocation.
-message CommandActionExecution {
+message LLBCommandActionExecution {
 
     // The spec for the action to execute.
     LLBActionSpec actionSpec = 1;
@@ -54,7 +54,7 @@ message CommandActionExecution {
 }
 
 // An action execution description for a merge trees action.
-message MergeTreesActionExecution {
+message LLBMergeTreesActionExecution {
 
     // The list of inputs to be merged together. In this context, the path in LLBActionInput is considered to be the
     // root under which the artifact will be placed into.

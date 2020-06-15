@@ -30,14 +30,14 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 
 //// An EvaluatedTargetKey is used to request the evaluation of a ConfiguredTarget, as identified by the
 //// ConfiguredTargetKey field.
-public struct EvaluatedTargetKey {
+public struct LLBEvaluatedTargetKey {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   //// The ConfiguredTargetKey that identifies the target to be evaluated.
-  public var configuredTargetKey: ConfiguredTargetKey {
-    get {return _configuredTargetKey ?? ConfiguredTargetKey()}
+  public var configuredTargetKey: LLBConfiguredTargetKey {
+    get {return _configuredTargetKey ?? LLBConfiguredTargetKey()}
     set {_configuredTargetKey = newValue}
   }
   /// Returns true if `configuredTargetKey` has been explicitly set.
@@ -49,7 +49,7 @@ public struct EvaluatedTargetKey {
 
   public init() {}
 
-  fileprivate var _configuredTargetKey: ConfiguredTargetKey? = nil
+  fileprivate var _configuredTargetKey: LLBConfiguredTargetKey? = nil
 }
 
 //// An EvaluatedTargetValue contains the result of evaluating a target, which can be used to interface between targets
@@ -57,7 +57,7 @@ public struct EvaluatedTargetKey {
 //// the dependency graph as specified by the build system project description, meaning that if a ConfiguredTarget
 //// declares a dependency on another target, it will have a reference to those dependencies EvaluatedTargetValues in
 //// order to use those results in the construction of its action graph.
-public struct EvaluatedTargetValue {
+public struct LLBEvaluatedTargetValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -96,8 +96,8 @@ public struct LLBProviderMap {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension EvaluatedTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "EvaluatedTargetKey"
+extension LLBEvaluatedTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBEvaluatedTargetKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "configuredTargetKey"),
   ]
@@ -118,15 +118,15 @@ extension EvaluatedTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImple
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: EvaluatedTargetKey, rhs: EvaluatedTargetKey) -> Bool {
+  public static func ==(lhs: LLBEvaluatedTargetKey, rhs: LLBEvaluatedTargetKey) -> Bool {
     if lhs._configuredTargetKey != rhs._configuredTargetKey {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension EvaluatedTargetValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "EvaluatedTargetValue"
+extension LLBEvaluatedTargetValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBEvaluatedTargetValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "providerMap"),
   ]
@@ -147,7 +147,7 @@ extension EvaluatedTargetValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: EvaluatedTargetValue, rhs: EvaluatedTargetValue) -> Bool {
+  public static func ==(lhs: LLBEvaluatedTargetValue, rhs: LLBEvaluatedTargetValue) -> Bool {
     if lhs._providerMap != rhs._providerMap {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

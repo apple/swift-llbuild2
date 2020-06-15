@@ -10,15 +10,14 @@ import llbuild2
 import LLBCAS
 import LLBBuildSystemProtocol
 
-extension ActionExecutionKey: LLBBuildKey {}
-
-extension ActionExecutionValue: LLBBuildValue {}
+extension LLBActionExecutionKey: LLBBuildKey {}
+extension LLBActionExecutionValue: LLBBuildValue {}
 
 /// Convenience initializer.
-public extension ActionExecutionKey {
+public extension LLBActionExecutionKey {
     static func command(actionSpec: LLBActionSpec, inputs: [LLBActionInput], outputs: [LLBActionOutput]) -> Self {
-        return ActionExecutionKey.with {
-            $0.actionExecutionType = .command(CommandActionExecution.with {
+        return LLBActionExecutionKey.with {
+            $0.actionExecutionType = .command(LLBCommandActionExecution.with {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
@@ -27,8 +26,8 @@ public extension ActionExecutionKey {
     }
 
     static func mergeTrees(inputs: [LLBActionInput]) -> Self {
-        return ActionExecutionKey.with {
-            $0.actionExecutionType = .mergeTrees(MergeTreesActionExecution.with {
+        return LLBActionExecutionKey.with {
+            $0.actionExecutionType = .mergeTrees(LLBMergeTreesActionExecution.with {
                 $0.inputs = inputs
             })
         }
@@ -36,7 +35,7 @@ public extension ActionExecutionKey {
 }
 
 /// Convenience initializer.
-fileprivate extension ActionExecutionValue {
+fileprivate extension LLBActionExecutionValue {
     init(outputs: [LLBDataID], stdoutID: LLBDataID?, stderrID: LLBDataID?) {
         self.outputs = outputs
         if let stdoutID = stdoutID {
@@ -54,7 +53,7 @@ fileprivate extension ActionExecutionValue {
     }
 }
 
-public enum ActionExecutionError: Error {
+public enum LLBActionExecutionError: Error {
     /// Error for invalid action execution key.
     case invalid
 
@@ -65,8 +64,8 @@ public enum ActionExecutionError: Error {
     case actionExecutionError(LLBDataID, LLBDataID)
 }
 
-final class ActionExecutionFunction: LLBBuildFunction<ActionExecutionKey, ActionExecutionValue> {
-    override func evaluate(key actionExecutionKey: ActionExecutionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionExecutionValue> {
+final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
+    override func evaluate(key actionExecutionKey: LLBActionExecutionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
 
         switch actionExecutionKey.actionExecutionType {
         case let .command(commandKey):
@@ -74,36 +73,36 @@ final class ActionExecutionFunction: LLBBuildFunction<ActionExecutionKey, Action
         case let .mergeTrees(mergeTreesKey):
             return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, fi)
         case .none:
-            return engineContext.group.next().makeFailedFuture(ActionExecutionError.invalid)
+            return engineContext.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
         }
     }
 
-    private func evaluateCommand(commandKey: CommandActionExecution, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionExecutionValue> {
+    private func evaluateCommand(commandKey: LLBCommandActionExecution, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
         let actionExecutionRequest = LLBActionExecutionRequest(
             actionSpec: commandKey.actionSpec, inputs: commandKey.inputs, outputs: commandKey.outputs
         )
 
         return engineContext.executor.execute(request: actionExecutionRequest, engineContext: engineContext).flatMapErrorThrowing { error in
             // Action failures do not throw from the executor, so this must be an executor specific error.
-            throw ActionExecutionError.executorError(error)
+            throw LLBActionExecutionError.executorError(error)
         }.flatMapThrowing { executionResponse in
             // If the action failed, convert it into an actual error with the dataIDs of the output logs.
             if executionResponse.exitCode != 0 {
-                throw ActionExecutionError.actionExecutionError(
+                throw LLBActionExecutionError.actionExecutionError(
                     executionResponse.stdoutID,
                     executionResponse.stderrID
                 )
             }
 
-            return ActionExecutionValue(from: executionResponse)
+            return LLBActionExecutionValue(from: executionResponse)
         }
     }
 
-    private func evaluateMergeTrees(mergeTreesKey: MergeTreesActionExecution, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionExecutionValue> {
+    private func evaluateMergeTrees(mergeTreesKey: LLBMergeTreesActionExecution, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
         let inputs = mergeTreesKey.inputs
         // Skip merging if there's a single tree as input, with no path to prepend.
         if inputs.count == 1, inputs[0].type == .directory, inputs[0].path.isEmpty {
-            return fi.group.next().makeSucceededFuture(ActionExecutionValue(outputs: [inputs[0].dataID], stdoutID: nil, stderrID: nil))
+            return fi.group.next().makeSucceededFuture(LLBActionExecutionValue(outputs: [inputs[0].dataID], stdoutID: nil, stderrID: nil))
         }
 
         let client = LLBCASFSClient(engineContext.db)
@@ -116,13 +115,13 @@ final class ActionExecutionFunction: LLBBuildFunction<ActionExecutionKey, Action
 
         // Skip merging if there is a single prepended tree.
         if prependedTrees.count == 1 {
-            return prependedTrees[0].map { ActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil) }
+            return prependedTrees[0].map { LLBActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil) }
         }
 
         return LLBFuture.whenAllSucceed(prependedTrees, on: fi.group.next()).flatMap { trees in
             return LLBCASFileTree.merge(trees: trees, in: self.engineContext.db)
         }.map {
-            return ActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil)
+            return LLBActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil)
         }
     }
 }

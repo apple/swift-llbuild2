@@ -16,7 +16,7 @@ import "CASProtocol/data_id.proto";
 // of the sources or intermediate files and directories, but instead contains the necessary data required to resolve
 // a particular input (or output) artifact during execution time. In some ways, it can be viewed as a future where
 // the result (ArtifactValue) is a reference to the actual built contents of the artifact.
-message Artifact {
+message LLBArtifact {
 
     // Represents what type of Artifact reference this is.
     oneof originType {

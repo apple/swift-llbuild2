@@ -59,9 +59,9 @@ class ActionTests: XCTestCase {
 
         let dataID = try testDB.put(data: bytes).wait()
 
-        let input = Artifact.source(shortPath: "some/source.txt", dataID: dataID)
+        let input = LLBArtifact.source(shortPath: "some/source.txt", dataID: dataID)
 
-        let actionKey = ActionKey.with {
+        let actionKey = LLBActionKey.with {
             $0.actionType = .command(.with {
                 $0.actionSpec = .with {
                     $0.arguments = ["success"]
@@ -71,7 +71,7 @@ class ActionTests: XCTestCase {
             })
         }
 
-        let actionValue: ActionValue = try testEngine.build(actionKey).wait()
+        let actionValue: LLBActionValue = try testEngine.build(actionKey).wait()
         XCTAssertEqual(actionValue.outputs, [])
     }
 }

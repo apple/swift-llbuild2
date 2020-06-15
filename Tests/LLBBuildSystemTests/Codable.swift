@@ -11,7 +11,7 @@ import LLBBuildSystem
 import Foundation
 
 /// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable
-extension Artifact: Codable {
+extension LLBArtifact: Codable {
     convenience public init(from decoder: Swift.Decoder) throws {
         let container = try decoder.singleValueContainer()
         try self.init(serializedData: container.decode(Data.self))
@@ -82,7 +82,7 @@ extension LLBProviderMap: Codable {
 }
 
 /// Convenience implementation for ConfiguredTargets that conform to Codable
-extension ConfiguredTarget where Self: Encodable {
+extension LLBConfiguredTarget where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
         buffer.writeBytes(ArraySlice<UInt8>(data))
@@ -90,7 +90,7 @@ extension ConfiguredTarget where Self: Encodable {
 }
 
 /// Convenience implementation for ConfiguredTargets that conform to Codable
-extension ConfiguredTarget where Self: Decodable {
+extension LLBConfiguredTarget where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
     }

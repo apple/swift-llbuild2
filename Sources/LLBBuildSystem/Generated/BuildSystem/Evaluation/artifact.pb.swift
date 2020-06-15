@@ -35,13 +35,13 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 /// of the sources or intermediate files and directories, but instead contains the necessary data required to resolve
 /// a particular input (or output) artifact during execution time. In some ways, it can be viewed as a future where
 /// the result (ArtifactValue) is a reference to the actual built contents of the artifact.
-public final class Artifact {
+public final class LLBArtifact {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Represents what type of Artifact reference this is.
-  public var originType: Artifact.OneOf_OriginType? = nil
+  public var originType: LLBArtifact.OneOf_OriginType? = nil
 
   /// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
   public var source: LLBCAS.LLBDataID {
@@ -95,7 +95,7 @@ public final class Artifact {
     case derivedStatic(LLBCAS.LLBDataID)
 
   #if !swift(>=4.1)
-    public static func ==(lhs: Artifact.OneOf_OriginType, rhs: Artifact.OneOf_OriginType) -> Bool {
+    public static func ==(lhs: LLBArtifact.OneOf_OriginType, rhs: LLBArtifact.OneOf_OriginType) -> Bool {
       switch (lhs, rhs) {
       case (.source(let l), .source(let r)): return l == r
       case (.derived(let l), .derived(let r)): return l == r
@@ -111,8 +111,8 @@ public final class Artifact {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "Artifact"
+extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBArtifact"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "source"),
     5: .same(proto: "derived"),
@@ -181,7 +181,7 @@ extension Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationB
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Artifact, rhs: Artifact) -> Bool {
+  public static func ==(lhs: LLBArtifact, rhs: LLBArtifact) -> Bool {
     if lhs.originType != rhs.originType {return false}
     if lhs.shortPath != rhs.shortPath {return false}
     if lhs.roots != rhs.roots {return false}

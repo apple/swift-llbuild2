@@ -11,7 +11,7 @@ syntax = "proto3";
 import "CASProtocol/data_id.proto";
 
 /// An ArtifactValue contains a reference to the actual bytes that is expected to exist in a CAS database.
-message ArtifactValue {
+message LLBArtifactValue {
 
     /// The dataID with a reference to the contents of the artifact.
     LLBDataID dataID = 1;

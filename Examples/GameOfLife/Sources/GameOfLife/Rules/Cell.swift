@@ -30,7 +30,7 @@ struct Point: Codable, Hashable, Comparable {
 
 /// A CellTarget represents the cell at a particular generation. It has a dependency to its same cell at a previous
 /// generation, along with dependencies to the neighbours at the previous generation.
-struct CellTarget: ConfiguredTarget, Codable {
+struct CellTarget: LLBConfiguredTarget, Codable {
     let position: Point
     let generation: Int
     let previousState: LLBProviderMap?
@@ -44,7 +44,7 @@ struct CellTarget: ConfiguredTarget, Codable {
     }
 
     /// Constructor for a CellTarget from the configuration key.
-    static func with(key: ConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<CellTarget> {
+    static func with(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<CellTarget> {
         // CellTarget labels are defined as //cell/<generation>:<x>-<y>.
         let label = key.label
         let generation = Int(label.logicalPathComponents[1])!
@@ -72,9 +72,9 @@ struct CellTarget: ConfiguredTarget, Codable {
                 // dependency comes later.
                 if x < boardSize.x && x >= 0 && y < boardSize.y && y >= 0 && (position.x != x || position.y != y) {
 
-                    let dependencyLabel = try Label("//cell/\(generation - 1):\(x)-\(y)")
+                    let dependencyLabel = try LLBLabel("//cell/\(generation - 1):\(x)-\(y)")
 
-                    let dependencyKey = ConfiguredTargetKey(
+                    let dependencyKey = LLBConfiguredTargetKey(
                         rootID: key.rootID,
                         label: dependencyLabel,
                         configurationKey: key.configurationKey
@@ -87,8 +87,8 @@ struct CellTarget: ConfiguredTarget, Codable {
         let dependenciesFuture = LLBFuture.whenAllSucceed(dependencyFutures, on: fi.group.next())
 
         // Request the dependency for the same point at the previous generation.
-        let previousStateLabel = try Label("//cell/\(generation - 1):\(position.x)-\(position.y)")
-        let previousStateKey = ConfiguredTargetKey(
+        let previousStateLabel = try LLBLabel("//cell/\(generation - 1):\(position.x)-\(position.y)")
+        let previousStateKey = LLBConfiguredTargetKey(
             rootID: key.rootID,
             label: previousStateLabel,
             configurationKey: key.configurationKey
@@ -110,17 +110,17 @@ struct CellTarget: ConfiguredTarget, Codable {
 /// A CellProvider contains the result of evaluating a CellTarget, containing the position that the cell corresponds to
 /// and the state artifact, which is a reference to a file containing 0 if the cell is dead or 1 if the cell is alive.
 struct CellProvider: LLBProvider, Codable {
-    let state: Artifact
+    let state: LLBArtifact
     let position: Point
 
-    init(state: Artifact, position: Point) {
+    init(state: LLBArtifact, position: Point) {
         self.state = state
         self.position = position
     }
 }
 
 class CellRule: LLBBuildRule<CellTarget> {
-    override func evaluate(configuredTarget: CellTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
+    override func evaluate(configuredTarget: CellTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
         // Register the output artifact for the cell state.
         let stateArtifact = try ruleContext.declareArtifact("state.txt")
 
