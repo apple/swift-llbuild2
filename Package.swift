@@ -41,7 +41,7 @@ let package = Package(
         // CAS Protocol
         .target(
             name: "LLBCAS",
-            dependencies: ["LLBSupport", "SwiftProtobuf"]
+            dependencies: ["LLBSupport", "CBLAKE3", "SwiftProtobuf"]
         ),
         .testTarget(
             name: "LLBCASTests",
@@ -95,7 +95,7 @@ let package = Package(
         // protocols that clients and/or tests may find useful.
         .target(
             name: "LLBUtil",
-            dependencies: ["llbuild2", "LLBCAS", "CBLAKE3"]
+            dependencies: ["llbuild2"]
         ),
         .testTarget(
             name: "LLBUtilTests",

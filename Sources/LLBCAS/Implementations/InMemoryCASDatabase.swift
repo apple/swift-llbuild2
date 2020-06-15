@@ -8,9 +8,9 @@
 
 import Foundation
 
-import llbuild2
-
 import NIOConcurrencyHelpers
+
+import LLBSupport
 
 
 /// A simple in-memory implementation of the `LLBCASDatabase` protocol.

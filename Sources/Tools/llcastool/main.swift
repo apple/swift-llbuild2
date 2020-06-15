@@ -9,7 +9,7 @@
 import ArgumentParser
 
 import LLBBazelBackend
-import LLBUtil
+
 
 struct llcastoolCommand: ParsableCommand {
     static var configuration = CommandConfiguration(
@@ -23,7 +23,6 @@ struct llcastoolCommand: ParsableCommand {
     )
 }
 
-LLBUtil.registerCASSchemes()
 LLBBazelBackend.registerCASSchemes()
 
 llcastoolCommand.main()

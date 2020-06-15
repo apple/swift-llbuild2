@@ -31,7 +31,10 @@ public protocol LLBCASDatabaseScheme {
 ///     mem://
 public struct LLBCASDatabaseSpec {
     /// The map of registered schemes.
-    private static var registeredSchemes: [String: LLBCASDatabaseScheme.Type] = [:]
+    private static var registeredSchemes: [String: LLBCASDatabaseScheme.Type] = [
+        "mem": LLBInMemoryCASDatabaseScheme.self,
+        "file": LLBFileBackedCASDatabaseScheme.self,
+    ]
 
     /// Register a content store scheme type.
     ///

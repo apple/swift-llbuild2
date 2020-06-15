@@ -9,9 +9,11 @@
 import XCTest
 
 import TSCBasic
+
+import LLBCAS
 import LLBCASFileTree
 import LLBSupport
-import LLBUtil
+
 
 class CASBlobTests: XCTestCase {
     var group: LLBFuturesDispatchGroup!
