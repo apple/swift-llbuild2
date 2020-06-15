@@ -15,13 +15,13 @@ import "BuildSystem/any_codable.proto";
 // considered as a build key where the build value is the evaluated configuration for the key. The ConfigurationFunction
 // requests the value for each of the fragment keys, and it will be up to the client implementation to provide functions
 // that evaluate those keys into ConfigurationFragments.
-message ConfigurationKey {
+message LLBConfigurationKey {
     repeated LLBAnyCodable fragmentKeys = 1;
 }
 
 // A collection of configuration fragments as requested by a ConfigurationKey. The ConfigurationValue will be made
 // available at rule evaluation time from the rule context.
-message ConfigurationValue {
+message LLBConfigurationValue {
     repeated LLBAnyCodable fragments = 1;
 
     // Contains a hash of the fragments that can be used as a root for derived artifacts.

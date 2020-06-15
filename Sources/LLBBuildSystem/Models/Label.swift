@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum LabelError: Error {
+public enum LLBLabelError: Error {
     /// Error for finding invalid characters in the label.
     case invalidCharacters(String)
 
@@ -25,7 +25,7 @@ public enum LabelError: Error {
     case invalidLabel(String)
 }
 
-extension Label {
+extension LLBLabel {
     // Character set used in label scanning.
     public static let colonCharacterSet = CharacterSet(charactersIn: ":")
     public static let slashCharacterSet = CharacterSet(charactersIn: "/")
@@ -39,16 +39,16 @@ extension Label {
         let stringScanner = Scanner(string: string)
 
         // If there are any invalid characters error out.
-        if let range = string.rangeOfCharacter(from: Label.invalidCharacters) {
-            throw LabelError.invalidCharacters("Invalid characters in range: \(String(describing: range))")
+        if let range = string.rangeOfCharacter(from: LLBLabel.invalidCharacters) {
+            throw LLBLabelError.invalidCharacters("Invalid characters in range: \(String(describing: range))")
         }
 
         // Read exactly 2 `/` characters from the beginning.
-        guard let separator = stringScanner.scanCharacters(from: Label.slashCharacterSet), separator.count == 2 else {
-            throw LabelError.unexpectedPrefix(string)
+        guard let separator = stringScanner.scanCharacters(from: LLBLabel.slashCharacterSet), separator.count == 2 else {
+            throw LLBLabelError.unexpectedPrefix(string)
         }
 
-        let unionCharacterSet = Label.colonCharacterSet.union(Label.slashCharacterSet)
+        let unionCharacterSet = LLBLabel.colonCharacterSet.union(LLBLabel.slashCharacterSet)
         var pathComponents = [String]()
 
         // Read components until we find either `:` or `/`.
@@ -63,7 +63,7 @@ extension Label {
                 } else if nextCharacter == "/" {
                     continue
                 } else {
-                    throw LabelError.unexpectedCharacter(nextCharacter)
+                    throw LLBLabelError.unexpectedCharacter(nextCharacter)
                 }
             } else {
                 break
@@ -78,14 +78,14 @@ extension Label {
             self.targetName = targetName
         } else {
             guard let lastPathComponent = pathComponents.last else {
-                throw LabelError.invalidLabel(string)
+                throw LLBLabelError.invalidLabel(string)
             }
             self.targetName = lastPathComponent
         }
 
         // Make sure we've read all of the input, if not, the label was invalid
         if !stringScanner.isAtEnd {
-            throw LabelError.unexpectedSuffix(string)
+            throw LLBLabelError.unexpectedSuffix(string)
         }
     }
 

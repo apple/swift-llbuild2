@@ -13,7 +13,7 @@ import llbuild2
 /// A BoardTarget represents a target for a complete board. The size of the board is specified in the configuration for
 /// the build, which is passed to the target lookup method in `with(key:_:)`. This target will be populated with all of
 /// the cell targets for the requested generation.
-struct BoardTarget: ConfiguredTarget, Codable {
+struct BoardTarget: LLBConfiguredTarget, Codable {
     /// The provider map for each of the dependencies declared for this target. Provider maps are the interface for
     /// reading the evaluation outputs of dependency targets.
     let dependencies: [LLBProviderMap]
@@ -23,7 +23,7 @@ struct BoardTarget: ConfiguredTarget, Codable {
     }
 
     /// Constructor for a BoardTarget from the ConfigurationTargetKey.
-    static func with(key: ConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<BoardTarget> {
+    static func with(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<BoardTarget> {
         // Board labels are defined as //board:<generation>, since that's all that needed to reference a board at a
         // specific generation (i.e. the target).
         let label = key.label
@@ -40,8 +40,8 @@ struct BoardTarget: ConfiguredTarget, Codable {
         // Once those are evaluated, the build system will be unblocked to evaluate this target.
         for x in 0 ..< boardSize.x {
             for y in 0 ..< boardSize.y {
-                let dependencyLabel = try Label("//cell/\(generation):\(x)-\(y)")
-                let dependencyKey = ConfiguredTargetKey(
+                let dependencyLabel = try LLBLabel("//cell/\(generation):\(x)-\(y)")
+                let dependencyKey = LLBConfiguredTargetKey(
                     rootID: key.rootID,
                     label: dependencyLabel,
                     configurationKey: key.configurationKey
@@ -62,9 +62,9 @@ struct BoardTarget: ConfiguredTarget, Codable {
 /// BoardProvider is how BoardTargets communicate their state to dependents. It contains a single artifact reference
 /// which when resolved will contain a matrix of `0` for dead cells and `1` for alive cells.
 struct BoardProvider: LLBProvider, Codable {
-    let board: Artifact
+    let board: LLBArtifact
 
-    init(board: Artifact) {
+    init(board: LLBArtifact) {
         self.board = board
     }
 }
@@ -74,7 +74,7 @@ struct BoardProvider: LLBProvider, Codable {
 /// in a matrix form and then register an action that reads all the files and concatenates them into the matrix form
 /// expected in the output.
 class BoardRule: LLBBuildRule<BoardTarget> {
-    override func evaluate(configuredTarget: BoardTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
+    override func evaluate(configuredTarget: BoardTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
         let dependencies = try configuredTarget.dependencies.map { try $0.get(CellProvider.self) }
 
         // Make a dictionary lookup of the cell's point to the artifact containing that state.
@@ -82,7 +82,7 @@ class BoardRule: LLBBuildRule<BoardTarget> {
 
         let boardSize = try ruleContext.getFragment(GameOfLifeConfigurationFragment.self).size
 
-        var matrix = [[Artifact]]()
+        var matrix = [[LLBArtifact]]()
 
         // Go over the complete board finding the state artifact for each point, and add them as rows into the matrix.
         // Since we requested a dependency on the cell for each point, the boardMap will contain an artifact for each

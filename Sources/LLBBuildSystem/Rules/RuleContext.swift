@@ -11,28 +11,28 @@ import Dispatch
 import LLBBuildSystemProtocol
 import Foundation
 
-public typealias PreAction = (arguments: [String], environment: [String: String], background: Bool)
+public typealias LLBPreAction = (arguments: [String], environment: [String: String], background: Bool)
 
-public enum RuleContextError: Error {
+public enum LLBRuleContextError: Error {
     case outputAlreadyRegistered
     case writeError
     case invalidRedeclarationOfArtifact
 }
 
-public class RuleContext {
+public class LLBRuleContext {
     public let group: LLBFuturesDispatchGroup
 
     /// The label for the target being evaluated.
-    public let label: Label
+    public let label: LLBLabel
 
     typealias ActionOutputIndex = (actionIndex: Int, outputIndex: Int)
 
     // Map of declared short paths to declared artifacts from the rule. Use short path as the index since that's unique
     // on the rule evaluation context.
-    var declaredArtifacts = [String: Artifact]()
+    var declaredArtifacts = [String: LLBArtifact]()
 
     // List of registered actions.
-    var registeredActions = [ActionKey]()
+    var registeredActions = [LLBActionKey]()
 
     // Map of artifact to static contents that rule evaluations may have requested.
     var staticWriteActions = [String: Data]()
@@ -40,12 +40,12 @@ public class RuleContext {
     // Private queue for concurrent access to the declared artifacts and actions.
     private let queue = DispatchQueue(label: "org.swift.llbuild2.rulecontext")
 
-    private let configurationValue: ConfigurationValue
+    private let configurationValue: LLBConfigurationValue
 
     // Private reference to the artifact owner ID to associate in ArtifactOwners.
     private let artifactOwnerID: LLBDataID
 
-    init(group: LLBFuturesDispatchGroup, label: Label, configurationValue: ConfigurationValue, artifactOwnerID: LLBDataID) {
+    init(group: LLBFuturesDispatchGroup, label: LLBLabel, configurationValue: LLBConfigurationValue, artifactOwnerID: LLBDataID) {
         self.group = group
         self.label = label
         self.configurationValue = configurationValue
@@ -67,22 +67,22 @@ public class RuleContext {
 
     /// Declares an output artifact from the target. If another artifact was declared with the same path, the same
     /// artifact instance will be returned (i.e. it is free to declare the same artifact path anywhere in the rule).
-    public func declareArtifact(_ path: String) throws -> Artifact {
+    public func declareArtifact(_ path: String) throws -> LLBArtifact {
         return try self.declareArtifact(path, type: .file)
     }
 
     /// Declares an output directory artifact from the target. If another artifact was declared with the same path, the
     /// same artifact instance will be returned (i.e. it is free to declare the same artifact path anywhere in the rule
     /// ).
-    public func declareDirectoryArtifact(_ path: String) throws -> Artifact {
+    public func declareDirectoryArtifact(_ path: String) throws -> LLBArtifact {
         return try self.declareArtifact(path, type: .directory)
     }
 
-    private func declareArtifact(_ path: String, type: LLBArtifactType) throws -> Artifact {
+    private func declareArtifact(_ path: String, type: LLBArtifactType) throws -> LLBArtifact {
         return try queue.sync {
             if let artifact = declaredArtifacts[path] {
                 guard case .directory = artifact.type else {
-                    throw RuleContextError.invalidRedeclarationOfArtifact
+                    throw LLBRuleContextError.invalidRedeclarationOfArtifact
                 }
                 return artifact
             }
@@ -94,12 +94,12 @@ public class RuleContext {
                 roots = [configurationValue.root, label.asRoot]
             }
 
-            let artifact: Artifact
+            let artifact: LLBArtifact
             switch type {
             case .directory:
-                artifact = Artifact.derivedUninitializedDirectory(shortPath: path, roots: roots)
+                artifact = LLBArtifact.derivedUninitializedDirectory(shortPath: path, roots: roots)
             case .file:
-                artifact = Artifact.derivedUninitialized(shortPath: path, roots: roots)
+                artifact = LLBArtifact.derivedUninitialized(shortPath: path, roots: roots)
             default:
                 fatalError("No paths should lead to here")
             }
@@ -116,10 +116,10 @@ public class RuleContext {
     public func registerAction(
         arguments: [String],
         environment: [String: String] = [:],
-        inputs: [Artifact],
-        outputs: [Artifact],
+        inputs: [LLBArtifact],
+        outputs: [LLBArtifact],
         workingDirectory: String? = nil,
-        preActions: [PreAction] = []
+        preActions: [LLBPreAction] = []
     ) throws {
         try queue.sync {
             // Check that all outputs for the action are uninitialized, have already been declared (and correspond to
@@ -128,11 +128,11 @@ public class RuleContext {
             for output in outputs {
                 guard output.originType == nil,
                       declaredArtifacts[output.shortPath] == output else {
-                    throw RuleContextError.outputAlreadyRegistered
+                    throw LLBRuleContextError.outputAlreadyRegistered
                 }
             }
 
-            let actionKey = ActionKey.command(
+            let actionKey = LLBActionKey.command(
                 actionSpec: LLBActionSpec(
                     arguments: arguments,
                     environment: environment,
@@ -162,14 +162,14 @@ public class RuleContext {
     }
 
     /// Registers an action that merges the given artifacts into a single directory artifact.
-    public func registerMergeDirectories(_ inputs: [(artifact: Artifact, path: String?)], output: Artifact) throws {
+    public func registerMergeDirectories(_ inputs: [(artifact: LLBArtifact, path: String?)], output: LLBArtifact) throws {
         try queue.sync {
             guard output.originType == nil,
                   declaredArtifacts[output.shortPath] == output else {
-                throw RuleContextError.outputAlreadyRegistered
+                throw LLBRuleContextError.outputAlreadyRegistered
             }
 
-            let actionKey = ActionKey.mergeTrees(inputs: inputs)
+            let actionKey = LLBActionKey.mergeTrees(inputs: inputs)
 
             registeredActions.append(actionKey)
             let actionIndex = registeredActions.count - 1
@@ -185,12 +185,12 @@ public class RuleContext {
     }
 
     /// Registers a static action that writes the specified contents into the given artifact output.
-    public func write(contents: Data, to output: Artifact) throws {
+    public func write(contents: Data, to output: LLBArtifact) throws {
         try queue.sync {
             guard output.originType == nil,
                   declaredArtifacts[output.shortPath] == output,
                   staticWriteActions[output.shortPath] == nil else {
-                throw RuleContextError.outputAlreadyRegistered
+                throw LLBRuleContextError.outputAlreadyRegistered
             }
 
             staticWriteActions[output.shortPath] = contents
@@ -198,12 +198,12 @@ public class RuleContext {
     }
 
     /// Registers a static action that writes the specified contents into the given artifact output.
-    public func write(contents: String, to output: Artifact) throws {
+    public func write(contents: String, to output: LLBArtifact) throws {
         try write(contents: Data(contents.utf8), to: output)
     }
 }
 
-extension Label {
+extension LLBLabel {
     var asRoot: String {
         return (self.logicalPathComponents + [self.targetName]).joined(separator: "/")
     }

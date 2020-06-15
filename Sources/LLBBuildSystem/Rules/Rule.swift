@@ -13,7 +13,7 @@ import llbuild2
 public protocol LLBRuleLookupDelegate {
 
     /// Lookup a rule implementation for a given configured target type, or nil if none is known.
-    func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule?
+    func rule(for configuredTargetType: LLBConfiguredTarget.Type) -> LLBRule?
 }
 
 
@@ -21,7 +21,7 @@ public protocol LLBRuleLookupDelegate {
 /// as the interface for downstream dependents of the target.
 public protocol LLBRule {
     /// Computes a configured target and returns a list of providers.
-    func compute(configuredTarget: ConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]>
+    func compute(configuredTarget: LLBConfiguredTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]>
 }
 
 public enum LLBBuildRuleError: Error {
@@ -29,10 +29,10 @@ public enum LLBBuildRuleError: Error {
 }
 
 /// "Abstract" implementation of an LLBRule that type casts the configured target to the user declared type.
-open class LLBBuildRule<C: ConfiguredTarget>: LLBRule {
+open class LLBBuildRule<C: LLBConfiguredTarget>: LLBRule {
     public init() {}
     
-    public final func compute(configuredTarget: ConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
+    public final func compute(configuredTarget: LLBConfiguredTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
         guard let typedConfiguredTarget = configuredTarget as? C else {
             throw LLBBuildRuleError.unexpectedType
         }
@@ -42,7 +42,7 @@ open class LLBBuildRule<C: ConfiguredTarget>: LLBRule {
 
     /// Evaluates a configured target to return a list of providers. This method is required to be overridden by
     /// subclasses of LLBBuildRule.
-    open func evaluate(configuredTarget: C, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
+    open func evaluate(configuredTarget: C, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
         fatalError("This should be overridden by a subclass")
     }
 }

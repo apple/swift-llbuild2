@@ -23,7 +23,7 @@ class LabelTests: XCTestCase {
         ]
 
         for (label, expected) in testLabels {
-            XCTAssertEqual(try Label(label).canonical, expected)
+            XCTAssertEqual(try LLBLabel(label).canonical, expected)
         }
     }
 
@@ -45,7 +45,7 @@ class LabelTests: XCTestCase {
         ]
 
         for label in invalidLabels {
-            XCTAssertThrowsError(try Label(label))
+            XCTAssertThrowsError(try LLBLabel(label))
         }
     }
 }

@@ -34,7 +34,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 //// after parsing and being configured by the active configuration. Configured targets have already resolved their
 //// dependencies (usually declared through labels). It is up to each build system implementation to define what a
 //// configured target looks like, and llbuild2 only enforces that it supports being serialized/deserialized.
-public struct ConfiguredTargetKey {
+public struct LLBConfiguredTargetKey {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -51,8 +51,8 @@ public struct ConfiguredTargetKey {
 
   //// The label for the target that is being requested. It is up to the build system implementation to interpret the
   //// label in order to associate it with a target.
-  public var label: Label {
-    get {return _label ?? Label()}
+  public var label: LLBLabel {
+    get {return _label ?? LLBLabel()}
     set {_label = newValue}
   }
   /// Returns true if `label` has been explicitly set.
@@ -62,8 +62,8 @@ public struct ConfiguredTargetKey {
 
   //// The configuration key under which this target should be evaluated. Each configured target will be requested
   //// exactly once for each combination of rootID, label and configuration key.
-  public var configurationKey: ConfigurationKey {
-    get {return _configurationKey ?? ConfigurationKey()}
+  public var configurationKey: LLBConfigurationKey {
+    get {return _configurationKey ?? LLBConfigurationKey()}
     set {_configurationKey = newValue}
   }
   /// Returns true if `configurationKey` has been explicitly set.
@@ -76,15 +76,15 @@ public struct ConfiguredTargetKey {
   public init() {}
 
   fileprivate var _rootID: LLBCAS.LLBDataID? = nil
-  fileprivate var _label: Label? = nil
-  fileprivate var _configurationKey: ConfigurationKey? = nil
+  fileprivate var _label: LLBLabel? = nil
+  fileprivate var _configurationKey: LLBConfigurationKey? = nil
 }
 
 //// A ConfiguredTargetValue wraps the contents of the user specified configured target. llbuild2 handles the runtime
 //// components of serialization and deserialization in order to provide a simpler interface for llbuild2 clients to
 //// integrate. A ConfiguredTarget value represents the state of a target after the target has been parsed from its
 //// project description file and after the configuration has been applied, but before the target has been evaluated.
-public struct ConfiguredTargetValue {
+public struct LLBConfiguredTargetValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -108,8 +108,8 @@ public struct ConfiguredTargetValue {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension ConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ConfiguredTargetKey"
+extension LLBConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBConfiguredTargetKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "rootID"),
     2: .same(proto: "label"),
@@ -140,7 +140,7 @@ extension ConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ConfiguredTargetKey, rhs: ConfiguredTargetKey) -> Bool {
+  public static func ==(lhs: LLBConfiguredTargetKey, rhs: LLBConfiguredTargetKey) -> Bool {
     if lhs._rootID != rhs._rootID {return false}
     if lhs._label != rhs._label {return false}
     if lhs._configurationKey != rhs._configurationKey {return false}
@@ -149,8 +149,8 @@ extension ConfiguredTargetKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 }
 
-extension ConfiguredTargetValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ConfiguredTargetValue"
+extension LLBConfiguredTargetValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBConfiguredTargetValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "serializedConfiguredTarget"),
   ]
@@ -171,7 +171,7 @@ extension ConfiguredTargetValue: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ConfiguredTargetValue, rhs: ConfiguredTargetValue) -> Bool {
+  public static func ==(lhs: LLBConfiguredTargetValue, rhs: LLBConfiguredTargetValue) -> Bool {
     if lhs._serializedConfiguredTarget != rhs._serializedConfiguredTarget {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

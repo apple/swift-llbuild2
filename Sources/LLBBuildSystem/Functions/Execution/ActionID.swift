@@ -12,7 +12,7 @@ import LLBBuildSystemProtocol
 
 // Mark ActionKey as an LLBBuildValue so that it can be returned by the ActionIDFunction. Since LLBBuildValue is a
 // subset of LLBBuildKey, any LLBBuildKey can be made to conform to LLBBuildValue for free.
-extension ActionKey: LLBBuildValue {}
+extension LLBActionKey: LLBBuildValue {}
 
 
 /// An ActionID is a key used to retrieve the ActionKey referenced by its dataID. This key exists so that the retrieval
@@ -38,17 +38,17 @@ struct ActionIDKey: LLBBuildKey {
     }
 }
 
-public enum ActionIDError: Error {
+enum ActionIDError: Error {
     case notFound
 }
 
-final class ActionIDFunction: LLBBuildFunction<ActionIDKey, ActionKey> {
-    override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionKey> {
+final class ActionIDFunction: LLBBuildFunction<ActionIDKey, LLBActionKey> {
+    override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionKey> {
         return engineContext.db.get(actionIDKey.dataID).flatMapThrowing { object in
             guard let object = object else {
                 throw ActionIDError.notFound
             }
-            return try ActionKey(from: object.data)
+            return try LLBActionKey(from: object.data)
         }
     }
 }

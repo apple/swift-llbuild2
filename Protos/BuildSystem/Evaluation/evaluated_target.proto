@@ -13,10 +13,10 @@ import "BuildSystem/Evaluation/configured_target.proto";
 
 /// An EvaluatedTargetKey is used to request the evaluation of a ConfiguredTarget, as identified by the
 /// ConfiguredTargetKey field.
-message EvaluatedTargetKey {
+message LLBEvaluatedTargetKey {
 
     /// The ConfiguredTargetKey that identifies the target to be evaluated.
-    ConfiguredTargetKey configuredTargetKey = 1;
+    LLBConfiguredTargetKey configuredTargetKey = 1;
 }
 
 /// An EvaluatedTargetValue contains the result of evaluating a target, which can be used to interface between targets
@@ -24,7 +24,7 @@ message EvaluatedTargetKey {
 /// the dependency graph as specified by the build system project description, meaning that if a ConfiguredTarget
 /// declares a dependency on another target, it will have a reference to those dependencies EvaluatedTargetValues in
 /// order to use those results in the construction of its action graph.
-message EvaluatedTargetValue {
+message LLBEvaluatedTargetValue {
 
     /// A container for providers which are the result of the evaluation of a target.
     LLBProviderMap providerMap = 1;

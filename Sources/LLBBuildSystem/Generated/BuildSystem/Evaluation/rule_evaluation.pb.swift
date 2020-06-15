@@ -37,7 +37,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 /// having the artifact ownership point to that, but there was a cycle issue when uploading the action keys as some input
 /// artifacts had not been updated yet. With this approach, artifacts get the ownership during action registration,
 /// avoiding that particular issue.
-public struct RuleEvaluationKeyID {
+public struct LLBRuleEvaluationKeyID {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -65,14 +65,14 @@ public struct RuleEvaluationKeyID {
 /// require the presence of the rootID field, which effectively changes with any change in the workspace. The digest of
 /// a RuleEvaluationKey should be stable to the _contents_ of a configured target. This means that if a source file
 /// changed, it should not invalidate the cache of a RuleEvaluationKey.
-public struct RuleEvaluationKey {
+public struct LLBRuleEvaluationKey {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The label for the configured target being evaluated.
-  public var label: Label {
-    get {return _label ?? Label()}
+  public var label: LLBLabel {
+    get {return _label ?? LLBLabel()}
     set {_label = newValue}
   }
   /// Returns true if `label` has been explicitly set.
@@ -81,8 +81,8 @@ public struct RuleEvaluationKey {
   public mutating func clearLabel() {self._label = nil}
 
   /// The configured target value to evaluate in the rule.
-  public var configuredTargetValue: ConfiguredTargetValue {
-    get {return _configuredTargetValue ?? ConfiguredTargetValue()}
+  public var configuredTargetValue: LLBConfiguredTargetValue {
+    get {return _configuredTargetValue ?? LLBConfiguredTargetValue()}
     set {_configuredTargetValue = newValue}
   }
   /// Returns true if `configuredTargetValue` has been explicitly set.
@@ -92,8 +92,8 @@ public struct RuleEvaluationKey {
 
   /// The configuration key under which this should be evaluated under. The ConfigurationValue fragments will be made
   /// available in the rule context.
-  public var configurationKey: ConfigurationKey {
-    get {return _configurationKey ?? ConfigurationKey()}
+  public var configurationKey: LLBConfigurationKey {
+    get {return _configurationKey ?? LLBConfigurationKey()}
     set {_configurationKey = newValue}
   }
   /// Returns true if `configurationKey` has been explicitly set.
@@ -105,13 +105,13 @@ public struct RuleEvaluationKey {
 
   public init() {}
 
-  fileprivate var _label: Label? = nil
-  fileprivate var _configuredTargetValue: ConfiguredTargetValue? = nil
-  fileprivate var _configurationKey: ConfigurationKey? = nil
+  fileprivate var _label: LLBLabel? = nil
+  fileprivate var _configuredTargetValue: LLBConfiguredTargetValue? = nil
+  fileprivate var _configurationKey: LLBConfigurationKey? = nil
 }
 
 /// The result of evaluating a configured target under a rule.
-public struct RuleEvaluationValue {
+public struct LLBRuleEvaluationValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -138,8 +138,8 @@ public struct RuleEvaluationValue {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension RuleEvaluationKeyID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "RuleEvaluationKeyID"
+extension LLBRuleEvaluationKeyID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBRuleEvaluationKeyID"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "ruleEvaluationKeyID"),
   ]
@@ -160,15 +160,15 @@ extension RuleEvaluationKeyID: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: RuleEvaluationKeyID, rhs: RuleEvaluationKeyID) -> Bool {
+  public static func ==(lhs: LLBRuleEvaluationKeyID, rhs: LLBRuleEvaluationKeyID) -> Bool {
     if lhs._ruleEvaluationKeyID != rhs._ruleEvaluationKeyID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "RuleEvaluationKey"
+extension LLBRuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBRuleEvaluationKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "label"),
     2: .same(proto: "configuredTargetValue"),
@@ -199,7 +199,7 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: RuleEvaluationKey, rhs: RuleEvaluationKey) -> Bool {
+  public static func ==(lhs: LLBRuleEvaluationKey, rhs: LLBRuleEvaluationKey) -> Bool {
     if lhs._label != rhs._label {return false}
     if lhs._configuredTargetValue != rhs._configuredTargetValue {return false}
     if lhs._configurationKey != rhs._configurationKey {return false}
@@ -208,8 +208,8 @@ extension RuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   }
 }
 
-extension RuleEvaluationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "RuleEvaluationValue"
+extension LLBRuleEvaluationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBRuleEvaluationValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "actionIDs"),
     2: .same(proto: "providerMap"),
@@ -235,7 +235,7 @@ extension RuleEvaluationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: RuleEvaluationValue, rhs: RuleEvaluationValue) -> Bool {
+  public static func ==(lhs: LLBRuleEvaluationValue, rhs: LLBRuleEvaluationValue) -> Bool {
     if lhs.actionIds != rhs.actionIds {return false}
     if lhs._providerMap != rhs._providerMap {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

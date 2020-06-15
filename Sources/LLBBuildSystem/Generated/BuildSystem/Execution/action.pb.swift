@@ -33,28 +33,28 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 
 /// Key that represents the evaluation of an action's outputs. The inputs to this action have not been resolved at this
 /// stage, so the purpose of the ActionFunction is to resolve the inputs and request the execution of the action.
-public struct ActionKey {
+public struct LLBActionKey {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Represents what type of action this key represents.
-  public var actionType: ActionKey.OneOf_ActionType? = nil
+  public var actionType: LLBActionKey.OneOf_ActionType? = nil
 
   /// A command line based action key.
-  public var command: CommandAction {
+  public var command: LLBCommandAction {
     get {
       if case .command(let v)? = actionType {return v}
-      return CommandAction()
+      return LLBCommandAction()
     }
     set {actionType = .command(newValue)}
   }
 
   /// A merge trees based action key.
-  public var mergeTrees: MergeTreesAction {
+  public var mergeTrees: LLBMergeTreesAction {
     get {
       if case .mergeTrees(let v)? = actionType {return v}
-      return MergeTreesAction()
+      return LLBMergeTreesAction()
     }
     set {actionType = .mergeTrees(newValue)}
   }
@@ -64,12 +64,12 @@ public struct ActionKey {
   /// Represents what type of action this key represents.
   public enum OneOf_ActionType: Equatable {
     /// A command line based action key.
-    case command(CommandAction)
+    case command(LLBCommandAction)
     /// A merge trees based action key.
-    case mergeTrees(MergeTreesAction)
+    case mergeTrees(LLBMergeTreesAction)
 
   #if !swift(>=4.1)
-    public static func ==(lhs: ActionKey.OneOf_ActionType, rhs: ActionKey.OneOf_ActionType) -> Bool {
+    public static func ==(lhs: LLBActionKey.OneOf_ActionType, rhs: LLBActionKey.OneOf_ActionType) -> Bool {
       switch (lhs, rhs) {
       case (.command(let l), .command(let r)): return l == r
       case (.mergeTrees(let l), .mergeTrees(let r)): return l == r
@@ -83,7 +83,7 @@ public struct ActionKey {
 }
 
 /// The value for an ActionKey.
-public struct ActionValue {
+public struct LLBActionValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -98,7 +98,7 @@ public struct ActionValue {
 }
 
 /// An action execution description for a command line invocation.
-public struct CommandAction {
+public struct LLBCommandAction {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -114,7 +114,7 @@ public struct CommandAction {
   public mutating func clearActionSpec() {self._actionSpec = nil}
 
   /// The list of artifact inputs required for this action evaluation.
-  public var inputs: [Artifact] = []
+  public var inputs: [LLBArtifact] = []
 
   /// The list of outputs expected from this action evaluation.
   public var outputs: [LLBBuildSystemProtocol.LLBActionOutput] = []
@@ -130,14 +130,14 @@ public struct CommandAction {
 /// artifact itself. The ActionValue will have a single dataID as output corresponding to the dataID of the tree
 /// artifact containing the inputs. If there are tree artifacts with colliding subdirectories, they will be merged. For
 /// colliding files, the last one "wins".
-public struct MergeTreesAction {
+public struct LLBMergeTreesAction {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The list of inputs into the merge action. Each input contains the artifact to merge and the root it should be
   /// merged under.
-  public var inputs: [MergeTreesActionInput] = []
+  public var inputs: [LLBMergeTreesActionInput] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -145,14 +145,14 @@ public struct MergeTreesAction {
 }
 
 /// A single input into a merge trees action.
-public struct MergeTreesActionInput {
+public struct LLBMergeTreesActionInput {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The artifact to merge into a tree. It can be any kind of artifact.
-  public var artifact: Artifact {
-    get {return _artifact ?? Artifact()}
+  public var artifact: LLBArtifact {
+    get {return _artifact ?? LLBArtifact()}
     set {_artifact = newValue}
   }
   /// Returns true if `artifact` has been explicitly set.
@@ -170,13 +170,13 @@ public struct MergeTreesActionInput {
 
   public init() {}
 
-  fileprivate var _artifact: Artifact? = nil
+  fileprivate var _artifact: LLBArtifact? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension ActionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ActionKey"
+extension LLBActionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBActionKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "command"),
     2: .same(proto: "mergeTrees"),
@@ -186,7 +186,7 @@ extension ActionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementation
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1:
-        var v: CommandAction?
+        var v: LLBCommandAction?
         if let current = self.actionType {
           try decoder.handleConflictingOneOf()
           if case .command(let m) = current {v = m}
@@ -194,7 +194,7 @@ extension ActionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementation
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.actionType = .command(v)}
       case 2:
-        var v: MergeTreesAction?
+        var v: LLBMergeTreesAction?
         if let current = self.actionType {
           try decoder.handleConflictingOneOf()
           if case .mergeTrees(let m) = current {v = m}
@@ -217,15 +217,15 @@ extension ActionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementation
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ActionKey, rhs: ActionKey) -> Bool {
+  public static func ==(lhs: LLBActionKey, rhs: LLBActionKey) -> Bool {
     if lhs.actionType != rhs.actionType {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension ActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ActionValue"
+extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBActionValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "outputs"),
   ]
@@ -246,15 +246,15 @@ extension ActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ActionValue, rhs: ActionValue) -> Bool {
+  public static func ==(lhs: LLBActionValue, rhs: LLBActionValue) -> Bool {
     if lhs.outputs != rhs.outputs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension CommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "CommandAction"
+extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBCommandAction"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "actionSpec"),
     2: .same(proto: "inputs"),
@@ -285,7 +285,7 @@ extension CommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: CommandAction, rhs: CommandAction) -> Bool {
+  public static func ==(lhs: LLBCommandAction, rhs: LLBCommandAction) -> Bool {
     if lhs._actionSpec != rhs._actionSpec {return false}
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
@@ -294,8 +294,8 @@ extension CommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
   }
 }
 
-extension MergeTreesAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "MergeTreesAction"
+extension LLBMergeTreesAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBMergeTreesAction"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "inputs"),
   ]
@@ -316,15 +316,15 @@ extension MergeTreesAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: MergeTreesAction, rhs: MergeTreesAction) -> Bool {
+  public static func ==(lhs: LLBMergeTreesAction, rhs: LLBMergeTreesAction) -> Bool {
     if lhs.inputs != rhs.inputs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension MergeTreesActionInput: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "MergeTreesActionInput"
+extension LLBMergeTreesActionInput: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBMergeTreesActionInput"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "artifact"),
     2: .same(proto: "path"),
@@ -350,7 +350,7 @@ extension MergeTreesActionInput: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: MergeTreesActionInput, rhs: MergeTreesActionInput) -> Bool {
+  public static func ==(lhs: LLBMergeTreesActionInput, rhs: LLBMergeTreesActionInput) -> Bool {
     if lhs._artifact != rhs._artifact {return false}
     if lhs.path != rhs.path {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

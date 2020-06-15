@@ -10,13 +10,13 @@ import llbuild2
 import Crypto
 import LLBBuildSystemProtocol
 
-extension ConfigurationKey: LLBBuildKey {}
-extension ConfigurationValue: LLBBuildValue {}
+extension LLBConfigurationKey: LLBBuildKey {}
+extension LLBConfigurationValue: LLBBuildValue {}
 
 public protocol LLBConfigurationFragmentKey: LLBBuildKey, LLBPolymorphicCodable {}
 public protocol LLBConfigurationFragment: LLBBuildValue, LLBPolymorphicCodable {}
 
-public enum ConfigurationError: Error {
+public enum LLBConfigurationError: Error {
     /// Unexpected type when deserializing the configured target
     case unexpectedType(String)
 
@@ -34,7 +34,7 @@ public enum ConfigurationError: Error {
 }
 
 // Convenience initializer.
-public extension ConfigurationKey {
+public extension LLBConfigurationKey {
     init(fragmentKeys: [LLBConfigurationFragmentKey] = []) throws {
         // Sort keys to create a deterministic key.
         var validKeys = [LLBAnyCodable]()
@@ -43,7 +43,7 @@ public extension ConfigurationKey {
         }.forEach { fragmentKey in
             if let lastCodable = validKeys.last,
                   lastCodable.typeIdentifier == type(of: fragmentKey).polymorphicIdentifier {
-                throw ConfigurationError.multipleFragmentKeys(String(describing: type(of: fragmentKey).polymorphicIdentifier))
+                throw LLBConfigurationError.multipleFragmentKeys(String(describing: type(of: fragmentKey).polymorphicIdentifier))
             }
             validKeys.append(try LLBAnyCodable(from: fragmentKey))
         }
@@ -58,12 +58,12 @@ public extension ConfigurationKey {
             }
         }
 
-        throw ConfigurationError.missingFragmentKey(C.polymorphicIdentifier)
+        throw LLBConfigurationError.missingFragmentKey(C.polymorphicIdentifier)
     }
 }
 
 // Convenience initializer.
-extension ConfigurationValue {
+extension LLBConfigurationValue {
     init(fragments: [LLBConfigurationFragment]) throws {
         self.fragments = try fragments.map { try LLBAnyCodable(from: $0 )}
     }
@@ -76,11 +76,11 @@ extension ConfigurationValue {
             }
         }
 
-        throw ConfigurationError.missingFragment(C.polymorphicIdentifier)
+        throw LLBConfigurationError.missingFragment(C.polymorphicIdentifier)
     }
 }
 
-extension ConfigurationKey {
+extension LLBConfigurationKey {
     /// Registers a type as a LLBConfigurationFragmentKey. This is required in order for the type to be able to be
     /// decoded at runtime, since llbuild2 allows dynamic types for LLBConfigurationFragmentKeys.
     public static func register(fragmentKeyType: LLBConfigurationFragmentKey.Type) {
@@ -88,7 +88,7 @@ extension ConfigurationKey {
     }
 }
 
-extension ConfigurationValue {
+extension LLBConfigurationValue {
     /// Registers a type as a LLBConfigurationFragment. This is required in order for the type to be able to be decoded
     /// at runtime, since llbuild2 allows dynamic types for LLBConfigurationFragments.
     public static func register(fragmentType: LLBConfigurationFragment.Type) {
@@ -96,12 +96,12 @@ extension ConfigurationValue {
     }
 }
 
-final class ConfigurationFunction: LLBBuildFunction<ConfigurationKey, ConfigurationValue> {
-    override func evaluate(key: ConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ConfigurationValue> {
+final class ConfigurationFunction: LLBBuildFunction<LLBConfigurationKey, LLBConfigurationValue> {
+    override func evaluate(key: LLBConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfigurationValue> {
         do {
             let fragmentKeys: [LLBConfigurationFragmentKey] = try key.fragmentKeys.map { (anyFragmentKey: LLBAnyCodable) in
                 guard let fragmentKeyType = anyFragmentKey.registeredType() as? LLBConfigurationFragmentKey.Type else {
-                    throw ConfigurationError.unexpectedType(
+                    throw LLBConfigurationError.unexpectedType(
                             "Could not find type for \(anyFragmentKey.typeIdentifier), did you forget to register it?"
                     )
                 }
@@ -113,12 +113,12 @@ final class ConfigurationFunction: LLBBuildFunction<ConfigurationKey, Configurat
             return fi.request(fragmentKeys).flatMapThrowing { fragments in
                 try fragments.map { maybeFragment in
                     guard let fragment = maybeFragment as? LLBConfigurationFragment else {
-                        throw ConfigurationError.unexpectedType("Expected an LLBConfigurationFragment but got \(String(describing: type(of: maybeFragment)))")
+                        throw LLBConfigurationError.unexpectedType("Expected an LLBConfigurationFragment but got \(String(describing: type(of: maybeFragment)))")
                     }
                     return fragment
                 }
-            }.flatMapThrowing { (fragments: [LLBConfigurationFragment]) -> ConfigurationValue in
-                var configurationValue = try ConfigurationValue(fragments: fragments)
+            }.flatMapThrowing { (fragments: [LLBConfigurationFragment]) -> LLBConfigurationValue in
+                var configurationValue = try LLBConfigurationValue(fragments: fragments)
 
                 // If there are no fragments, do not calculate a root.
                 if fragments.count == 0 {
@@ -133,7 +133,7 @@ final class ConfigurationFunction: LLBBuildFunction<ConfigurationKey, Configurat
 
             }
         } catch {
-            return fi.group.next().makeFailedFuture(ConfigurationError.unexpectedError(error))
+            return fi.group.next().makeFailedFuture(LLBConfigurationError.unexpectedError(error))
         }
     }
 }

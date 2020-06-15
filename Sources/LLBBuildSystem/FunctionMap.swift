@@ -16,24 +16,24 @@ class LLBBuildFunctionMap {
 
     init(engineContext: LLBBuildEngineContext, configuredTargetDelegate: LLBConfiguredTargetDelegate?, ruleLookupDelegate: LLBRuleLookupDelegate?) {
         self.functionMap = [
-            Artifact.identifier: ArtifactFunction(engineContext: engineContext),
+            LLBArtifact.identifier: ArtifactFunction(engineContext: engineContext),
 
             // Evaluation
-            ConfiguredTargetKey.identifier: ConfiguredTargetFunction(
+            LLBConfiguredTargetKey.identifier: ConfiguredTargetFunction(
                 engineContext: engineContext,
                 configuredTargetDelegate: configuredTargetDelegate
             ),
-            EvaluatedTargetKey.identifier: EvaluatedTargetFunction(engineContext: engineContext),
-            RuleEvaluationKeyID.identifier: RuleEvaluationFunction(
+            LLBEvaluatedTargetKey.identifier: EvaluatedTargetFunction(engineContext: engineContext),
+            LLBRuleEvaluationKeyID.identifier: RuleEvaluationFunction(
                 engineContext: engineContext,
                 ruleLookupDelegate: ruleLookupDelegate
             ),
-            ConfigurationKey.identifier: ConfigurationFunction(engineContext: engineContext),
+            LLBConfigurationKey.identifier: ConfigurationFunction(engineContext: engineContext),
 
             // Execution
             ActionIDKey.identifier: ActionIDFunction(engineContext: engineContext),
-            ActionKey.identifier: ActionFunction(engineContext: engineContext),
-            ActionExecutionKey.identifier: ActionExecutionFunction(engineContext: engineContext),
+            LLBActionKey.identifier: ActionFunction(engineContext: engineContext),
+            LLBActionExecutionKey.identifier: ActionExecutionFunction(engineContext: engineContext),
         ]
     }
 

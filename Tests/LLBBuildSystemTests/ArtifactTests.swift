@@ -15,7 +15,7 @@ import TSCBasic
 import XCTest
 
 // This should actually be a testable import but it's not working for some reason.
-private extension Artifact {
+private extension LLBArtifact {
     func _updateOwner(owner: LLBArtifactOwner) {
         precondition(originType == nil, "Artifact was already associated to an action")
         self.originType = .derived(owner)
@@ -28,9 +28,9 @@ class ArtifactTests: XCTestCase {
 
         let bytes = LLBByteBuffer.withString("Hello, world!")
         let dataID = try testEngine.testDB.put(data: bytes).wait()
-        let artifact = Artifact.source(shortPath: "someSource", dataID: dataID)
+        let artifact = LLBArtifact.source(shortPath: "someSource", dataID: dataID)
 
-        let artifactValue: ArtifactValue = try testEngine.build(artifact).wait()
+        let artifactValue: LLBArtifactValue = try testEngine.build(artifact).wait()
         XCTAssertEqual(Data(dataID.bytes), artifactValue.dataID.bytes)
     }
 }

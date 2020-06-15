@@ -31,7 +31,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 }
 
 //// An ArtifactValue contains a reference to the actual bytes that is expected to exist in a CAS database.
-public struct ArtifactValue {
+public struct LLBArtifactValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -55,8 +55,8 @@ public struct ArtifactValue {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-extension ArtifactValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = "ArtifactValue"
+extension LLBArtifactValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBArtifactValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "dataID"),
   ]
@@ -77,7 +77,7 @@ extension ArtifactValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: ArtifactValue, rhs: ArtifactValue) -> Bool {
+  public static func ==(lhs: LLBArtifactValue, rhs: LLBArtifactValue) -> Bool {
     if lhs._dataID != rhs._dataID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

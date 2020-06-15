@@ -78,7 +78,7 @@ class ActionExecutionTests: XCTestCase {
 
         let dataID = try testDB.put(data: bytes).wait()
 
-        let actionExecutionKey = ActionExecutionKey.with {
+        let actionExecutionKey = LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
                 $0.actionSpec = .with {
                     $0.arguments = ["success"]
@@ -99,13 +99,13 @@ class ActionExecutionTests: XCTestCase {
             })
         }
 
-        let actionExecutionValue: ActionExecutionValue = try testEngine.build(actionExecutionKey).wait()
+        let actionExecutionValue: LLBActionExecutionValue = try testEngine.build(actionExecutionKey).wait()
         let stdout = try XCTUnwrap(testDB.get(actionExecutionValue.stdoutID).wait()?.data.asString())
         XCTAssertEqual(stdout, "Success")
     }
 
     func testActionExecutionFailure() throws {
-        let actionExecutionKey = ActionExecutionKey.with {
+        let actionExecutionKey = LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
                 $0.actionSpec = .with {
                     $0.arguments = ["failure"]
@@ -115,7 +115,7 @@ class ActionExecutionTests: XCTestCase {
 
         XCTAssertThrowsError(try testEngine.build(actionExecutionKey).wait()) { error in
             do {
-                let actionExecutionError = try XCTUnwrap(error as? ActionExecutionError)
+                let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 
                 guard case let .actionExecutionError(stdoutID, stderrID) = actionExecutionError else {
                     XCTFail("Expected an actionExecutionError")
@@ -134,7 +134,7 @@ class ActionExecutionTests: XCTestCase {
     }
 
     func testActionExecutionExecutorError() throws {
-        let actionExecutionKey = ActionExecutionKey.with {
+        let actionExecutionKey = LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
                 $0.actionSpec = .with {
                     $0.arguments = ["schedule-error"]
@@ -144,7 +144,7 @@ class ActionExecutionTests: XCTestCase {
 
         XCTAssertThrowsError(try testEngine.build(actionExecutionKey).wait()) { error in
             do {
-                let actionExecutionError = try XCTUnwrap(error as? ActionExecutionError)
+                let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 
                 guard case let .executorError(underlyingError) = actionExecutionError else {
                     XCTFail("Expected a schedulingError")

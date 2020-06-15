@@ -10,14 +10,14 @@ import llbuild2
 import LLBCAS
 import LLBBuildSystemProtocol
 
-extension Artifact: LLBBuildKey {}
-extension ArtifactValue: LLBBuildValue {}
+extension LLBArtifact: LLBBuildKey {}
+extension LLBArtifactValue: LLBBuildValue {}
 
 /// Convenience initializer.
-public extension Artifact {
+public extension LLBArtifact {
     /// Returns a source artifact with a reference to the data ID containing artifact's contents.
-    static func source(shortPath: String, roots: [String] = [], dataID: LLBDataID) -> Artifact {
-        return Artifact.with {
+    static func source(shortPath: String, roots: [String] = [], dataID: LLBDataID) -> LLBArtifact {
+        return LLBArtifact.with {
             $0.originType = .source(dataID)
             $0.shortPath = shortPath
             $0.type = .file
@@ -26,8 +26,8 @@ public extension Artifact {
     }
 
     /// Returns a derived artifact that doesn't have any artifact owner information configured.
-    static func derivedUninitialized(shortPath: String, roots: [String] = []) -> Artifact {
-        return Artifact.with {
+    static func derivedUninitialized(shortPath: String, roots: [String] = []) -> LLBArtifact {
+        return LLBArtifact.with {
             $0.originType = nil
             $0.shortPath = shortPath
             $0.type = .file
@@ -36,8 +36,8 @@ public extension Artifact {
     }
 
     /// Returns a derived artifact that doesn't have any artifact owner information configured.
-    static func derivedUninitializedDirectory(shortPath: String, roots: [String] = []) -> Artifact {
-        return Artifact.with {
+    static func derivedUninitializedDirectory(shortPath: String, roots: [String] = []) -> LLBArtifact {
+        return LLBArtifact.with {
             $0.originType = nil
             $0.shortPath = shortPath
             $0.type = .directory
@@ -59,7 +59,7 @@ public extension Artifact {
     }
 }
 
-extension Artifact {
+extension LLBArtifact {
     func updateOwner(owner: LLBArtifactOwner) {
         precondition(originType == nil, "Artifact was already associated to an action")
         self.originType = .derived(owner)
@@ -83,49 +83,49 @@ public extension LLBArtifactOwner {
 }
 
 /// Convenience initializer.
-fileprivate extension ArtifactValue {
+fileprivate extension LLBArtifactValue {
     init(dataID: LLBDataID) {
         self.dataID = dataID
     }
 }
 
-public enum ArtifactError: Error {
+public enum LLBArtifactError: Error {
     case unimplemented
     case invalidOriginType
     case actionWithTooFewOutputs
 }
 
-final class ArtifactFunction: LLBBuildFunction<Artifact, ArtifactValue> {
-    override func evaluate(key artifact: Artifact, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ArtifactValue> {
+final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
+    override func evaluate(key artifact: LLBArtifact, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBArtifactValue> {
 
         // Resolve the easy states first, like no originType and source originType.
         switch artifact.originType {
         case .none:
-            return fi.group.next().makeFailedFuture(ArtifactError.invalidOriginType)
+            return fi.group.next().makeFailedFuture(LLBArtifactError.invalidOriginType)
         case let .source(dataID):
-            return fi.group.next().makeSucceededFuture(ArtifactValue(dataID: dataID))
+            return fi.group.next().makeSucceededFuture(LLBArtifactValue(dataID: dataID))
         case let .derivedStatic(dataID):
-            return fi.group.next().makeSucceededFuture(ArtifactValue(dataID: dataID))
+            return fi.group.next().makeSucceededFuture(LLBArtifactValue(dataID: dataID))
         default:
             break
         }
 
         // There are no other known originTypes, so we must be expecting a derived type.
         guard case let .derived(artifactOwner) = artifact.originType else {
-            return fi.group.next().makeFailedFuture(ArtifactError.invalidOriginType)
+            return fi.group.next().makeFailedFuture(LLBArtifactError.invalidOriginType)
         }
 
         // Request the ActionKey, then request its ActionValue and retrieve the data ID from the ActionValue to
         // associate to this artifact.
-        return fi.request(RuleEvaluationKeyID(ruleEvaluationKeyID: artifactOwner.actionsOwner)).flatMap { (ruleEvaluationValue: RuleEvaluationValue) -> LLBFuture<ActionKey> in
+        return fi.request(LLBRuleEvaluationKeyID(ruleEvaluationKeyID: artifactOwner.actionsOwner)).flatMap { (ruleEvaluationValue: LLBRuleEvaluationValue) -> LLBFuture<LLBActionKey> in
             return fi.request(ActionIDKey(dataID: ruleEvaluationValue.actionIds[Int(artifactOwner.actionIndex)]))
-        }.flatMap { (actionKey: ActionKey) -> LLBFuture<ActionValue> in
+        }.flatMap { (actionKey: LLBActionKey) -> LLBFuture<LLBActionValue> in
             return fi.request(actionKey)
-        }.flatMapThrowing { (actionValue: ActionValue) -> ArtifactValue in
+        }.flatMapThrowing { (actionValue: LLBActionValue) -> LLBArtifactValue in
             guard actionValue.outputs.count >= artifactOwner.outputIndex + 1 else {
-                throw ArtifactError.actionWithTooFewOutputs
+                throw LLBArtifactError.actionWithTooFewOutputs
             }
-            return ArtifactValue(dataID: actionValue.outputs[Int(artifactOwner.outputIndex)])
+            return LLBArtifactValue(dataID: actionValue.outputs[Int(artifactOwner.outputIndex)])
         }
     }
 }

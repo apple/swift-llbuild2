@@ -48,7 +48,7 @@ fileprivate struct ConfigurationTestsProvider: LLBProvider, Codable {
     }
 }
 
-private struct ConfigurationTestsConfiguredTarget: ConfiguredTarget, Codable {
+private struct ConfigurationTestsConfiguredTarget: LLBConfiguredTarget, Codable {
     let name: String
     let dependency: LLBProviderMap?
 
@@ -59,7 +59,7 @@ private struct ConfigurationTestsConfiguredTarget: ConfiguredTarget, Codable {
 }
 
 private final class ConfigurationTestsBuildRule: LLBBuildRule<ConfigurationTestsConfiguredTarget> {
-    override func evaluate(configuredTarget: ConfigurationTestsConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
+    override func evaluate(configuredTarget: ConfigurationTestsConfiguredTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
         var returnValue = ""
         let platformConfiguration = try ruleContext.getFragment(PlatformFragment.self)
         returnValue += platformConfiguration.expensiveCompilerPath
@@ -75,13 +75,13 @@ private final class ConfigurationTestsBuildRule: LLBBuildRule<ConfigurationTests
 }
 
 private final class ConfigurationTestsConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: ConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<ConfiguredTarget> {
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
 
         if key.label.targetName == "top_level_target", try key.configurationKey.get(PlatformFragmentKey.self).platformName == "target" {
-            let dependencyKey = ConfiguredTargetKey(
+            let dependencyKey = LLBConfiguredTargetKey(
                 rootID: key.rootID,
-                label: try Label("//some:top_level_target"),
-                configurationKey: try ConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: "host")])
+                label: try LLBLabel("//some:top_level_target"),
+                configurationKey: try LLBConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: "host")])
             )
             return fi.requestDependency(dependencyKey).map { providerMap in
                 return ConfigurationTestsConfiguredTarget(name: key.label.targetName, dependency: providerMap)
@@ -97,7 +97,7 @@ private final class ConfigurationTestsRuleLookupDelegate: LLBRuleLookupDelegate 
         ConfigurationTestsConfiguredTarget.identifier: ConfigurationTestsBuildRule(),
     ]
 
-    func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule? {
+    func rule(for configuredTargetType: LLBConfiguredTarget.Type) -> LLBRule? {
         return ruleMap[configuredTargetType.identifier]
     }
 }
@@ -126,11 +126,11 @@ class ConfigurationTests: XCTestCase {
     // achieve this result. Real life clients of llbuild2 will need to provide similar infrastructure (in a more
     // sustainable approach of course).
     func testSameTargetConfigurationTransitions() throws {
-        ConfigurationKey.register(fragmentKeyType: PlatformFragmentKey.self)
-        ConfigurationValue.register(fragmentType: PlatformFragment.self)
+        LLBConfigurationKey.register(fragmentKeyType: PlatformFragmentKey.self)
+        LLBConfigurationValue.register(fragmentType: PlatformFragment.self)
 
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: ConfigurationTestsConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: ConfigurationTestsConfiguredTarget.self)
 
             let configuredTargetDelegate = ConfigurationTestsConfiguredTargetDelegate()
             let ruleLookupDelegate = ConfigurationTestsRuleLookupDelegate()
@@ -143,13 +143,13 @@ class ConfigurationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:top_level_target")
-            let configurationKey = try ConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: "target")])
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label, configurationKey: configurationKey)
+            let label = try LLBLabel("//some:top_level_target")
+            let configurationKey = try LLBConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: "target")])
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label, configurationKey: configurationKey)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
             let simpleString = try evaluatedTargetValue.providerMap.get(ConfigurationTestsProvider.self).simpleString
 

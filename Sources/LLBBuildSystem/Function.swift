@@ -81,17 +81,17 @@ public final class LLBBuildFunctionInterface {
 }
 
 extension LLBBuildFunctionInterface {
-    public func requestArtifact(_ artifact: Artifact) -> LLBFuture<ArtifactValue> {
-        return self.request(artifact, as: ArtifactValue.self).map { $0 }
+    public func requestArtifact(_ artifact: LLBArtifact) -> LLBFuture<LLBArtifactValue> {
+        return self.request(artifact, as: LLBArtifactValue.self).map { $0 }
     }
 
-    public func requestDependency(_ key: ConfiguredTargetKey) -> LLBFuture<LLBProviderMap> {
-        let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: key)
-        return self.request(evaluatedTargetKey, as: EvaluatedTargetValue.self).map { $0.providerMap }
+    public func requestDependency(_ key: LLBConfiguredTargetKey) -> LLBFuture<LLBProviderMap> {
+        let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: key)
+        return self.request(evaluatedTargetKey, as: LLBEvaluatedTargetValue.self).map { $0.providerMap }
     }
 
-    public func requestDependencies(_ keys: [ConfiguredTargetKey]) -> LLBFuture<[LLBProviderMap]> {
-        let evaluatedTargetKeys = keys.map { EvaluatedTargetKey(configuredTargetKey: $0) }
-        return self.request(evaluatedTargetKeys, as: EvaluatedTargetValue.self).map { $0.map(\.providerMap) }
+    public func requestDependencies(_ keys: [LLBConfiguredTargetKey]) -> LLBFuture<[LLBProviderMap]> {
+        let evaluatedTargetKeys = keys.map { LLBEvaluatedTargetKey(configuredTargetKey: $0) }
+        return self.request(evaluatedTargetKeys, as: LLBEvaluatedTargetValue.self).map { $0.map(\.providerMap) }
     }
 }

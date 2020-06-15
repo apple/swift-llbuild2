@@ -10,14 +10,14 @@ import llbuild2
 import LLBCAS
 import LLBBuildSystemProtocol
 
-extension ActionKey: LLBBuildKey {}
-extension ActionValue: LLBBuildValue {}
+extension LLBActionKey: LLBBuildKey {}
+extension LLBActionValue: LLBBuildValue {}
 
 /// Convenience initializer.
-public extension ActionKey {
-    static func command(actionSpec: LLBActionSpec, inputs: [Artifact], outputs: [LLBActionOutput]) -> Self {
-        return ActionKey.with {
-            $0.actionType = .command(CommandAction.with {
+public extension LLBActionKey {
+    static func command(actionSpec: LLBActionSpec, inputs: [LLBArtifact], outputs: [LLBActionOutput]) -> Self {
+        return LLBActionKey.with {
+            $0.actionType = .command(LLBCommandAction.with {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
@@ -25,17 +25,17 @@ public extension ActionKey {
         }
     }
 
-    static func mergeTrees(inputs: [(artifact: Artifact, path: String?)]) -> Self {
-        return ActionKey.with {
-            $0.actionType = .mergeTrees(MergeTreesAction.with {
-                $0.inputs = inputs.map { MergeTreesActionInput(artifact: $0.artifact, path: $0.path) }
+    static func mergeTrees(inputs: [(artifact: LLBArtifact, path: String?)]) -> Self {
+        return LLBActionKey.with {
+            $0.actionType = .mergeTrees(LLBMergeTreesAction.with {
+                $0.inputs = inputs.map { LLBMergeTreesActionInput(artifact: $0.artifact, path: $0.path) }
             })
         }
     }
 }
 
-fileprivate extension MergeTreesActionInput {
-    init(artifact: Artifact, path: String?) {
+fileprivate extension LLBMergeTreesActionInput {
+    init(artifact: LLBArtifact, path: String?) {
         self.artifact = artifact
         if let path = path {
             self.path = path
@@ -44,13 +44,13 @@ fileprivate extension MergeTreesActionInput {
 }
 
 /// Convenience initializer.
-fileprivate extension ActionValue {
+fileprivate extension LLBActionValue {
     init(outputs: [LLBDataID]) {
         self.outputs = outputs
     }
 }
 
-public enum ActionError: Error {
+public enum LLBActionError: Error {
     /// Error for invalid action key.
     case invalid
 
@@ -58,21 +58,21 @@ public enum ActionError: Error {
     case invalidMergeTreeInput(String)
 }
 
-final class ActionFunction: LLBBuildFunction<ActionKey, ActionValue> {
-    override func evaluate(key actionKey: ActionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionValue> {
+final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
+    override func evaluate(key actionKey: LLBActionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionValue> {
         switch actionKey.actionType {
         case let .command(commandKey):
             return evaluate(commandKey: commandKey, fi)
         case let .mergeTrees(mergeTreesKey):
             return evaluate(mergeTreesKey: mergeTreesKey, fi)
         case .none:
-            return engineContext.group.next().makeFailedFuture(ActionError.invalid)
+            return engineContext.group.next().makeFailedFuture(LLBActionError.invalid)
         }
     }
 
-    private func evaluate(commandKey: CommandAction, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionValue> {
-        return fi.requestKeyed(commandKey.inputs).flatMap { (inputs: [(Artifact, ArtifactValue)]) -> LLBFuture<ActionExecutionValue> in
-            let actionExecutionKey = ActionExecutionKey.command(
+    private func evaluate(commandKey: LLBCommandAction, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionValue> {
+        return fi.requestKeyed(commandKey.inputs).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
+            let actionExecutionKey = LLBActionExecutionKey.command(
                 actionSpec: commandKey.actionSpec,
                 inputs: inputs.map { (artifact, artifactValue) in
                     LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
@@ -82,16 +82,16 @@ final class ActionFunction: LLBBuildFunction<ActionKey, ActionValue> {
 
             return fi.request(actionExecutionKey)
         }.map { actionExecutionValue in
-            return ActionValue(outputs: actionExecutionValue.outputs)
+            return LLBActionValue(outputs: actionExecutionValue.outputs)
         }
     }
 
-    private func evaluate(mergeTreesKey: MergeTreesAction, _ fi: LLBBuildFunctionInterface) -> LLBFuture<ActionValue> {
-        return fi.requestKeyed(mergeTreesKey.inputs.map(\.artifact)).flatMap { (inputs: [(artifact: Artifact, artifactValue: ArtifactValue)]) -> LLBFuture<ActionExecutionValue> in
+    private func evaluate(mergeTreesKey: LLBMergeTreesAction, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionValue> {
+        return fi.requestKeyed(mergeTreesKey.inputs.map(\.artifact)).flatMap { (inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
             var actionInputs = [LLBActionInput]()
             for (index, input) in mergeTreesKey.inputs.enumerated() {
                 guard inputs[index].artifact.type == .directory || !input.path.isEmpty else {
-                    return fi.group.next().makeFailedFuture(ActionError.invalidMergeTreeInput("expected a path for the non directory artifact"))
+                    return fi.group.next().makeFailedFuture(LLBActionError.invalidMergeTreeInput("expected a path for the non directory artifact"))
                 }
 
                 actionInputs.append(
@@ -99,10 +99,10 @@ final class ActionFunction: LLBBuildFunction<ActionKey, ActionValue> {
                 )
             }
 
-            let actionExecutionKey = ActionExecutionKey.mergeTrees(inputs: actionInputs)
+            let actionExecutionKey = LLBActionExecutionKey.mergeTrees(inputs: actionInputs)
             return fi.request(actionExecutionKey)
         }.map { actionExecutionValue in
-            return ActionValue(outputs: actionExecutionValue.outputs)
+            return LLBActionValue(outputs: actionExecutionValue.outputs)
         }
     }
 }

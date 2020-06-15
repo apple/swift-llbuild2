@@ -37,14 +37,14 @@ class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
     override func evaluate(key: GenerationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<GenerationValue> {
         do {
             // Construct the GameOfLife configuration key with the initial board and board size.
-            let configurationKey = try ConfigurationKey(
+            let configurationKey = try LLBConfigurationKey(
                 fragmentKeys: [GameOfLifeConfigurationKey(initialBoard: key.initialBoard, size: key.size)]
             )
 
             // Request the BoardTarget for the specified generation, with the configuration key.
-            let configuredTargetKey = ConfiguredTargetKey(
+            let configuredTargetKey = LLBConfiguredTargetKey(
                 rootID: LLBDataID(),
-                label: try Label("//board:\(key.generation)"),
+                label: try LLBLabel("//board:\(key.generation)"),
                 configurationKey: configurationKey
             )
 
@@ -57,7 +57,7 @@ class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
                 } catch {
                     return fi.group.next().makeFailedFuture(error)
                 }
-            }.map { (artifactValue: ArtifactValue) in
+            }.map { (artifactValue: LLBArtifactValue) in
                 // With the data ID for the artifact, return the GenerationValue.
                 return GenerationValue(boardID: artifactValue.dataID)
             }

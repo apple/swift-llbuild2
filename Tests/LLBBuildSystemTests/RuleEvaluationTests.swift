@@ -17,7 +17,7 @@ import TSCBasic
 import XCTest
 
 // Dummy configured target data structure.
-private struct RuleEvaluationConfiguredTarget: ConfiguredTarget, Codable {
+private struct RuleEvaluationConfiguredTarget: LLBConfiguredTarget, Codable {
     let name: String
     let dependency: LLBProviderMap?
 
@@ -28,7 +28,7 @@ private struct RuleEvaluationConfiguredTarget: ConfiguredTarget, Codable {
 }
 
 private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget> {
-    override func evaluate(configuredTarget: RuleEvaluationConfiguredTarget, _ ruleContext: RuleContext) throws -> LLBFuture<[LLBProvider]> {
+    override func evaluate(configuredTarget: RuleEvaluationConfiguredTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
         if configuredTarget.name == "single_artifact_valid" {
             let output = try ruleContext.declareArtifact("single_artifact_valid")
 
@@ -135,17 +135,17 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
 }
 
 fileprivate struct RuleEvaluationProvider: LLBProvider, Codable {
-    let artifacts: [Artifact]
+    let artifacts: [LLBArtifact]
 
-    init(artifacts: [Artifact]) {
+    init(artifacts: [LLBArtifact]) {
         self.artifacts = artifacts
     }
 }
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: ConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<ConfiguredTarget> {
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
         if key.label.targetName == "top_level_target" {
-            let dependencyKey = ConfiguredTargetKey(rootID: key.rootID, label: try Label("//some:bottom_level_target"))
+            let dependencyKey = LLBConfiguredTargetKey(rootID: key.rootID, label: try LLBLabel("//some:bottom_level_target"))
             return fi.requestDependency(dependencyKey).map { providerMap in
                 return RuleEvaluationConfiguredTarget(name: key.label.targetName, dependency: providerMap)
             }
@@ -160,7 +160,7 @@ private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
         RuleEvaluationConfiguredTarget.identifier: DummyBuildRule(),
     ]
 
-    func rule(for configuredTargetType: ConfiguredTarget.Type) -> LLBRule? {
+    func rule(for configuredTargetType: LLBConfiguredTarget.Type) -> LLBRule? {
         return ruleMap[configuredTargetType.identifier]
     }
 }
@@ -168,7 +168,7 @@ private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
 class RuleEvaluationTests: XCTestCase {
     func testRuleEvaluation() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
@@ -181,17 +181,17 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:single_artifact_valid")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:single_artifact_valid")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
             XCTAssertEqual(evaluatedTargetValue.providerMap.count, 1)
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
             let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter\n")
@@ -200,7 +200,7 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluation2Outputs2Actions() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
@@ -213,15 +213,15 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:2_outputs_2_actions")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:2_outputs_2_actions")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
             for (index, artifact) in try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts.enumerated() {
-                let artifactValue: ArtifactValue = try testEngine.build(artifact).wait()
+                let artifactValue: LLBArtifactValue = try testEngine.build(artifact).wait()
 
                 let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
 
@@ -239,7 +239,7 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluation2ActionsWithSameOutput() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -250,13 +250,13 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:2_actions_1_output")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:2_actions_1_output")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
             XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey).wait()) { error in
-                guard let ruleContextError = error as? RuleContextError else {
+                guard let ruleContextError = error as? LLBRuleContextError else {
                     XCTFail("unexpected error type")
                     return
                 }
@@ -270,7 +270,7 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluationUnregisteredOutput() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -281,13 +281,13 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:unregistered_output")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:unregistered_output")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
             XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey).wait()) { error in
-                guard let ruleContextError = error as? RuleEvaluationError else {
+                guard let ruleContextError = error as? LLBRuleEvaluationError else {
                     XCTFail("unexpected error type \(error)")
                     return
                 }
@@ -303,7 +303,7 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluation2Targets() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
@@ -316,16 +316,16 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:top_level_target")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:top_level_target")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
             let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter\nI cant breathe\n")
@@ -334,7 +334,7 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluationStaticWrite() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -345,16 +345,16 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:static_write")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:static_write")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
             let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter")
@@ -363,7 +363,7 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluationTreeMerge() throws {
         try withTemporaryDirectory { tempDir in
-            ConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
+            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
 
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
@@ -376,16 +376,16 @@ class RuleEvaluationTests: XCTestCase {
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
-            let label = try Label("//some:tree_merge")
-            let configuredTargetKey = ConfiguredTargetKey(rootID: dataID, label: label)
+            let label = try LLBLabel("//some:tree_merge")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let evaluatedTargetKey = EvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: EvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
 
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: ArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
             let client = LLBCASFSClient(testEngine.testDB)
 
