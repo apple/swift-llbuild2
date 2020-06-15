@@ -12,8 +12,8 @@ import Dispatch
 import NIO
 import TSCBasic
 
-import llbuild2
-import LLBUtil
+import LLBCAS
+import LLBSupport
 
 
 class FileBackedCASDatabaseTests: XCTestCase {

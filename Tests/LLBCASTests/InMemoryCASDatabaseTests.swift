@@ -10,8 +10,9 @@ import XCTest
 
 import Dispatch
 
-import llbuild2
-import LLBUtil
+import LLBCAS
+import LLBSupport
+
 
 class InMemoryCASDatabaseTests: XCTestCase {
     let group = LLBMakeDefaultDispatchGroup()

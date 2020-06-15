@@ -12,9 +12,9 @@ import XCTest
 
 import TSCBasic
 
+import LLBCAS
 import LLBCASFileTree
 import LLBSupport
-import LLBUtil
 
 
 class ImportExportTests: XCTestCase {
