@@ -11,7 +11,7 @@ import LLBBuildSystem
 
 /// GenerationKey represents the request for a board at a particular generation for a given board size and initial
 /// state.
-struct GenerationKey: LLBBuildKey, Codable {
+struct GenerationKey: LLBBuildKey, Codable, Hashable {
     let initialBoard: InitialBoard
     let size: Point
     let generation: Int
