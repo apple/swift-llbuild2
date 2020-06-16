@@ -29,14 +29,21 @@ public struct LLBResult {
 }
 
 public class LLBFunctionInterface {
+    @usableFromInline
     let engine: LLBEngine
+
     let key: LLBKey
 
-    public let group: LLBFuturesDispatchGroup
+    /// The dispatch group to be used as when processing the future blocks throughout the build.
+    @inlinable
+    public var group: LLBFuturesDispatchGroup { return engine.group }
 
-    init(group: LLBFuturesDispatchGroup, engine: LLBEngine, key: LLBKey) {
+    /// The CAS database reference to use for interfacing with CAS systems.
+    @inlinable
+    public var db: LLBCASDatabase { return engine.db }
+
+    init(engine: LLBEngine, key: LLBKey) {
         self.engine = engine
-        self.group = group
         self.key = key
     }
 
@@ -58,9 +65,9 @@ public class LLBFunctionInterface {
         return engine.build(key: key, as: type)
     }
 
-    // FIXME - implement these
-    //    func spawn<T>(action: ()->T) -> LLBFuture<T>
-    //    func spawn(args: [String], env: [String: String]) -> LLBFuture<ProcessResult...>
+    public func spawn(_ action: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+        return engine.executor.execute(request: action, ctx)
+    }
 }
 
 public protocol LLBFunction {
@@ -97,6 +104,8 @@ public class LLBEngine {
 
     fileprivate let lock = NIOConcurrencyHelpers.Lock()
     fileprivate let delegate: LLBEngineDelegate
+    @usableFromInline internal let db: LLBCASDatabase
+    fileprivate let executor: LLBExecutor
     fileprivate let pendingResults: LLBEventualResultsCache<Key, LLBValue>
     fileprivate let keyDependencyGraph = LLBKeyDependencyGraph()
 
@@ -109,17 +118,21 @@ public class LLBEngine {
 
     public init(
         group: LLBFuturesDispatchGroup = LLBMakeDefaultDispatchGroup(),
-        delegate: LLBEngineDelegate
+        delegate: LLBEngineDelegate,
+        db: LLBCASDatabase? = nil,
+        executor: LLBExecutor = LLBNullExecutor()
     ) {
         self.group = group
         self.delegate = delegate
+        self.db = db ?? LLBInMemoryCASDatabase(group: group)
+        self.executor = executor
         self.pendingResults = LLBEventualResultsCache<Key, LLBValue>(group: group)
     }
 
     public func build(key: LLBKey) -> LLBFuture<LLBValue> {
         return self.pendingResults.value(for: Key(key)) { _ in
             return self.delegate.lookupFunction(forKey: key, group: self.group).flatMap { function in
-                let fi = LLBFunctionInterface(group: self.group, engine: self, key: key)
+                let fi = LLBFunctionInterface(engine: self, key: key)
                 return function.compute(key: key, fi)
             }
         }

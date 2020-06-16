@@ -12,12 +12,9 @@ import LLBCAS
 /// LLBBuildEngineContext contains references to dependencies that may need to be used throught the evaluation of the
 /// functions.
 public protocol LLBBuildEngineContext {
-    /// The dispatch group to be used as when processing the future blocks throught the build.
+    /// The dispatch group to be used as when processing the future blocks throughout the build.
     var group: LLBFuturesDispatchGroup { get }
 
     /// The CAS database reference to use for interfacing with CAS systems.
     var db: LLBCASDatabase { get }
-
-    /// A reference to an executor that provides action execution support.
-    var executor: LLBExecutor { get }
 }

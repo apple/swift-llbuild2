@@ -80,7 +80,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             actionSpec: commandKey.actionSpec, inputs: commandKey.inputs, outputs: commandKey.outputs
         )
 
-        return engineContext.executor.execute(request: actionExecutionRequest, engineContext: engineContext).flatMapErrorThrowing { error in
+        return fi.spawn(actionExecutionRequest, engineContext).flatMapErrorThrowing { error in
             // Action failures do not throw from the executor, so this must be an executor specific error.
             throw LLBActionExecutionError.executorError(error)
         }.flatMapThrowing { executionResponse in

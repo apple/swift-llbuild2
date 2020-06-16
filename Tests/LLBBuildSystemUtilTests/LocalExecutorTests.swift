@@ -31,7 +31,7 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            let response = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
+            let response = try localExecutor.execute(request: request, testEngineContext).wait()
             let contents = try XCTUnwrap(testEngineContext.testDB.get(response.outputs[0]).wait()?.data.asString())
             XCTAssertEqual(contents, "black lives matter\n")
         }
@@ -48,7 +48,7 @@ class LocalExecutorTests: XCTestCase {
                 }
             }
 
-            XCTAssertThrowsError(try localExecutor.execute(request: request, engineContext: testEngineContext).wait()) { error in
+            XCTAssertThrowsError(try localExecutor.execute(request: request, testEngineContext).wait()) { error in
                 guard case let LLBLocalExecutorError.unexpected(underlyingError) = error else {
                     XCTFail("Unexpected error type")
                     return
@@ -70,7 +70,7 @@ class LocalExecutorTests: XCTestCase {
                 }
             }
 
-            let result = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
+            let result = try localExecutor.execute(request: request, testEngineContext).wait()
             XCTAssertEqual(result.exitCode, 1)
             XCTAssert(result.outputs.isEmpty)
         }
@@ -93,7 +93,7 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            XCTAssertThrowsError(try localExecutor.execute(request: request, engineContext: testEngineContext).wait()) { error in
+            XCTAssertThrowsError(try localExecutor.execute(request: request, testEngineContext).wait()) { error in
                 guard case let LLBLocalExecutorError.unexpected(underlyingError) = error,
                       let fsError = underlyingError as? FileSystemError else {
                     XCTFail("Unexpected error type")
@@ -122,7 +122,7 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            let result = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
+            let result = try localExecutor.execute(request: request, testEngineContext).wait()
             try LLBCASFSClient(testEngineContext.testDB).load(result.outputs[0]).map { node in
                 guard let tree = node.tree else {
                     XCTFail("expected output to be a tree")
@@ -161,7 +161,7 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            let response = try localExecutor.execute(request: request, engineContext: testEngineContext).wait()
+            let response = try localExecutor.execute(request: request, testEngineContext).wait()
             let contents = try XCTUnwrap(testEngineContext.testDB.get(response.outputs[0]).wait()?.data.asString())
             XCTAssertEqual(contents, "I can't breathe")
         }

@@ -15,20 +15,16 @@ import NIO
 public class LLBTestBuildEngineContext: LLBBuildEngineContext {
     public let group: LLBFuturesDispatchGroup
     public let testDB: LLBTestCASDatabase
-    public let testExecutor: LLBTestExecutor
 
     public var db: LLBCASDatabase { testDB }
-    public var executor: LLBExecutor { testExecutor }
 
     public init(
         group: LLBFuturesDispatchGroup? = nil,
-        db: LLBCASDatabase? = nil,
-        executor: LLBExecutor? = nil
+        db: LLBCASDatabase? = nil
     ) {
         let group = group ?? MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.group = group
         self.testDB = LLBTestCASDatabase(group: group, db: db ?? LLBInMemoryCASDatabase(group: group))
-        self.testExecutor = LLBTestExecutor(group: group, executor: executor)
     }
 }
 
@@ -45,20 +41,21 @@ public class LLBTestBuildEngine {
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
         executor: LLBExecutor? = nil
     ) {
-        let engineContext = engineContext ?? LLBTestBuildEngineContext(executor: executor)
+        let engineContext = engineContext ?? LLBTestBuildEngineContext()
         self.engineContext = engineContext
 
         self.engine = LLBBuildEngine(
             engineContext: engineContext,
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
             configuredTargetDelegate: configuredTargetDelegate,
-            ruleLookupDelegate: ruleLookupDelegate
+            ruleLookupDelegate: ruleLookupDelegate,
+            db: engineContext.db,
+            executor: executor ?? LLBNullExecutor()
         )
     }
 
     public var group: LLBFuturesDispatchGroup { engineContext.group }
     public var testDB: LLBTestCASDatabase { engineContext.testDB }
-    public var testExecutor: LLBTestExecutor { engineContext.testExecutor }
 
     /// Requests the evaluation of a build key, returning an abstract build value.
     public func build(_ key: LLBBuildKey) -> LLBFuture<LLBBuildValue> {

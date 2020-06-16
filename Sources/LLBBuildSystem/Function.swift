@@ -77,6 +77,10 @@ public final class LLBBuildFunctionInterface {
         let requestFutures = keys.map { self.fi.request($0).map { $0 as! LLBBuildValue} }
         return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
     }
+
+    func spawn(_ action: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+        return fi.spawn(action, ctx)
+    }
 }
 
 extension LLBBuildFunctionInterface {

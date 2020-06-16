@@ -18,7 +18,7 @@ enum ActionExecutionDummyError: Error, Equatable {
 }
 
 private class ActionExecutionDummyExecutor: LLBExecutor {
-    func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    func execute(request: LLBActionExecutionRequest, _ engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
         let command = request.actionSpec.arguments[0]
         if command == "success" {
             let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
@@ -59,8 +59,8 @@ class ActionExecutionTests: XCTestCase {
 
     override func setUp() {
         self.testExecutor = ActionExecutionDummyExecutor()
-        self.testEngineContext = LLBTestBuildEngineContext(executor: testExecutor)
-        self.testEngine = LLBTestBuildEngine(engineContext: testEngineContext)
+        self.testEngineContext = LLBTestBuildEngineContext()
+        self.testEngine = LLBTestBuildEngine(engineContext: testEngineContext, executor: self.testExecutor)
     }
 
     override func tearDown() {
