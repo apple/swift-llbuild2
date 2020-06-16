@@ -8,7 +8,6 @@
 # See http://swift.org/LICENSE.txt for license information
 # See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-
 PROTOC_ZIP=protoc-3.12.2-osx-x86_64.zip
 PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v3.12.2/$PROTOC_ZIP"
 
