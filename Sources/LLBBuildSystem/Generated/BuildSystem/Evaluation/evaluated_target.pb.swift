@@ -80,7 +80,7 @@ public struct LLBEvaluatedTargetValue {
 }
 
 //// A provider map contains a list of providers. There can only be 1 of each type of provider, as identified by the type
-//// of the LLBAnyCodable.
+//// of the LLBAnySerializable.
 public struct LLBProviderMap {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
