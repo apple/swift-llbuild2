@@ -111,15 +111,11 @@ let package = Package(
         // Build system support
         .target(
             name: "LLBBuildSystem",
-            dependencies: ["llbuild2", "LLBBuildSystemProtocol", "SwiftProtobuf", "Crypto"]
-        ),
-        .target(
-            name: "LLBBuildSystemProtocol",
-            dependencies: ["llbuild2", "LLBCAS", "SwiftProtobuf"]
+            dependencies: ["llbuild2", "SwiftProtobuf", "Crypto"]
         ),
         .target(
             name: "LLBBuildSystemUtil",
-            dependencies: ["LLBBuildSystemProtocol", "SwiftToolsSupport-auto", "LLBCASFileTree"]
+            dependencies: ["llbuild2", "SwiftToolsSupport-auto", "LLBCASFileTree"]
         ),
         .target(
             name: "LLBBuildSystemTestHelpers",

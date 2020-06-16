@@ -9,7 +9,7 @@
 syntax = "proto3";
 
 import "BuildSystem/Evaluation/artifact_owner.proto";
-import "BuildSystemProtocol/action_execution.proto";
+import "EngineProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
 // An Artifact is the unit with which files and directories are represented in llbuild2. It contains not the contents

@@ -6,7 +6,6 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import llbuild2
 
 /// Protocol definition for an executor that can fullfil action execution requests.
 public protocol LLBExecutor {

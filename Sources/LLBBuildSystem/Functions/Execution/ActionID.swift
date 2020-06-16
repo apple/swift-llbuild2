@@ -7,8 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-import LLBCAS
-import LLBBuildSystemProtocol
 
 // Mark ActionKey as an LLBBuildValue so that it can be returned by the ActionIDFunction. Since LLBBuildValue is a
 // subset of LLBBuildKey, any LLBBuildKey can be made to conform to LLBBuildValue for free.

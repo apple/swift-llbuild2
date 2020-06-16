@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystemProtocol/action_execution.proto";
+import "EngineProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
 // Key that represents the execution of an action after the input artifacts have been resolved into concrete data IDs,

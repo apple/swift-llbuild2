@@ -8,7 +8,6 @@
 
 import llbuild2
 import Crypto
-import LLBBuildSystemProtocol
 
 extension LLBConfigurationKey: LLBBuildKey {}
 extension LLBConfigurationValue: LLBBuildValue {}
