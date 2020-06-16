@@ -21,7 +21,7 @@ public enum LLBProviderMapError: Error {
 public extension LLBProviderMap {
     init(providers: [LLBProvider]) throws {
         // Sort providers to create a deterministic output.
-        var validProviders = [LLBAnyCodable]()
+        var validProviders = [LLBAnySerializable]()
         try providers.sorted {
             type(of: $0).polymorphicIdentifier < type(of: $1).polymorphicIdentifier
         }.forEach { provider in
@@ -29,7 +29,7 @@ public extension LLBProviderMap {
                   lastCodable.typeIdentifier == type(of: provider).polymorphicIdentifier {
                 throw LLBProviderMapError.multipleProviders(String(describing: type(of: provider).polymorphicIdentifier))
             }
-            validProviders.append(try LLBAnyCodable(from: provider))
+            validProviders.append(try LLBAnySerializable(from: provider))
         }
         self.providers = validProviders
     }
@@ -44,7 +44,7 @@ extension LLBProviderMap {
     public func get<P: LLBProvider>(_ type: P.Type = P.self) throws -> P {
         for anyProvider in providers {
             if anyProvider.typeIdentifier == P.polymorphicIdentifier {
-                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyProvider.serializedCodable))
+                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyProvider.serializedBytes))
                 return try P.init(from: byteBuffer)
             }
         }

@@ -40,7 +40,7 @@ public extension LLBConfiguredTargetKey {
 
 // Convenience initializer.
 extension LLBConfiguredTargetValue {
-    init(serializedConfiguredTarget: LLBAnyCodable) {
+    init(serializedConfiguredTarget: LLBAnySerializable) {
         self.serializedConfiguredTarget = serializedConfiguredTarget
     }
 }
@@ -49,7 +49,7 @@ extension LLBConfiguredTargetValue {
     /// Registers a type as a ConfiguredTarget. This is required in order for the type to be able to be decoded at
     /// runtime, since llbuild2 allows dynamic types for ConfiguredTargets.
     public static func register(configuredTargetType: LLBConfiguredTarget.Type) {
-        LLBAnyCodable.register(type: configuredTargetType)
+        LLBAnySerializable.register(type: configuredTargetType)
     }
 
     /// Returns the configured target as a ConfiguredTarget type.
@@ -59,7 +59,7 @@ extension LLBConfiguredTargetValue {
                 "Could not find type for \(serializedConfiguredTarget.typeIdentifier), did you forget to register it?"
             )
         }
-        let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(serializedConfiguredTarget.serializedCodable))
+        let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(serializedConfiguredTarget.serializedBytes))
         return try configuredTargetType.init(from: byteBuffer)
     }
 
@@ -86,8 +86,8 @@ final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, L
         }
         do {
             return try delegate.configuredTarget(for: key, fi).flatMapThrowing { configuredTarget in
-                // Wrap the ConfiguredTarget into an LLBAnyCodable and store that.
-                let serializedConfiguredTarget = try LLBAnyCodable(from: configuredTarget)
+                // Wrap the ConfiguredTarget into an LLBAnySerializable and store that.
+                let serializedConfiguredTarget = try LLBAnySerializable(from: configuredTarget)
                 return LLBConfiguredTargetValue(serializedConfiguredTarget: serializedConfiguredTarget)
             }.flatMapErrorThrowing { error in
                 // Convert any non ConfiguredTargetErrors into ConfiguredTargetError.

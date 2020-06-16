@@ -87,7 +87,7 @@ public struct LLBProviderMap {
   // methods supported on all messages.
 
   //// The list of providers returned from the evaluation of a target.
-  public var providers: [LLBAnyCodable] = []
+  public var providers: [LLBAnySerializable] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 

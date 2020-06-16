@@ -90,8 +90,8 @@ public struct LLBConfiguredTargetValue {
   // methods supported on all messages.
 
   //// The polymorphic codable wrapper containing the configured target as declared by llbuild2's clients.
-  public var serializedConfiguredTarget: LLBAnyCodable {
-    get {return _serializedConfiguredTarget ?? LLBAnyCodable()}
+  public var serializedConfiguredTarget: LLBAnySerializable {
+    get {return _serializedConfiguredTarget ?? LLBAnySerializable()}
     set {_serializedConfiguredTarget = newValue}
   }
   /// Returns true if `serializedConfiguredTarget` has been explicitly set.
@@ -103,7 +103,7 @@ public struct LLBConfiguredTargetValue {
 
   public init() {}
 
-  fileprivate var _serializedConfiguredTarget: LLBAnyCodable? = nil
+  fileprivate var _serializedConfiguredTarget: LLBAnySerializable? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
