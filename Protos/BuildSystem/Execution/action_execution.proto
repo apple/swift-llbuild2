@@ -19,10 +19,10 @@ message LLBActionExecutionKey {
     oneof actionExecutionType {
 
         // A command line based action execution key.
-        LLBCommandActionExecution command = 1;
+        LLBCommandActionExecution command = 16;
 
         // A merge trees based action execution key.
-        LLBMergeTreesActionExecution mergeTrees = 2;
+        LLBMergeTreesActionExecution mergeTrees = 17;
     }
 }
 

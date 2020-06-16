@@ -169,14 +169,14 @@ public struct LLBMergeTreesActionExecution {
 extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = "LLBActionExecutionKey"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "command"),
-    2: .same(proto: "mergeTrees"),
+    16: .same(proto: "command"),
+    17: .same(proto: "mergeTrees"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1:
+      case 16:
         var v: LLBCommandActionExecution?
         if let current = self.actionExecutionType {
           try decoder.handleConflictingOneOf()
@@ -184,7 +184,7 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.actionExecutionType = .command(v)}
-      case 2:
+      case 17:
         var v: LLBMergeTreesActionExecution?
         if let current = self.actionExecutionType {
           try decoder.handleConflictingOneOf()
@@ -200,9 +200,9 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     switch self.actionExecutionType {
     case .command(let v)?:
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 16)
     case .mergeTrees(let v)?:
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
