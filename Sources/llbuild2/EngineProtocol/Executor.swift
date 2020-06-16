@@ -10,5 +10,17 @@
 /// Protocol definition for an executor that can fullfil action execution requests.
 public protocol LLBExecutor {
     /// Requests the execution of an action, returning a future action response.
-    func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse>
+    func execute(request: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse>
+}
+
+
+public class LLBNullExecutor: LLBExecutor {
+    public enum Error: Swift.Error {
+        case actionExecutionUnsupported
+    }
+    public init() {}
+
+    public func execute(request: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+        return ctx.group.next().makeFailedFuture(Error.actionExecutionUnsupported)
+    }
 }

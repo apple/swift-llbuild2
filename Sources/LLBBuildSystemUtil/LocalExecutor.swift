@@ -24,7 +24,7 @@ final public class LLBLocalExecutor: LLBExecutor {
         self.outputBase = outputBase
     }
 
-    public func execute(request: LLBActionExecutionRequest, engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    public func execute(request: LLBActionExecutionRequest, _ engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
         var inputFutures = [LLBFuture<Void>]()
         let client = LLBCASFSClient(engineContext.db)
 

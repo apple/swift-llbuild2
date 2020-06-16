@@ -77,7 +77,9 @@ public final class LLBBuildEngine {
         engineContext: LLBBuildEngineContext,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
-        ruleLookupDelegate: LLBRuleLookupDelegate? = nil
+        ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
+        db: LLBCASDatabase,
+        executor: LLBExecutor
     ) {
         self.engineContext = engineContext
         self.delegate = LLBBuildEngineDelegate(
@@ -86,7 +88,7 @@ public final class LLBBuildEngine {
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate
         )
-        self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate)
+        self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate, db: db, executor: executor)
     }
 
     /// Requests the evaluation of a build key, returning an abstract build value.
