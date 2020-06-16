@@ -38,8 +38,8 @@ public class LLBKeyDependencyGraph {
     public func addEdge(from origin: LLBKey, to destination: LLBKey) throws {
         // This is the biggest expense in this method. We need to find a way to identify keys in a faster way than
         // serializing and hashing.
-        let originID = origin.digest.hashValue
-        let destinationID = destination.digest.hashValue
+        let originID = origin.hashValue
+        let destinationID = destination.hashValue
 
         // Check if the direct dependency is already known, in which case, skip the check since the edge is already
         // been proven to not have a cycle.

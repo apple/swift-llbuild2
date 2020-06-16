@@ -11,7 +11,7 @@ import Foundation
 import llbuild2
 
 /// A simple structure containing the initial state for the board at generation 0.
-struct InitialBoard: Codable {
+struct InitialBoard: Codable, Hashable {
     let points: [Point]
 
     func isAlive(_ point: Point) -> Bool {
@@ -22,7 +22,7 @@ struct InitialBoard: Codable {
 /// The configuration key represents the minimum amount of data needed to construct a full configuration fragment. For
 /// GameOfLife purpose, we just need to store the initial board state and the size of the board. All cell and board targets
 /// at any generation derived from to this initial state.
-struct GameOfLifeConfigurationKey: LLBConfigurationFragmentKey, Codable {
+struct GameOfLifeConfigurationKey: LLBConfigurationFragmentKey, Codable, Hashable {
     static let identifier = String(describing: Self.self)
 
     let initialBoard: InitialBoard

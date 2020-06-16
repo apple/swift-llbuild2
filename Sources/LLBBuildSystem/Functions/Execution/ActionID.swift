@@ -19,7 +19,7 @@ extension LLBActionKey: LLBBuildValue {}
 /// and deserialization of previously deserialized instances of the same action are shared. Without this, each
 /// ArtifactFunction invocation would have to deserialize the ActionKey, which is potentially a problem for actions that
 /// have many declared outputs.
-struct ActionIDKey: LLBBuildKey {
+struct ActionIDKey: LLBBuildKey, Hashable {
     public static let identifier = "ActionIDKey"
 
     /// The data ID representing the serialized form of an ActionKey.
