@@ -8,7 +8,6 @@
 
 import llbuild2
 import LLBBuildSystem
-import LLBBuildSystemProtocol
 import LLBUtil
 import NIO
 

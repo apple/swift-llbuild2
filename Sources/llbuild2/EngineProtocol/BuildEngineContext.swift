@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import llbuild2
 import LLBCAS
+
 
 /// LLBBuildEngineContext contains references to dependencies that may need to be used throught the evaluation of the
 /// functions.

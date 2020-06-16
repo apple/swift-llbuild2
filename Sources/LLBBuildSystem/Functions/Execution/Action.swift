@@ -7,8 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-import LLBCAS
-import LLBBuildSystemProtocol
 
 extension LLBActionKey: LLBBuildKey {}
 extension LLBActionValue: LLBBuildValue {}

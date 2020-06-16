@@ -8,8 +8,8 @@ mapping {
     proto_file_path: "CASFileTreeProtocol/file_tree.proto"
 }
 mapping {
-    module_name: "LLBBuildSystemProtocol"
-    proto_file_path: "BuildSystemProtocol/action_execution.proto"
+    module_name: "llbuild2"
+    proto_file_path: "EngineProtocol/action_execution.proto"
 }
 mapping {
     module_name: "LLBBuildSystem"

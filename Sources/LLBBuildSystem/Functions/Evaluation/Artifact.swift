@@ -8,7 +8,6 @@
 
 import llbuild2
 import LLBCAS
-import LLBBuildSystemProtocol
 
 extension LLBArtifact: LLBBuildKey {}
 extension LLBArtifactValue: LLBBuildValue {}

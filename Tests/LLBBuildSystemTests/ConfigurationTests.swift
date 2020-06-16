@@ -9,7 +9,6 @@
 import llbuild2
 import LLBBuildSystem
 import LLBBuildSystemTestHelpers
-import LLBBuildSystemProtocol
 import LLBCASFileTree
 import TSCBasic
 import XCTest

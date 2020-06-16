@@ -9,7 +9,7 @@
 syntax = "proto3";
 
 import "BuildSystem/Evaluation/artifact.proto";
-import "BuildSystemProtocol/action_execution.proto";
+import "EngineProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
 // Key that represents the evaluation of an action's outputs. The inputs to this action have not been resolved at this

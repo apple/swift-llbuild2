@@ -8,7 +8,6 @@
 
 import llbuild2
 import Dispatch
-import LLBBuildSystemProtocol
 import Foundation
 
 public typealias LLBPreAction = (arguments: [String], environment: [String: String], background: Bool)

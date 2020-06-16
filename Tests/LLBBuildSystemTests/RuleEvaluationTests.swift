@@ -10,8 +10,6 @@ import llbuild2
 import Foundation
 import LLBBuildSystem
 import LLBBuildSystemTestHelpers
-import LLBBuildSystemProtocol
-import LLBCASFileTree
 import LLBBuildSystemUtil
 import TSCBasic
 import XCTest

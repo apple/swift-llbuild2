@@ -18,7 +18,7 @@
 import Foundation
 import SwiftProtobuf
 
-import LLBBuildSystemProtocol
+import llbuild2
 import LLBCAS
 
 // If the compiler emits an error on this type, it is because this file
@@ -80,7 +80,7 @@ public final class LLBArtifact {
   public var roots: [String] = []
 
   /// The type of artifact that this represents.
-  public var type: LLBBuildSystemProtocol.LLBArtifactType = .file
+  public var type: llbuild2.LLBArtifactType = .file
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
