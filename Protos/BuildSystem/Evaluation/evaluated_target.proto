@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystem/any_codable.proto";
+import "BuildSystem/any_serializable.proto";
 import "BuildSystem/Evaluation/configured_target.proto";
 
 /// An EvaluatedTargetKey is used to request the evaluation of a ConfiguredTarget, as identified by the
@@ -31,9 +31,9 @@ message LLBEvaluatedTargetValue {
 }
 
 /// A provider map contains a list of providers. There can only be 1 of each type of provider, as identified by the type
-/// of the LLBAnyCodable.
+/// of the LLBAnySerializable.
 message LLBProviderMap {
 
     /// The list of providers returned from the evaluation of a target.
-    repeated LLBAnyCodable providers = 1;
+    repeated LLBAnySerializable providers = 1;
 }

@@ -10,10 +10,10 @@ syntax = "proto3";
 
 /// AnyCodable is a wrapper type for polymorphic codables, in which the type of the serialized data is not known at
 /// compile time.
-message LLBAnyCodable {
+message LLBAnySerializable {
     /// A string identifier to map the runtime bytes into a specific type, for deserialization.
     string typeIdentifier = 1;
 
     /// The serialized bytes of the underlying data structure.
-    bytes serializedCodable = 2;
+    bytes serializedBytes = 2;
 }

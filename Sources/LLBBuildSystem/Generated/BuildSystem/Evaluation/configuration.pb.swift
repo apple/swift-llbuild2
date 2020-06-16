@@ -38,7 +38,7 @@ public struct LLBConfigurationKey {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var fragmentKeys: [LLBAnyCodable] = []
+  public var fragmentKeys: [LLBAnySerializable] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -52,7 +52,7 @@ public struct LLBConfigurationValue {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var fragments: [LLBAnyCodable] = []
+  public var fragments: [LLBAnySerializable] = []
 
   /// Contains a hash of the fragments that can be used as a root for derived artifacts.
   public var root: String = String()

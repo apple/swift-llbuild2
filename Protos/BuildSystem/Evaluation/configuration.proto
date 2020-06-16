@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystem/any_codable.proto";
+import "BuildSystem/any_serializable.proto";
 
 // A ConfigurationKey represents the configuration to use while evaluating a project. It should contain the minimum set
 // of data required in order to construct a full configuration fragment. Each configuration fragment key should be
@@ -16,13 +16,13 @@ import "BuildSystem/any_codable.proto";
 // requests the value for each of the fragment keys, and it will be up to the client implementation to provide functions
 // that evaluate those keys into ConfigurationFragments.
 message LLBConfigurationKey {
-    repeated LLBAnyCodable fragmentKeys = 1;
+    repeated LLBAnySerializable fragmentKeys = 1;
 }
 
 // A collection of configuration fragments as requested by a ConfigurationKey. The ConfigurationValue will be made
 // available at rule evaluation time from the rule context.
 message LLBConfigurationValue {
-    repeated LLBAnyCodable fragments = 1;
+    repeated LLBAnySerializable fragments = 1;
 
     // Contains a hash of the fragments that can be used as a root for derived artifacts.
     string root = 2;

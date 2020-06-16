@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystem/any_codable.proto";
+import "BuildSystem/any_serializable.proto";
 import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
 import "CASProtocol/data_id.proto";
@@ -38,5 +38,5 @@ message LLBConfiguredTargetKey {
 message LLBConfiguredTargetValue {
 
     /// The polymorphic codable wrapper containing the configured target as declared by llbuild2's clients.
-    LLBAnyCodable serializedConfiguredTarget = 1;
+    LLBAnySerializable serializedConfiguredTarget = 1;
 }

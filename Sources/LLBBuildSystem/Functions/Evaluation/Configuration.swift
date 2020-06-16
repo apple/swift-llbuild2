@@ -37,7 +37,7 @@ public enum LLBConfigurationError: Error {
 public extension LLBConfigurationKey {
     init(fragmentKeys: [LLBConfigurationFragmentKey] = []) throws {
         // Sort keys to create a deterministic key.
-        var validKeys = [LLBAnyCodable]()
+        var validKeys = [LLBAnySerializable]()
         try fragmentKeys.sorted {
             type(of: $0).polymorphicIdentifier < type(of: $1).polymorphicIdentifier
         }.forEach { fragmentKey in
@@ -45,7 +45,7 @@ public extension LLBConfigurationKey {
                   lastCodable.typeIdentifier == type(of: fragmentKey).polymorphicIdentifier {
                 throw LLBConfigurationError.multipleFragmentKeys(String(describing: type(of: fragmentKey).polymorphicIdentifier))
             }
-            validKeys.append(try LLBAnyCodable(from: fragmentKey))
+            validKeys.append(try LLBAnySerializable(from: fragmentKey))
         }
         self.fragmentKeys = validKeys
     }
@@ -53,7 +53,7 @@ public extension LLBConfigurationKey {
     func get<C: LLBConfigurationFragmentKey>(_ type: C.Type = C.self) throws -> C {
         for anyFragmentKey in fragmentKeys {
             if anyFragmentKey.typeIdentifier == C.polymorphicIdentifier {
-                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragmentKey.serializedCodable))
+                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragmentKey.serializedBytes))
                 return try C.init(from: byteBuffer)
             }
         }
@@ -65,13 +65,13 @@ public extension LLBConfigurationKey {
 // Convenience initializer.
 extension LLBConfigurationValue {
     init(fragments: [LLBConfigurationFragment]) throws {
-        self.fragments = try fragments.map { try LLBAnyCodable(from: $0 )}
+        self.fragments = try fragments.map { try LLBAnySerializable(from: $0 )}
     }
 
     func get<C: LLBConfigurationFragment>(_ type: C.Type = C.self) throws -> C {
         for anyFragment in fragments {
             if anyFragment.typeIdentifier == C.polymorphicIdentifier {
-                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragment.serializedCodable))
+                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragment.serializedBytes))
                 return try C.init(from: byteBuffer)
             }
         }
@@ -84,7 +84,7 @@ extension LLBConfigurationKey {
     /// Registers a type as a LLBConfigurationFragmentKey. This is required in order for the type to be able to be
     /// decoded at runtime, since llbuild2 allows dynamic types for LLBConfigurationFragmentKeys.
     public static func register(fragmentKeyType: LLBConfigurationFragmentKey.Type) {
-        LLBAnyCodable.register(type: fragmentKeyType)
+        LLBAnySerializable.register(type: fragmentKeyType)
     }
 }
 
@@ -92,20 +92,20 @@ extension LLBConfigurationValue {
     /// Registers a type as a LLBConfigurationFragment. This is required in order for the type to be able to be decoded
     /// at runtime, since llbuild2 allows dynamic types for LLBConfigurationFragments.
     public static func register(fragmentType: LLBConfigurationFragment.Type) {
-        LLBAnyCodable.register(type: fragmentType)
+        LLBAnySerializable.register(type: fragmentType)
     }
 }
 
 final class ConfigurationFunction: LLBBuildFunction<LLBConfigurationKey, LLBConfigurationValue> {
     override func evaluate(key: LLBConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfigurationValue> {
         do {
-            let fragmentKeys: [LLBConfigurationFragmentKey] = try key.fragmentKeys.map { (anyFragmentKey: LLBAnyCodable) in
+            let fragmentKeys: [LLBConfigurationFragmentKey] = try key.fragmentKeys.map { (anyFragmentKey: LLBAnySerializable) in
                 guard let fragmentKeyType = anyFragmentKey.registeredType() as? LLBConfigurationFragmentKey.Type else {
                     throw LLBConfigurationError.unexpectedType(
                             "Could not find type for \(anyFragmentKey.typeIdentifier), did you forget to register it?"
                     )
                 }
-                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragmentKey.serializedCodable))
+                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragmentKey.serializedBytes))
                 return try fragmentKeyType.init(from: byteBuffer)
             }
 

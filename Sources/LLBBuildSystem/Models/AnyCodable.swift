@@ -10,7 +10,7 @@ import llbuild2
 import Dispatch
 import Foundation
 
-/// Types conforming to LLBPolymorphicCodable are allowed to be serialized into LLBAnyCodables. They need to be
+/// Types conforming to LLBPolymorphicCodable are allowed to be serialized into LLBAnySerializable. They need to be
 /// registered in order to be deserialized at runtime without compile-time type information.
 public protocol LLBPolymorphicCodable: LLBSerializable {
     static var polymorphicIdentifier: String { get }
@@ -32,17 +32,17 @@ fileprivate let queue = DispatchQueue(label: "org.swift.llbuild2.anycodable")
 fileprivate var registeredTypes: [String: LLBPolymorphicCodable.Type] = [:]
 
 // Convenience internal initializer.
-extension LLBAnyCodable {
+extension LLBAnySerializable {
     internal init(from polymorphicCodable: LLBPolymorphicCodable) throws {
         self.typeIdentifier = type(of: polymorphicCodable).polymorphicIdentifier
-        self.serializedCodable = try Data(polymorphicCodable.toBytes().readableBytesView)
+        self.serializedBytes = try Data(polymorphicCodable.toBytes().readableBytesView)
     }
 }
 
 // API for registering and retrieving registered types into the global registry. These methods are internal for now so
 // that the API surface for what is allowed to be registered is controlled. If we find use cases where making this
 // public would help, we might reconsider this.
-extension LLBAnyCodable {
+extension LLBAnySerializable {
     internal static func register(type: LLBPolymorphicCodable.Type) {
         queue.sync {
             if registeredTypes[type.polymorphicIdentifier] == nil {
@@ -51,7 +51,7 @@ extension LLBAnyCodable {
         }
     }
 
-    /// Returns the registered type for this LLBAnyCodable, or nil if it wasn't registered.
+    /// Returns the registered type for this LLBAnySerializable, or nil if it wasn't registered.
     internal func registeredType() -> LLBPolymorphicCodable.Type? {
         return registeredTypes[typeIdentifier]
     }
