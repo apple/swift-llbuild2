@@ -40,35 +40,6 @@ public extension LLBCASObject {
 }
 
 
-// MARK:- Codable support for CASObject -
-
-extension LLBCASObject: Codable {
-    private enum CodingKeys: String, CodingKey {
-        case refs
-        case data
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(refs, forKey: .refs)
-        try container.encode(data.getBytes(at: 0, length: data.readableBytes), forKey: .data)
-    }
-
-    public init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: CodingKeys.self)
-        self.refs = try values.decode([LLBDataID].self, forKey: .refs)
-
-        let bytes = try values.decode([UInt8].self, forKey: .data)
-
-        let allocator = LLBByteBufferAllocator()
-        var buffer = allocator.buffer(capacity: bytes.count)
-        buffer.writeBytes(bytes)
-
-        self.data = buffer
-    }
-}
-
-
 // MARK:- CASObject Serializeable -
 
 public extension LLBCASObject {
