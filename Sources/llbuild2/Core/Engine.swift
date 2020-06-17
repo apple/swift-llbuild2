@@ -20,7 +20,7 @@ public protocol LLBKey {
     func hash(into: inout Hasher)
     var hashValue: Int { get }
 }
-public protocol LLBValue: LLBSerializable {}
+public protocol LLBValue: LLBCASObjectRepresentable {}
 
 public struct LLBResult {
     let changedAt: Int
@@ -133,7 +133,16 @@ public class LLBEngine {
         return self.pendingResults.value(for: Key(key)) { _ in
             return self.delegate.lookupFunction(forKey: key, group: self.group).flatMap { function in
                 let fi = LLBFunctionInterface(engine: self, key: key)
-                return function.compute(key: key, fi)
+                return function.compute(key: key, fi).flatMap { result in
+                    do {
+                        return self.db.put(try result.asCASObject()).map { _ in
+                            // TODO: cache key -> resultid here
+                            return result
+                        }
+                    } catch {
+                        return self.group.next().makeFailedFuture(error)
+                    }
+                }
             }
         }
     }

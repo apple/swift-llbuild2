@@ -102,18 +102,39 @@ public protocol LLBCASDatabase: class {
 }
 
 public extension LLBCASDatabase {
+    @inlinable
+    func identify(_ object: LLBCASObject) -> LLBFuture<LLBDataID> {
+        return identify(refs: object.refs, data: object.data)
+    }
+
+    @inlinable
+    func put(_ object: LLBCASObject) -> LLBFuture<LLBDataID> {
+        return put(refs: object.refs, data: object.data)
+    }
+
+    @inlinable
+    func put(knownID id: LLBDataID, object: LLBCASObject) -> LLBFuture<LLBDataID> {
+        return put(knownID: id, refs: object.refs, data: object.data)
+    }
+}
+
+public extension LLBCASDatabase {
+    @inlinable
     func identify(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
         return identify(refs: refs, data: LLBByteBuffer(data))
     }
 
+    @inlinable
     func put(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
         return put(refs: refs, data: LLBByteBuffer(data))
     }
 
+    @inlinable
     func put(data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
         return self.put(refs: [], data: data)
     }
 
+    @inlinable
     func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
         return put(knownID: id, refs: refs, data: LLBByteBuffer(data))
     }
