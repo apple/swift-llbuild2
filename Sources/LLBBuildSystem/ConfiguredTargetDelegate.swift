@@ -9,7 +9,7 @@
 import llbuild2
 
 /// Protocol that configured target instances must conform to.
-public protocol LLBConfiguredTarget: LLBPolymorphicCodable {}
+public protocol LLBConfiguredTarget: LLBPolymorphicSerializable {}
 
 public extension LLBConfiguredTarget {
     static var identifier: String {

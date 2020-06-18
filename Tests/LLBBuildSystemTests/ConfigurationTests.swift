@@ -125,12 +125,7 @@ class ConfigurationTests: XCTestCase {
     // achieve this result. Real life clients of llbuild2 will need to provide similar infrastructure (in a more
     // sustainable approach of course).
     func testSameTargetConfigurationTransitions() throws {
-        LLBConfigurationKey.register(fragmentKeyType: PlatformFragmentKey.self)
-        LLBConfigurationValue.register(fragmentType: PlatformFragment.self)
-
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: ConfigurationTestsConfiguredTarget.self)
-
             let configuredTargetDelegate = ConfigurationTestsConfiguredTargetDelegate()
             let ruleLookupDelegate = ConfigurationTestsRuleLookupDelegate()
             let testEngineContext = LLBTestBuildEngineContext()
@@ -138,7 +133,11 @@ class ConfigurationTests: XCTestCase {
                 buildFunctionLookupDelegate: ConfigurationTestsFunctionMap(engineContext: testEngineContext),
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
-            )
+            ) { registry in
+                registry.register(type: PlatformFragmentKey.self)
+                registry.register(type: PlatformFragment.self)
+                registry.register(type: ConfigurationTestsConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 

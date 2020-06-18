@@ -42,6 +42,10 @@ public class LLBFunctionInterface {
     @inlinable
     public var db: LLBCASDatabase { return engine.db }
 
+    /// The serializable registry lookup interface
+    @inlinable
+    public var registry: LLBSerializableLookup { return engine.registry }
+
     init(engine: LLBEngine, key: LLBKey) {
         self.engine = engine
         self.key = key
@@ -75,7 +79,12 @@ public protocol LLBFunction {
 }
 
 public protocol LLBEngineDelegate {
+    func registerTypes(registry: LLBSerializableRegistry)
     func lookupFunction(forKey: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction>
+}
+
+public extension LLBEngineDelegate {
+    func registerTypes(registry: LLBSerializableRegistry) { }
 }
 
 public enum LLBError: Error {
@@ -108,6 +117,7 @@ public class LLBEngine {
     fileprivate let executor: LLBExecutor
     fileprivate let pendingResults: LLBEventualResultsCache<Key, LLBValue>
     fileprivate let keyDependencyGraph = LLBKeyDependencyGraph()
+    @usableFromInline internal let registry = LLBSerializableRegistry()
 
 
     public enum InternalError: Swift.Error {
@@ -127,6 +137,8 @@ public class LLBEngine {
         self.db = db ?? LLBInMemoryCASDatabase(group: group)
         self.executor = executor
         self.pendingResults = LLBEventualResultsCache<Key, LLBValue>(group: group)
+
+        delegate.registerTypes(registry: registry)
     }
 
     public func build(key: LLBKey) -> LLBFuture<LLBValue> {

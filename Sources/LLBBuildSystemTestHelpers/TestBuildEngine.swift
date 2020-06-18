@@ -34,12 +34,21 @@ public class LLBTestBuildEngine {
     public let engineContext: LLBTestBuildEngineContext
     private let engine: LLBBuildEngine
 
+    private struct RegistrationDelegateWrapper: LLBSerializableRegistrationDelegate {
+        let handler: (LLBSerializableRegistry) -> Void
+
+        public func registerTypes(registry: LLBSerializableRegistry) {
+            handler(registry)
+        }
+    }
+
     public init(
         engineContext: LLBTestBuildEngineContext? = nil,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
-        executor: LLBExecutor? = nil
+        executor: LLBExecutor? = nil,
+        registrationHandler: @escaping (LLBSerializableRegistry) -> Void = { _ in }
     ) {
         let engineContext = engineContext ?? LLBTestBuildEngineContext()
         self.engineContext = engineContext
@@ -49,6 +58,7 @@ public class LLBTestBuildEngine {
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate,
+            registrationDelegate: RegistrationDelegateWrapper(handler: registrationHandler),
             db: engineContext.db,
             executor: executor ?? LLBNullExecutor()
         )

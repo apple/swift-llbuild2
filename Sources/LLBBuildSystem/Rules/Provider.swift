@@ -8,7 +8,7 @@
 
 import llbuild2
 
-public protocol LLBProvider: LLBPolymorphicCodable {}
+public protocol LLBProvider: LLBPolymorphicSerializable {}
 
 public enum LLBProviderMapError: Error {
     /// Thrown when there are multiple providers of the same type being added to a ProviderMap.

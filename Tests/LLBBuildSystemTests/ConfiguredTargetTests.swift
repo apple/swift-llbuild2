@@ -74,9 +74,12 @@ class ConfiguredTargetTests: XCTestCase {
 
     func testConfiguredTarget() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: Int.self)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
-            let testEngine = LLBTestBuildEngine(configuredTargetDelegate: configuredTargetDelegate)
+            let testEngine = LLBTestBuildEngine(configuredTargetDelegate: configuredTargetDelegate) { registry in
+                registry.register(type: Int.self)
+            }
+            let registry = LLBSerializableRegistry()
+            registry.register(type: Int.self)
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -84,7 +87,7 @@ class ConfiguredTargetTests: XCTestCase {
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let configuredTargetValue = try testEngine.build(configuredTargetKey, as: LLBConfiguredTargetValue.self).wait()
-            let configuredTarget: Int = try configuredTargetValue.typedConfiguredTarget()
+            let configuredTarget: Int = try configuredTargetValue.typedConfiguredTarget(registry: registry)
             XCTAssertEqual(configuredTarget, 1)
         }
     }

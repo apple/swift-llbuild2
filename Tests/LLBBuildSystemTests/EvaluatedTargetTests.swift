@@ -71,14 +71,14 @@ private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
 class EvaluatedTargetTests: XCTestCase {
     func testEvaluatedTarget() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: DummyConfiguredTarget.self)
-            
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
             let testEngine = LLBTestBuildEngine(
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
-            )
+            ) { registry in
+                registry.register(type: DummyConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 

@@ -21,7 +21,7 @@ ROOT_DIR="$(dirname $(dirname "$0"))"
 ARTIFACT_PB_SWIFT="${ROOT_DIR}/Sources/LLBBuildSystem/Generated/BuildSystem/Evaluation/artifact.pb.swift"
 
 # Replace the struct semantics to class semantics, as per above.
-sed -i -e 's/public struct LLBArtifact/public final class LLBArtifact/' "${ARTIFACT_PB_SWIFT}"
+sed -i '' -e 's/public struct LLBArtifact/public final class LLBArtifact/' "${ARTIFACT_PB_SWIFT}"
 
 # Remove mutating modifiers since they're incompatible with classes.
-sed -i -e 's/public mutating func/public func/' "${ARTIFACT_PB_SWIFT}"
+sed -i '' -e 's/public mutating func/public func/' "${ARTIFACT_PB_SWIFT}"

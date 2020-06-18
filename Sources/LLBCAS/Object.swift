@@ -45,12 +45,6 @@ public protocol LLBCASObjectRepresentable {
     func asCASObject() throws -> LLBCASObject
 }
 
-extension LLBCASObjectRepresentable where Self: LLBSerializableOut {
-    public func asCASObject() throws -> LLBCASObject {
-        return LLBCASObject(refs: [], data: try self.toBytes())
-    }
-}
-
 // MARK:- CASObject Serializeable -
 
 public extension LLBCASObject {

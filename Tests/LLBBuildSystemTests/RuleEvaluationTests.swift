@@ -166,8 +166,6 @@ private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
 class RuleEvaluationTests: XCTestCase {
     func testRuleEvaluation() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -175,7 +173,9 @@ class RuleEvaluationTests: XCTestCase {
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -198,8 +198,6 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluation2Outputs2Actions() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -207,7 +205,9 @@ class RuleEvaluationTests: XCTestCase {
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -237,14 +237,14 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluation2ActionsWithSameOutput() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
             let testEngine = LLBTestBuildEngine(
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -268,14 +268,14 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluationUnregisteredOutput() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
             let testEngine = LLBTestBuildEngine(
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -301,8 +301,6 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluation2Targets() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -310,7 +308,9 @@ class RuleEvaluationTests: XCTestCase {
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -332,14 +332,14 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluationStaticWrite() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
             let testEngine = LLBTestBuildEngine(
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 
@@ -361,8 +361,6 @@ class RuleEvaluationTests: XCTestCase {
 
     func testRuleEvaluationTreeMerge() throws {
         try withTemporaryDirectory { tempDir in
-            LLBConfiguredTargetValue.register(configuredTargetType: RuleEvaluationConfiguredTarget.self)
-
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
@@ -370,7 +368,9 @@ class RuleEvaluationTests: XCTestCase {
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
-            )
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
 
             let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
 

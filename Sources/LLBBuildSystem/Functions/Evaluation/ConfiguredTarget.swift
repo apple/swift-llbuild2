@@ -45,26 +45,14 @@ extension LLBConfiguredTargetValue {
 }
 
 extension LLBConfiguredTargetValue {
-    /// Registers a type as a ConfiguredTarget. This is required in order for the type to be able to be decoded at
-    /// runtime, since llbuild2 allows dynamic types for ConfiguredTargets.
-    public static func register(configuredTargetType: LLBConfiguredTarget.Type) {
-        LLBAnySerializable.register(type: configuredTargetType)
-    }
-
     /// Returns the configured target as a ConfiguredTarget type.
-    func configuredTarget() throws -> LLBConfiguredTarget {
-        guard let configuredTargetType = serializedConfiguredTarget.registeredType() as? LLBConfiguredTarget.Type else {
-            throw LLBConfiguredTargetError.unexpectedType(
-                "Could not find type for \(serializedConfiguredTarget.typeIdentifier), did you forget to register it?"
-            )
-        }
-        let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(serializedConfiguredTarget.serializedBytes))
-        return try configuredTargetType.init(from: byteBuffer)
+    func configuredTarget(registry: LLBSerializableLookup) throws -> LLBConfiguredTarget {
+        return try serializedConfiguredTarget.deserialize(registry: registry)
     }
 
     /// Returns the configured target if it's possible to cast it to the specified type.
-    public func typedConfiguredTarget<C: LLBConfiguredTarget>(as expectedType: C.Type = C.self) throws -> C {
-        guard let target = try self.configuredTarget() as? C else {
+    public func typedConfiguredTarget<C: LLBConfiguredTarget>(as expectedType: C.Type = C.self, registry: LLBSerializableLookup) throws -> C {
+        guard let target = try self.configuredTarget(registry: registry) as? C else {
             throw LLBConfiguredTargetError.unexpectedType("Could not cast target to \(String(describing: C.self))")
         }
         return target
