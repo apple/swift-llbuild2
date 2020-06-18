@@ -10,10 +10,10 @@ mapping {
 mapping {
     module_name: "llbuild2"
     proto_file_path: "EngineProtocol/action_execution.proto"
+    proto_file_path: "EngineProtocol/any_serializable.proto"
 }
 mapping {
     module_name: "LLBBuildSystem"
-    proto_file_path: "BuildSystem/any_codable.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact_owner.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact_value.proto"
     proto_file_path: "BuildSystem/Evaluation/artifact.proto"

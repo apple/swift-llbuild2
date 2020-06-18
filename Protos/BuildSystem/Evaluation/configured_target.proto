@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystem/any_serializable.proto";
+import "EngineProtocol/any_serializable.proto";
 import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
 import "CASProtocol/data_id.proto";

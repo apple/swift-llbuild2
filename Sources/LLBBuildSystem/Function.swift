@@ -49,6 +49,10 @@ public final class LLBBuildFunctionInterface {
         return fi.group
     }
 
+    public var registry: LLBSerializableLookup {
+        return fi.registry
+    }
+
     /// Requests the value for a build key.
     func request<K: LLBBuildKey>(_ key: K) -> LLBFuture<LLBBuildValue> {
         return self.fi.request(key).map { $0 as! LLBBuildValue }

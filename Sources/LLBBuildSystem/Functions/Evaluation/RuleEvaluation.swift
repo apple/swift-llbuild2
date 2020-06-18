@@ -80,7 +80,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
         }.flatMap { (ruleEvaluationKey: LLBRuleEvaluationKey, configurationValue: LLBConfigurationValue) in
             let configuredTarget: LLBConfiguredTarget
             do {
-                configuredTarget = try ruleEvaluationKey.configuredTargetValue.configuredTarget()
+                configuredTarget = try ruleEvaluationKey.configuredTargetValue.configuredTarget(registry: fi.registry)
             } catch {
                 return fi.group.next().makeFailedFuture(error)
             }

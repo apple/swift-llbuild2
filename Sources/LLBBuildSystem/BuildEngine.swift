@@ -16,20 +16,28 @@ public enum LLBBuildEngineError: Error {
 
 extension LLBBuildEngineError: Equatable {}
 
+public protocol LLBSerializableRegistrationDelegate {
+    func registerTypes(registry: LLBSerializableRegistry)
+}
+
+
 // Private delegate for implementing the LLBEngine delegate logic.
 fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
     private let engineContext: LLBBuildEngineContext
     private let functionMap: LLBBuildFunctionMap
     private let buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?
+    private let registrationDelegate: LLBSerializableRegistrationDelegate?
 
     init(
         engineContext: LLBBuildEngineContext,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?,
         configuredTargetDelegate: LLBConfiguredTargetDelegate?,
-        ruleLookupDelegate: LLBRuleLookupDelegate?
+        ruleLookupDelegate: LLBRuleLookupDelegate?,
+        registrationDelegate: LLBSerializableRegistrationDelegate?
     ) {
         self.engineContext = engineContext
         self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
+        self.registrationDelegate = registrationDelegate
         self.functionMap = LLBBuildFunctionMap(
             engineContext: engineContext,
             configuredTargetDelegate: configuredTargetDelegate,
@@ -52,6 +60,10 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
                 LLBBuildEngineError.unknownKeyType(String(describing: type(of: key)))
             )
         }
+    }
+
+    func registerTypes(registry: LLBSerializableRegistry) {
+        registrationDelegate?.registerTypes(registry: registry)
     }
 }
 
@@ -78,6 +90,7 @@ public final class LLBBuildEngine {
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
+        registrationDelegate: LLBSerializableRegistrationDelegate? = nil,
         db: LLBCASDatabase,
         executor: LLBExecutor
     ) {
@@ -86,7 +99,8 @@ public final class LLBBuildEngine {
             engineContext: engineContext,
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
             configuredTargetDelegate: configuredTargetDelegate,
-            ruleLookupDelegate: ruleLookupDelegate
+            ruleLookupDelegate: ruleLookupDelegate,
+            registrationDelegate: registrationDelegate
         )
         self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate, db: db, executor: executor)
     }

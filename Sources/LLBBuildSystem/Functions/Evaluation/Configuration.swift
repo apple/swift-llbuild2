@@ -12,8 +12,8 @@ import Crypto
 extension LLBConfigurationKey: LLBBuildKey {}
 extension LLBConfigurationValue: LLBBuildValue {}
 
-public protocol LLBConfigurationFragmentKey: LLBBuildKey, LLBPolymorphicCodable {}
-public protocol LLBConfigurationFragment: LLBBuildValue, LLBPolymorphicCodable {}
+public protocol LLBConfigurationFragmentKey: LLBBuildKey, LLBPolymorphicSerializable {}
+public protocol LLBConfigurationFragment: LLBBuildValue {}
 
 public enum LLBConfigurationError: Error {
     /// Unexpected type when deserializing the configured target
@@ -79,33 +79,11 @@ extension LLBConfigurationValue {
     }
 }
 
-extension LLBConfigurationKey {
-    /// Registers a type as a LLBConfigurationFragmentKey. This is required in order for the type to be able to be
-    /// decoded at runtime, since llbuild2 allows dynamic types for LLBConfigurationFragmentKeys.
-    public static func register(fragmentKeyType: LLBConfigurationFragmentKey.Type) {
-        LLBAnySerializable.register(type: fragmentKeyType)
-    }
-}
-
-extension LLBConfigurationValue {
-    /// Registers a type as a LLBConfigurationFragment. This is required in order for the type to be able to be decoded
-    /// at runtime, since llbuild2 allows dynamic types for LLBConfigurationFragments.
-    public static func register(fragmentType: LLBConfigurationFragment.Type) {
-        LLBAnySerializable.register(type: fragmentType)
-    }
-}
-
 final class ConfigurationFunction: LLBBuildFunction<LLBConfigurationKey, LLBConfigurationValue> {
     override func evaluate(key: LLBConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfigurationValue> {
         do {
             let fragmentKeys: [LLBConfigurationFragmentKey] = try key.fragmentKeys.map { (anyFragmentKey: LLBAnySerializable) in
-                guard let fragmentKeyType = anyFragmentKey.registeredType() as? LLBConfigurationFragmentKey.Type else {
-                    throw LLBConfigurationError.unexpectedType(
-                            "Could not find type for \(anyFragmentKey.typeIdentifier), did you forget to register it?"
-                    )
-                }
-                let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyFragmentKey.serializedBytes))
-                return try fragmentKeyType.init(from: byteBuffer)
+                return try anyFragmentKey.deserialize(registry: fi.registry)
             }
 
             // Request all of the fragment keys to convert them into fragments to be added to the configuration.

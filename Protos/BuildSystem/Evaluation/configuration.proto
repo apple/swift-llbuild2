@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-import "BuildSystem/any_serializable.proto";
+import "EngineProtocol/any_serializable.proto";
 
 // A ConfigurationKey represents the configuration to use while evaluating a project. It should contain the minimum set
 // of data required in order to construct a full configuration fragment. Each configuration fragment key should be

@@ -17,7 +17,7 @@ public protocol LLBBuildKey: LLBKey {
 }
 
 /// Convenience protocol for referencing build system specific values.
-public protocol LLBBuildValue: LLBValue, LLBSerializable {}
+public protocol LLBBuildValue: LLBValue, LLBPolymorphicSerializable {}
 
 /// Identifier type for each type of build system specific key.
 public typealias LLBBuildKeyIdentifier = String
@@ -29,17 +29,3 @@ extension LLBBuildKey where Self: SwiftProtobuf.Message {
     }
 }
 
-/// Convenience implementation for types that extend SwiftProtobuf.Message.
-extension LLBSerializableOut where Self: SwiftProtobuf.Message {
-    public func toBytes(into buffer: inout LLBByteBuffer) throws {
-        buffer.writeBytes(try self.serializedData())
-    }
-}
-
-/// Convenience implementation for types that extend SwiftProtobuf.Message.
-extension LLBSerializableIn where Self: SwiftProtobuf.Message {
-    public init(from bytes: LLBByteBuffer) throws {
-        let data = Data(bytes.readableBytesView)
-        self = try Self.init(serializedData: data)
-    }
-}
