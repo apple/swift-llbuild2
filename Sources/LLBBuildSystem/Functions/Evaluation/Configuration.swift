@@ -13,7 +13,7 @@ extension LLBConfigurationKey: LLBBuildKey {}
 extension LLBConfigurationValue: LLBBuildValue {}
 
 public protocol LLBConfigurationFragmentKey: LLBBuildKey, LLBPolymorphicSerializable {}
-public protocol LLBConfigurationFragment: LLBBuildValue {}
+public protocol LLBConfigurationFragment: LLBBuildValue, LLBPolymorphicSerializable {}
 
 public enum LLBConfigurationError: Error {
     /// Unexpected type when deserializing the configured target

@@ -8,27 +8,17 @@
 
 import llbuild2
 
-public enum LLBBuildFunctionError: Error {
-    case unexpectedKeyType(String)
-}
-
 /// An "abstract" class that represents a build function, which includes the engineContext reference and a way to
 /// statically specify the types of the build keys and values.
-open class LLBBuildFunction<K: LLBBuildKey, V: LLBBuildValue>: LLBFunction {
+open class LLBBuildFunction<K: LLBBuildKey, V: LLBBuildValue>: LLBTypedCachingFunction<K, V> {
     public let engineContext: LLBBuildEngineContext
 
     public init(engineContext: LLBBuildEngineContext) {
         self.engineContext = engineContext
     }
 
-    public final func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
-        if let key = key as? K {
-            return evaluate(key: key, LLBBuildFunctionInterface(fi: fi)).map { $0 }
-        } else {
-            return engineContext.group.next().makeFailedFuture(
-                LLBBuildFunctionError.unexpectedKeyType("Expected type \(String(describing: K.self)), but got \(String(describing: type(of: key)))")
-            )
-        }
+    override open func compute(key: K, _ fi: LLBFunctionInterface) -> LLBFuture<V> {
+        return evaluate(key: key, LLBBuildFunctionInterface(fi: fi)).map { $0 }
     }
 
     /// Subclasses of LLBBuildFunction should override this method to provide the actual implementation of the function.

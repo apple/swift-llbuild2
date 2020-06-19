@@ -22,11 +22,6 @@ public protocol LLBKey {
 }
 public protocol LLBValue: LLBCASObjectRepresentable {}
 
-public struct LLBResult {
-    let changedAt: Int
-    let value: LLBValue
-    let dependencies: [LLBKey]
-}
 
 public class LLBFunctionInterface {
     @usableFromInline
@@ -78,6 +73,37 @@ public protocol LLBFunction {
     func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue>
 }
 
+open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
+    public init() {}
+
+    @_disfavoredOverload
+    public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
+        guard let typedKey = key as? K else {
+            return fi.group.next().makeFailedFuture(LLBError.unexpectedKeyType(String(describing: type(of: key))))
+        }
+
+        if false /* is key in the cache? */ {
+            // return cached value
+            // V.init(from bytes)
+        } else {
+            return self.compute(key: typedKey, fi).flatMap { (value: LLBValue) in
+                do {
+                    return fi.db.put(try value.asCASObject()).map { _ in
+                        return value
+                    }
+                } catch {
+                    return fi.group.next().makeFailedFuture(error)
+                }
+            }
+        }
+    }
+
+    open func compute(key: K, _ fi: LLBFunctionInterface) -> LLBFuture<V> {
+        // This is a developer error and not a runtime error, which is why fatalError is used.
+        fatalError("unimplemented: this method is expected to be overridden by subclasses.")
+    }
+}
+
 public protocol LLBEngineDelegate {
     func registerTypes(registry: LLBSerializableRegistry)
     func lookupFunction(forKey: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction>
@@ -89,6 +115,7 @@ public extension LLBEngineDelegate {
 
 public enum LLBError: Error {
     case invalidValueType(String)
+    case unexpectedKeyType(String)
 }
 
 fileprivate struct Key {
@@ -145,16 +172,7 @@ public class LLBEngine {
         return self.pendingResults.value(for: Key(key)) { _ in
             return self.delegate.lookupFunction(forKey: key, group: self.group).flatMap { function in
                 let fi = LLBFunctionInterface(engine: self, key: key)
-                return function.compute(key: key, fi).flatMap { result in
-                    do {
-                        return self.db.put(try result.asCASObject()).map { _ in
-                            // TODO: cache key -> resultid here
-                            return result
-                        }
-                    } catch {
-                        return self.group.next().makeFailedFuture(error)
-                    }
-                }
+                return function.compute(key: key, fi)
             }
         }
     }
