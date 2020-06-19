@@ -9,8 +9,8 @@
 import llbuild2
 import LLBBuildSystem
 
-/// GenerationKey represents the request for a board at a particular generation for a given board size and initial
-/// state.
+/// GenerationKey represents the request for a board at a particular generation
+/// for a given board size and initial state.
 struct GenerationKey: LLBBuildKey, Codable, Hashable {
     let initialBoard: InitialBoard
     let size: Point
@@ -23,8 +23,9 @@ struct GenerationKey: LLBBuildKey, Codable, Hashable {
     }
 }
 
-/// GenerationValue corresponds to the result of evaluating a GenerationKey, and contains a data ID pointer to the
-/// data that represents the board for the specified generation key.
+/// GenerationValue corresponds to the result of evaluating a GenerationKey, and
+/// contains a data ID pointer to the data that represents the board for the
+/// specified generation key.
 struct GenerationValue: LLBBuildValue, Codable {
     let boardID: LLBDataID
 
@@ -48,7 +49,8 @@ class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
                 configurationKey: configurationKey
             )
 
-            // Request the evaluation of the board target and retrieve the BoardProvider's board artifact.
+            // Request the evaluation of the board target and retrieve the
+            // BoardProvider's board artifact.
             return fi.requestDependency(configuredTargetKey).flatMap { providerMap in
                 do {
                     let artifact = try providerMap.get(BoardProvider.self).board

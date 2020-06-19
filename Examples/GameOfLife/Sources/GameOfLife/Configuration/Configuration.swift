@@ -19,9 +19,10 @@ struct InitialBoard: Codable, Hashable {
     }
 }
 
-/// The configuration key represents the minimum amount of data needed to construct a full configuration fragment. For
-/// GameOfLife purpose, we just need to store the initial board state and the size of the board. All cell and board targets
-/// at any generation derived from to this initial state.
+/// The configuration key represents the minimum amount of data needed to
+/// construct a full configuration fragment. For GameOfLife purpose, we just need
+/// to store the initial board state and the size of the board. All cell and
+/// board targets at any generation derived from to this initial state.
 struct GameOfLifeConfigurationKey: LLBConfigurationFragmentKey, Codable, Hashable {
     static let identifier = String(describing: Self.self)
 
@@ -34,8 +35,9 @@ struct GameOfLifeConfigurationKey: LLBConfigurationFragmentKey, Codable, Hashabl
     }
 }
 
-/// The configuration fragment for the configuration key. For GameOfLife, since the key is mostly static data, the fragment
-/// just copies the values from the keys.
+/// The configuration fragment for the configuration key. For GameOfLife, since
+/// the key is mostly static data, the fragment just copies the values from the
+/// keys.
 struct GameOfLifeConfigurationFragment: LLBConfigurationFragment, Codable {
     let initialBoard: InitialBoard
     let size: Point
@@ -51,8 +53,8 @@ struct GameOfLifeConfigurationFragment: LLBConfigurationFragment, Codable {
     }
 }
 
-/// The configuration key to configuration fragment function. Since the key has mostly static data, the function just
-/// copies the results into the fragment.
+/// The configuration key to configuration fragment function. Since the key has
+/// mostly static data, the function just copies the results into the fragment.
 class GameOfLifeConfigurationFunction: LLBBuildFunction<GameOfLifeConfigurationKey, GameOfLifeConfigurationFragment> {
     override func evaluate(key: GameOfLifeConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<GameOfLifeConfigurationFragment> {
         return fi.group.next().makeSucceededFuture(.fromKey(key))
