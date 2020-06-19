@@ -17,7 +17,7 @@ public protocol LLBBuildKey: LLBKey {
 }
 
 /// Convenience protocol for referencing build system specific values.
-public protocol LLBBuildValue: LLBValue, LLBSerializable {}
+public protocol LLBBuildValue: LLBValue, LLBSerializable, LLBCASObjectConstructable {}
 
 /// Identifier type for each type of build system specific key.
 public typealias LLBBuildKeyIdentifier = String

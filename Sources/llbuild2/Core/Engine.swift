@@ -37,6 +37,10 @@ public class LLBFunctionInterface {
     @inlinable
     public var db: LLBCASDatabase { return engine.db }
 
+    /// The function execution cache
+    @inlinable
+    public var functionCache: LLBFunctionCache { return engine.functionCache }
+
     /// The serializable registry lookup interface
     @inlinable
     public var registry: LLBSerializableLookup { return engine.registry }
@@ -73,8 +77,37 @@ public protocol LLBFunction {
     func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue>
 }
 
+public protocol LLBFunctionCache {
+    func get(key: LLBKey) -> LLBFuture<LLBDataID?>
+    func update(key: LLBKey, value: LLBDataID) -> LLBFuture<Void>
+}
+
 open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
     public init() {}
+
+    private func computeAndUpdate(key: K, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
+        return self.compute(key: key, fi).flatMap { (value: LLBValue) in
+            do {
+                return fi.db.put(try value.asCASObject()).flatMap { resultID in
+                    return fi.functionCache.update(key: key, value: resultID).map {
+                        return value
+                    }
+                }
+            } catch {
+                return fi.group.next().makeFailedFuture(error)
+            }
+        }
+    }
+
+    private func unpack<T>(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> T where T:  LLBPolymorphicSerializable {
+        return try T.init(from: object, registry: fi.registry)
+    }
+    private func unpack<T>(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> T where T: LLBCASObjectConstructable {
+        return try T.init(from: object)
+    }
+    private func unpack<T>(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> T {
+        fatalError("cannot unpack CAS object")
+    }
 
     @_disfavoredOverload
     public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
@@ -82,19 +115,21 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
             return fi.group.next().makeFailedFuture(LLBError.unexpectedKeyType(String(describing: type(of: key))))
         }
 
-        if false /* is key in the cache? */ {
-            // return cached value
-            // V.init(from bytes)
-        } else {
-            return self.compute(key: typedKey, fi).flatMap { (value: LLBValue) in
-                do {
-                    return fi.db.put(try value.asCASObject()).map { _ in
-                        return value
+        return fi.functionCache.get(key: key).flatMap { result -> LLBFuture<LLBValue> in
+            if let resultID = result {
+                return fi.db.get(resultID).flatMap { objectOpt in
+                    guard let object = objectOpt else {
+                        return self.computeAndUpdate(key: typedKey, fi)
                     }
-                } catch {
-                    return fi.group.next().makeFailedFuture(error)
+                    do {
+                        let value: V = try self.unpack(object, fi)
+                        return fi.group.next().makeSucceededFuture(value)
+                    } catch {
+                        return fi.group.next().makeFailedFuture(error)
+                    }
                 }
             }
+            return self.computeAndUpdate(key: typedKey, fi)
         }
     }
 
@@ -118,7 +153,7 @@ public enum LLBError: Error {
     case unexpectedKeyType(String)
 }
 
-fileprivate struct Key {
+internal struct Key {
     let key: LLBKey
 
     init(_ key: LLBKey) {
@@ -145,6 +180,7 @@ public class LLBEngine {
     fileprivate let pendingResults: LLBEventualResultsCache<Key, LLBValue>
     fileprivate let keyDependencyGraph = LLBKeyDependencyGraph()
     @usableFromInline internal let registry = LLBSerializableRegistry()
+    @usableFromInline internal let functionCache: LLBFunctionCache
 
 
     public enum InternalError: Swift.Error {
@@ -157,13 +193,15 @@ public class LLBEngine {
         group: LLBFuturesDispatchGroup = LLBMakeDefaultDispatchGroup(),
         delegate: LLBEngineDelegate,
         db: LLBCASDatabase? = nil,
-        executor: LLBExecutor = LLBNullExecutor()
+        executor: LLBExecutor = LLBNullExecutor(),
+        functionCache: LLBFunctionCache? = nil
     ) {
         self.group = group
         self.delegate = delegate
         self.db = db ?? LLBInMemoryCASDatabase(group: group)
         self.executor = executor
         self.pendingResults = LLBEventualResultsCache<Key, LLBValue>(group: group)
+        self.functionCache = functionCache ?? LLBInMemoryFunctionCache(group: group)
 
         delegate.registerTypes(registry: registry)
     }
