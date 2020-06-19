@@ -105,6 +105,12 @@ extension LLBCASObjectRepresentable where Self: LLBPolymorphicSerializable {
     }
 }
 
+extension LLBCASObjectRepresentable where Self: LLBSerializable {
+    public func asCASObject() throws -> LLBCASObject {
+        return LLBCASObject(refs: [], data: try self.toBytes())
+    }
+}
+
 extension LLBAnySerializable {
     public init(from casObject: LLBCASObject) throws {
         self = try LLBAnySerializable.init(from: casObject.data)
