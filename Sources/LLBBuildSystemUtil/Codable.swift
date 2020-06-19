@@ -137,3 +137,16 @@ extension LLBBuildValue where Self: Decodable {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
     }
 }
+
+/// Convenience implementation for LLBLabel that conform to Codable.
+extension LLBLabel: Codable {
+    public init(from decoder: Swift.Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        try self.init(serializedData: container.decode(Data.self))
+    }
+
+    public func encode(to encoder: Swift.Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.serializedData())
+    }
+}
