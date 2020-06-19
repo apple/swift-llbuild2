@@ -44,6 +44,9 @@ public extension LLBCASObject {
 public protocol LLBCASObjectRepresentable {
     func asCASObject() throws -> LLBCASObject
 }
+public protocol LLBCASObjectConstructable {
+    init(from casObject: LLBCASObject) throws
+}
 
 // MARK:- CASObject Serializeable -
 

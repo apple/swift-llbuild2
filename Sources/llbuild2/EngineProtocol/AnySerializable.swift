@@ -98,6 +98,18 @@ extension LLBAnySerializable {
 
 extension LLBAnySerializable: LLBSerializable {}
 
+extension LLBPolymorphicSerializable {
+    init(from casObject: LLBCASObject, registry: LLBSerializableLookup) throws {
+        let any = try LLBAnySerializable(from: casObject.data)
+        guard let objType = registry.lookupType(identifier: any.typeIdentifier) else {
+            throw LLBAnySerializableError.unknownType(any.typeIdentifier)
+        }
+        // FIXME: this extra buffer copy is unfortunate
+        let buffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(any.serializedBytes))
+        self = try objType.init(from: buffer) as! Self
+    }
+}
+
 extension LLBCASObjectRepresentable where Self: LLBPolymorphicSerializable {
     public func asCASObject() throws -> LLBCASObject {
         let any = try LLBAnySerializable(from: self)
@@ -110,8 +122,13 @@ extension LLBCASObjectRepresentable where Self: LLBSerializable {
         return LLBCASObject(refs: [], data: try self.toBytes())
     }
 }
+extension LLBCASObjectConstructable where Self: LLBSerializable {
+    public init(from casObject: LLBCASObject) throws {
+        try self.init(from: casObject.data)
+    }
+}
 
-extension LLBAnySerializable {
+extension LLBAnySerializable: LLBCASObjectConstructable {
     public init(from casObject: LLBCASObject) throws {
         self = try LLBAnySerializable.init(from: casObject.data)
     }
