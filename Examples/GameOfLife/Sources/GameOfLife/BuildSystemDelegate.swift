@@ -13,19 +13,23 @@ enum GameOfLifeConfiguredTargetError: Error {
     case notFound
 }
 
-/// Implementation of the LLBBuildEngine delegates for extending the engine with our custom functions, rules and
-/// targets.
+/// Implementation of the LLBBuildEngine delegates for extending the engine with
+/// our custom functions, rules and targets.
 class GameOfLifeBuildSystemDelegate {
-    /// Registry of available rules in the GameOfLife build system. This means that CellTarget targets are evaluated using
-    /// the CellRule implementation. Same for the BoardTarget and BoardRule. Rules are used mostly for processing
-    /// artifact related computations, since it has access to APIs for managing inputs, outputs and action registration.
+    /// Registry of available rules in the GameOfLife build system. This means
+    /// that CellTarget targets are evaluated using the CellRule implementation.
+    /// Same for the BoardTarget and BoardRule. Rules are used mostly for
+    /// processing artifact related computations, since it has access to APIs for
+    /// managing inputs, outputs and action registration.
     let rules: [String: LLBRule] = [
         CellTarget.identifier: CellRule(),
         BoardTarget.identifier: BoardRule(),
     ]
 
-    /// Registry of key identifiers to the functions that evaluate them. Functions are used to access the raw llbuild2
-    /// engine capabilities for implementing generic functional computations that are not necesarily artifact related.
+    /// Registry of key identifiers to the functions that evaluate them.
+    /// Functions are used to access the raw llbuild2 engine capabilities for
+    /// implementing generic functional computations that are not necesarily
+    /// artifact related.
     let functions: [LLBBuildKeyIdentifier: LLBFunction]
 
     init(engineContext: LLBBuildEngineContext) {

@@ -10,10 +10,11 @@ import LLBBuildSystem
 import Foundation
 import llbuild2
 
-// This file is a collection of extensions that make Codable adoption easier for the LLBBuildSystem types, to avoid
-// having to implement codable for each of the types. Performance of Codable is not that great, so we might need to
-// find a way to allow easy serialization/deserialization for client types. For demo purposes for the GameOfLife project,
-// they are enough.
+// This file is a collection of extensions that make Codable adoption easier for
+// the LLBBuildSystem types, to avoid having to implement codable for each of
+// the types. Performance of Codable is not that great, so we might need to find
+// a way to allow easy serialization/deserialization for client types. For demo
+// purposes for the GameOfLife project, they are enough.
 
 /// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable
 extension LLBArtifact: Codable {
