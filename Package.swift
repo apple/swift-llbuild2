@@ -115,7 +115,7 @@ let package = Package(
         ),
         .target(
             name: "LLBBuildSystemUtil",
-            dependencies: ["llbuild2", "SwiftToolsSupport-auto", "LLBCASFileTree"]
+            dependencies: ["llbuild2", "SwiftToolsSupport-auto", "LLBCASFileTree", "LLBBuildSystem"]
         ),
         .target(
             name: "LLBBuildSystemTestHelpers",

@@ -13,10 +13,9 @@ import llbuild2
 // This file is a collection of extensions that make Codable adoption easier for
 // the LLBBuildSystem types, to avoid having to implement codable for each of
 // the types. Performance of Codable is not that great, so we might need to find
-// a way to allow easy serialization/deserialization for client types. For demo
-// purposes for the GameOfLife project, they are enough.
+// a way to allow easy serialization/deserialization for client types.
 
-/// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable
+/// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable.
 extension LLBArtifact: Codable {
     convenience public init(from decoder: Swift.Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -29,7 +28,7 @@ extension LLBArtifact: Codable {
     }
 }
 
-/// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable
+/// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable.
 extension LLBConfigurationFragmentKey where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
@@ -37,14 +36,14 @@ extension LLBConfigurationFragmentKey where Self: Encodable {
     }
 }
 
-/// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable
+/// Convenience implementation for LLBConfigurationFragmentKey that conform to Codable.
 extension LLBConfigurationFragmentKey where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
     }
 }
 
-/// Convenience implementation for LLBConfigurationFragment that conform to Codable
+/// Convenience implementation for LLBConfigurationFragment that conform to Codable.
 extension LLBConfigurationFragment where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
@@ -52,14 +51,14 @@ extension LLBConfigurationFragment where Self: Encodable {
     }
 }
 
-/// Convenience implementation for LLBConfigurationFragment that conform to Codable
+/// Convenience implementation for LLBConfigurationFragment that conform to Codable.
 extension LLBConfigurationFragment where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
     }
 }
 
-/// Convenience implementation for LLBProviders that conform to Codable
+/// Convenience implementation for LLBProviders that conform to Codable.
 extension LLBProvider where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
@@ -67,7 +66,7 @@ extension LLBProvider where Self: Encodable {
     }
 }
 
-/// Convenience implementation for LLBProviders that conform to Codable
+/// Convenience implementation for LLBProviders that conform to Codable.
 extension LLBProvider where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
@@ -87,7 +86,7 @@ extension LLBProviderMap: Codable {
     }
 }
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
+/// Convenience implementation for ConfiguredTargets that conform to Codable.
 extension LLBConfiguredTarget where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
@@ -95,7 +94,7 @@ extension LLBConfiguredTarget where Self: Encodable {
     }
 }
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
+/// Convenience implementation for ConfiguredTargets that conform to Codable.
 extension LLBConfiguredTarget where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
@@ -109,7 +108,7 @@ extension LLBBuildKey where Self: Encodable {
     }
 }
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
+/// Convenience implementation for ConfiguredTargets that conform to Codable.
 extension LLBBuildKey where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
@@ -117,14 +116,14 @@ extension LLBBuildKey where Self: Encodable {
     }
 }
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
+/// Convenience implementation for ConfiguredTargets that conform to Codable.
 extension LLBBuildKey where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
     }
 }
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
+/// Convenience implementation for ConfiguredTargets that conform to Codable.
 extension LLBBuildValue where Self: Encodable {
     public func toBytes(into buffer: inout LLBByteBuffer) throws {
         let data = try JSONEncoder().encode(self)
@@ -132,7 +131,7 @@ extension LLBBuildValue where Self: Encodable {
     }
 }
 
-/// Convenience implementation for ConfiguredTargets that conform to Codable
+/// Convenience implementation for ConfiguredTargets that conform to Codable.
 extension LLBBuildValue where Self: Decodable {
     public init(from bytes: LLBByteBuffer) throws {
         self = try JSONDecoder().decode(Self.self, from: Data(bytes.readableBytesView))
