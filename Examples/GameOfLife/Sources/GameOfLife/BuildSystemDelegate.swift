@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import LLBBuildSystem
-import LLBBuildSystemProtocol
 import llbuild2
 
 enum GameOfLifeConfiguredTargetError: Error {
@@ -66,5 +65,14 @@ extension GameOfLifeBuildSystemDelegate: LLBRuleLookupDelegate {
 extension GameOfLifeBuildSystemDelegate: LLBBuildFunctionLookupDelegate {
     func lookupBuildFunction(for identifier: LLBBuildKeyIdentifier) -> LLBFunction? {
         return functions[identifier]
+    }
+}
+
+extension GameOfLifeBuildSystemDelegate: LLBSerializableRegistrationDelegate {
+    func registerTypes(registry: LLBSerializableRegistry) {
+        registry.register(type: GameOfLifeConfigurationKey.self)
+        registry.register(type: GameOfLifeConfigurationFragment.self)
+        registry.register(type: CellTarget.self)
+        registry.register(type: BoardTarget.self)
     }
 }

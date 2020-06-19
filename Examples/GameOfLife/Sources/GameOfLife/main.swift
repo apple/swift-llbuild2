@@ -15,12 +15,6 @@ import LLBUtil
 import LLBBuildSystemUtil
 import TSCBasic
 
-// Register the build system related types as required for polymorphic encoding.
-LLBConfigurationKey.register(fragmentKeyType: GameOfLifeConfigurationKey.self)
-LLBConfigurationValue.register(fragmentType: GameOfLifeConfigurationFragment.self)
-LLBConfiguredTargetValue.register(configuredTargetType: CellTarget.self)
-LLBConfiguredTargetValue.register(configuredTargetType: BoardTarget.self)
-
 // Create the build engine's dependencies.
 let group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
 let db = LLBInMemoryCASDatabase(group: group)
@@ -33,7 +27,10 @@ let engine = LLBBuildEngine(
     engineContext: engineContext,
     buildFunctionLookupDelegate: buildSystemDelegate,
     configuredTargetDelegate: buildSystemDelegate,
-    ruleLookupDelegate: buildSystemDelegate
+    ruleLookupDelegate: buildSystemDelegate,
+    registrationDelegate: buildSystemDelegate,
+    db: db,
+    executor: executor
 )
 
 // Construct the SwiftUI environment object to access the build engine and database.
