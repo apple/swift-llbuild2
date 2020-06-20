@@ -13,12 +13,46 @@ extension LLBActionExecutionValue: LLBBuildValue {}
 
 /// Convenience initializer.
 public extension LLBActionExecutionKey {
-    static func command(actionSpec: LLBActionSpec, inputs: [LLBActionInput], outputs: [LLBActionOutput]) -> Self {
+
+    static func command(
+        arguments: [String],
+        environment: [String: String] = [:],
+        workingDirectory: String? = nil,
+        inputs: [LLBActionInput],
+        outputs: [LLBActionOutput],
+        dynamicIdentifier: LLBDynamicActionIdentifier? = nil
+    ) -> Self {
+        return LLBActionExecutionKey.with {
+            $0.actionExecutionType = .command(LLBCommandActionExecution.with {
+                $0.actionSpec = LLBActionSpec(
+                    arguments: arguments,
+                    environment: environment,
+                    workingDirectory: workingDirectory,
+                    preActions: []
+                )
+                $0.inputs = inputs
+                $0.outputs = outputs
+                if let dynamicIdentifier = dynamicIdentifier {
+                    $0.dynamicIdentifier = dynamicIdentifier
+                }
+            })
+        }
+    }
+
+    static func command(
+        actionSpec: LLBActionSpec,
+        inputs: [LLBActionInput],
+        outputs: [LLBActionOutput],
+        dynamicIdentifier: LLBDynamicActionIdentifier? = nil
+    ) -> Self {
         return LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(LLBCommandActionExecution.with {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
+                if let dynamicIdentifier = dynamicIdentifier {
+                    $0.dynamicIdentifier = dynamicIdentifier
+                }
             })
         }
     }
@@ -63,6 +97,13 @@ public enum LLBActionExecutionError: Error {
 }
 
 final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
+    let dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?
+
+    init(engineContext: LLBBuildEngineContext, dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?) {
+        self.dynamicActionExecutorDelegate = dynamicActionExecutorDelegate
+        super.init(engineContext: engineContext)
+    }
+
     override func evaluate(key actionExecutionKey: LLBActionExecutionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
 
         switch actionExecutionKey.actionExecutionType {
@@ -80,7 +121,17 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             actionSpec: commandKey.actionSpec, inputs: commandKey.inputs, outputs: commandKey.outputs
         )
 
-        return fi.spawn(actionExecutionRequest, engineContext).flatMapErrorThrowing { error in
+        let resultFuture: LLBFuture<LLBActionExecutionResponse>
+        if commandKey.dynamicIdentifier.isEmpty {
+            resultFuture = fi.spawn(actionExecutionRequest, engineContext)
+        } else if let dynamicExecutor = dynamicActionExecutorDelegate?.dynamicActionExecutor(for: commandKey.dynamicIdentifier) {
+            resultFuture = dynamicExecutor.execute(request: actionExecutionRequest, engineContext: engineContext, fi)
+
+        } else {
+            resultFuture = fi.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
+        }
+
+        return resultFuture.flatMapErrorThrowing { error in
             // Action failures do not throw from the executor, so this must be an executor specific error.
             throw LLBActionExecutionError.executorError(error)
         }.flatMapThrowing { executionResponse in

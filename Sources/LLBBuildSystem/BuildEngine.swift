@@ -33,7 +33,8 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?,
         configuredTargetDelegate: LLBConfiguredTargetDelegate?,
         ruleLookupDelegate: LLBRuleLookupDelegate?,
-        registrationDelegate: LLBSerializableRegistrationDelegate?
+        registrationDelegate: LLBSerializableRegistrationDelegate?,
+        dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?
     ) {
         self.engineContext = engineContext
         self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
@@ -41,7 +42,8 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
         self.functionMap = LLBBuildFunctionMap(
             engineContext: engineContext,
             configuredTargetDelegate: configuredTargetDelegate,
-            ruleLookupDelegate: ruleLookupDelegate
+            ruleLookupDelegate: ruleLookupDelegate,
+            dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
         )
     }
 
@@ -91,6 +93,7 @@ public final class LLBBuildEngine {
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
         registrationDelegate: LLBSerializableRegistrationDelegate? = nil,
+        dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate? = nil,
         db: LLBCASDatabase,
         executor: LLBExecutor
     ) {
@@ -100,7 +103,8 @@ public final class LLBBuildEngine {
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate,
-            registrationDelegate: registrationDelegate
+            registrationDelegate: registrationDelegate,
+            dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
         )
         self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate, db: db, executor: executor)
     }

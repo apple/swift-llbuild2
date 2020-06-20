@@ -92,3 +92,10 @@ extension LLBBuildFunctionInterface {
         return self.request(evaluatedTargetKeys, as: LLBEvaluatedTargetValue.self).map { $0.map(\.providerMap) }
     }
 }
+
+extension LLBBuildFunctionInterface: LLBDynamicFunctionInterface {
+    public func requestActionExecution(_ key: LLBActionExecutionKey) -> LLBFuture<LLBActionExecutionValue> {
+        return self.request(key, as: LLBActionExecutionValue.self)
+    }
+}
+

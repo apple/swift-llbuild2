@@ -47,6 +47,7 @@ public class LLBTestBuildEngine {
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
+        dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate? = nil,
         executor: LLBExecutor? = nil,
         registrationHandler: @escaping (LLBSerializableRegistry) -> Void = { _ in }
     ) {
@@ -59,6 +60,7 @@ public class LLBTestBuildEngine {
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate,
             registrationDelegate: RegistrationDelegateWrapper(handler: registrationHandler),
+            dynamicActionExecutorDelegate: dynamicActionExecutorDelegate,
             db: engineContext.db,
             executor: executor ?? LLBNullExecutor()
         )
