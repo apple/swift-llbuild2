@@ -10,8 +10,6 @@ import llbuild2
 import LLBBuildSystem
 import XCTest
 
-extension LLBProviderMap: LLBSerializable {}
-
 fileprivate struct SimpleProvider: LLBProvider {
     let simpleString: String
     
