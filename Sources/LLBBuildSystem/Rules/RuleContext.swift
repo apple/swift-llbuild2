@@ -120,6 +120,48 @@ public class LLBRuleContext {
         workingDirectory: String? = nil,
         preActions: [LLBPreAction] = []
     ) throws {
+        try registerAction(
+            arguments: arguments,
+            inputs: inputs,
+            outputs: outputs,
+            workingDirectory: workingDirectory,
+            preActions: preActions,
+            dynamicIdentifier: nil
+        )
+    }
+
+    /// Registers a dynamic action that takes the specified inputs and produces the specified outputs. Only a single
+    /// action can be registered for each output, and each output declared from the rule must have 1 producing action.
+    /// It is an error to leave an output artifact without a producing action, or to register more than one action for a
+    /// particular output.
+    public func registerDynamicAction(
+        _ dynamicExecutorType: LLBDynamicActionExecutor.Type,
+        arguments: [String],
+        environment: [String: String] = [:],
+        inputs: [LLBArtifact],
+        outputs: [LLBArtifact],
+        workingDirectory: String? = nil,
+        preActions: [LLBPreAction] = []
+    ) throws {
+        try registerAction(
+            arguments: arguments,
+            inputs: inputs,
+            outputs: outputs,
+            workingDirectory: workingDirectory,
+            preActions: preActions,
+            dynamicIdentifier: dynamicExecutorType.identifier
+        )
+    }
+
+    private func registerAction(
+        arguments: [String],
+        environment: [String: String] = [:],
+        inputs: [LLBArtifact],
+        outputs: [LLBArtifact],
+        workingDirectory: String? = nil,
+        preActions: [LLBPreAction] = [],
+        dynamicIdentifier: LLBDynamicActionIdentifier?
+    ) throws {
         try queue.sync {
             // Check that all outputs for the action are uninitialized, have already been declared (and correspond to
             // the declared one) and that they have not been associated to another action. If this turns out to be too
@@ -141,7 +183,8 @@ public class LLBRuleContext {
                     }
                 ),
                 inputs: inputs,
-                outputs: outputs.map { $0.asActionOutput() }
+                outputs: outputs.map { $0.asActionOutput() },
+                dynamicIdentifier: dynamicIdentifier
             )
 
             registeredActions.append(actionKey)

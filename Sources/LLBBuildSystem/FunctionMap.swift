@@ -13,7 +13,12 @@ import llbuild2
 class LLBBuildFunctionMap {
     private let functionMap: [LLBBuildKeyIdentifier: LLBFunction]
 
-    init(engineContext: LLBBuildEngineContext, configuredTargetDelegate: LLBConfiguredTargetDelegate?, ruleLookupDelegate: LLBRuleLookupDelegate?) {
+    init(
+        engineContext: LLBBuildEngineContext,
+        configuredTargetDelegate: LLBConfiguredTargetDelegate?,
+        ruleLookupDelegate: LLBRuleLookupDelegate?,
+        dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?
+    ) {
         self.functionMap = [
             LLBArtifact.identifier: ArtifactFunction(engineContext: engineContext),
 
@@ -32,7 +37,10 @@ class LLBBuildFunctionMap {
             // Execution
             ActionIDKey.identifier: ActionIDFunction(engineContext: engineContext),
             LLBActionKey.identifier: ActionFunction(engineContext: engineContext),
-            LLBActionExecutionKey.identifier: ActionExecutionFunction(engineContext: engineContext),
+            LLBActionExecutionKey.identifier: ActionExecutionFunction(
+                engineContext: engineContext,
+                dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
+            ),
         ]
     }
 

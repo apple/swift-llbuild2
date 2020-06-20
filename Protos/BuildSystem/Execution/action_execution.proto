@@ -51,6 +51,11 @@ message LLBCommandActionExecution {
 
     // The list of outputs expected from this action execution.
     repeated LLBActionOutput outputs = 3;
+
+    // Identifier for the dynamic action executor for this action. If this is empty (which should be the majority of the
+    // cases) actions will be scheduled on the executor specified for the build. If set, action execution will find the
+    // dynamic executor with this identifier from the dynamic execution delegate and invoke that instead.
+    string dynamicIdentifier = 4;
 }
 
 // An action execution description for a merge trees action.

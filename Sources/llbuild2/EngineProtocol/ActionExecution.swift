@@ -37,7 +37,7 @@ public extension LLBActionExecutionRequest {
 }
 
 public extension LLBActionExecutionResponse {
-    init(outputs: [LLBDataID], exitCode: Int, stdoutID: LLBDataID, stderrID: LLBDataID) {
+    init(outputs: [LLBDataID], exitCode: Int = 0, stdoutID: LLBDataID, stderrID: LLBDataID) {
         self.outputs = outputs
         self.exitCode = Int32(exitCode)
         self.stdoutID = stdoutID

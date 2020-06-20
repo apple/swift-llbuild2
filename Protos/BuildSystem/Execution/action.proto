@@ -46,6 +46,10 @@ message LLBCommandAction {
 
     // The list of outputs expected from this action evaluation.
     repeated LLBActionOutput outputs = 3;
+
+    // Identifier for the dynamic action executor for this action. Should be empty for the vast majority of the cases,
+    // and only be used for actions that schedule additional actions based on the outputs of previous actions.
+    string dynamicIdentifier = 4;
 }
 
 // An action that merges artifacts into a single tree artifact. There is no output specification since that lies in the

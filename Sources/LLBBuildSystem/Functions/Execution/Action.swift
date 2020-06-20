@@ -13,12 +13,20 @@ extension LLBActionValue: LLBBuildValue {}
 
 /// Convenience initializer.
 public extension LLBActionKey {
-    static func command(actionSpec: LLBActionSpec, inputs: [LLBArtifact], outputs: [LLBActionOutput]) -> Self {
+    static func command(
+        actionSpec: LLBActionSpec,
+        inputs: [LLBArtifact],
+        outputs: [LLBActionOutput],
+        dynamicIdentifier: String? = nil
+    ) -> Self {
         return LLBActionKey.with {
             $0.actionType = .command(LLBCommandAction.with {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
+                if let dynamicIdentifier = dynamicIdentifier {
+                    $0.dynamicIdentifier = dynamicIdentifier
+                }
             })
         }
     }
@@ -75,7 +83,11 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 inputs: inputs.map { (artifact, artifactValue) in
                     LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
                 },
-                outputs: commandKey.outputs
+                outputs: commandKey.outputs,
+                // This should be empty most of the time. Only used for dynamic action registration. Need to check if
+                // the key has an empty dynamic identifier since SwiftProtobuf doesn't support optionals, but want to
+                // keep the Optional interface here.
+                dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier)
             )
 
             return fi.request(actionExecutionKey)

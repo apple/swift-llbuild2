@@ -142,6 +142,11 @@ public struct LLBCommandActionExecution {
   /// The list of outputs expected from this action execution.
   public var outputs: [llbuild2.LLBActionOutput] = []
 
+  /// Identifier for the dynamic action executor for this action. If this is empty (which should be the majority of the
+  /// cases) actions will be scheduled on the executor specified for the build. If set, action execution will find the
+  /// dynamic executor with this identifier from the dynamic execution delegate and invoke that instead.
+  public var dynamicIdentifier: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -262,6 +267,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     1: .same(proto: "actionSpec"),
     2: .same(proto: "inputs"),
     3: .same(proto: "outputs"),
+    4: .same(proto: "dynamicIdentifier"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -270,6 +276,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 1: try decoder.decodeSingularMessageField(value: &self._actionSpec)
       case 2: try decoder.decodeRepeatedMessageField(value: &self.inputs)
       case 3: try decoder.decodeRepeatedMessageField(value: &self.outputs)
+      case 4: try decoder.decodeSingularStringField(value: &self.dynamicIdentifier)
       default: break
       }
     }
@@ -285,6 +292,9 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if !self.outputs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.outputs, fieldNumber: 3)
     }
+    if !self.dynamicIdentifier.isEmpty {
+      try visitor.visitSingularStringField(value: self.dynamicIdentifier, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -292,6 +302,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs._actionSpec != rhs._actionSpec {return false}
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
+    if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
