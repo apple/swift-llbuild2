@@ -17,7 +17,7 @@ public final class LLBInMemoryFunctionCache: LLBFunctionCache {
     private var cache = [Key: LLBDataID]()
 
     /// Threads capable of running futures.
-    public var group: LLBFuturesDispatchGroup
+    public let group: LLBFuturesDispatchGroup
 
     /// The lock protecting content.
     let lock = NIOConcurrencyHelpers.Lock()
