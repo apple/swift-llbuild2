@@ -61,7 +61,6 @@ public class LLBTestBuildEngine {
             ruleLookupDelegate: ruleLookupDelegate,
             registrationDelegate: RegistrationDelegateWrapper(handler: registrationHandler),
             dynamicActionExecutorDelegate: dynamicActionExecutorDelegate,
-            db: engineContext.db,
             executor: executor ?? LLBNullExecutor()
         )
     }

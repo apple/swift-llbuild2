@@ -15,10 +15,15 @@ import LLBUtil
 import LLBBuildSystemUtil
 import TSCBasic
 
+let gameOfLifeDirectory = AbsolutePath("/tmp/game_of_life")
+try localFileSystem.createDirectory(gameOfLifeDirectory, recursive: true)
+
 // Create the build engine's dependencies.
 let group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
-let db = LLBInMemoryCASDatabase(group: group)
-let executor = LLBLocalExecutor(outputBase: AbsolutePath("/tmp/game_of_life"))
+let db = LLBFileBackedCASDatabase(group: group, path: gameOfLifeDirectory.appending(component: "cas"))
+let executor = LLBLocalExecutor(outputBase: gameOfLifeDirectory.appending(component: "executor_output"))
+let functionCache = LLBFileBackedFunctionCache(group: group, path: gameOfLifeDirectory.appending(component: "function_cache"))
+
 let engineContext = LLBBasicBuildEngineContext(group: group, db: db, executor: executor)
 let buildSystemDelegate = GameOfLifeBuildSystemDelegate(engineContext: engineContext)
 
@@ -29,8 +34,8 @@ let engine = LLBBuildEngine(
     configuredTargetDelegate: buildSystemDelegate,
     ruleLookupDelegate: buildSystemDelegate,
     registrationDelegate: buildSystemDelegate,
-    db: db,
-    executor: executor
+    executor: executor,
+    functionCache: functionCache
 )
 
 // Construct the SwiftUI environment object to access the build engine and database.

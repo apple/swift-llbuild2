@@ -87,6 +87,13 @@ public final class LLBBuildEngine {
     ///     - ruleLookupDelegate: An optional rule lookup delegate used for retrieving the rule implementation to
     ///           evaluate a configured target. If not specified, will trigger an error if an EvaluatedTargetKey is
     ///           requested.
+    ///     - registrationDelegate: An optional delegate providing a hook for registering types that need to be
+    ///           pre-declared for polymorphic serialization.
+    ///     - dynamicActionExecutorDelegate: An optional delegate that is required if the build system implements
+    ///           support for dynamic actions. The purpose of this delegate is to find the dynamic action implementation
+    ///           from the identifier encoded in the action key.
+    ///     - executor: The executor that will execute the actions.
+    ///     - functionCache: The function cache that acts as the memoization layer for the core llbuild2 engine.
     public init(
         engineContext: LLBBuildEngineContext,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
@@ -94,8 +101,8 @@ public final class LLBBuildEngine {
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
         registrationDelegate: LLBSerializableRegistrationDelegate? = nil,
         dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate? = nil,
-        db: LLBCASDatabase,
-        executor: LLBExecutor
+        executor: LLBExecutor,
+        functionCache: LLBFunctionCache? = nil
     ) {
         self.engineContext = engineContext
         self.delegate = LLBBuildEngineDelegate(
@@ -106,7 +113,13 @@ public final class LLBBuildEngine {
             registrationDelegate: registrationDelegate,
             dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
         )
-        self.coreEngine = LLBEngine(group: engineContext.group, delegate: delegate, db: db, executor: executor)
+        self.coreEngine = LLBEngine(
+            group: engineContext.group,
+            delegate: delegate,
+            db: engineContext.db,
+            executor: executor,
+            functionCache: functionCache
+        )
     }
 
     /// Requests the evaluation of a build key, returning an abstract build value.
