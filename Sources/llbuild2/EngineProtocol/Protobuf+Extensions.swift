@@ -24,3 +24,10 @@ extension LLBSerializableIn where Self: SwiftProtobuf.Message {
         self = try Self.init(serializedData: data)
     }
 }
+
+/// Convenience implementation for types that extend SwiftProtobuf.Message
+extension LLBKey where Self: SwiftProtobuf.Message {
+    public var stableHashValue: LLBDataID {
+        return LLBDataID(blake3hash: ArraySlice(try! self.serializedData()))
+    }
+}

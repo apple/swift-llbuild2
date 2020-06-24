@@ -13,13 +13,17 @@ import LLBCASFileTree
 import TSCBasic
 import XCTest
 
-struct PlatformFragmentKey: LLBConfigurationFragmentKey, Codable, Hashable {
+struct PlatformFragmentKey: LLBConfigurationFragmentKey, Codable {
     static let identifier = String(describing: Self.self)
 
     let platformName: String
 
     init(platformName: String) {
         self.platformName = platformName
+    }
+
+    public var stableHashValue: LLBDataID {
+        return LLBDataID(blake3hash: platformName)
     }
 }
 

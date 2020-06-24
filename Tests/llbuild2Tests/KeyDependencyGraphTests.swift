@@ -11,7 +11,17 @@ import XCTest
 import llbuild2
 import LLBUtil
 
-extension Int: LLBKey {}
+extension Int: LLBKey {
+    public var stableHashValue: LLBDataID {
+        var v = self
+        let s: Int = MemoryLayout<Int>.size
+        return withUnsafePointer(to: &v) { p in
+            p.withMemoryRebound(to: UInt8.self, capacity: s) { pb in
+                LLBDataID(directHash: Array(UnsafeBufferPointer(start: pb, count: s)))
+            }
+        }
+    }
+}
 
 final class KeyDependencyGraphTests: XCTestCase {
     func testSimpleCycle() throws {

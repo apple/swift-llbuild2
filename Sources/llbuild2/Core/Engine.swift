@@ -17,8 +17,7 @@ import NIOConcurrencyHelpers
 
 
 public protocol LLBKey {
-    func hash(into: inout Hasher)
-    var hashValue: Int { get }
+    var stableHashValue: LLBDataID { get }
 }
 public protocol LLBValue: LLBCASObjectRepresentable {}
 
@@ -162,10 +161,10 @@ internal struct Key {
 }
 extension Key: Hashable {
     func hash(into hasher: inout Hasher) {
-        key.hash(into: &hasher)
+        key.stableHashValue.hash(into: &hasher)
     }
     static func ==(lhs: Key, rhs: Key) -> Bool {
-        return lhs.key.hashValue == rhs.key.hashValue
+        return lhs.key.stableHashValue == rhs.key.stableHashValue
     }
 }
 

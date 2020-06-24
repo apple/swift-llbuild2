@@ -38,7 +38,7 @@ public final class LLBFileBackedFunctionCache: LLBFunctionCache {
     }
 
     private func filePath(key: LLBKey) -> AbsolutePath {
-        return path.appending(component: "\(key.hashValue)")
+        return path.appending(component: "\(key.stableHashValue)")
     }
 
     public func get(key: LLBKey) -> LLBFuture<LLBDataID?> {

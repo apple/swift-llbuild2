@@ -9,7 +9,11 @@
 import llbuild2
 
 
-extension String: LLBKey {}
+extension String: LLBKey {
+    public var stableHashValue: LLBDataID {
+        return LLBDataID(blake3hash: self)
+    }
+}
 
 public class LLBStaticFunctionDelegate: LLBEngineDelegate {
     let keyMap: [String: LLBFunction]
