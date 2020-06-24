@@ -11,7 +11,7 @@ syntax = "proto3";
 import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
 import "BuildSystem/Evaluation/configured_target.proto";
-import "BuildSystem/Evaluation/evaluated_target.proto";
+import "BuildSystem/Evaluation/provider_map.proto";
 import "CASProtocol/data_id.proto";
 
 // The reference to a rule evaluation key. This is used for 2 purposes: to avoid having a large rule evaluation key

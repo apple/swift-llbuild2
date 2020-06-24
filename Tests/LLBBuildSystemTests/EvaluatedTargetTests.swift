@@ -21,6 +21,8 @@ private struct DummyConfiguredTarget: LLBConfiguredTarget {
         self.name = name
     }
     
+    var targetDependencies: [String: LLBTargetDependency] { [:] }
+    
     init(from bytes: LLBByteBuffer) throws {
         self.name = try String(from: bytes)
     }

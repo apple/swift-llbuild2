@@ -39,8 +39,9 @@ public extension LLBConfiguredTargetKey {
 
 // Convenience initializer.
 extension LLBConfiguredTargetValue {
-    init(serializedConfiguredTarget: LLBAnySerializable) {
+    init(serializedConfiguredTarget: LLBAnySerializable, targetDependencies: [LLBNamedConfiguredTargetDependency]) {
         self.serializedConfiguredTarget = serializedConfiguredTarget
+        self.targetDependencies = targetDependencies
     }
 }
 
@@ -59,6 +60,43 @@ extension LLBConfiguredTargetValue {
     }
 }
 
+/// Helper type used to handle the dependency type and provider map list across future callbacks.
+fileprivate enum NamedProviderMapType: Comparable {
+    case single(String, LLBProviderMap)
+    case list(String, [LLBProviderMap])
+    
+    var name: String {
+        switch self {
+        case let .single(name, _):
+            return name
+        case let .list(name, _):
+            return name
+        }
+    }
+    
+    var providerMapsAsArray: [LLBProviderMap] {
+        switch self {
+        case let .single(_, providerMap):
+            return [providerMap]
+        case let .list(_, providerMaps):
+            return providerMaps
+        }
+    }
+    
+    var protoType: LLBNamedConfiguredTargetDependency.TypeEnum {
+        switch self {
+        case .single:
+            return .single
+        case .list:
+            return .list
+        }
+    }
+    
+    static func < (lhs: NamedProviderMapType, rhs: NamedProviderMapType) -> Bool {
+        lhs.name < rhs.name
+    }
+}
+
 final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, LLBConfiguredTargetValue> {
     let configuredTargetDelegate: LLBConfiguredTargetDelegate?
 
@@ -72,10 +110,49 @@ final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, L
             return fi.group.next().makeFailedFuture(LLBConfiguredTargetError.noDelegate)
         }
         do {
-            return try delegate.configuredTarget(for: key, fi).flatMapThrowing { configuredTarget in
+            return try delegate.configuredTarget(for: key, fi).flatMap { configuredTarget in
+                var namedProviderMapFutures = [LLBFuture<NamedProviderMapType>]()
+                
+                // Request all dependencies as declared by the configured target, so they can be added to the
+                // configuration value.
+                for (name, type) in configuredTarget.targetDependencies {
+                    let namedProviderMapFuture: LLBFuture<NamedProviderMapType>
+                    switch type {
+                    case let .single(label, configurationKey):
+                        let dependencyKey = LLBConfiguredTargetKey(
+                            rootID: key.rootID,
+                            label: label,
+                            configurationKey: configurationKey
+                        )
+                        namedProviderMapFuture = fi.requestDependency(dependencyKey).map { NamedProviderMapType.single(name, $0) }
+                    case let .list(labels, configurationKey):
+                        let dependencyKeys = labels.map {
+                            LLBConfiguredTargetKey(rootID: key.rootID, label: $0, configurationKey: configurationKey)
+                        }
+                        namedProviderMapFuture = fi.requestDependencies(dependencyKeys).map { NamedProviderMapType.list(name, $0) }
+                    }
+                    
+                    namedProviderMapFutures.append(namedProviderMapFuture)
+                }
+                
+                return LLBFuture.whenAllSucceed(namedProviderMapFutures, on: fi.group.next()).map { (configuredTarget, $0) }
+            }.flatMapThrowing { (configuredTarget: LLBConfiguredTarget, namedProviderMaps: [NamedProviderMapType]) in
                 // Wrap the ConfiguredTarget into an LLBAnySerializable and store that.
                 let serializedConfiguredTarget = try LLBAnySerializable(from: configuredTarget)
-                return LLBConfiguredTargetValue(serializedConfiguredTarget: serializedConfiguredTarget)
+                
+                // Sort the provider maps for deterministic outputs.
+                let targetDependencies = namedProviderMaps.sorted(by: <).map { namedProviderMap in
+                    return LLBNamedConfiguredTargetDependency.with {
+                        $0.name = namedProviderMap.name
+                        $0.type = namedProviderMap.protoType
+                        $0.providerMaps = namedProviderMap.providerMapsAsArray
+                    }
+                }
+                
+                return LLBConfiguredTargetValue(
+                    serializedConfiguredTarget: serializedConfiguredTarget,
+                    targetDependencies: targetDependencies
+                )
             }.flatMapErrorThrowing { error in
                 // Convert any non ConfiguredTargetErrors into ConfiguredTargetError.
                 if error is LLBConfiguredTargetError {

@@ -92,7 +92,8 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                 group: fi.group,
                 label: ruleEvaluationKey.label,
                 configurationValue: configurationValue,
-                artifactOwnerID: key.ruleEvaluationKeyID
+                artifactOwnerID: key.ruleEvaluationKeyID,
+                targetDependencies: ruleEvaluationKey.configuredTargetValue.targetDependencies
             )
 
             let providersFuture: LLBFuture<([LLBDataID], [LLBProvider])>

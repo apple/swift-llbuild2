@@ -16,6 +16,28 @@ public enum LLBRuleContextError: Error {
     case outputAlreadyRegistered
     case writeError
     case invalidRedeclarationOfArtifact
+    case missingDependencyName
+    case dependencyTypeMismatch
+}
+
+/// Helper storage for the provider maps that preserves the original type of dependency.
+fileprivate enum RuleContextTargetDependencyType {
+    case single(LLBProviderMap)
+    case list([LLBProviderMap])
+    
+    init?(_ namedConfiguredTargetDependency: LLBNamedConfiguredTargetDependency) {
+        switch namedConfiguredTargetDependency.type {
+        
+        case .single:
+            // FIXME: We should validate that there is 1 and only 1 providerMap. This is sort of managed by
+            // LLBBuildSystem, so it shouldn't happen that we get 0 or more than 1 provider maps here.
+            self = .single(namedConfiguredTargetDependency.providerMaps[0])
+        case .list:
+            self = .list(namedConfiguredTargetDependency.providerMaps)
+        default:
+            return nil
+        }
+    }
 }
 
 public class LLBRuleContext {
@@ -43,12 +65,59 @@ public class LLBRuleContext {
 
     // Private reference to the artifact owner ID to associate in ArtifactOwners.
     private let artifactOwnerID: LLBDataID
+    
+    private let targetDependencies: [String: RuleContextTargetDependencyType]
 
-    init(group: LLBFuturesDispatchGroup, label: LLBLabel, configurationValue: LLBConfigurationValue, artifactOwnerID: LLBDataID) {
+    init(
+        group: LLBFuturesDispatchGroup,
+        label: LLBLabel,
+        configurationValue: LLBConfigurationValue,
+        artifactOwnerID: LLBDataID,
+        targetDependencies: [LLBNamedConfiguredTargetDependency]) {
         self.group = group
         self.label = label
         self.configurationValue = configurationValue
         self.artifactOwnerID = artifactOwnerID
+
+        self.targetDependencies = targetDependencies.reduce(into: [:]) { (dict, entry) in
+            switch entry.type {
+            case .single:
+                dict[entry.name] = .single(entry.providerMaps[0])
+            case .list:
+                dict[entry.name] = .list(entry.providerMaps)
+            default:
+                fatalError("Unexpected, since this is entirely controlled by llbuild2")
+            }
+        }
+    }
+    
+    /// Returns the provider of the specified type, for the given dependency name, or throws if none exists. This API
+    /// enforces that the dependency type was declared as a single dependency.
+    public func provider<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> P {
+        guard let dependencyEntry = targetDependencies[name] else {
+            throw LLBRuleContextError.missingDependencyName
+        }
+        
+        guard case let .single(providerMap) = dependencyEntry else {
+            throw LLBRuleContextError.dependencyTypeMismatch
+        }
+        
+        // This is so cool, type inference FTW.
+        return try providerMap.get()
+    }
+    
+    /// Returns the provider of the specified type, for the given dependency name, or throws if none exists. This API
+    /// enforces that the dependency type was declared as a list.
+    public func providers<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> [P] {
+        guard let dependencyEntry = targetDependencies[name] else {
+            throw LLBRuleContextError.missingDependencyName
+        }
+        
+        guard case let .list(providerMaps) = dependencyEntry else {
+            throw LLBRuleContextError.dependencyTypeMismatch
+        }
+        
+        return try providerMaps.map { try $0.get() }
     }
 
     /// Returns a the requested configuration fragment if available on the configuration, or nil otherwise.
