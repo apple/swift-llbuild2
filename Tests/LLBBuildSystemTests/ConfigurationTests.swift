@@ -53,11 +53,21 @@ fileprivate struct ConfigurationTestsProvider: LLBProvider, Codable {
 
 private struct ConfigurationTestsConfiguredTarget: LLBConfiguredTarget, Codable {
     let name: String
-    let dependency: LLBProviderMap?
+    let dependency: LLBLabel?
+    let configurationType: String?
 
-    init(name: String, dependency: LLBProviderMap? = nil) {
+    init(name: String, dependency: LLBLabel? = nil, configurationType: String? = nil) {
         self.name = name
         self.dependency = dependency
+        self.configurationType = configurationType
+    }
+    
+    var targetDependencies: [String : LLBTargetDependency] {
+        if let dependency = dependency, let configurationType = configurationType {
+            let configurationKey = try? LLBConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: configurationType)])
+            return ["dependency": .single(dependency, configurationKey)]
+        }
+        return [:]
     }
 }
 
@@ -67,10 +77,8 @@ private final class ConfigurationTestsBuildRule: LLBBuildRule<ConfigurationTests
         let platformConfiguration = try ruleContext.getFragment(PlatformFragment.self)
         returnValue += platformConfiguration.expensiveCompilerPath
 
-
-        if let dependency = configuredTarget.dependency {
-            returnValue += "-"
-            returnValue += try dependency.get(ConfigurationTestsProvider.self).simpleString
+        if let provider: ConfigurationTestsProvider = try? ruleContext.provider(for: "dependency") {
+            returnValue += "-\(provider.simpleString)"
         }
 
         return ruleContext.group.next().makeSucceededFuture([ConfigurationTestsProvider(simpleString: returnValue)])
@@ -80,18 +88,18 @@ private final class ConfigurationTestsBuildRule: LLBBuildRule<ConfigurationTests
 private final class ConfigurationTestsConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
 
+        let configuredTarget: ConfigurationTestsConfiguredTarget
         if key.label.targetName == "top_level_target", try key.configurationKey.get(PlatformFragmentKey.self).platformName == "target" {
-            let dependencyKey = LLBConfiguredTargetKey(
-                rootID: key.rootID,
-                label: try LLBLabel("//some:top_level_target"),
-                configurationKey: try LLBConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: "host")])
+            configuredTarget = ConfigurationTestsConfiguredTarget(
+                name: key.label.targetName,
+                dependency: try LLBLabel("//some:top_level_target"),
+                configurationType: "host"
             )
-            return fi.requestDependency(dependencyKey).map { providerMap in
-                return ConfigurationTestsConfiguredTarget(name: key.label.targetName, dependency: providerMap)
-            }
+        } else {
+            configuredTarget = ConfigurationTestsConfiguredTarget(name: key.label.targetName)
         }
 
-        return fi.group.next().makeSucceededFuture(ConfigurationTestsConfiguredTarget(name: key.label.targetName))
+        return fi.group.next().makeSucceededFuture(configuredTarget)
     }
 }
 

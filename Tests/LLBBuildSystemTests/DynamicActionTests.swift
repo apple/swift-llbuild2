@@ -14,7 +14,9 @@ import LLBBuildSystemUtil
 import TSCBasic
 import XCTest
 
-extension String: LLBConfiguredTarget {}
+extension String: LLBConfiguredTarget {
+    public var targetDependencies: [String: LLBTargetDependency] { [:] }
+}
 
 private final class DummyBuildRule: LLBBuildRule<String> {
     override func evaluate(configuredTarget: String, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {

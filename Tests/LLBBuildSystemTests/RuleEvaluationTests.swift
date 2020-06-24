@@ -17,11 +17,18 @@ import XCTest
 // Dummy configured target data structure.
 private struct RuleEvaluationConfiguredTarget: LLBConfiguredTarget, Codable {
     let name: String
-    let dependency: LLBProviderMap?
+    let dependency: LLBLabel?
 
-    init(name: String, dependency: LLBProviderMap? = nil) {
+    init(name: String, dependency: LLBLabel? = nil) {
         self.name = name
         self.dependency = dependency
+    }
+    
+    var targetDependencies: [String : LLBTargetDependency] {
+        if let dependency = dependency {
+            return ["dependency": .single(dependency)]
+        }
+        return [:]
     }
 }
 
@@ -84,9 +91,11 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
         } else if configuredTarget.name == "top_level_target" {
             let output = try ruleContext.declareArtifact("top_level_artifact")
 
-            guard let bottomArtifact = try configuredTarget.dependency?.get(RuleEvaluationProvider.self).artifacts[0] else {
+            guard let provider: RuleEvaluationProvider = try? ruleContext.provider(for: "dependency") else {
                 throw StringError("Dependency did not have artifact.")
             }
+            
+            let bottomArtifact = provider.artifacts[0]
 
             try ruleContext.registerAction(
                 arguments: ["/bin/bash", "-c", "cat \(bottomArtifact.path) > \(output.path); echo I cant breathe >> \(output.path)"],
@@ -142,14 +151,17 @@ fileprivate struct RuleEvaluationProvider: LLBProvider, Codable {
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
+        let configuredTarget: RuleEvaluationConfiguredTarget
         if key.label.targetName == "top_level_target" {
-            let dependencyKey = LLBConfiguredTargetKey(rootID: key.rootID, label: try LLBLabel("//some:bottom_level_target"))
-            return fi.requestDependency(dependencyKey).map { providerMap in
-                return RuleEvaluationConfiguredTarget(name: key.label.targetName, dependency: providerMap)
-            }
+            configuredTarget = RuleEvaluationConfiguredTarget(
+                name: key.label.targetName,
+                dependency: try LLBLabel("//some:bottom_level_target")
+            )
+        } else {
+            configuredTarget = RuleEvaluationConfiguredTarget(name: key.label.targetName)
         }
 
-        return fi.group.next().makeSucceededFuture(RuleEvaluationConfiguredTarget(name: key.label.targetName))
+        return fi.group.next().makeSucceededFuture(configuredTarget)
     }
 }
 

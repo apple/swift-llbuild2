@@ -13,7 +13,9 @@ import LLBCASFileTree
 import TSCBasic
 import XCTest
 
-extension Int: LLBConfiguredTarget {}
+extension Int: LLBConfiguredTarget {
+    public var targetDependencies: [String: LLBTargetDependency] { [:] }
+}
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfiguredTarget> {
