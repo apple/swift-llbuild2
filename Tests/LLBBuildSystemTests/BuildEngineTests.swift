@@ -14,7 +14,7 @@ import LLBUtil
 import XCTest
 
 /// Key requesting the addition of some numbers. In order to maximize cacheability, the numbers should be sorted.
-struct SumKey: LLBBuildKey, Codable, Hashable {
+struct SumKey: LLBBuildKey, Codable, LLBSerializable {
     static let identifier = String(describing: Self.self)
 
     let numbers: [Int]
@@ -30,6 +30,10 @@ struct SumKey: LLBBuildKey, Codable, Hashable {
     func toBytes(into buffer: inout LLBByteBuffer) throws {
         let encoded = try JSONEncoder().encode(self)
         buffer.writeBytes(encoded)
+    }
+
+    public var stableHashValue: LLBDataID {
+        return LLBDataID(blake3hash: try! self.toBytes())
     }
 }
 

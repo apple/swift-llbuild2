@@ -17,11 +17,11 @@ public class LLBKeyDependencyGraph {
     // Use Ints containing the hashValue values for each key. They should be stable during the execution of this
     // process, and we're not storing them for usage in future process invocations. If that changes, this should
     // probably be refactored.
-    private var edges: [Int: Set<Int>]
+    private var edges: [LLBDataID: Set<LLBDataID>]
 
     // A map of the hashValue to the key. This allows us to preserve key information if paths are founds, so that
     // they can be useful when debugging.
-    private var knownKeys: [Int: LLBKey]
+    private var knownKeys: [LLBDataID: LLBKey]
 
     private let lock = os_unfair_lock_t.allocate(capacity: 1)
 
@@ -38,8 +38,8 @@ public class LLBKeyDependencyGraph {
     public func addEdge(from origin: LLBKey, to destination: LLBKey) throws {
         // This is the biggest expense in this method. We need to find a way to identify keys in a faster way than
         // serializing and hashing.
-        let originID = origin.hashValue
-        let destinationID = destination.hashValue
+        let originID = origin.stableHashValue
+        let destinationID = destination.stableHashValue
 
         // Check if the direct dependency is already known, in which case, skip the check since the edge is already
         // been proven to not have a cycle.
@@ -86,7 +86,7 @@ public class LLBKeyDependencyGraph {
 
     /// Simple mechanism to find a path between 2 nodes. It doesn't care if its the shortest path, only whether a path
     /// exists. If a path is found, it returns it.
-    private func anyPath(from origin: Int, to destination: Int) -> [Int]? {
+    private func anyPath(from origin: LLBDataID, to destination: LLBDataID) -> [LLBDataID]? {
         // If the origin is the destination, then the path is itself.
         if origin == destination {
             return [origin]
@@ -98,13 +98,13 @@ public class LLBKeyDependencyGraph {
         os_unfair_lock_unlock(lock)
 
         // Keeps track of the path between the nodes as it searches through.
-        var path = [Int]()
+        var path = [LLBDataID]()
 
         // Stack with the unprocessed nodes.
-        var stack = [Int?]()
+        var stack = [LLBDataID?]()
 
         // Set of visited nodes to skip if found again.
-        var visited = Set<Int>()
+        var visited = Set<LLBDataID>()
 
         stack.append(origin)
 
