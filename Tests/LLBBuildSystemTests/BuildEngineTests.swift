@@ -14,7 +14,7 @@ import LLBUtil
 import XCTest
 
 /// Key requesting the addition of some numbers. In order to maximize cacheability, the numbers should be sorted.
-struct SumKey: LLBBuildKey, Codable, LLBSerializable {
+struct SumKey: LLBBuildKey, Codable, Hashable, LLBSerializable {
     static let identifier = String(describing: Self.self)
 
     let numbers: [Int]

@@ -13,7 +13,7 @@ import LLBCASFileTree
 import TSCBasic
 import XCTest
 
-struct PlatformFragmentKey: LLBConfigurationFragmentKey, Codable {
+struct PlatformFragmentKey: LLBConfigurationFragmentKey, Codable, Hashable {
     static let identifier = String(describing: Self.self)
 
     let platformName: String
