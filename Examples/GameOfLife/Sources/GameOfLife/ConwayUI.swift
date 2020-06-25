@@ -130,11 +130,13 @@ struct GameOfLifeView: View {
             do {
                 generationValue = try self.environment.engine.build(generationKey).flatMap { (value: GenerationValue) in
                     // Read the output data from the CAS.
-                    return self.environment.db.get(value.boardID)
-                }.map { (object: LLBCASObject?) in
+                    return LLBCASFSClient(self.environment.db).load(value.boardID).flatMap { node in
+                        return node.blob!.read().map { Data($0) }
+                    }
+                }.map { (data: Data) in
                     // Process the data as a 0s and 1s matrix where 1s signal alive cells, so add them to the
                     // boardState.
-                    let boardString = String(data: Data(object!.data.readableBytesView), encoding: .utf8)!
+                    let boardString = String(data: data, encoding: .utf8)!
                     let lines = boardString.split(separator: "\n")
                     var boardState = Set<Point>()
                     for y in 0 ..< self.gridSize {
