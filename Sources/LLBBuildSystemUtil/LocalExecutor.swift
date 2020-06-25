@@ -142,25 +142,13 @@ final public class LLBLocalExecutor: LLBExecutor {
             if exitCode == 0 {
                 uploadFutures = request.outputs.map { output in
                     let outputPath = self.outputBase.appending(RelativePath(output.path))
-                    if output.type == .directory {
-                        return LLBCASFileTree.import(path: outputPath, to: engineContext.db).flatMapError { error in
-                            if case FileSystemError.noEntry = error {
-                                // If we didn't find an output artifact that was a directory, create an empty CASTree to
-                                // represent it.
-                                return LLBCASFileTree.create(files: [], in: engineContext.db).map { $0.id }
-                            }
-                            return engineContext.group.next().makeFailedFuture(error)
+                    return LLBCASFileTree.import(path: outputPath, to: engineContext.db).flatMapError { error in
+                        if output.type == .directory, case FileSystemError.noEntry = error {
+                            // If we didn't find an output artifact that was a directory, create an empty CASTree to
+                            // represent it.
+                            return LLBCASFileTree.create(files: [], in: engineContext.db).map { $0.id }
                         }
-                    } else {
-                        var dataIDFuture: LLBFuture<LLBDataID>! = nil
-                        do {
-                            try localFileSystem.readFileContents(outputPath).withData { fileData in
-                                dataIDFuture = client.store(ArraySlice<UInt8>(fileData), type: .plainFile)
-                            }
-                        } catch {
-                            return engineContext.group.next().makeFailedFuture(error)
-                        }
-                        return dataIDFuture
+                        return engineContext.group.next().makeFailedFuture(error)
                     }
                 }
             } else {
