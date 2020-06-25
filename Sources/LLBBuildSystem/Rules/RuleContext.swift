@@ -315,7 +315,9 @@ public class LLBRuleContext {
 }
 
 extension LLBLabel {
-    var asRoot: String {
+    /// Returns "root" representation of the label which can be used as a
+    /// subpath prefix when laying out contents on disk.
+    public var asRoot: String {
         return (self.logicalPathComponents + [self.targetName]).joined(separator: "/")
     }
 }
