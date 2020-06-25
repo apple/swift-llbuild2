@@ -20,9 +20,11 @@ try localFileSystem.createDirectory(gameOfLifeDirectory, recursive: true)
 
 // Create the build engine's dependencies.
 let group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
-let db = LLBFileBackedCASDatabase(group: group, path: gameOfLifeDirectory.appending(component: "cas"))
+let db = LLBInMemoryCASDatabase(group: group)
+//let db = LLBFileBackedCASDatabase(group: group, path: gameOfLifeDirectory.appending(component: "cas"))
 let executor = LLBLocalExecutor(outputBase: gameOfLifeDirectory.appending(component: "executor_output"))
-let functionCache = LLBFileBackedFunctionCache(group: group, path: gameOfLifeDirectory.appending(component: "function_cache"))
+let functionCache = LLBInMemoryFunctionCache(group: group)
+//let functionCache = LLBFileBackedFunctionCache(group: group, path: gameOfLifeDirectory.appending(component: "function_cache"))
 
 let engineContext = LLBBasicBuildEngineContext(group: group, db: db, executor: executor)
 let buildSystemDelegate = GameOfLifeBuildSystemDelegate(engineContext: engineContext)
