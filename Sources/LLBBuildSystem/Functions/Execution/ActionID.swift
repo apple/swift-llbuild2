@@ -27,16 +27,8 @@ struct ActionIDKey: LLBBuildKey {
         self.dataID = dataID
     }
 
-    init(from bytes: LLBByteBuffer) throws {
-        self.dataID = try LLBDataID(from: bytes)
-    }
-
-    func toBytes(into buffer: inout LLBByteBuffer) throws {
-        try dataID.toBytes(into: &buffer)
-    }
-
     public var stableHashValue: LLBDataID {
-        return dataID
+        return LLBDataID(blake3hash: ArraySlice(dataID.bytes))
     }
 }
 

@@ -81,6 +81,11 @@ extension LLBBuildKey where Self: Encodable {
     public static var identifier: LLBBuildKeyIdentifier {
         return String(describing: Self.self)
     }
+    
+    public var stableHashValue: LLBDataID {
+        let data = try! JSONEncoder().encode(self)
+        return LLBDataID(blake3hash: ArraySlice(data))
+    }
 }
 
 /// Convenience implementation for ConfiguredTargets that conform to Codable.

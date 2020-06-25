@@ -33,14 +33,22 @@ struct Point: Codable, Hashable, Comparable {
 struct CellTarget: LLBConfiguredTarget, Codable {
     let position: Point
     let generation: Int
-    let previousState: LLBProviderMap?
-    let neighbours: [LLBProviderMap]
+    let previousState: LLBLabel?
+    let neighbours: [LLBLabel]
 
-    init(position: Point, generation: Int, previousState: LLBProviderMap?, neighbours: [LLBProviderMap]) {
+    init(position: Point, generation: Int, previousState: LLBLabel?, neighbours: [LLBLabel]) {
         self.position = position
         self.generation = generation
         self.previousState = previousState
         self.neighbours = neighbours
+    }
+    
+    var targetDependencies: [String : LLBTargetDependency] {
+        var targetDependencies = ["neighbours": LLBTargetDependency.list(neighbours)]
+        if let previousState = previousState {
+            targetDependencies["previousState"] = .single(previousState)
+        }
+        return targetDependencies
     }
 
     /// Constructor for a CellTarget from the configuration key.
@@ -62,7 +70,7 @@ struct CellTarget: LLBConfiguredTarget, Codable {
 
         let boardSize = try key.configurationKey.get(GameOfLifeConfigurationKey.self).size
 
-        var dependencyFutures = [LLBFuture<LLBProviderMap>]()
+        var neighbours = [LLBLabel]()
 
         // Request the neighbour dependencies. Dependencies do not need to be ordered in any way, since the CellProvider
         // includes positioning information that the BoardRule uses to order the cells in the matrix.
@@ -72,38 +80,23 @@ struct CellTarget: LLBConfiguredTarget, Codable {
                 // dependency comes later.
                 if x < boardSize.x && x >= 0 && y < boardSize.y && y >= 0 && (position.x != x || position.y != y) {
 
-                    let dependencyLabel = try LLBLabel("//cell/\(generation - 1):\(x)-\(y)")
-
-                    let dependencyKey = LLBConfiguredTargetKey(
-                        rootID: key.rootID,
-                        label: dependencyLabel,
-                        configurationKey: key.configurationKey
-                    )
-                    dependencyFutures.append(fi.requestDependency(dependencyKey))
+                    let neighbourLabel = try LLBLabel("//cell/\(generation - 1):\(x)-\(y)")
+                    neighbours.append(neighbourLabel)
                 }
             }
         }
 
-        let dependenciesFuture = LLBFuture.whenAllSucceed(dependencyFutures, on: fi.group.next())
-
         // Request the dependency for the same point at the previous generation.
         let previousStateLabel = try LLBLabel("//cell/\(generation - 1):\(position.x)-\(position.y)")
-        let previousStateKey = LLBConfiguredTargetKey(
-            rootID: key.rootID,
-            label: previousStateLabel,
-            configurationKey: key.configurationKey
-        )
-        let previousStateFuture = fi.requestDependency(previousStateKey)
-
-        // Once the dependencies are complete, return the CellTarget.
-        return previousStateFuture.and(dependenciesFuture).flatMapThrowing { (previousState, neighbours) in
-            return CellTarget(
+        
+        return fi.group.next().makeSucceededFuture(
+            CellTarget(
                 position: position,
                 generation: generation,
-                previousState: previousState,
+                previousState: previousStateLabel,
                 neighbours: neighbours
             )
-        }
+        )
     }
 }
 
@@ -141,9 +134,9 @@ class CellRule: LLBBuildRule<CellTarget> {
         }
 
         // Get the list of neighbours state artifacts from the dependencies.
-        let neighbours = try configuredTarget.neighbours.map { try $0.get(CellProvider.self).state }
+        let neighbours: [LLBArtifact] = try ruleContext.providers(for: "neighbours", as: CellProvider.self).map(\.state)
         // And also the previous state of the current position.
-        let previousState = try configuredTarget.previousState!.get(CellProvider.self).state
+        let previousState = try ruleContext.provider(for: "previousState", as: CellProvider.self).state
 
         // Register a rule that processes the neighbours and the previous state according to Conway's Game of Life rules
         // and returns an output containing either a 1 or a 0 depending on whether the cell is alive or dead.

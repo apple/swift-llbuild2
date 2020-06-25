@@ -122,12 +122,18 @@ final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, L
                         let dependencyKey = LLBConfiguredTargetKey(
                             rootID: key.rootID,
                             label: label,
-                            configurationKey: configurationKey
+                            // If there was no configurationKey specified, use this targets configuration.
+                            configurationKey: configurationKey ?? key.configurationKey
                         )
                         namedProviderMapFuture = fi.requestDependency(dependencyKey).map { NamedProviderMapType.single(name, $0) }
                     case let .list(labels, configurationKey):
                         let dependencyKeys = labels.map {
-                            LLBConfiguredTargetKey(rootID: key.rootID, label: $0, configurationKey: configurationKey)
+                            LLBConfiguredTargetKey(
+                                rootID: key.rootID,
+                                label: $0,
+                                // If there was no configurationKey specified, use this targets configuration.
+                                configurationKey: configurationKey ?? key.configurationKey
+                            )
                         }
                         namedProviderMapFuture = fi.requestDependencies(dependencyKeys).map { NamedProviderMapType.list(name, $0) }
                     }

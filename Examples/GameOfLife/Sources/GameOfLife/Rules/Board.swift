@@ -16,10 +16,14 @@ import llbuild2
 struct BoardTarget: LLBConfiguredTarget, Codable {
     /// The provider map for each of the dependencies declared for this target. Provider maps are the interface for
     /// reading the evaluation outputs of dependency targets.
-    let dependencies: [LLBProviderMap]
+    let dependencies: [LLBLabel]
 
-    init(dependencies: [LLBProviderMap]) {
+    init(dependencies: [LLBLabel]) {
         self.dependencies = dependencies
+    }
+    
+    var targetDependencies: [String : LLBTargetDependency] {
+        return ["dependencies": .list(dependencies)]
     }
 
     /// Constructor for a BoardTarget from the ConfigurationTargetKey.
@@ -33,7 +37,7 @@ struct BoardTarget: LLBConfiguredTarget, Codable {
         // size of the board and the initial state.
         let boardSize = try key.configurationKey.get(GameOfLifeConfigurationKey.self).size
 
-        var dependencyFutures = [LLBFuture<LLBProviderMap>]()
+        var dependencies = [LLBLabel]()
 
         // Request the cell dependendency for each of the points in the board. This will effectively trigger the
         // evaluation of those targets and rules in order to provided the ProviderMap for each of the cell targets.
@@ -41,21 +45,11 @@ struct BoardTarget: LLBConfiguredTarget, Codable {
         for x in 0 ..< boardSize.x {
             for y in 0 ..< boardSize.y {
                 let dependencyLabel = try LLBLabel("//cell/\(generation):\(x)-\(y)")
-                let dependencyKey = LLBConfiguredTargetKey(
-                    rootID: key.rootID,
-                    label: dependencyLabel,
-                    configurationKey: key.configurationKey
-                )
-                dependencyFutures.append(fi.requestDependency(dependencyKey))
+                dependencies.append(dependencyLabel)
             }
         }
-
-        let dependenciesFuture = LLBFuture.whenAllSucceed(dependencyFutures, on: fi.group.next())
-
-
-        return dependenciesFuture.flatMapThrowing { dependencies in
-            return BoardTarget(dependencies: dependencies)
-        }
+        
+        return fi.group.next().makeSucceededFuture(BoardTarget(dependencies: dependencies))
     }
 }
 
@@ -75,7 +69,7 @@ struct BoardProvider: LLBProvider, Codable {
 /// expected in the output.
 class BoardRule: LLBBuildRule<BoardTarget> {
     override func evaluate(configuredTarget: BoardTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
-        let dependencies = try configuredTarget.dependencies.map { try $0.get(CellProvider.self) }
+        let dependencies: [CellProvider] = try ruleContext.providers(for: "dependencies")
 
         // Make a dictionary lookup of the cell's point to the artifact containing that state.
         let boardMap = dependencies.reduce(into: [:]) { (dict, dep) in dict[dep.position] = dep.state }
