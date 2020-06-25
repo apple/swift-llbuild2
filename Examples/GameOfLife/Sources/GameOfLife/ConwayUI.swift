@@ -34,6 +34,9 @@ struct GameOfLifeView: View {
     var boardState = Set<Point>()
 
     @State
+    var updateTime = 0.0
+
+    @State
     var generation = 0
 
     @State
@@ -82,7 +85,7 @@ struct GameOfLifeView: View {
                     .padding()
                     .disabled(self.loading || self.boardState.isEmpty)
             }
-
+            Text("Elapsed: \(updateTime)s")
         }
         .frame(minWidth: 600, minHeight: 550)
     }
@@ -127,7 +130,9 @@ struct GameOfLifeView: View {
             }
 
             let generationValue: Set<Point>
+            let elapsedS: Double
             do {
+                let start = DispatchTime.now()
                 generationValue = try self.environment.engine.build(generationKey).flatMap { (value: GenerationValue) in
                     // Read the output data from the CAS.
                     return LLBCASFSClient(self.environment.db).load(value.boardID).flatMap { node in
@@ -148,9 +153,12 @@ struct GameOfLifeView: View {
                     }
                     return boardState
                 }.wait()
+                let finish = DispatchTime.now()
+                elapsedS = Double(finish.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000_000
 
                 DispatchQueue.main.async {
                     self.boardState = generationValue
+                    self.updateTime = elapsedS
                 }
             } catch {
                 print("Error evaluating: \(error)")
