@@ -12,7 +12,7 @@ import NIO
 import NIOConcurrencyHelpers
 import TSCBasic
 import TSCLibc
-import ZSTD
+import llbuild2ZSTD
 
 import LLBCAS
 import LLBSupport

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CZSTD
+import llbuild2CZSTD
 
 /**
  * Class that supports compression/decompression of an in-memory buffer without using

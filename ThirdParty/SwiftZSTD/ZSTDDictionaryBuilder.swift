@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CZSTD
+import llbuild2CZSTD
 
 /**
  * Exceptions thrown by the dictionary builder.

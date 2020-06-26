@@ -9,7 +9,7 @@
 import Foundation
 
 import TSCBasic
-import ZSTD
+import llbuild2ZSTD
 
 import LLBCAS
 import LLBSupport

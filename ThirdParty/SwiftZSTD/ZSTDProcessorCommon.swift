@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CZSTD
+import llbuild2CZSTD
 
 /**
  * An extension providing a method to determine if the bytes of a Data are stored

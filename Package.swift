@@ -24,14 +24,22 @@ let package = Package(
     ],
     targets: [
         // ZSTD Compression support
-        .target(name: "CZSTD"),
-        .target(name: "ZSTD", dependencies: ["CZSTD"]),
-        .testTarget(name: "ZSTDTests", dependencies: ["ZSTD"]),
+        .target(
+            name: "llbuild2CZSTD",
+            path: "Sources/CZSTD"
+
+        ),
+        .target(
+            name: "llbuild2ZSTD", 
+            dependencies: ["llbuild2CZSTD"],
+            path: "Sources/ZSTD"
+        ),
+        .testTarget(name: "ZSTDTests", dependencies: ["llbuild2ZSTD"]),
 
         // Support types and methods
         .target(
             name: "LLBSupport",
-            dependencies: ["NIO", "SwiftToolsSupport-auto", "ZSTD"]
+            dependencies: ["NIO", "SwiftToolsSupport-auto", "llbuild2ZSTD"]
         ),
         .testTarget(
             name: "LLBSupportTests",
@@ -49,7 +57,7 @@ let package = Package(
         ),
         .target(
             name: "LLBCASFileTree",
-            dependencies: ["LLBCAS", "ZSTD"]
+            dependencies: ["LLBCAS", "llbuild2ZSTD"]
         ),
         .testTarget(
             name: "LLBCASFileTreeTests",

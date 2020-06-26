@@ -1,5 +1,5 @@
 import XCTest
-import ZSTD
+import llbuild2ZSTD
 
 final class SwiftZSTDTests: XCTestCase {
 
