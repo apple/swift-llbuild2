@@ -99,14 +99,20 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
         }
     }
 
-    private func unpack<T>(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> T where T:  LLBPolymorphicSerializable {
-        return try T.init(from: object, registry: fi.registry)
-    }
-    private func unpack<T>(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> T where T: LLBCASObjectConstructable {
-        return try T.init(from: object)
-    }
-    private func unpack<T>(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> T {
-        fatalError("cannot unpack CAS object")
+    private func unpack(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> V {
+        if
+            let type = V.self as? LLBPolymorphicSerializable.Type,
+            let instance = try type.init(from: object, registry: fi.registry) as? V
+        {
+            return instance
+        } else if
+            let type = V.self as? LLBCASObjectConstructable.Type,
+            let instance = try type.init(from: object) as? V
+        {
+            return instance
+        } else {
+            fatalError("cannot unpack CAS object")
+        }
     }
 
     @_disfavoredOverload
