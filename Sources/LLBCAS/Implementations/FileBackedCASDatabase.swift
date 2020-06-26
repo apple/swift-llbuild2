@@ -8,9 +8,10 @@
 
 import Foundation
 
+import NIO
 import TSCBasic
 import TSCLibc
-import NIO
+import TSCUtility
 
 import LLBSupport
 
@@ -55,7 +56,7 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
         group.next().makeSucceededFuture(LLBCASFeatures(preservesIDs: true))
     }
 
-    public func contains(_ id: LLBDataID) -> LLBFuture<Bool> {
+    public func contains(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<Bool> {
         let refsFile = fileName(for: id, prefix: .refs)
         let dataFile = fileName(for: id, prefix: .data)
         let contains = localFileSystem.exists(refsFile) && localFileSystem.exists(dataFile)
@@ -82,7 +83,7 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
         }
     }
 
-    public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> {
+    public func get(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<LLBCASObject?> {
         let refsFile = fileName(for: id, prefix: .refs)
         let dataFile = fileName(for: id, prefix: .data)
 
@@ -108,23 +109,26 @@ public final class LLBFileBackedCASDatabase: LLBCASDatabase {
 
     public func identify(
         refs: [LLBDataID] = [],
-        data: LLBByteBuffer
+        data: LLBByteBuffer,
+        _ ctx: Context
     ) -> LLBFuture<LLBDataID> {
         return group.next().makeSucceededFuture(LLBDataID(blake3hash: data, refs: refs))
     }
 
     public func put(
         refs: [LLBDataID] = [],
-        data: LLBByteBuffer
+        data: LLBByteBuffer,
+        _ ctx: Context
     ) -> LLBFuture<LLBDataID> {
         let id = LLBDataID(blake3hash: data, refs: refs)
-        return put(knownID: id, refs: refs, data: data)
+        return put(knownID: id, refs: refs, data: data, ctx)
     }
 
     public func put(
         knownID id: LLBDataID,
         refs: [LLBDataID] = [],
-        data: LLBByteBuffer
+        data: LLBByteBuffer,
+        _ ctx: Context
     ) -> LLBFuture<LLBDataID> {
         let dataFile = fileName(for: id, prefix: .data)
         let dataFuture = writeIfNeeded(data: data, path: dataFile)
@@ -183,7 +187,7 @@ public struct LLBFileBackedCASDatabaseScheme: LLBCASDatabaseScheme {
         return host == nil && port == nil && path != "" && query == nil
     }
 
-    public static func open(group: LLBFuturesDispatchGroup, url: URL) throws -> LLBCASDatabase {
+    public static func open(group: LLBFuturesDispatchGroup, url: Foundation.URL) throws -> LLBCASDatabase {
         return LLBFileBackedCASDatabase(group: group, path: AbsolutePath(url.path))
     }
 }

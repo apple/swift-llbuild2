@@ -22,8 +22,8 @@ public class LLBStaticFunctionDelegate: LLBEngineDelegate {
         self.keyMap = keyMap
     }
 
-    public func lookupFunction(forKey key: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
+    public func lookupFunction(forKey key: LLBKey, _ ctx: Context) -> LLBFuture<LLBFunction> {
         let stringKey = key as! String
-        return group.next().makeSucceededFuture(keyMap[stringKey]!)
+        return ctx.group.next().makeSucceededFuture(keyMap[stringKey]!)
     }
 }

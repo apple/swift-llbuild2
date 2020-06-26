@@ -52,7 +52,7 @@ public final class LLBCASTool {
     }
 
     /// Put the given file into the CAS database.
-    public func casPut(file: AbsolutePath) -> LLBFuture<LLBDataID> {
+    public func casPut(file: AbsolutePath, _ ctx: Context) -> LLBFuture<LLBDataID> {
         let handleAndRegion = fileIO.openFile(
             path: file.pathString, eventLoop: group.next()
         )
@@ -70,16 +70,17 @@ public final class LLBCASTool {
         }
 
         return buffer.flatMap { buf in
-            self.db.put(refs: [], data: buf)
+            self.db.put(refs: [], data: buf, ctx)
         }
     }
 
     /// Get the contents of the given data id from CAS database.
     public func casGet(
         id: LLBDataID,
-        to outputFile: AbsolutePath
+        to outputFile: AbsolutePath,
+        _ ctx: Context
     ) -> LLBFuture<Void> {
-        let object = db.get(id)
+        let object = db.get(id, ctx)
 
         let data: LLBFuture<LLBByteBuffer> = object.flatMapThrowing {
             guard let data = $0?.data else {

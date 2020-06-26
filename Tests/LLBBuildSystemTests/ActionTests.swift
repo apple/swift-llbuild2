@@ -18,9 +18,9 @@ enum ActionDummyError: Error, Equatable {
 }
 
 private class ActionDummyExecutor: LLBExecutor {
-    func execute(request: LLBActionExecutionRequest, _ engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
-        let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
-        let stderrFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("".utf8)))
+    func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
+        let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)), ctx)
+        let stderrFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("".utf8)), ctx)
 
         return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
             return LLBActionExecutionResponse.with {
@@ -34,29 +34,31 @@ private class ActionDummyExecutor: LLBExecutor {
 }
 
 class ActionTests: XCTestCase {
+    private var testGroup: LLBFuturesDispatchGroup! = nil
     private var testExecutor: LLBExecutor! = nil
-    private var testEngineContext: LLBTestBuildEngineContext! = nil
+    private var testDB: LLBTestCASDatabase! = nil
     private var testEngine: LLBTestBuildEngine! = nil
 
     override func setUp() {
+        self.testGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.testExecutor = ActionDummyExecutor()
-        self.testEngineContext = LLBTestBuildEngineContext()
-        self.testEngine = LLBTestBuildEngine(engineContext: testEngineContext, executor: testExecutor)
+        self.testDB = LLBTestCASDatabase(group: testGroup)
+        self.testEngine = LLBTestBuildEngine(group: testGroup, db: testDB, executor: testExecutor)
     }
 
     override func tearDown() {
         self.testExecutor = nil
+        self.testDB = nil
         self.testEngine = nil
-    }
+        self.testGroup = nil
 
-    private var testDB: LLBTestCASDatabase {
-        return testEngineContext.testDB
     }
 
     func testSimpleActionNoOutputs() throws {
+        let ctx = Context()
         let bytes = LLBByteBuffer.withString("Hello, world!")
 
-        let dataID = try testDB.put(data: bytes).wait()
+        let dataID = try testDB.put(data: bytes, ctx).wait()
 
         let input = LLBArtifact.source(shortPath: "some/source.txt", dataID: dataID)
 
@@ -70,7 +72,7 @@ class ActionTests: XCTestCase {
             })
         }
 
-        let actionValue: LLBActionValue = try testEngine.build(actionKey).wait()
+        let actionValue: LLBActionValue = try testEngine.build(actionKey, ctx).wait()
         XCTAssertEqual(actionValue.outputs, [])
     }
 }

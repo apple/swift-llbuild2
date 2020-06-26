@@ -23,13 +23,14 @@ private extension LLBArtifact {
 
 class ArtifactTests: XCTestCase {
     func testSourceArtifact() throws {
-        let testEngine = LLBTestBuildEngine()
+        let ctx = LLBMakeTestContext()
+        let testEngine = LLBTestBuildEngine(group: ctx.group, db: ctx.db)
 
         let bytes = LLBByteBuffer.withString("Hello, world!")
-        let dataID = try testEngine.testDB.put(data: bytes).wait()
+        let dataID = try ctx.db.put(data: bytes, ctx).wait()
         let artifact = LLBArtifact.source(shortPath: "someSource", dataID: dataID)
 
-        let artifactValue: LLBArtifactValue = try testEngine.build(artifact).wait()
+        let artifactValue: LLBArtifactValue = try testEngine.build(artifact, ctx).wait()
         XCTAssertEqual(Data(dataID.bytes), artifactValue.dataID.bytes)
     }
 }

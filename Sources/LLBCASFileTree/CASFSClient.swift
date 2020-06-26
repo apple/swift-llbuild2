@@ -11,6 +11,7 @@ import Foundation
 import LLBCAS
 import LLBSupport
 import TSCBasic
+import TSCUtility
 
 
 /// A main API struct
@@ -31,14 +32,14 @@ public struct LLBCASFSClient {
     }
 
     /// Check that DataID exists in CAS
-    public func exists(_ id: LLBDataID) -> LLBFuture<Bool> {
-        return db.contains(id)
+    public func exists(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<Bool> {
+        return db.contains(id, ctx)
     }
 
     /// Load CASFSNode from CAS
     /// If object doesn't exist future fails with noEntry
-    public func load(_ id: LLBDataID, type hint: LLBFileType? = nil) -> LLBFuture<LLBCASFSNode> {
-        return db.get(id).flatMapThrowing { objectOpt in
+    public func load(_ id: LLBDataID, type hint: LLBFileType? = nil, _ ctx: Context) -> LLBFuture<LLBCASFSNode> {
+        return db.get(id, ctx).flatMapThrowing { objectOpt in
             guard let object = objectOpt else {
                 throw Error.noEntry(id)
             }
@@ -48,7 +49,7 @@ public struct LLBCASFSClient {
                 let tree = try LLBCASFileTree(id: id, object: object)
                 return LLBCASFSNode(tree: tree, db: self.db)
             case .plainFile?, .executable?:
-                let blob = try LLBCASBlob(db: self.db, id: id, type: hint!, object: object)
+                let blob = try LLBCASBlob(db: self.db, id: id, type: hint!, object: object, ctx)
                 return LLBCASFSNode(blob: blob, db: self.db)
             case .symlink?, .UNRECOGNIZED?:
                 // We don't support symlinks yet
@@ -56,7 +57,7 @@ public struct LLBCASFSClient {
             case nil:
                 if let tree = try? LLBCASFileTree(id: id, object: object) {
                     return LLBCASFSNode(tree: tree, db: self.db)
-                } else if let blob = try? LLBCASBlob(db: self.db, id: id, object: object) {
+                } else if let blob = try? LLBCASBlob(db: self.db, id: id, object: object, ctx) {
                     return LLBCASFSNode(blob: blob, db: self.db)
                 } else {
                     // We don't support symlinks yet
@@ -67,33 +68,33 @@ public struct LLBCASFSClient {
     }
 
     /// Save ByteBuffer to CAS
-    public func store(_ data: LLBByteBuffer, type: LLBFileType = .plainFile) -> LLBFuture<LLBCASFSNode> {
-        LLBCASBlob.import(data: data, isExecutable: type == .executable, in: db).map { LLBCASFSNode(blob: $0, db: self.db) }
+    public func store(_ data: LLBByteBuffer, type: LLBFileType = .plainFile, _ ctx: Context) -> LLBFuture<LLBCASFSNode> {
+        LLBCASBlob.import(data: data, isExecutable: type == .executable, in: db, ctx).map { LLBCASFSNode(blob: $0, db: self.db) }
     }
 
     /// Save ArraySlice to CAS
-    public func store(_ data: ArraySlice<UInt8>, type: LLBFileType = .plainFile) -> LLBFuture<LLBCASFSNode> {
-        LLBCASBlob.import(data: LLBByteBuffer.withBytes(data), isExecutable: type == .executable, in: db).map { LLBCASFSNode(blob: $0, db: self.db) }
+    public func store(_ data: ArraySlice<UInt8>, type: LLBFileType = .plainFile, _ ctx: Context) -> LLBFuture<LLBCASFSNode> {
+        LLBCASBlob.import(data: LLBByteBuffer.withBytes(data), isExecutable: type == .executable, in: db, ctx).map { LLBCASFSNode(blob: $0, db: self.db) }
     }
 
     /// Save Data to CAS
-    public func store(_ data: Data, type: LLBFileType = .plainFile) -> LLBFuture<LLBCASFSNode> {
-        LLBCASBlob.import(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(data)), isExecutable: type == .executable, in: db).map { LLBCASFSNode(blob: $0, db: self.db) }
+    public func store(_ data: Data, type: LLBFileType = .plainFile, _ ctx: Context) -> LLBFuture<LLBCASFSNode> {
+        LLBCASBlob.import(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(data)), isExecutable: type == .executable, in: db, ctx).map { LLBCASFSNode(blob: $0, db: self.db) }
     }
 
 }
 
 extension LLBCASFSClient {
-    public func store(_ data: LLBByteBuffer, type: LLBFileType = .plainFile) -> LLBFuture<LLBDataID> {
-        LLBCASBlob.import(data: data, isExecutable: type == .executable, in: db).flatMap { $0.export() }
+    public func store(_ data: LLBByteBuffer, type: LLBFileType = .plainFile, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        LLBCASBlob.import(data: data, isExecutable: type == .executable, in: db, ctx).flatMap { $0.export(ctx) }
     }
 
-    public func store(_ data: ArraySlice<UInt8>, type: LLBFileType = .plainFile) -> LLBFuture<LLBDataID> {
-        LLBCASBlob.import(data: LLBByteBuffer.withBytes(data), isExecutable: type == .executable, in: db).flatMap { $0.export() }
+    public func store(_ data: ArraySlice<UInt8>, type: LLBFileType = .plainFile, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        LLBCASBlob.import(data: LLBByteBuffer.withBytes(data), isExecutable: type == .executable, in: db, ctx).flatMap { $0.export(ctx) }
     }
 
-    public func store(_ data: Data, type: LLBFileType = .plainFile) -> LLBFuture<LLBDataID> {
-        LLBCASBlob.import(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(data)), isExecutable: type == .executable, in: db).flatMap { $0.export() }
+    public func store(_ data: Data, type: LLBFileType = .plainFile, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        LLBCASBlob.import(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(data)), isExecutable: type == .executable, in: db, ctx).flatMap { $0.export(ctx) }
     }
 }
 
@@ -102,8 +103,8 @@ extension LLBCASFSClient {
     /// contains a reference to a CASFileTree containing [a.txt, b.txt], and path was 'some/path', the resulting
     /// CASFileTree would contain [some/path/a.txt, some/path/b.txt] (where both `some` and `path` represent
     /// CASFileTrees).
-    public func wrap(_ id: LLBDataID, path: String) -> LLBFuture<LLBCASFileTree> {
-        return self.load(id).flatMap { node in
+    public func wrap(_ id: LLBDataID, path: String, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
+        return self.load(id, ctx).flatMap { node in
             return AbsolutePath(path, relativeTo: .root)
                 .components
                 .dropFirst()
@@ -111,7 +112,7 @@ extension LLBCASFSClient {
                 .reduce(self.db.group.next().makeSucceededFuture(node)) { future, pathComponent in
                     future.flatMap { node in
                         let entry = node.asDirectoryEntry(filename: pathComponent)
-                        return LLBCASFileTree.create(files: [entry], in: self.db).map {
+                        return LLBCASFileTree.create(files: [entry], in: self.db, ctx).map {
                             return LLBCASFSNode(tree: $0, db: self.db)
                         }
                     }

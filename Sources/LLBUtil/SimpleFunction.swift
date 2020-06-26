@@ -10,13 +10,13 @@ import llbuild2
 
 
 public class LLBSimpleFunction: LLBFunction {
-    let action: (_ fi: LLBFunctionInterface, _ key: LLBKey) -> LLBFuture<LLBValue>
+    let action: (_ fi: LLBFunctionInterface, _ key: LLBKey, _ ctx: Context) -> LLBFuture<LLBValue>
 
-    public init(action: @escaping (_ fi: LLBFunctionInterface, _ key: LLBKey) -> LLBFuture<LLBValue>) {
+    public init(action: @escaping (_ fi: LLBFunctionInterface, _ key: LLBKey, _ ctx: Context) -> LLBFuture<LLBValue>) {
         self.action = action
     }
 
-    public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
-        return action(fi, key)
+    public func compute(key: LLBKey, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue> {
+        return action(fi, key, ctx)
     }
 }

@@ -24,9 +24,9 @@ final public class LLBLocalExecutor: LLBExecutor {
         self.outputBase = outputBase
     }
 
-    public func execute(request: LLBActionExecutionRequest, _ engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    public func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
         var inputFutures = [LLBFuture<Void>]()
-        let client = LLBCASFSClient(engineContext.db)
+        let client = LLBCASFSClient(ctx.db)
 
         for input in request.inputs {
             // Create the parent directory for each of the inputs, so that they can be exported there.
@@ -34,7 +34,7 @@ final public class LLBLocalExecutor: LLBExecutor {
             do {
                 try localFileSystem.createDirectory(fullInputPath.parentDirectory, recursive: true)
             } catch {
-                return engineContext.group.next().makeFailedFuture(error)
+                return ctx.group.next().makeFailedFuture(error)
             }
 
             // This is a local optimization, if the file has already been exported, don't export it again. Because
@@ -46,17 +46,18 @@ final public class LLBLocalExecutor: LLBExecutor {
                     inputFutures.append(
                         LLBCASFileTree.export(
                             input.dataID,
-                            from: engineContext.db,
-                            to: .init(fullInputPath.pathString)
+                            from: ctx.db,
+                            to: .init(fullInputPath.pathString),
+                            ctx
                         )
                     )
                 } else {
                     inputFutures.append(
-                        client.load(input.dataID).flatMap { (node: LLBCASFSNode) -> LLBFuture<(LLBByteBufferView, LLBFileType)> in
+                        client.load(input.dataID, ctx).flatMap { (node: LLBCASFSNode) -> LLBFuture<(LLBByteBufferView, LLBFileType)> in
                             guard let blob = node.blob else {
-                                return engineContext.group.next().makeFailedFuture(LLBLocalExecutorError.missingInput(input))
+                                return ctx.group.next().makeFailedFuture(LLBLocalExecutorError.missingInput(input))
                             }
-                            return blob.read().map { ($0, node.type()) }
+                            return blob.read(ctx).map { ($0, node.type()) }
                         }.flatMapThrowing { (data, type) in
                             try localFileSystem.writeFileContents(fullInputPath, bytes: ByteString(data))
                             if type == .executable {
@@ -68,7 +69,7 @@ final public class LLBLocalExecutor: LLBExecutor {
             }
         }
 
-        return LLBFuture.whenAllSucceed(inputFutures, on: engineContext.group.next()).flatMapThrowing { _ in
+        return LLBFuture.whenAllSucceed(inputFutures, on: ctx.group.next()).flatMapThrowing { _ in
             // For each of the declared outputs, make sure that the parent directory exists.
             for output in request.outputs {
                 try localFileSystem.createDirectory(
@@ -133,8 +134,8 @@ final public class LLBLocalExecutor: LLBExecutor {
             return (resultExitCode, try result.output.get(), try result.stderrOutput.get())
         }.flatMap { (exitCode, stdout, stderr) in
             // Upload the stdout and stderr of the action into the CAS.
-            let stdoutFuture = engineContext.db.put(data: .withBytes(stdout[...]))
-            let stderrFuture = engineContext.db.put(data: .withBytes(stderr[...]))
+            let stdoutFuture = ctx.db.put(data: .withBytes(stdout[...]), ctx)
+            let stderrFuture = ctx.db.put(data: .withBytes(stderr[...]), ctx)
 
             let uploadFutures: [LLBFuture<LLBDataID>]
 
@@ -142,20 +143,20 @@ final public class LLBLocalExecutor: LLBExecutor {
             if exitCode == 0 {
                 uploadFutures = request.outputs.map { output in
                     let outputPath = self.outputBase.appending(RelativePath(output.path))
-                    return LLBCASFileTree.import(path: outputPath, to: engineContext.db).flatMapError { error in
+                    return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapError { error in
                         if output.type == .directory, case FileSystemError.noEntry = error {
                             // If we didn't find an output artifact that was a directory, create an empty CASTree to
                             // represent it.
-                            return LLBCASFileTree.create(files: [], in: engineContext.db).map { $0.id }
+                            return LLBCASFileTree.create(files: [], in: ctx.db, ctx).map { $0.id }
                         }
-                        return engineContext.group.next().makeFailedFuture(error)
+                        return ctx.group.next().makeFailedFuture(error)
                     }
                 }
             } else {
                 uploadFutures = []
             }
 
-            let uploadsFuture = LLBFuture.whenAllSucceed(uploadFutures, on: engineContext.group.next())
+            let uploadsFuture = LLBFuture.whenAllSucceed(uploadFutures, on: ctx.group.next())
 
             return stdoutFuture.and(stderrFuture).and(uploadsFuture).map { stdouterrIDs, outputUploads in
                 return LLBActionExecutionResponse(

@@ -36,8 +36,8 @@ struct PlatformFragment: LLBConfigurationFragment, Codable {
 }
 
 private final class PlatformFragmentFunction: LLBBuildFunction<PlatformFragmentKey, PlatformFragment> {
-    override func evaluate(key: PlatformFragmentKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<PlatformFragment> {
-        return engineContext.group.next().makeSucceededFuture(
+    override func evaluate(key: PlatformFragmentKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<PlatformFragment> {
+        return ctx.group.next().makeSucceededFuture(
             PlatformFragment(expensiveCompilerPath: "expensive_compiler_path_for_\(key.platformName)")
         )
     }
@@ -86,7 +86,7 @@ private final class ConfigurationTestsBuildRule: LLBBuildRule<ConfigurationTests
 }
 
 private final class ConfigurationTestsConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) throws -> LLBFuture<LLBConfiguredTarget> {
 
         let configuredTarget: ConfigurationTestsConfiguredTarget
         if key.label.targetName == "top_level_target", try key.configurationKey.get(PlatformFragmentKey.self).platformName == "target" {
@@ -99,7 +99,7 @@ private final class ConfigurationTestsConfiguredTargetDelegate: LLBConfiguredTar
             configuredTarget = ConfigurationTestsConfiguredTarget(name: key.label.targetName)
         }
 
-        return fi.group.next().makeSucceededFuture(configuredTarget)
+        return ctx.group.next().makeSucceededFuture(configuredTarget)
     }
 }
 
@@ -116,9 +116,9 @@ private final class ConfigurationTestsRuleLookupDelegate: LLBRuleLookupDelegate 
 class ConfigurationTestsFunctionMap: LLBBuildFunctionLookupDelegate {
     let functionMap: [LLBBuildKeyIdentifier: LLBFunction]
 
-    init(engineContext: LLBBuildEngineContext) {
+    init() {
         self.functionMap = [
-            PlatformFragmentKey.identifier: PlatformFragmentFunction(engineContext: engineContext),
+            PlatformFragmentKey.identifier: PlatformFragmentFunction(),
         ]
     }
 
@@ -140,9 +140,11 @@ class ConfigurationTests: XCTestCase {
         try withTemporaryDirectory { tempDir in
             let configuredTargetDelegate = ConfigurationTestsConfiguredTargetDelegate()
             let ruleLookupDelegate = ConfigurationTestsRuleLookupDelegate()
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
-                buildFunctionLookupDelegate: ConfigurationTestsFunctionMap(engineContext: testEngineContext),
+                group: ctx.group,
+                db: ctx.db,
+                buildFunctionLookupDelegate: ConfigurationTestsFunctionMap(),
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
             ) { registry in
@@ -151,7 +153,7 @@ class ConfigurationTests: XCTestCase {
                 registry.register(type: ConfigurationTestsConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:top_level_target")
             let configurationKey = try LLBConfigurationKey(fragmentKeys: [PlatformFragmentKey(platformName: "target")])
@@ -159,7 +161,7 @@ class ConfigurationTests: XCTestCase {
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             let simpleString = try evaluatedTargetValue.providerMap.get(ConfigurationTestsProvider.self).simpleString
 

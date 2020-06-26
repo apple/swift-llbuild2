@@ -18,25 +18,26 @@ extension Int: LLBConfiguredTarget {
 }
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfiguredTarget> {
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBConfiguredTarget> {
         if key.label.targetName == "notFound" {
-            return fi.group.next().makeFailedFuture(LLBConfiguredTargetError.notFound(key.label))
+            return ctx.group.next().makeFailedFuture(LLBConfiguredTargetError.notFound(key.label))
         }
-        return fi.group.next().makeSucceededFuture(1)
+        return ctx.group.next().makeSucceededFuture(1)
     }
 }
 
 class ConfiguredTargetTests: XCTestCase {
     func testNoDelegateConfigured() throws {
         try withTemporaryDirectory { tempDir in
-            let testEngine = LLBTestBuildEngine()
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(group: ctx.group, db: ctx.db)
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:target")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            XCTAssertThrowsError(try testEngine.build(configuredTargetKey).wait()) { error in
+            XCTAssertThrowsError(try testEngine.build(configuredTargetKey, ctx).wait()) { error in
                 guard let configuredTargetError = try? XCTUnwrap(error as? LLBConfiguredTargetError) else {
                     XCTFail("unexpected error type")
                     return
@@ -52,14 +53,15 @@ class ConfiguredTargetTests: XCTestCase {
     func testConfiguredTargetNotFound() throws {
         try withTemporaryDirectory { tempDir in
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
-            let testEngine = LLBTestBuildEngine(configuredTargetDelegate: configuredTargetDelegate)
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(group: ctx.group, db: ctx.db, configuredTargetDelegate: configuredTargetDelegate)
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:notFound")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            XCTAssertThrowsError(try testEngine.build(configuredTargetKey).wait()) { error in
+            XCTAssertThrowsError(try testEngine.build(configuredTargetKey, ctx).wait()) { error in
                 guard let configuredTargetError = try? XCTUnwrap(error as? LLBConfiguredTargetError) else {
                     XCTFail("unexpected error type")
                     return
@@ -77,18 +79,19 @@ class ConfiguredTargetTests: XCTestCase {
     func testConfiguredTarget() throws {
         try withTemporaryDirectory { tempDir in
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
-            let testEngine = LLBTestBuildEngine(configuredTargetDelegate: configuredTargetDelegate) { registry in
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(group: ctx.group, db: ctx.db, configuredTargetDelegate: configuredTargetDelegate) { registry in
                 registry.register(type: Int.self)
             }
             let registry = LLBSerializableRegistry()
             registry.register(type: Int.self)
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:valid")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
-            let configuredTargetValue = try testEngine.build(configuredTargetKey, as: LLBConfiguredTargetValue.self).wait()
+            let configuredTargetValue = try testEngine.build(configuredTargetKey, as: LLBConfiguredTargetValue.self, ctx).wait()
             let configuredTarget: Int = try configuredTargetValue.typedConfiguredTarget(registry: registry)
             XCTAssertEqual(configuredTarget, 1)
         }

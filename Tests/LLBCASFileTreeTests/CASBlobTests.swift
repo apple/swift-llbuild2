@@ -9,6 +9,7 @@
 import XCTest
 
 import TSCBasic
+import TSCUtility
 
 import LLBCAS
 import LLBCASFileTree
@@ -42,16 +43,17 @@ class CASBlobTests: XCTestCase {
         try localFileSystem.writeFileContents(tmp.path, bytes: ByteString(contents))
 
         let db = LLBInMemoryCASDatabase(group: group)
+        let ctx = Context()
         let id = try LLBCASFileTree.import(path: tmp.path, to: db,
-            options: LLBCASFileTree.ImportOptions(fileChunkSize: chunkSize), stats: nil).wait()
+            options: LLBCASFileTree.ImportOptions(fileChunkSize: chunkSize), stats: nil, ctx).wait()
 
-        let blob = try LLBCASBlob.parse(id: id, in: db).wait()
+        let blob = try LLBCASBlob.parse(id: id, in: db, ctx).wait()
         XCTAssertEqual(blob.size, contents.count)
 
         // Check various read patterns.
         for testRange in [0 ..< 0, 0 ..< 1, 0 ..< contents.count, 10 ..< 20, 20 ..< 128, 128 ..< 512] {
 
-            let blobRange = try blob.read(range: testRange).wait()
+            let blobRange = try blob.read(range: testRange, ctx).wait()
             let bytes: [UInt8] = LLBByteBuffer(blobRange).getBytes(at: 0, length: testRange.count)!
             XCTAssertEqual(ArraySlice(bytes), contents[testRange])
         }

@@ -27,11 +27,11 @@ public final class LLBInMemoryFunctionCache: LLBFunctionCache {
         self.group = group
     }
 
-    public func get(key: LLBKey) -> LLBFuture<LLBDataID?> {
+    public func get(key: LLBKey, _ ctx: Context) -> LLBFuture<LLBDataID?> {
         return group.next().makeSucceededFuture(lock.withLock { cache[Key(key)] })
     }
 
-    public func update(key: LLBKey, value: LLBDataID) -> LLBFuture<Void> {
+    public func update(key: LLBKey, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
         return group.next().makeSucceededFuture(lock.withLockVoid { cache[Key(key)] = value })
     }
 }

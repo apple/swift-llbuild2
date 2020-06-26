@@ -20,11 +20,12 @@ final class FunctionCacheTests: XCTestCase {
     }
 
     func doFunctionCacheTests(cache: LLBFunctionCache) throws {
-        XCTAssertNil(try cache.get(key: "key1").wait())
+        let ctx = Context()
+        XCTAssertNil(try cache.get(key: "key1", ctx).wait())
 
         let id1 = LLBDataID(blake3hash: LLBByteBuffer.withBytes(ArraySlice("value1".utf8)), refs: [])
-        try cache.update(key: "key1", value: id1).wait()
-        XCTAssertEqual(id1, try cache.get(key: "key1").wait())
+        try cache.update(key: "key1", value: id1, ctx).wait()
+        XCTAssertEqual(id1, try cache.get(key: "key1", ctx).wait())
     }
 
     func testInMemoryFunctionCache() throws {

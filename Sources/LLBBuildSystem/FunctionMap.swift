@@ -14,31 +14,27 @@ class LLBBuildFunctionMap {
     private let functionMap: [LLBBuildKeyIdentifier: LLBFunction]
 
     init(
-        engineContext: LLBBuildEngineContext,
         configuredTargetDelegate: LLBConfiguredTargetDelegate?,
         ruleLookupDelegate: LLBRuleLookupDelegate?,
         dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?
     ) {
         self.functionMap = [
-            LLBArtifact.identifier: ArtifactFunction(engineContext: engineContext),
+            LLBArtifact.identifier: ArtifactFunction(),
 
             // Evaluation
             LLBConfiguredTargetKey.identifier: ConfiguredTargetFunction(
-                engineContext: engineContext,
                 configuredTargetDelegate: configuredTargetDelegate
             ),
-            LLBEvaluatedTargetKey.identifier: EvaluatedTargetFunction(engineContext: engineContext),
+            LLBEvaluatedTargetKey.identifier: EvaluatedTargetFunction(),
             LLBRuleEvaluationKeyID.identifier: RuleEvaluationFunction(
-                engineContext: engineContext,
                 ruleLookupDelegate: ruleLookupDelegate
             ),
-            LLBConfigurationKey.identifier: ConfigurationFunction(engineContext: engineContext),
+            LLBConfigurationKey.identifier: ConfigurationFunction(),
 
             // Execution
-            ActionIDKey.identifier: ActionIDFunction(engineContext: engineContext),
-            LLBActionKey.identifier: ActionFunction(engineContext: engineContext),
+            ActionIDKey.identifier: ActionIDFunction(),
+            LLBActionKey.identifier: ActionFunction(),
             LLBActionExecutionKey.identifier: ActionExecutionFunction(
-                engineContext: engineContext,
                 dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
             ),
         ]

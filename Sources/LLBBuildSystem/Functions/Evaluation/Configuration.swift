@@ -80,14 +80,14 @@ extension LLBConfigurationValue {
 }
 
 final class ConfigurationFunction: LLBBuildFunction<LLBConfigurationKey, LLBConfigurationValue> {
-    override func evaluate(key: LLBConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfigurationValue> {
+    override func evaluate(key: LLBConfigurationKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBConfigurationValue> {
         do {
             let fragmentKeys: [LLBConfigurationFragmentKey] = try key.fragmentKeys.map { (anyFragmentKey: LLBAnySerializable) in
                 return try anyFragmentKey.deserialize(registry: fi.registry)
             }
 
             // Request all of the fragment keys to convert them into fragments to be added to the configuration.
-            return fi.request(fragmentKeys).flatMapThrowing { fragments in
+            return fi.request(fragmentKeys, ctx).flatMapThrowing { fragments in
                 try fragments.map { maybeFragment in
                     guard let fragment = maybeFragment as? LLBConfigurationFragment else {
                         throw LLBConfigurationError.unexpectedType("Expected an LLBConfigurationFragment but got \(String(describing: type(of: maybeFragment)))")
@@ -110,7 +110,7 @@ final class ConfigurationFunction: LLBBuildFunction<LLBConfigurationKey, LLBConf
 
             }
         } catch {
-            return fi.group.next().makeFailedFuture(LLBConfigurationError.unexpectedError(error))
+            return ctx.group.next().makeFailedFuture(LLBConfigurationError.unexpectedError(error))
         }
     }
 }

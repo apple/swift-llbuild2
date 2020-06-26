@@ -114,7 +114,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         return group.next().makeSucceededFuture(LLBCASFeatures(preservesIDs: false))
     }
 
-    public func contains(_ id: LLBDataID) -> LLBFuture<Bool> {
+    public func contains(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<Bool> {
         var request: FindMissingBlobsRequest
         if let instance = instance {
             request = .with {
@@ -134,7 +134,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         }
     }
 
-    public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> {
+    public func get(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<LLBCASObject?> {
         do {
             let resourcePrefix: String
             if let instance = instance {
@@ -166,7 +166,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         }
     }
 
-    public func identify(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+    public func identify(refs: [LLBDataID] = [], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
         do {
             let id = try Digest(with: data.readableBytesView).asDataID()
             return group.next().makeSucceededFuture(id)
@@ -175,7 +175,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         }
     }
 
-    public func put(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(refs: [LLBDataID] = [], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
         do {
             let resourcePrefix: String
             if let instance = instance {
@@ -212,11 +212,11 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
         }
     }
 
-    public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
         // Bazel DataIDs are intrinsically tied to the internal protobuf storage
         // While it is possible a client could have it already, we'd have to go
         // through the motions to confirm anyway.
-        return put(refs: refs, data: data)
+        return put(refs: refs, data: data, ctx)
     }
 }
 

@@ -105,31 +105,31 @@ public enum LLBArtifactError: Error {
 }
 
 final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
-    override func evaluate(key artifact: LLBArtifact, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBArtifactValue> {
+    override func evaluate(key artifact: LLBArtifact, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBArtifactValue> {
 
         // Resolve the easy states first, like no originType and source originType.
         switch artifact.originType {
         case .none:
-            return fi.group.next().makeFailedFuture(LLBArtifactError.invalidOriginType)
+            return ctx.group.next().makeFailedFuture(LLBArtifactError.invalidOriginType)
         case let .source(dataID):
-            return fi.group.next().makeSucceededFuture(LLBArtifactValue(dataID: dataID))
+            return ctx.group.next().makeSucceededFuture(LLBArtifactValue(dataID: dataID))
         case let .derivedStatic(dataID):
-            return fi.group.next().makeSucceededFuture(LLBArtifactValue(dataID: dataID))
+            return ctx.group.next().makeSucceededFuture(LLBArtifactValue(dataID: dataID))
         default:
             break
         }
 
         // There are no other known originTypes, so we must be expecting a derived type.
         guard case let .derived(artifactOwner) = artifact.originType else {
-            return fi.group.next().makeFailedFuture(LLBArtifactError.invalidOriginType)
+            return ctx.group.next().makeFailedFuture(LLBArtifactError.invalidOriginType)
         }
 
         // Request the ActionKey, then request its ActionValue and retrieve the data ID from the ActionValue to
         // associate to this artifact.
-        return fi.request(LLBRuleEvaluationKeyID(ruleEvaluationKeyID: artifactOwner.actionsOwner)).flatMap { (ruleEvaluationValue: LLBRuleEvaluationValue) -> LLBFuture<LLBActionKey> in
-            return fi.request(ActionIDKey(dataID: ruleEvaluationValue.actionIds[Int(artifactOwner.actionIndex)]))
+        return fi.request(LLBRuleEvaluationKeyID(ruleEvaluationKeyID: artifactOwner.actionsOwner), ctx).flatMap { (ruleEvaluationValue: LLBRuleEvaluationValue) -> LLBFuture<LLBActionKey> in
+            return fi.request(ActionIDKey(dataID: ruleEvaluationValue.actionIds[Int(artifactOwner.actionIndex)]), ctx)
         }.flatMap { (actionKey: LLBActionKey) -> LLBFuture<LLBActionValue> in
-            return fi.request(actionKey)
+            return fi.request(actionKey, ctx)
         }.flatMapThrowing { (actionValue: LLBActionValue) -> LLBArtifactValue in
             guard actionValue.outputs.count >= artifactOwner.outputIndex + 1 else {
                 throw LLBArtifactError.actionWithTooFewOutputs

@@ -65,19 +65,19 @@ public enum LLBActionError: Error {
 }
 
 final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
-    override func evaluate(key actionKey: LLBActionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionValue> {
+    override func evaluate(key actionKey: LLBActionKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
         switch actionKey.actionType {
         case let .command(commandKey):
-            return evaluate(commandKey: commandKey, fi)
+            return evaluate(commandKey: commandKey, fi, ctx)
         case let .mergeTrees(mergeTreesKey):
-            return evaluate(mergeTreesKey: mergeTreesKey, fi)
+            return evaluate(mergeTreesKey: mergeTreesKey, fi, ctx)
         case .none:
-            return engineContext.group.next().makeFailedFuture(LLBActionError.invalid)
+            return ctx.group.next().makeFailedFuture(LLBActionError.invalid)
         }
     }
 
-    private func evaluate(commandKey: LLBCommandAction, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionValue> {
-        return fi.requestKeyed(commandKey.inputs).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
+    private func evaluate(commandKey: LLBCommandAction, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
+        return fi.requestKeyed(commandKey.inputs, ctx).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
             let actionExecutionKey = LLBActionExecutionKey.command(
                 actionSpec: commandKey.actionSpec,
                 inputs: inputs.map { (artifact, artifactValue) in
@@ -90,18 +90,18 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier)
             )
 
-            return fi.request(actionExecutionKey)
+            return fi.request(actionExecutionKey, ctx)
         }.map { actionExecutionValue in
             return LLBActionValue(outputs: actionExecutionValue.outputs)
         }
     }
 
-    private func evaluate(mergeTreesKey: LLBMergeTreesAction, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionValue> {
-        return fi.requestKeyed(mergeTreesKey.inputs.map(\.artifact)).flatMap { (inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
+    private func evaluate(mergeTreesKey: LLBMergeTreesAction, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
+        return fi.requestKeyed(mergeTreesKey.inputs.map(\.artifact), ctx).flatMap { (inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
             var actionInputs = [LLBActionInput]()
             for (index, input) in mergeTreesKey.inputs.enumerated() {
                 guard inputs[index].artifact.type == .directory || !input.path.isEmpty else {
-                    return fi.group.next().makeFailedFuture(LLBActionError.invalidMergeTreeInput("expected a path for the non directory artifact"))
+                    return ctx.group.next().makeFailedFuture(LLBActionError.invalidMergeTreeInput("expected a path for the non directory artifact"))
                 }
 
                 actionInputs.append(
@@ -110,7 +110,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
             }
 
             let actionExecutionKey = LLBActionExecutionKey.mergeTrees(inputs: actionInputs)
-            return fi.request(actionExecutionKey)
+            return fi.request(actionExecutionKey, ctx)
         }.map { actionExecutionValue in
             return LLBActionValue(outputs: actionExecutionValue.outputs)
         }

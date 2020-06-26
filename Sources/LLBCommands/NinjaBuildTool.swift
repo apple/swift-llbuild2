@@ -30,7 +30,8 @@ public struct NinjaBuildTool: ParsableCommand {
     public func run() throws {
         let dryRunDelegate = NinjaDryRunDelegate()
         let nb = try NinjaBuild(manifest: manifest, delegate: dryRunDelegate)
-        _ = try nb.build(target: target, as: Int.self)
+        let ctx = Context()
+        _ = try nb.build(target: target, as: Int.self, ctx)
     }
 }
 

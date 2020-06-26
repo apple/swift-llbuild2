@@ -22,7 +22,8 @@ final class NinjaBuildTests: XCTestCase {
             try localFileSystem.writeFileContents(tmp.path, bytes: ByteString((manifest + "\n").utf8))
             let logger = LoggingNinjaDelegate()
             let nb = try NinjaBuild(manifest: tmp.path.pathString, delegate: logger)
-            _ = try nb.build(target: "all", as: Int.self)
+            let ctx = Context()
+            _ = try nb.build(target: "all", as: Int.self, ctx)
             return logger.log
         }
     }

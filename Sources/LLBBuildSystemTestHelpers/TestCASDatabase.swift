@@ -22,19 +22,19 @@ public class LLBTestCASDatabase: LLBCASDatabase {
 
     public func supportedFeatures() -> LLBFuture<LLBCASFeatures> { self.db.supportedFeatures() }
 
-    public func contains(_ id: LLBDataID) -> LLBFuture<Bool> { self.db.contains(id) }
+    public func contains(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<Bool> { self.db.contains(id, ctx) }
 
-    public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> { self.db.get(id) }
+    public func get(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<LLBCASObject?> { self.db.get(id, ctx) }
 
-    public func identify(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        self.db.identify(refs: refs, data: data)
+    public func identify(refs: [LLBDataID], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        self.db.identify(refs: refs, data: data, ctx)
     }
 
-    public func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        self.db.put(refs: refs, data: data)
+    public func put(refs: [LLBDataID], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        self.db.put(refs: refs, data: data, ctx)
     }
 
-    public func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        self.db.put(knownID: id, refs: refs, data: data)
+    public func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        self.db.put(knownID: id, refs: refs, data: data, ctx)
     }
 }

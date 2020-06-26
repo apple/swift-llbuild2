@@ -55,5 +55,5 @@ public protocol LLBConfiguredTargetDelegate {
     /// The LLBBuildFunctionInterface is also provided to allow requesting additional keys during evaluation. Any custom
     /// function that is needed to evaluate a ConfiguredTarget will need to be implemented by the client and returned
     /// through the LLBBuildFunctionLookupDelegate implementation.
-    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget>
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) throws -> LLBFuture<LLBConfiguredTarget>
 }

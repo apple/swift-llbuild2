@@ -10,11 +10,13 @@ import Foundation
 
 import Crypto
 import NIOConcurrencyHelpers
+import TSCUtility
 
 @_exported import LLBCAS
 @_exported import LLBCASFileTree
 @_exported import LLBSupport
 
+public typealias Context = TSCUtility.Context
 
 public protocol LLBKey: LLBStablyHashable {
     func hash(into hasher: inout Hasher)
@@ -29,14 +31,6 @@ public class LLBFunctionInterface {
 
     let key: LLBKey
 
-    /// The dispatch group to be used as when processing the future blocks throughout the build.
-    @inlinable
-    public var group: LLBFuturesDispatchGroup { return engine.group }
-
-    /// The CAS database reference to use for interfacing with CAS systems.
-    @inlinable
-    public var db: LLBCASDatabase { return engine.db }
-
     /// The function execution cache
     @inlinable
     public var functionCache: LLBFunctionCache { return engine.functionCache }
@@ -50,51 +44,51 @@ public class LLBFunctionInterface {
         self.key = key
     }
 
-    public func request(_ key: LLBKey) -> LLBFuture<LLBValue> {
+    public func request(_ key: LLBKey, _ ctx: Context) -> LLBFuture<LLBValue> {
         do {
             try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
         } catch {
-            return group.next().makeFailedFuture(error)
+            return ctx.group.next().makeFailedFuture(error)
         }
-        return engine.build(key: key)
+        return engine.build(key: key, ctx)
     }
 
-    public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self) -> LLBFuture<V> {
+    public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
         do {
             try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
         } catch {
-            return group.next().makeFailedFuture(error)
+            return ctx.group.next().makeFailedFuture(error)
         }
-        return engine.build(key: key, as: type)
+        return engine.build(key: key, as: type, ctx)
     }
 
-    public func spawn(_ action: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    public func spawn(_ action: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
         return engine.executor.execute(request: action, ctx)
     }
 }
 
 public protocol LLBFunction {
-    func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue>
+    func compute(key: LLBKey, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue>
 }
 
 public protocol LLBFunctionCache {
-    func get(key: LLBKey) -> LLBFuture<LLBDataID?>
-    func update(key: LLBKey, value: LLBDataID) -> LLBFuture<Void>
+    func get(key: LLBKey, _ ctx: Context) -> LLBFuture<LLBDataID?>
+    func update(key: LLBKey, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void>
 }
 
 open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
     public init() {}
 
-    private func computeAndUpdate(key: K, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
-        return self.compute(key: key, fi).flatMap { (value: LLBValue) in
+    private func computeAndUpdate(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue> {
+        return self.compute(key: key, fi, ctx).flatMap { (value: LLBValue) in
             do {
-                return fi.db.put(try value.asCASObject()).flatMap { resultID in
-                    return fi.functionCache.update(key: key, value: resultID).map {
+                return ctx.db.put(try value.asCASObject(), ctx).flatMap { resultID in
+                    return fi.functionCache.update(key: key, value: resultID, ctx).map {
                         return value
                     }
                 }
             } catch {
-                return fi.group.next().makeFailedFuture(error)
+                return ctx.group.next().makeFailedFuture(error)
             }
         }
     }
@@ -116,30 +110,30 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
     }
 
     @_disfavoredOverload
-    public func compute(key: LLBKey, _ fi: LLBFunctionInterface) -> LLBFuture<LLBValue> {
+    public func compute(key: LLBKey, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue> {
         guard let typedKey = key as? K else {
-            return fi.group.next().makeFailedFuture(LLBError.unexpectedKeyType(String(describing: type(of: key))))
+            return ctx.group.next().makeFailedFuture(LLBError.unexpectedKeyType(String(describing: type(of: key))))
         }
 
-        return fi.functionCache.get(key: key).flatMap { result -> LLBFuture<LLBValue> in
+        return fi.functionCache.get(key: key, ctx).flatMap { result -> LLBFuture<LLBValue> in
             if let resultID = result {
-                return fi.db.get(resultID).flatMap { objectOpt in
+                return ctx.db.get(resultID, ctx).flatMap { objectOpt in
                     guard let object = objectOpt else {
-                        return self.computeAndUpdate(key: typedKey, fi)
+                        return self.computeAndUpdate(key: typedKey, fi, ctx)
                     }
                     do {
                         let value: V = try self.unpack(object, fi)
-                        return fi.group.next().makeSucceededFuture(value)
+                        return ctx.group.next().makeSucceededFuture(value)
                     } catch {
-                        return fi.group.next().makeFailedFuture(error)
+                        return ctx.group.next().makeFailedFuture(error)
                     }
                 }
             }
-            return self.computeAndUpdate(key: typedKey, fi)
+            return self.computeAndUpdate(key: typedKey, fi, ctx)
         }
     }
 
-    open func compute(key: K, _ fi: LLBFunctionInterface) -> LLBFuture<V> {
+    open func compute(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<V> {
         // This is a developer error and not a runtime error, which is why fatalError is used.
         fatalError("unimplemented: this method is expected to be overridden by subclasses.")
     }
@@ -147,7 +141,7 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
 
 public protocol LLBEngineDelegate {
     func registerTypes(registry: LLBSerializableRegistry)
-    func lookupFunction(forKey: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction>
+    func lookupFunction(forKey: LLBKey, _ ctx: Context) -> LLBFuture<LLBFunction>
 }
 
 public extension LLBEngineDelegate {
@@ -177,11 +171,9 @@ extension Key: Hashable {
 
 
 public class LLBEngine {
-    public let group: LLBFuturesDispatchGroup
-
-    fileprivate let lock = NIOConcurrencyHelpers.Lock()
-    fileprivate let delegate: LLBEngineDelegate
-    @usableFromInline internal let db: LLBCASDatabase
+    private let group: LLBFuturesDispatchGroup
+    private let delegate: LLBEngineDelegate
+    private let db: LLBCASDatabase
     fileprivate let executor: LLBExecutor
     fileprivate let pendingResults: LLBEventualResultsCache<Key, LLBValue>
     fileprivate let keyDependencyGraph = LLBKeyDependencyGraph()
@@ -212,19 +204,28 @@ public class LLBEngine {
         delegate.registerTypes(registry: registry)
     }
 
-    public func build(key: LLBKey) -> LLBFuture<LLBValue> {
+    /// Populate context with engine provided values
+    private func engineContext(_ ctx: Context) -> Context {
+        var ctx = ctx
+        ctx.group = self.group
+        ctx.db = self.db
+        return ctx
+    }
+
+    public func build(key: LLBKey, _ ctx: Context) -> LLBFuture<LLBValue> {
+        let ctx = engineContext(ctx)
         return self.pendingResults.value(for: Key(key)) { _ in
-            return self.delegate.lookupFunction(forKey: key, group: self.group).flatMap { function in
+            return self.delegate.lookupFunction(forKey: key, ctx).flatMap { function in
                 let fi = LLBFunctionInterface(engine: self, key: key)
-                return function.compute(key: key, fi)
+                return function.compute(key: key, fi, ctx)
             }
         }
     }
 }
 
 extension LLBEngine {
-    public func build<V: LLBValue>(key: LLBKey, as: V.Type) -> LLBFuture<V> {
-        return self.build(key: key).flatMapThrowing {
+    public func build<V: LLBValue>(key: LLBKey, as: V.Type, _ ctx: Context) -> LLBFuture<V> {
+        return self.build(key: key, ctx).flatMapThrowing {
             guard let value = $0 as? V else {
                 throw LLBError.invalidValueType("Expected value of type \(V.self)")
             }

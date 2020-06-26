@@ -56,8 +56,8 @@ fileprivate struct DynamicActionProvider: LLBProvider, Codable {
 }
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
-        return fi.group.next().makeSucceededFuture(key.label.targetName)
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) throws -> LLBFuture<LLBConfiguredTarget> {
+        return ctx.group.next().makeSucceededFuture(key.label.targetName)
     }
 }
 
@@ -74,8 +74,8 @@ private final class DummyRuleLookupDelegate: LLBRuleLookupDelegate {
 private final class DynamicActionExecutor: LLBDynamicActionExecutor {
     func execute(
         request: LLBActionExecutionRequest,
-        engineContext: LLBBuildEngineContext,
-        _ fi: LLBDynamicFunctionInterface
+        _ fi: LLBDynamicFunctionInterface,
+        _ ctx: Context
     ) -> LLBFuture<LLBActionExecutionResponse> {
         let input = request.inputs[0]
         let output = request.outputs[0]
@@ -88,7 +88,7 @@ private final class DynamicActionExecutor: LLBDynamicActionExecutor {
             outputs: [intermediate]
         )
 
-        return fi.requestActionExecution(actionExecutionKey).flatMap { actionResult in
+        return fi.requestActionExecution(actionExecutionKey, ctx).flatMap { actionResult in
 
             let intermediateInput = LLBActionInput(path: intermediate.path, dataID: actionResult.outputs[0], type: intermediate.type)
 
@@ -98,7 +98,7 @@ private final class DynamicActionExecutor: LLBDynamicActionExecutor {
                 outputs: [output]
             )
 
-            return fi.requestActionExecution(actionExecutionKey)
+            return fi.requestActionExecution(actionExecutionKey, ctx)
         }.map { (actionResult: LLBActionExecutionValue) in
             return LLBActionExecutionResponse(
                 outputs: actionResult.outputs,
@@ -122,11 +122,14 @@ private final class DynamicActionExecutorDelegate: LLBDynamicActionExecutorDeleg
 class DynamicActionTests: XCTestCase {
     func testDynamicAction() throws {
         try withTemporaryDirectory { tempDir in
+            let ctx = LLBMakeTestContext()
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
             let dynamicExecutorDelegate = DynamicActionExecutorDelegate()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 dynamicActionExecutorDelegate: dynamicExecutorDelegate,
@@ -135,21 +138,21 @@ class DynamicActionTests: XCTestCase {
                 registry.register(type: String.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:simple_action")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             XCTAssertEqual(evaluatedTargetValue.providerMap.count, 1)
             let outputArtifact = try evaluatedTargetValue.providerMap.get(DynamicActionProvider.self).artifact
 
-            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact, ctx).wait()
 
-            let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
+            let artifactContents = try LLBCASFSClient(ctx.db).fileContents(for: artifactValue.dataID, ctx)
             XCTAssertEqual(artifactContents, "black lives matter")
         }
     }

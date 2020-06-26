@@ -29,10 +29,10 @@ public class NinjaBuild {
         self.delegate = delegate
     }
 
-    public func build<V: NinjaValue>(target: String, as: V.Type) throws -> V {
+    public func build<V: NinjaValue>(target: String, as: V.Type, _ ctx: Context) throws -> V {
         let engineDelegate = NinjaEngineDelegate(manifest: manifest, delegate: delegate)
         let engine = LLBEngine(delegate: engineDelegate)
-        return try engine.build(key: "T" + target, as: V.self).wait()
+        return try engine.build(key: "T" + target, as: V.self, ctx).wait()
     }
 }
 
@@ -87,15 +87,15 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
         self.commandMap = commandMap
     }
     
-    func lookupFunction(forKey rawKey: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
+    func lookupFunction(forKey rawKey: LLBKey, _ ctx: Context) -> LLBFuture<LLBFunction> {
         guard let key = rawKey as? String else {
-            return group.next().makeFailedFuture(
+            return ctx.group.next().makeFailedFuture(
                 NinjaEngineDelegateError.unexpectedKeyType(String(describing: type(of: rawKey)))
             )
         }
 
         guard let code = key.first else {
-            return group.next().makeFailedFuture(NinjaEngineDelegateError.invalidKey(key))
+            return ctx.group.next().makeFailedFuture(NinjaEngineDelegateError.invalidKey(key))
         }
 
         switch code {
@@ -104,12 +104,12 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
             // Must be a target.
             let target = String(key.dropFirst(1))
             guard let i = self.commandMap[target] else {
-                return group.next().makeFailedFuture(NinjaEngineDelegateError.commandNotFound(target))
+                return ctx.group.next().makeFailedFuture(NinjaEngineDelegateError.commandNotFound(target))
             }
 
-            return group.next().makeSucceededFuture(
-                LLBSimpleFunction { (fi, key) in
-                    return fi.request("C" + String(i))
+            return ctx.group.next().makeSucceededFuture(
+                LLBSimpleFunction { (fi, key, ctx) in
+                    return fi.request("C" + String(i), ctx)
                 }
             )
 
@@ -120,17 +120,17 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
             // produce multiple outputs).
             let path = String(key.dropFirst(1))
             if let i = self.commandMap[path] {
-                return group.next().makeSucceededFuture(
-                    LLBSimpleFunction { (fi, key) in
-                        return fi.request("C" + String(i))
+                return ctx.group.next().makeSucceededFuture(
+                    LLBSimpleFunction { (fi, key, ctx) in
+                        return fi.request("C" + String(i), ctx)
                     }
                 )
             }
 
             // Otherwise, it is an input file.
-            return group.next().makeSucceededFuture(
-                LLBSimpleFunction { (fi, key) in
-                    return self.delegate.build(group: fi.group, path: path).map { $0 as LLBValue }
+            return ctx.group.next().makeSucceededFuture(
+                LLBSimpleFunction { (fi, key, ctx) in
+                    return self.delegate.build(group: ctx.group, path: path).map { $0 as LLBValue }
                 }
             )
 
@@ -138,26 +138,26 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
         case "C":
             let commandIndexStr = String(key.dropFirst(1))
             guard let i = Int(commandIndexStr) else {
-                return group.next().makeFailedFuture(NinjaEngineDelegateError.unexpectedCommandKey(key))
+                return ctx.group.next().makeFailedFuture(NinjaEngineDelegateError.unexpectedCommandKey(key))
             }
 
-            return group.next().makeSucceededFuture(
-                LLBSimpleFunction { (fi, key) in
+            return ctx.group.next().makeSucceededFuture(
+                LLBSimpleFunction { (fi, key, ctx) in
                     // Get the command.
                     let command = self.manifest.commands[i]
                     // FIXME: For now, we just merge all the inputs. This isn't
                     // really in keeping with the Ninja semantics, but is strong.
-                    var inputs = command.inputs.map{ fi.request("N" + $0).asNinjaValue() }
-                    inputs += command.implicitInputs.map{ fi.request("N" + $0).asNinjaValue() }
-                    inputs += command.orderOnlyInputs.map{ fi.request("N" + $0).asNinjaValue() }
-                    return LLBFuture.whenAllSucceed(inputs, on: fi.group.next()).flatMap { inputs in
-                        return self.delegate.build(group: fi.group.next(), command: command, inputs: inputs).map { $0 as LLBValue }
+                    var inputs = command.inputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
+                    inputs += command.implicitInputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
+                    inputs += command.orderOnlyInputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
+                    return LLBFuture.whenAllSucceed(inputs, on: ctx.group.next()).flatMap { inputs in
+                        return self.delegate.build(group: ctx.group.next(), command: command, inputs: inputs).map { $0 as LLBValue }
                     }
                 }
             )
 
         default:
-            return group.next().makeFailedFuture(NinjaEngineDelegateError.unexpectedKey(key))
+            return ctx.group.next().makeFailedFuture(NinjaEngineDelegateError.unexpectedKey(key))
         }
     }
 }

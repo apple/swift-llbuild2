@@ -55,17 +55,16 @@ public enum LLBRuleEvaluationError: Error {
 final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLBRuleEvaluationValue> {
     let ruleLookupDelegate: LLBRuleLookupDelegate?
 
-    init(engineContext: LLBBuildEngineContext, ruleLookupDelegate: LLBRuleLookupDelegate?) {
+    init(ruleLookupDelegate: LLBRuleLookupDelegate?) {
         self.ruleLookupDelegate = ruleLookupDelegate
-        super.init(engineContext: engineContext)
     }
 
-    override func evaluate(key: LLBRuleEvaluationKeyID, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBRuleEvaluationValue> {
+    override func evaluate(key: LLBRuleEvaluationKeyID, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBRuleEvaluationValue> {
         guard let ruleLookupDelegate = ruleLookupDelegate else {
-            return fi.group.next().makeFailedFuture(LLBRuleEvaluationError.noRuleLookupDelegate)
+            return ctx.group.next().makeFailedFuture(LLBRuleEvaluationError.noRuleLookupDelegate)
         }
 
-        return engineContext.db.get(key.ruleEvaluationKeyID).flatMapThrowing { (object: LLBCASObject?) -> LLBRuleEvaluationKey in
+        return ctx.db.get(key.ruleEvaluationKeyID, ctx).flatMapThrowing { (object: LLBCASObject?) -> LLBRuleEvaluationKey in
             guard let data = object?.data,
                   let ruleEvaluationKey = try? LLBRuleEvaluationKey(from: data) else {
                 throw LLBRuleEvaluationError.ruleEvaluationKeyDeserializationError
@@ -75,21 +74,21 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
         }.flatMap { ruleEvaluationKey in
 
 
-            let configurationFuture: LLBFuture<LLBConfigurationValue> = fi.request(ruleEvaluationKey.configurationKey)
+            let configurationFuture: LLBFuture<LLBConfigurationValue> = fi.request(ruleEvaluationKey.configurationKey, ctx)
             return configurationFuture.map { (ruleEvaluationKey, $0) }
         }.flatMap { (ruleEvaluationKey: LLBRuleEvaluationKey, configurationValue: LLBConfigurationValue) in
             let configuredTarget: LLBConfiguredTarget
             do {
                 configuredTarget = try ruleEvaluationKey.configuredTargetValue.configuredTarget(registry: fi.registry)
             } catch {
-                return fi.group.next().makeFailedFuture(error)
+                return ctx.group.next().makeFailedFuture(error)
             }
             guard let rule = ruleLookupDelegate.rule(for: type(of: configuredTarget)) else {
-                return fi.group.next().makeFailedFuture(LLBRuleEvaluationError.ruleNotFound)
+                return ctx.group.next().makeFailedFuture(LLBRuleEvaluationError.ruleNotFound)
             }
 
             let ruleContext = LLBRuleContext(
-                group: fi.group,
+                group: ctx.group,
                 label: ruleEvaluationKey.label,
                 configurationValue: configurationValue,
                 artifactOwnerID: key.ruleEvaluationKeyID,
@@ -104,7 +103,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                     // artifacts. This needs to happen before we serialize the actions, otherwise we risk actions
                     // serializing artifacts that have not yet been updated to contain origin reference.
                     let staticWritesFutures: [LLBFuture<Void>] = ruleContext.staticWriteActions.map { (path, contents) in
-                        self.engineContext.db.put(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(contents))).flatMapThrowing { dataID in
+                        ctx.db.put(data: LLBByteBuffer.withBytes(ArraySlice<UInt8>(contents)), ctx).flatMapThrowing { dataID in
                             guard let artifact = ruleContext.declaredArtifacts[path],
                                   artifact.originType == nil else {
                                 throw LLBRuleEvaluationError.artifactAlreadyInitialized
@@ -112,7 +111,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                             artifact.updateID(dataID: dataID)
                         }
                     }
-                    let actionKeysFuture: LLBFuture<[LLBDataID]> = LLBFuture.whenAllSucceed(staticWritesFutures, on: fi.group.next()).flatMapThrowing { _ in
+                    let actionKeysFuture: LLBFuture<[LLBDataID]> = LLBFuture.whenAllSucceed(staticWritesFutures, on: ctx.group.next()).flatMapThrowing { _ in
                         // Ensure all artifacts have been updated to contain an origin reference, before the actions
                         // are serialized but after static writes have been uploaded.
                         for artifact in ruleContext.declaredArtifacts.values {
@@ -125,13 +124,13 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                         do {
                             // Store the action keys in the CAS
                             actionKeyFutures = try ruleContext.registeredActions.map { actionKey in
-                                self.engineContext.db.put(data: try actionKey.toBytes())
+                                ctx.db.put(data: try actionKey.toBytes(), ctx)
                             }
                         } catch {
-                            return fi.group.next().makeFailedFuture(error)
+                            return ctx.group.next().makeFailedFuture(error)
                         }
 
-                        return LLBFuture.whenAllSucceed(actionKeyFutures, on: fi.group.next())
+                        return LLBFuture.whenAllSucceed(actionKeyFutures, on: ctx.group.next())
                     }
 
                     return actionKeysFuture.flatMapThrowing { actionIDs in
@@ -139,7 +138,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                     }
                 }
             } catch {
-                return fi.group.next().makeFailedFuture(error)
+                return ctx.group.next().makeFailedFuture(error)
             }
 
             return providersFuture

@@ -99,36 +99,35 @@ public enum LLBActionExecutionError: Error {
 final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
     let dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?
 
-    init(engineContext: LLBBuildEngineContext, dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?) {
+    init(dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?) {
         self.dynamicActionExecutorDelegate = dynamicActionExecutorDelegate
-        super.init(engineContext: engineContext)
     }
 
-    override func evaluate(key actionExecutionKey: LLBActionExecutionKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
+    override func evaluate(key actionExecutionKey: LLBActionExecutionKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
 
         switch actionExecutionKey.actionExecutionType {
         case let .command(commandKey):
-            return evaluateCommand(commandKey: commandKey, fi)
+            return evaluateCommand(commandKey: commandKey, fi, ctx)
         case let .mergeTrees(mergeTreesKey):
-            return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, fi)
+            return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, fi, ctx)
         case .none:
-            return engineContext.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
+            return ctx.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
         }
     }
 
-    private func evaluateCommand(commandKey: LLBCommandActionExecution, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
+    private func evaluateCommand(commandKey: LLBCommandActionExecution, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
         let actionExecutionRequest = LLBActionExecutionRequest(
             actionSpec: commandKey.actionSpec, inputs: commandKey.inputs, outputs: commandKey.outputs
         )
 
         let resultFuture: LLBFuture<LLBActionExecutionResponse>
         if commandKey.dynamicIdentifier.isEmpty {
-            resultFuture = fi.spawn(actionExecutionRequest, engineContext)
+            resultFuture = fi.spawn(actionExecutionRequest, ctx)
         } else if let dynamicExecutor = dynamicActionExecutorDelegate?.dynamicActionExecutor(for: commandKey.dynamicIdentifier) {
-            resultFuture = dynamicExecutor.execute(request: actionExecutionRequest, engineContext: engineContext, fi)
+            resultFuture = dynamicExecutor.execute(request: actionExecutionRequest, fi, ctx)
 
         } else {
-            resultFuture = fi.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
+            resultFuture = ctx.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
         }
 
         return resultFuture.flatMapErrorThrowing { error in
@@ -147,19 +146,19 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         }
     }
 
-    private func evaluateMergeTrees(mergeTreesKey: LLBMergeTreesActionExecution, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionExecutionValue> {
+    private func evaluateMergeTrees(mergeTreesKey: LLBMergeTreesActionExecution, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
         let inputs = mergeTreesKey.inputs
         // Skip merging if there's a single tree as input, with no path to prepend.
         if inputs.count == 1, inputs[0].type == .directory, inputs[0].path.isEmpty {
-            return fi.group.next().makeSucceededFuture(LLBActionExecutionValue(outputs: [inputs[0].dataID], stdoutID: nil, stderrID: nil))
+            return ctx.group.next().makeSucceededFuture(LLBActionExecutionValue(outputs: [inputs[0].dataID], stdoutID: nil, stderrID: nil))
         }
 
-        let client = LLBCASFSClient(engineContext.db)
+        let client = LLBCASFSClient(ctx.db)
 
         var prependedTrees = [LLBFuture<LLBCASFileTree>]()
 
         for input in inputs {
-            prependedTrees.append(client.wrap(input.dataID, path: input.path))
+            prependedTrees.append(client.wrap(input.dataID, path: input.path, ctx))
         }
 
         // Skip merging if there is a single prepended tree.
@@ -167,8 +166,8 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             return prependedTrees[0].map { LLBActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil) }
         }
 
-        return LLBFuture.whenAllSucceed(prependedTrees, on: fi.group.next()).flatMap { trees in
-            return LLBCASFileTree.merge(trees: trees, in: self.engineContext.db)
+        return LLBFuture.whenAllSucceed(prependedTrees, on: ctx.group.next()).flatMap { trees in
+            return LLBCASFileTree.merge(trees: trees, in: ctx.db, ctx)
         }.map {
             return LLBActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil)
         }

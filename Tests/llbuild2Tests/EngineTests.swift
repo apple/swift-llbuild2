@@ -13,7 +13,7 @@ import LLBUtil
 
 final class EngineTests: XCTestCase {
     func testBasicMath() {
-        let staticIntFunction = LLBSimpleFunction { (fi, key) in
+        let staticIntFunction = LLBSimpleFunction { (fi, key, ctx) in
             guard let key = key as? String else {
                 fatalError("Expected a String key")
             }
@@ -22,12 +22,12 @@ final class EngineTests: XCTestCase {
                 fatalError("Expected a valid number after droppping the first character")
             }
 
-            return fi.group.next().makeSucceededFuture(intValue)
+            return ctx.group.next().makeSucceededFuture(intValue)
         }
 
-        let sumFunction = LLBSimpleFunction { (fi, key) in
-            let v1 = fi.request("v1", as: Int.self)
-            let v2 = fi.request("v2", as: Int.self)
+        let sumFunction = LLBSimpleFunction { (fi, key, ctx) in
+            let v1 = fi.request("v1", as: Int.self, ctx)
+            let v2 = fi.request("v2", as: Int.self, ctx)
             return v1.and(v2).map { r in
                 return r.0 + r.1
             }.map { $0 as LLBValue }
@@ -41,9 +41,10 @@ final class EngineTests: XCTestCase {
 
         let delegate = LLBStaticFunctionDelegate(keyMap: keyMap)
         let engine = LLBEngine(delegate: delegate)
+        let ctx = Context()
 
         do {
-            let s = try engine.build(key: "sum", as: Int.self).wait()
+            let s = try engine.build(key: "sum", as: Int.self, ctx).wait()
             XCTAssertEqual(s, 3)
         } catch {
             XCTFail("error \(error)")
@@ -51,9 +52,9 @@ final class EngineTests: XCTestCase {
     }
 
     func testDependencyCycles() {
-        let modFunction = LLBSimpleFunction { (fi, key) in
+        let modFunction = LLBSimpleFunction { (fi, key, ctx) in
             let intKey = Int(key as! String)!
-            return fi.request("\((intKey + 1) % 4)").map { _ in 42 }
+            return fi.request("\((intKey + 1) % 4)", ctx).map { _ in 42 }
         }
 
         let keyMap: [String: LLBFunction] = [
@@ -65,8 +66,9 @@ final class EngineTests: XCTestCase {
 
         let delegate = LLBStaticFunctionDelegate(keyMap: keyMap)
         let engine = LLBEngine(delegate: delegate)
+        let ctx = Context()
 
-        XCTAssertThrowsError(try engine.build(key: "1", as: Int.self).wait()) { error in
+        XCTAssertThrowsError(try engine.build(key: "1", as: Int.self, ctx).wait()) { error in
             guard case let LLBKeyDependencyGraphError.cycleDetected(cycle) = error else {
                 XCTFail("Unexpected error type")
                 return

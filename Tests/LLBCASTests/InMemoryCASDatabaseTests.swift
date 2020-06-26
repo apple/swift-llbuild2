@@ -10,6 +10,8 @@ import XCTest
 
 import Dispatch
 
+import TSCUtility
+
 import LLBCAS
 import LLBSupport
 
@@ -19,33 +21,35 @@ class InMemoryCASDatabaseTests: XCTestCase {
 
     func testBasics() throws {
         let db = LLBInMemoryCASDatabase(group: group)
+        let ctx = Context()
 
-        let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3])).wait()
-        let obj1 = try db.get(id1).wait()!
+        let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3]), ctx).wait()
+        let obj1 = try db.get(id1, ctx).wait()!
         XCTAssertEqual(id1, LLBDataID(string: "0~sXfsG_Jt-ztwENRz5tRHE7KbdluZxuYOy_rnQt5JZUM="))
         XCTAssertEqual(obj1.size, 3)
         XCTAssertEqual(obj1.refs, [])
         XCTAssertEqual(obj1.data, LLBByteBuffer.withBytes([1, 2, 3]))
 
-        let id2 = try db.put(refs: [id1], data: LLBByteBuffer.withBytes([4, 5, 6])).wait()
-        let obj2 = try db.get(id2).wait()!
+        let id2 = try db.put(refs: [id1], data: LLBByteBuffer.withBytes([4, 5, 6]), ctx).wait()
+        let obj2 = try db.get(id2, ctx).wait()!
         XCTAssertEqual(id2, LLBDataID(string: "0~udZrZzFHJr8uovWT5dOWtKz95ZqKi-vBkpiH0mJfjM4="))
         XCTAssertEqual(obj2.size, 3)
         XCTAssertEqual(obj2.refs, [id1])
         XCTAssertEqual(obj2.data.getBytes(at: 0, length: obj2.data.readableBytes), [4, 5, 6])
-        XCTAssertEqual(try db.contains(id1).wait(), true)
+        XCTAssertEqual(try db.contains(id1, ctx).wait(), true)
 
         // Check contains on a missing object.
-        let missingID = try LLBInMemoryCASDatabase(group: group).put(data: LLBByteBuffer.withBytes([])).wait()
-        XCTAssertEqual(try db.contains(missingID).wait(), false)
+        let missingID = try LLBInMemoryCASDatabase(group: group).put(data: LLBByteBuffer.withBytes([]), ctx).wait()
+        XCTAssertEqual(try db.contains(missingID, ctx).wait(), false)
     }
 
     func testPutStressTest() throws {
         let db = LLBInMemoryCASDatabase(group: group)
+        let ctx = Context()
         let queue = DispatchQueue(label: "sync")
 
         // Insert one object.
-        let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3])).wait()
+        let id1 = try db.put(data: LLBByteBuffer.withBytes([1, 2, 3]), ctx).wait()
 
         // Insert a bunch of objects concurrently.
         //
@@ -62,14 +66,14 @@ class InMemoryCASDatabaseTests: XCTestCase {
         let numObjects = 100
         var objects = [LLBDataID?](repeating: nil, count: numObjects)
         DispatchQueue.concurrentPerform(iterations: numObjects) { i in
-            let id = { try! db.put(refs: [id1], data: makeData(i: i)).wait() }()
+            let id = { try! db.put(refs: [id1], data: makeData(i: i), ctx).wait() }()
             queue.sync {
                 objects[i] = id
             }
         }
 
         for i in 0 ..< numObjects {
-            guard let result = try db.get(objects[i]!).wait() else {
+            guard let result = try db.get(objects[i]!, ctx).wait() else {
                 XCTFail("missing expected object")
                 return
             }

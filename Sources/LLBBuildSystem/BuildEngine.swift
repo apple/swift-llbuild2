@@ -23,42 +23,38 @@ public protocol LLBSerializableRegistrationDelegate {
 
 // Private delegate for implementing the LLBEngine delegate logic.
 fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
-    private let engineContext: LLBBuildEngineContext
     private let functionMap: LLBBuildFunctionMap
     private let buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?
     private let registrationDelegate: LLBSerializableRegistrationDelegate?
 
     init(
-        engineContext: LLBBuildEngineContext,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate?,
         configuredTargetDelegate: LLBConfiguredTargetDelegate?,
         ruleLookupDelegate: LLBRuleLookupDelegate?,
         registrationDelegate: LLBSerializableRegistrationDelegate?,
         dynamicActionExecutorDelegate: LLBDynamicActionExecutorDelegate?
     ) {
-        self.engineContext = engineContext
         self.buildFunctionLookupDelegate = buildFunctionLookupDelegate
         self.registrationDelegate = registrationDelegate
         self.functionMap = LLBBuildFunctionMap(
-            engineContext: engineContext,
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate,
             dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
         )
     }
 
-    func lookupFunction(forKey key: LLBKey, group: LLBFuturesDispatchGroup) -> LLBFuture<LLBFunction> {
+    func lookupFunction(forKey key: LLBKey, _ ctx: Context) -> LLBFuture<LLBFunction> {
         if let buildKey = key as? LLBBuildKey {
             // First look in the build system function map, and if not found, resolve it using the delegate.
             guard let function = functionMap.get(type(of: buildKey).identifier) ??
                     buildFunctionLookupDelegate?.lookupBuildFunction(for: type(of: buildKey).identifier) else {
-                return engineContext.group.next().makeFailedFuture(
+                return ctx.group.next().makeFailedFuture(
                     LLBBuildEngineError.unknownBuildKeyIdentifier(String(describing: type(of: buildKey)))
                 )
             }
-            return engineContext.group.next().makeSucceededFuture(function)
+            return ctx.group.next().makeSucceededFuture(function)
         } else {
-            return engineContext.group.next().makeFailedFuture(
+            return ctx.group.next().makeFailedFuture(
                 LLBBuildEngineError.unknownKeyType(String(describing: type(of: key)))
             )
         }
@@ -73,12 +69,10 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
 public final class LLBBuildEngine {
     private let coreEngine: LLBEngine
     private let delegate: LLBEngineDelegate
-    private let engineContext: LLBBuildEngineContext
 
     /// Builds a new instance of an LLBBuildEngine.
     ///
     /// - Parameters:
-    ///     - engineContext: The context for the engine.
     ///     - buildFunctionLookupDelegate: An optional delegate for resolving build functions at runtime. The build
     ///           engine will first look in the internal function map, and only resolve using the delegate if it can't
     ///           find a function to use for a particular key.
@@ -95,7 +89,8 @@ public final class LLBBuildEngine {
     ///     - executor: The executor that will execute the actions.
     ///     - functionCache: The function cache that acts as the memoization layer for the core llbuild2 engine.
     public init(
-        engineContext: LLBBuildEngineContext,
+        group: LLBFuturesDispatchGroup,
+        db: LLBCASDatabase,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
@@ -104,9 +99,7 @@ public final class LLBBuildEngine {
         executor: LLBExecutor,
         functionCache: LLBFunctionCache? = nil
     ) {
-        self.engineContext = engineContext
         self.delegate = LLBBuildEngineDelegate(
-            engineContext: engineContext,
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate,
@@ -114,17 +107,17 @@ public final class LLBBuildEngine {
             dynamicActionExecutorDelegate: dynamicActionExecutorDelegate
         )
         self.coreEngine = LLBEngine(
-            group: engineContext.group,
+            group: group,
             delegate: delegate,
-            db: engineContext.db,
+            db: db,
             executor: executor,
             functionCache: functionCache
         )
     }
 
     /// Requests the evaluation of a build key, returning an abstract build value.
-    public func build(_ key: LLBBuildKey) -> LLBFuture<LLBBuildValue> {
-        return self.coreEngine.build(key: key).flatMapThrowing { value -> LLBBuildValue in
+    public func build(_ key: LLBBuildKey, _ ctx: Context) -> LLBFuture<LLBBuildValue> {
+        return self.coreEngine.build(key: key, ctx).flatMapThrowing { value -> LLBBuildValue in
             if let buildValue = value as? LLBBuildValue {
                 return buildValue
             }
@@ -133,8 +126,8 @@ public final class LLBBuildEngine {
     }
 
     /// Requests the evaluation of a build key and attempts to cast the resulting value to the specified type.
-    public func build<V: LLBBuildValue>(_ key: LLBBuildKey, as valueType: V.Type = V.self) -> LLBFuture<V> {
-        return self.coreEngine.build(key: key).flatMapThrowing { value -> V in
+    public func build<V: LLBBuildValue>(_ key: LLBBuildKey, as valueType: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
+        return self.coreEngine.build(key: key, ctx).flatMapThrowing { value -> V in
             if let buildValue = value as? V {
                 return buildValue
             }

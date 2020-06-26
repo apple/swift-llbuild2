@@ -150,7 +150,7 @@ fileprivate struct RuleEvaluationProvider: LLBProvider, Codable {
 }
 
 private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
-    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<LLBConfiguredTarget> {
+    func configuredTarget(for key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) throws -> LLBFuture<LLBConfiguredTarget> {
         let configuredTarget: RuleEvaluationConfiguredTarget
         if key.label.targetName == "top_level_target" {
             configuredTarget = RuleEvaluationConfiguredTarget(
@@ -161,7 +161,7 @@ private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
             configuredTarget = RuleEvaluationConfiguredTarget(name: key.label.targetName)
         }
 
-        return fi.group.next().makeSucceededFuture(configuredTarget)
+        return ctx.group.next().makeSucceededFuture(configuredTarget)
     }
 }
 
@@ -181,7 +181,10 @@ class RuleEvaluationTests: XCTestCase {
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
@@ -189,21 +192,21 @@ class RuleEvaluationTests: XCTestCase {
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:single_artifact_valid")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             XCTAssertEqual(evaluatedTargetValue.providerMap.count, 1)
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact, ctx).wait()
 
-            let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
+            let artifactContents = try LLBCASFSClient(ctx.db).fileContents(for: artifactValue.dataID, ctx)
             XCTAssertEqual(artifactContents, "black lives matter\n")
         }
     }
@@ -213,7 +216,10 @@ class RuleEvaluationTests: XCTestCase {
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
@@ -221,19 +227,19 @@ class RuleEvaluationTests: XCTestCase {
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:2_outputs_2_actions")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             for (index, artifact) in try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts.enumerated() {
-                let artifactValue: LLBArtifactValue = try testEngine.build(artifact).wait()
+                let artifactValue: LLBArtifactValue = try testEngine.build(artifact, ctx).wait()
 
-                let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
+                let artifactContents = try LLBCASFSClient(ctx.db).fileContents(for: artifactValue.dataID, ctx)
 
                 switch index {
                 case 0:
@@ -251,21 +257,24 @@ class RuleEvaluationTests: XCTestCase {
         try withTemporaryDirectory { tempDir in
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
             ) { registry in
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:2_actions_1_output")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey).wait()) { error in
+            XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey, ctx).wait()) { error in
                 guard let ruleContextError = error as? LLBRuleContextError else {
                     XCTFail("unexpected error type")
                     return
@@ -282,21 +291,24 @@ class RuleEvaluationTests: XCTestCase {
         try withTemporaryDirectory { tempDir in
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
             ) { registry in
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:unregistered_output")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey).wait()) { error in
+            XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey, ctx).wait()) { error in
                 guard let ruleContextError = error as? LLBRuleEvaluationError else {
                     XCTFail("unexpected error type \(error)")
                     return
@@ -316,7 +328,10 @@ class RuleEvaluationTests: XCTestCase {
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
@@ -324,20 +339,20 @@ class RuleEvaluationTests: XCTestCase {
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:top_level_target")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact, ctx).wait()
 
-            let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
+            let artifactContents = try LLBCASFSClient(ctx.db).fileContents(for: artifactValue.dataID, ctx)
             XCTAssertEqual(artifactContents, "black lives matter\nI cant breathe\n")
         }
     }
@@ -346,27 +361,30 @@ class RuleEvaluationTests: XCTestCase {
         try withTemporaryDirectory { tempDir in
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate
             ) { registry in
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:static_write")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact, ctx).wait()
 
-            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
+            let artifactContents = try XCTUnwrap(ctx.db.get(artifactValue.dataID, ctx).wait()?.data.asString())
             XCTAssertEqual(artifactContents, "black lives matter")
         }
     }
@@ -376,7 +394,10 @@ class RuleEvaluationTests: XCTestCase {
             let localExecutor = LLBLocalExecutor(outputBase: tempDir)
             let configuredTargetDelegate = DummyConfiguredTargetDelegate()
             let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
             let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
                 configuredTargetDelegate: configuredTargetDelegate,
                 ruleLookupDelegate: ruleLookupDelegate,
                 executor: localExecutor
@@ -384,35 +405,35 @@ class RuleEvaluationTests: XCTestCase {
                 registry.register(type: RuleEvaluationConfiguredTarget.self)
             }
 
-            let dataID = try LLBCASFileTree.import(path: tempDir, to: testEngine.testDB).wait()
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
 
             let label = try LLBLabel("//some:tree_merge")
             let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
 
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
-            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey).wait()
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
 
             let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
 
-            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact, ctx).wait()
 
-            let client = LLBCASFSClient(testEngine.testDB)
+            let client = LLBCASFSClient(ctx.db)
 
             // FIXME: There should be an easier way to read files from a CASFileTree, perhaps using a CAS based
             // FileSystem protocol implementation?
-            let (file1Contents, file2Contents): (String, String) = try client.load(artifactValue.dataID).flatMap { node in
+            let (file1Contents, file2Contents): (String, String) = try client.load(artifactValue.dataID, ctx).flatMap { node in
                 let tree = node.tree!
-                let file1Contents = client.load(try! XCTUnwrap(tree.lookup("directory1")).id).flatMap { node -> LLBFuture<String> in
+                let file1Contents = client.load(try! XCTUnwrap(tree.lookup("directory1")).id, ctx).flatMap { node -> LLBFuture<String> in
                     let tree = node.tree!
-                    return client.load(try! XCTUnwrap(tree.lookup("file1.txt")).id).flatMap { node in
-                        return node.blob!.read().map { String(data: Data($0), encoding: .utf8)! }
+                    return client.load(try! XCTUnwrap(tree.lookup("file1.txt")).id, ctx).flatMap { node in
+                        return node.blob!.read(ctx).map { String(data: Data($0), encoding: .utf8)! }
                     }
                 }
-                let file2Contents = client.load(try! XCTUnwrap(tree.lookup("directory2")).id).flatMap { node -> LLBFuture<String> in
+                let file2Contents = client.load(try! XCTUnwrap(tree.lookup("directory2")).id, ctx).flatMap { node -> LLBFuture<String> in
                     let tree = node.tree!
-                    return client.load(try! XCTUnwrap(tree.lookup("file2.txt")).id).flatMap { node in
-                        return node.blob!.read().map { String(data: Data($0), encoding: .utf8)! }
+                    return client.load(try! XCTUnwrap(tree.lookup("file2.txt")).id, ctx).flatMap { node in
+                        return node.blob!.read(ctx).map { String(data: Data($0), encoding: .utf8)! }
                     }
                 }
                 return file1Contents.and(file2Contents)
