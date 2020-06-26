@@ -8,8 +8,9 @@
 
 import Foundation
 
-import TSCBasic
 import NIOConcurrencyHelpers
+import TSCBasic
+import TSCUtility
 
 import LLBCAS
 import LLBSupport
@@ -19,7 +20,7 @@ protocol RetrieveChildrenProtocol: class {
     associatedtype Item
 
     /// Get the item's children based on the item.
-    func children(of: Item) -> LLBFuture<[Item]>
+    func children(of: Item, _ ctx: Context) -> LLBFuture<[Item]>
 }
 
 /// Walk the hierarchy with bounded concurrency.
@@ -27,21 +28,21 @@ final class ConcurrentHierarchyWalker<Item> {
 
     private let group: LLBFuturesDispatchGroup
     private let futureOpQueue: LLBFutureOperationQueue
-    private let getChildren: (_ of: Item) -> LLBFuture<[Item]>
+    private let getChildren: (_ of: Item, _ ctx: Context) -> LLBFuture<[Item]>
 
     public init<Delegate: RetrieveChildrenProtocol>(group: LLBFuturesDispatchGroup, delegate: Delegate, maxConcurrentOperations: Int = 100) where Delegate.Item == Item {
         self.group = group
-        self.getChildren = {
-            delegate.children(of: $0)
+        self.getChildren = { (item, ctx) in
+            delegate.children(of: item, ctx)
         }
         self.futureOpQueue = .init(maxConcurrentOperations: maxConcurrentOperations)
     }
 
-    public func walk(_ item: Item) -> LLBFuture<Void> {
+    public func walk(_ item: Item, _ ctx: Context) -> LLBFuture<Void> {
         return futureOpQueue.enqueue(on: group.next()) {
-            self.getChildren(item)
+            self.getChildren(item, ctx)
         }.flatMap { more in
-            let futures = more.map { self.walk($0) }
+            let futures = more.map { self.walk($0, ctx) }
             return LLBFuture.whenAllSucceed(futures, on: self.group.next()).map { _ in () }
         }
     }
@@ -92,16 +93,16 @@ class ConcurrentFileTreeWalker: RetrieveChildrenProtocol {
     /// Concurrently scan the filesystem in CAS, returning the unsorted
     /// list of entries that the filter has accepted.
     /// Scanning a single file will result in a single entry with no name.
-    public func scan(root: LLBDataID) -> LLBFuture<[FilterArgument]> {
+    public func scan(root: LLBDataID, _ ctx: Context) -> LLBFuture<[FilterArgument]> {
         let root = Item(arg: FilterArgument(path: .root, type: .UNRECOGNIZED(.min), size: 0), id: root, scanResult: ScanResult())
         let walker = ConcurrentHierarchyWalker(group: db.group, delegate: self)
-        return walker.walk(root).map { () in
+        return walker.walk(root, ctx).map { () in
             root.scanResult.reapResult()
         }
     }
 
     /// Get the children of a (directory) item.
-    public func children(of item: Item) -> LLBFuture<[Item]> {
+    public func children(of item: Item, _ ctx: Context) -> LLBFuture<[Item]> {
         let typeHint: LLBFileType?
         switch item.arg.type {
         case .UNRECOGNIZED(.min):
@@ -110,7 +111,7 @@ class ConcurrentFileTreeWalker: RetrieveChildrenProtocol {
             typeHint = type
         }
 
-        return client.load(item.id, type: typeHint).map { node in
+        return client.load(item.id, type: typeHint, ctx).map { node in
             if typeHint == nil, item.arg.path == .root, item.arg.size == 0 {
                 // This is our root. Check if we're allowed to go past it.
                 let dirEntry = node.asDirectoryEntry(filename: "-")

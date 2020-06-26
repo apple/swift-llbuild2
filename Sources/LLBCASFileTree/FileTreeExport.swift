@@ -8,8 +8,9 @@
 
 import Foundation
 
-import TSCBasic
 import NIOConcurrencyHelpers
+import TSCBasic
+import TSCUtility
 
 import LLBCAS
 import LLBSupport
@@ -105,12 +106,13 @@ public extension LLBCASFileTree {
         to exportPathPrefix: AbsolutePath,
         materializer: LLBFilesystemObjectMaterializer = LLBRealFilesystemMaterializer(),
         storageBatcher: LLBBatchingFutureOperationQueue? = nil,
-        stats: ExportProgressStats? = nil
+        stats: ExportProgressStats? = nil,
+        _ ctx: Context
     ) -> LLBFuture<Void> {
         let delegate = CASFileTreeWalkerDelegate(from: db, to: exportPathPrefix, materializer: materializer, storageBatcher: storageBatcher, stats: stats ?? .init())
         let walker = ConcurrentHierarchyWalker(group: db.group, delegate: delegate)
         _ = stats?.objectsToExport_.add(1)
-        return walker.walk(.init(id: id, exportPath: exportPathPrefix, kindHint: nil))
+        return walker.walk(.init(id: id, exportPath: exportPathPrefix, kindHint: nil), ctx)
     }
 }
 
@@ -139,11 +141,11 @@ private final class CASFileTreeWalkerDelegate: RetrieveChildrenProtocol {
     }
 
     /// Conformance to `RetrieveChildrenProtocol`.
-    func children(of item: Item) -> LLBFuture<[Item]> {
+    func children(of item: Item, _ ctx: Context) -> LLBFuture<[Item]> {
 
         _ = stats.downloadsInProgressObjects_.add(1)
 
-        let casObjectFuture: LLBFuture<LLBCASObject> = db.get(item.id).flatMapThrowing { casObject in
+        let casObjectFuture: LLBFuture<LLBCASObject> = db.get(item.id, ctx).flatMapThrowing { casObject in
             _ = self.stats.downloadsInProgressObjects_.add(-1)
 
             guard let casObject = casObject else {

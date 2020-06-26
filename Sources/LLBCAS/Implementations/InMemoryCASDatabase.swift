@@ -9,6 +9,7 @@
 import Foundation
 
 import NIOConcurrencyHelpers
+import TSCUtility
 
 import LLBSupport
 
@@ -64,25 +65,25 @@ extension LLBInMemoryCASDatabase: LLBCASDatabase {
         return group.next().makeSucceededFuture(LLBCASFeatures(preservesIDs: true))
     }
 
-    public func contains(_ id: LLBDataID) -> LLBFuture<Bool> {
+    public func contains(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<Bool> {
         let result = lock.withLock { self.content.index(forKey: id) != nil }
         return group.next().makeSucceededFuture(result)
     }
 
-    public func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?> {
+    public func get(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<LLBCASObject?> {
         let result = lock.withLock { self.content[id] }
         return group.next().makeSucceededFuture(result)
     }
 
-    public func identify(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+    public func identify(refs: [LLBDataID] = [], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
         return group.next().makeSucceededFuture(LLBDataID(blake3hash: data, refs: refs))
     }
 
-    public func put(refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        return put(knownID: LLBDataID(blake3hash: data, refs: refs), refs: refs, data: data)
+    public func put(refs: [LLBDataID] = [], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return put(knownID: LLBDataID(blake3hash: data, refs: refs), refs: refs, data: data, ctx)
     }
 
-    public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
+    public func put(knownID id: LLBDataID, refs: [LLBDataID] = [], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
         lock.withLockVoid {
             guard content[id] == nil else {
                 assert(content[id]?.data == data, "put data for id doesn't match")
@@ -102,7 +103,7 @@ public struct LLBInMemoryCASDatabaseScheme: LLBCASDatabaseScheme {
         return host == nil && port == nil && path == "" && query == nil
     }
 
-    public static func open(group: LLBFuturesDispatchGroup, url: URL) throws -> LLBCASDatabase {
+    public static func open(group: LLBFuturesDispatchGroup, url: Foundation.URL) throws -> LLBCASDatabase {
         return LLBInMemoryCASDatabase(group: group)
     }
 }

@@ -41,7 +41,7 @@ public final class LLBFileBackedFunctionCache: LLBFunctionCache {
         return path.appending(component: "\(key.stableHashValue)")
     }
 
-    public func get(key: LLBKey) -> LLBFuture<LLBDataID?> {
+    public func get(key: LLBKey, _ ctx: Context) -> LLBFuture<LLBDataID?> {
         let file = filePath(key: key)
         let handleAndRegion = fileIO.openFile(
             path: file.pathString, eventLoop: group.next()
@@ -64,7 +64,7 @@ public final class LLBFileBackedFunctionCache: LLBFunctionCache {
         }
     }
 
-    public func update(key: LLBKey, value: LLBDataID) -> LLBFuture<Void> {
+    public func update(key: LLBKey, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
         let file = filePath(key: key)
         let handle = fileIO.openFile(
             path: file.pathString,

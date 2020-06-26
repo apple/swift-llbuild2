@@ -17,13 +17,13 @@ public enum LLBCASFSClientTestError: Error {
 extension LLBCASFSClient {
     /// Returns the String contents of a file for a specified LLBDataID. Throws if the dataID does not represent a file
     /// or if it can't be converted into a String.
-    public func fileContents(for dataID: LLBDataID) throws -> String {
+    public func fileContents(for dataID: LLBDataID, _ ctx: Context) throws -> String {
         let casFSClient = LLBCASFSClient(db)
-        return try casFSClient.load(dataID).flatMap { [self] node in
+        return try casFSClient.load(dataID, ctx).flatMap { [self] node in
             guard let blob = node.blob else {
                 return db.group.next().makeFailedFuture(LLBCASFSClientTestError.notFile)
             }
-            return blob.read().flatMapThrowing { data in
+            return blob.read(ctx).flatMapThrowing { data in
                 guard let contents = String(data: Data(data), encoding: .utf8) else {
                     throw LLBCASFSClientTestError.decodingError
                 }

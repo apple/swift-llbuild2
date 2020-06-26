@@ -8,6 +8,8 @@
 
 import NIO
 
+import TSCUtility
+
 public typealias LLBFuture<T> = NIO.EventLoopFuture<T>
 public typealias LLBPromise<T> = NIO.EventLoopPromise<T>
 public typealias LLBFuturesDispatchGroup = NIO.EventLoopGroup
@@ -26,6 +28,26 @@ public extension LLBPromise {
             try succeed(body())
         } catch {
             fail(error)
+        }
+    }
+}
+
+
+/// Support storing and retrieving dispatch group from a context
+public extension Context {
+    static func with(_ group: LLBFuturesDispatchGroup) -> Context {
+        return Context(dictionaryLiteral: (ObjectIdentifier(LLBFuturesDispatchGroup.self), group as Any))
+    }
+
+    var group: LLBFuturesDispatchGroup {
+        get {
+            guard let group = self[ObjectIdentifier(LLBFuturesDispatchGroup.self)] else {
+                fatalError("no futures dispatch group")
+            }
+            return group as! LLBFuturesDispatchGroup
+        }
+        set {
+            self[ObjectIdentifier(LLBFuturesDispatchGroup.self)] = newValue
         }
     }
 }

@@ -8,21 +8,15 @@
 
 import llbuild2
 
-/// An "abstract" class that represents a build function, which includes the engineContext reference and a way to
+/// An "abstract" class that represents a build function, which includes a way to
 /// statically specify the types of the build keys and values.
 open class LLBBuildFunction<K: LLBBuildKey, V: LLBBuildValue>: LLBTypedCachingFunction<K, V> {
-    public let engineContext: LLBBuildEngineContext
-
-    public init(engineContext: LLBBuildEngineContext) {
-        self.engineContext = engineContext
-    }
-
-    override open func compute(key: K, _ fi: LLBFunctionInterface) -> LLBFuture<V> {
-        return evaluate(key: key, LLBBuildFunctionInterface(fi: fi)).map { $0 }
+    override open func compute(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<V> {
+        return evaluate(key: key, LLBBuildFunctionInterface(fi: fi), ctx).map { $0 }
     }
 
     /// Subclasses of LLBBuildFunction should override this method to provide the actual implementation of the function.
-    open func evaluate(key: K, _ fi: LLBBuildFunctionInterface) -> LLBFuture<V> {
+    open func evaluate(key: K, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<V> {
         fatalError("This needs to be implemented by subclasses.")
     }
 }
@@ -35,67 +29,63 @@ public final class LLBBuildFunctionInterface {
         self.fi = fi
     }
 
-    public var group: LLBFuturesDispatchGroup {
-        return fi.group
-    }
-
     public var registry: LLBSerializableLookup {
         return fi.registry
     }
 
     /// Requests the value for a build key.
-    func request<K: LLBBuildKey>(_ key: K) -> LLBFuture<LLBBuildValue> {
-        return self.fi.request(key).map { $0 as! LLBBuildValue }
+    func request<K: LLBBuildKey>(_ key: K, _ ctx: Context) -> LLBFuture<LLBBuildValue> {
+        return self.fi.request(key, ctx).map { $0 as! LLBBuildValue }
     }
 
     /// Requests the value for a build key.
-    public func request<K: LLBBuildKey, V: LLBBuildValue>(_ key: K, as valueType: V.Type = V.self) -> LLBFuture<V> {
-        return self.fi.request(key).map { $0 as! V }
+    public func request<K: LLBBuildKey, V: LLBBuildValue>(_ key: K, as valueType: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
+        return self.fi.request(key, ctx).map { $0 as! V }
     }
 
     /// Requests the values for a list of keys of the same type, returned as a tuple containing the key and the value.
-    func requestKeyed<K: LLBBuildKey, V: LLBBuildValue>(_ keys: [K], as valueType: V.Type = V.self) -> LLBFuture<[(K, V)]> {
+    func requestKeyed<K: LLBBuildKey, V: LLBBuildValue>(_ keys: [K], as valueType: V.Type = V.self, _ ctx: Context) -> LLBFuture<[(K, V)]> {
         let requestFutures = keys.map { key in
-            self.request(key, as: V.self).map { (key, $0) }
+            self.request(key, as: V.self, ctx).map { (key, $0) }
         }
-        return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
+        return LLBFuture.whenAllSucceed(requestFutures, on: ctx.group.next())
     }
 
     /// Requests the values for a list of keys of the same type.
-    func request<K: LLBBuildKey, V: LLBBuildValue>(_ keys: [K], as valueType: V.Type = V.self) -> LLBFuture<[V]> {
-        let requestFutures = keys.map { self.request($0, as: V.self) }
-        return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
+    func request<K: LLBBuildKey, V: LLBBuildValue>(_ keys: [K], as valueType: V.Type = V.self, _ ctx: Context) -> LLBFuture<[V]> {
+        let requestFutures = keys.map { self.request($0, as: V.self, ctx) }
+        return LLBFuture.whenAllSucceed(requestFutures, on: ctx.group.next())
     }
 
-    internal func request(_ keys: [LLBBuildKey]) -> LLBFuture<[LLBBuildValue]> {
-        let requestFutures = keys.map { self.fi.request($0).map { $0 as! LLBBuildValue} }
-        return LLBFuture.whenAllSucceed(requestFutures, on: fi.group.next())
+    internal func request(_ keys: [LLBBuildKey], _ ctx: Context) -> LLBFuture<[LLBBuildValue]> {
+        let requestFutures = keys.map { self.fi.request($0, ctx).map { $0 as! LLBBuildValue} }
+        return LLBFuture.whenAllSucceed(requestFutures, on: ctx.group.next())
     }
 
-    func spawn(_ action: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    func spawn(_ action: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
         return fi.spawn(action, ctx)
     }
 }
 
 extension LLBBuildFunctionInterface {
-    public func requestArtifact(_ artifact: LLBArtifact) -> LLBFuture<LLBArtifactValue> {
-        return self.request(artifact, as: LLBArtifactValue.self).map { $0 }
+    public func requestArtifact(_ artifact: LLBArtifact, _ ctx: Context) -> LLBFuture<LLBArtifactValue> {
+        return self.request(artifact, as: LLBArtifactValue.self, ctx).map { $0 }
     }
 
-    public func requestDependency(_ key: LLBConfiguredTargetKey) -> LLBFuture<LLBProviderMap> {
+    public func requestDependency(_ key: LLBConfiguredTargetKey, _ ctx: Context) -> LLBFuture<LLBProviderMap> {
         let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: key)
-        return self.request(evaluatedTargetKey, as: LLBEvaluatedTargetValue.self).map { $0.providerMap }
+        return self.request(evaluatedTargetKey, as: LLBEvaluatedTargetValue.self, ctx).map { $0.providerMap }
     }
 
-    public func requestDependencies(_ keys: [LLBConfiguredTargetKey]) -> LLBFuture<[LLBProviderMap]> {
+    public func requestDependencies(_ keys: [LLBConfiguredTargetKey], _ ctx: Context) -> LLBFuture<[LLBProviderMap]> {
         let evaluatedTargetKeys = keys.map { LLBEvaluatedTargetKey(configuredTargetKey: $0) }
-        return self.request(evaluatedTargetKeys, as: LLBEvaluatedTargetValue.self).map { $0.map(\.providerMap) }
+        return self.request(evaluatedTargetKeys, as: LLBEvaluatedTargetValue.self, ctx).map { $0.map(\.providerMap) }
     }
 }
 
 extension LLBBuildFunctionInterface: LLBDynamicFunctionInterface {
-    public func requestActionExecution(_ key: LLBActionExecutionKey) -> LLBFuture<LLBActionExecutionValue> {
-        return self.request(key, as: LLBActionExecutionValue.self)
+    public func requestActionExecution(_ key: LLBActionExecutionKey, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
+        return self.request(key, as: LLBActionExecutionValue.self, ctx)
     }
 }
 

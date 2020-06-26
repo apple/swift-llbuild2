@@ -15,8 +15,8 @@ public protocol LLBDynamicActionExecutor {
 
     func execute(
         request: LLBActionExecutionRequest,
-        engineContext: LLBBuildEngineContext,
-        _ fi: LLBDynamicFunctionInterface
+        _ fi: LLBDynamicFunctionInterface,
+        _ ctx: Context
     ) -> LLBFuture<LLBActionExecutionResponse>
 }
 
@@ -31,5 +31,5 @@ public protocol LLBDynamicActionExecutorDelegate {
 }
 
 public protocol LLBDynamicFunctionInterface {
-    func requestActionExecution(_ key: LLBActionExecutionKey) -> LLBFuture<LLBActionExecutionValue>
+    func requestActionExecution(_ key: LLBActionExecutionKey, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue>
 }

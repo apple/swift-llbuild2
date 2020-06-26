@@ -11,27 +11,16 @@ import LLBBuildSystem
 import LLBUtil
 import NIO
 
-/// Test implementation of a build engine context.
-public class LLBTestBuildEngineContext: LLBBuildEngineContext {
-    public let group: LLBFuturesDispatchGroup
-    public let testDB: LLBTestCASDatabase
-
-    public var db: LLBCASDatabase { testDB }
-
-    public init(
-        group: LLBFuturesDispatchGroup? = nil,
-        db: LLBCASDatabase? = nil
-    ) {
-        let group = group ?? MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.group = group
-        self.testDB = LLBTestCASDatabase(group: group, db: db ?? LLBInMemoryCASDatabase(group: group))
-    }
+public func LLBMakeTestContext() -> Context {
+    var ctx = Context()
+    ctx.group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+    ctx.db = LLBTestCASDatabase(group: ctx.group)
+    return ctx
 }
 
 /// Test implementation of a build engine to be used for inspection during tests. This class is a wrapper around an
 /// actual LLBBuildEngine.
 public class LLBTestBuildEngine {
-    public let engineContext: LLBTestBuildEngineContext
     private let engine: LLBBuildEngine
 
     private struct RegistrationDelegateWrapper: LLBSerializableRegistrationDelegate {
@@ -43,7 +32,8 @@ public class LLBTestBuildEngine {
     }
 
     public init(
-        engineContext: LLBTestBuildEngineContext? = nil,
+        group: LLBFuturesDispatchGroup,
+        db: LLBCASDatabase,
         buildFunctionLookupDelegate: LLBBuildFunctionLookupDelegate? = nil,
         configuredTargetDelegate: LLBConfiguredTargetDelegate? = nil,
         ruleLookupDelegate: LLBRuleLookupDelegate? = nil,
@@ -51,11 +41,10 @@ public class LLBTestBuildEngine {
         executor: LLBExecutor? = nil,
         registrationHandler: @escaping (LLBSerializableRegistry) -> Void = { _ in }
     ) {
-        let engineContext = engineContext ?? LLBTestBuildEngineContext()
-        self.engineContext = engineContext
 
         self.engine = LLBBuildEngine(
-            engineContext: engineContext,
+            group: group,
+            db: db,
             buildFunctionLookupDelegate: buildFunctionLookupDelegate,
             configuredTargetDelegate: configuredTargetDelegate,
             ruleLookupDelegate: ruleLookupDelegate,
@@ -65,16 +54,13 @@ public class LLBTestBuildEngine {
         )
     }
 
-    public var group: LLBFuturesDispatchGroup { engineContext.group }
-    public var testDB: LLBTestCASDatabase { engineContext.testDB }
-
     /// Requests the evaluation of a build key, returning an abstract build value.
-    public func build(_ key: LLBBuildKey) -> LLBFuture<LLBBuildValue> {
-        return self.engine.build(key)
+    public func build(_ key: LLBBuildKey, _ ctx: Context) -> LLBFuture<LLBBuildValue> {
+        return self.engine.build(key, ctx)
     }
 
     /// Requests the evaluation of a build key and attempts to cast the resulting value to the specified type.
-    public func build<V: LLBBuildValue>(_ key: LLBBuildKey, as valueType: V.Type = V.self) -> LLBFuture<V> {
-        return self.engine.build(key)
+    public func build<V: LLBBuildValue>(_ key: LLBBuildKey, as valueType: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
+        return self.engine.build(key, ctx)
     }
 }

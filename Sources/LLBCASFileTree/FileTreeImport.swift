@@ -8,11 +8,12 @@
 
 import Foundation
 
+import llbuild2ZSTD
 import NIO
 import NIOConcurrencyHelpers
 import TSCBasic
 import TSCLibc
-import llbuild2ZSTD
+import TSCUtility
 
 import LLBCAS
 import LLBSupport
@@ -253,7 +254,7 @@ public extension LLBCASFileTree {
     //
     // - FIXME: Move this to use TSC's FileSystem. For that, we need to add a
     //          way to get the contents of a symbolic link.
-    static func `import`(path importPath: AbsolutePath, to db: LLBCASDatabase, options optionsTemplate: LLBCASFileTree.ImportOptions = .init(), stats providedStats: LLBCASFileTree.ImportProgressStats? = nil) -> LLBFuture<LLBDataID> {
+    static func `import`(path importPath: AbsolutePath, to db: LLBCASDatabase, options optionsTemplate: LLBCASFileTree.ImportOptions = .init(), stats providedStats: LLBCASFileTree.ImportProgressStats? = nil, _ ctx: Context) -> LLBFuture<LLBDataID> {
         let stats = providedStats ?? .init()
 
         // Adjust options
@@ -272,7 +273,7 @@ public extension LLBCASFileTree {
             stats.reset()
             return CASTreeImport(importPath: importPath, to: db,
                         options: options, stats: stats,
-                        netConcurrency: limit).run()
+                        netConcurrency: limit).run(ctx)
         }
     }
 
@@ -316,11 +317,11 @@ private final class CASTreeImport {
     let _db: LLBCASDatabase
     let finalResultPromise: LLBCancellablePromise<LLBDataID>
 
-    func dbContains(_ segm: SegmentDescriptor) -> LLBFuture<Bool> {
+    func dbContains(_ segm: SegmentDescriptor, _ ctx: Context) -> LLBFuture<Bool> {
         _ = stats.checksProgressObjects_.add(+1)
         _ = stats.checksProgressBytes_.add(segm.uncompressedSize)
         return segm.id.flatMap { id in
-            return self._db.contains(id).map { result in
+            return self._db.contains(id, ctx).map { result in
                 guard self.finalResultPromise.isCompleted == false else {
                     return false
                 }
@@ -334,10 +335,10 @@ private final class CASTreeImport {
         }
     }
 
-    func dbPut(refs: [LLBDataID], data: LLBByteBuffer, importSize: Int?) -> LLBFuture<LLBDataID> {
+    func dbPut(refs: [LLBDataID], data: LLBByteBuffer, importSize: Int?, _ ctx: Context) -> LLBFuture<LLBDataID> {
         _ = stats.uploadsProgressObjects_.add(+1)
         _ = stats.uploadsProgressBytes_.add(data.readableBytes)
-        return _db.put(refs: refs, data: data).map { result in
+        return _db.put(refs: refs, data: data, ctx).map { result in
             guard self.finalResultPromise.isCompleted == false else {
                 return result
             }
@@ -417,7 +418,7 @@ private final class CASTreeImport {
         return invokeUserFilter
     }
 
-    func run() -> LLBFuture<LLBDataID> {
+    func run(_ ctx: Context) -> LLBFuture<LLBDataID> {
         let loop = self.loop
         let importPath = self.importPath
         let stats = self.stats
@@ -453,7 +454,7 @@ private final class CASTreeImport {
             return pathInfos.joined().map { pathInfo -> LLBFuture<NextStep> in
                 self.execute(on: self.ssdQueue, default: .skipped) {
                     do {
-                        switch try self.makeNextStep(path: pathInfo.path, type: pathInfo.type) {
+                        switch try self.makeNextStep(path: pathInfo.path, type: pathInfo.type, ctx) {
                         case let .execute(in: .EstimatingSize, run):
                             return NextStep.wait(in: .EstimatingSize, futures: [run()])
                         case let step:
@@ -557,7 +558,7 @@ private final class CASTreeImport {
                         let (refs, dirData, aggregateSize) = try self.constructDirectoryContents(subpaths, wireFormat: self.options.wireFormat)
 
                         _ = stats.toImportBytes_.add(dirData.readableBytes)
-                        return self.dbPut(refs: refs, data: dirData, importSize: dirData.readableBytes).map { id in
+                        return self.dbPut(refs: refs, data: dirData, importSize: dirData.readableBytes, ctx).map { id in
                             _ = stats.uploadedMetadataBytes_.add(dirData.readableBytes)
                             var dirEntry = LLBDirectoryEntry()
                             dirEntry.name = path.pathString
@@ -718,7 +719,7 @@ private final class CASTreeImport {
     case partialFileChunk(LLBDataID)
     }
 
-    func describeAllSegments(of file: FileSegmenter) throws -> [SegmentDescriptor] {
+    func describeAllSegments(of file: FileSegmenter, _ ctx: Context) throws -> [SegmentDescriptor] {
         var descriptions: [SegmentDescriptor] = []
 
         for segmentNumber in (0...Int.max) {
@@ -754,7 +755,7 @@ private final class CASTreeImport {
                 segment = AnnotatedSegment(isCompressed: false, uncompressedSize: data.count, data: data)
             }
 
-            descriptions.append(.init(of: segment, id: _db.identify(refs: [], data: segment.data.toByteBuffer())))
+            descriptions.append(.init(of: segment, id: _db.identify(refs: [], data: segment.data.toByteBuffer(), ctx)))
             if isEOF {
                 break
             }
@@ -788,7 +789,7 @@ private final class CASTreeImport {
         return try rawData.compressed(allocator: options.compressBufferAllocator!)
     }
 
-    func makeNextStep(path: AbsolutePath, type pathObjectType: FilesystemObjectType) throws -> NextStep {
+    func makeNextStep(path: AbsolutePath, type pathObjectType: FilesystemObjectType, _ ctx: Context) throws -> NextStep {
         let loop = self.loop
         let stats = self.stats
 
@@ -818,7 +819,7 @@ private final class CASTreeImport {
             let target = LLBFastData(buf[..<count].map{ UInt8($0) })
             allSegmentsUncompressedDataSize = target.count
             importObject = .link(target: target)
-            segmentDescriptors = [SegmentDescriptor(isCompressed: false, uncompressedSize: target.count, id: _db.identify(refs: [], data: target.toByteBuffer()))]
+            segmentDescriptors = [SegmentDescriptor(isCompressed: false, uncompressedSize: target.count, id: _db.identify(refs: [], data: target.toByteBuffer(), ctx))]
         case .DIR:
             // If this is a directory, defer its processing.
             return .gotDirectory(path: path)
@@ -835,7 +836,7 @@ private final class CASTreeImport {
 
             type = (file.statInfo.st_mode & 0o111 == 0) ? .plainFile : .executable
             importObject = .file(file: file)
-            segmentDescriptors = try describeAllSegments(of: file)
+            segmentDescriptors = try describeAllSegments(of: file, ctx)
             allSegmentsUncompressedDataSize = segmentDescriptors.reduce(0) {
                 $0 + $1.uncompressedSize
             }
@@ -910,7 +911,7 @@ private final class CASTreeImport {
                 fileInfo.compression = segm.isCompressed ? .zstd : .none
                 fileInfo.fixedChunkSize = UInt64(segm.uncompressedSize)
                 do {
-                    return dbPut(refs: [blobId], data: try fileInfo.toBytes(), importSize: importSize).map { id in
+                    return dbPut(refs: [blobId], data: try fileInfo.toBytes(), importSize: importSize, ctx).map { id in
                         encodeNextStep(for: id)
                     }
                 } catch {
@@ -921,7 +922,7 @@ private final class CASTreeImport {
               let containsRequestWireSizeEstimate = 64
 
               let throttledContainsFuture = self.execute(on: self.netQueue, size: containsRequestWireSizeEstimate, default: .skipped) { () -> LLBFuture<NextStep> in
-                let containsFuture = self.dbContains(segm)
+                let containsFuture = self.dbContains(segm, ctx)
                 let containsLoop = containsFuture.eventLoop
                 return containsFuture.flatMap { exists -> LLBFuture<NextStep> in
 
@@ -950,7 +951,7 @@ private final class CASTreeImport {
                         // free to take our load. This ensures that we're not
                         // limited by CPU parallelism for network concurrency.
                         return self.executeWithBackpressure(on: self.netQueue, loop: containsLoop, size: slice.readableBytes, default: .skipped) { () -> LLBFuture<NextStep> in
-                            return self.dbPut(refs: [], data: slice, importSize: segm.uncompressedSize).flatMap { id -> LLBFuture<NextStep> in
+                            return self.dbPut(refs: [], data: slice, importSize: segm.uncompressedSize, ctx).flatMap { id -> LLBFuture<NextStep> in
                                 withExtendedLifetime(importObject) { // for mmap
                                     uploadFileInfo(blobId: id)
                                 }
@@ -1026,7 +1027,7 @@ private final class CASTreeImport {
                 do {
                     let fileInfoBytes = try fileInfo.toBytes()
                     return self.execute(on: self.netQueue, size: fileInfoBytes.readableBytes, default: .skipped) {
-                        self.dbPut(refs: chunkIds, data: fileInfoBytes, importSize: nil).map { id in
+                        self.dbPut(refs: chunkIds, data: fileInfoBytes, importSize: nil, ctx).map { id in
                             return .singleFile(SingleFileInfo(path: path, id: id, type: type, size: UInt64(clamping: allSegmentsUncompressedDataSize)))
                         }
                     }

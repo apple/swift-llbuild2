@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2ZSTD
+import TSCUtility
 
 import LLBCAS
 import LLBSupport
@@ -60,11 +61,11 @@ public struct LLBCASBlob {
     /// Split big binaries to chunks of this size
     static let maxChunkSize = 8 * 1024 * 1024
 
-    public static func parse(id: LLBDataID, in db: LLBCASDatabase) -> LLBFuture<LLBCASBlob> {
-        return db.get(id).flatMapThrowing { object in
+    public static func parse(id: LLBDataID, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASBlob> {
+        return db.get(id, ctx).flatMapThrowing { object in
             guard let object = object else { throw LLBCASBlobError.missingObject }
 
-            return try LLBCASBlob(db: db, id: id, object: object)
+            return try LLBCASBlob(db: db, id: id, object: object, ctx)
         }
     }
 
@@ -76,11 +77,11 @@ public struct LLBCASBlob {
         self.contents = contents
     }
 
-    public init(db: LLBCASDatabase, id: LLBDataID, object: LLBCASObject) throws {
-        self = try Self(db: db, id: id, type: .plainFile, object: object)
+    public init(db: LLBCASDatabase, id: LLBDataID, object: LLBCASObject, _ ctx: Context) throws {
+        self = try Self(db: db, id: id, type: .plainFile, object: object, ctx)
     }
 
-    internal init(db: LLBCASDatabase, id: LLBDataID, type advertisedType: LLBFileType, object: LLBCASObject) throws {
+    internal init(db: LLBCASDatabase, id: LLBDataID, type advertisedType: LLBFileType, object: LLBCASObject, _ ctx: Context) throws {
         self.db = db
 
         // Parse the object.
@@ -116,7 +117,7 @@ public struct LLBCASBlob {
                 throw LLBCASBlobError.unexpectedEncoding
             }
 
-            let future: LLBFuture<LLBByteBuffer> = db.get(ref).flatMapThrowing { object in
+            let future: LLBFuture<LLBByteBuffer> = db.get(ref, ctx).flatMapThrowing { object in
                 guard let object = object else {
                     throw LLBCASBlobError.missingObject
                 }
@@ -137,11 +138,11 @@ public struct LLBCASBlob {
     /// may require allocation of temporary buffers to provide a contiguous
     /// view, and it cannot accomodate that the underlying object may be loaded
     /// at separate points in time).
-    public func read() -> LLBFuture<LLBByteBufferView> {
-        read(range: 0..<size)
+    public func read(_ ctx: Context) -> LLBFuture<LLBByteBufferView> {
+        read(range: 0..<size, ctx)
     }
 
-    public func read(range: Range<Int>) -> LLBFuture<LLBByteBufferView> {
+    public func read(range: Range<Int>, _ ctx: Context) -> LLBFuture<LLBByteBufferView> {
         guard range.lowerBound >= 0, range.upperBound <= size else {
             return db.group.next().makeFailedFuture(LLBCASBlobError.badRange)
         }
@@ -161,7 +162,7 @@ public struct LLBCASBlob {
             if endChunk - startChunk == 1 {
                 let chunkStart = startChunk * chunkSize
                 return readFromOneChunk(id: chunks[startChunk],
-                    range: (range.lowerBound-chunkStart)..<(range.upperBound-chunkStart))
+                    range: (range.lowerBound-chunkStart)..<(range.upperBound-chunkStart), ctx)
             }
 
             // Otherwise, dispatch all the individual reads.
@@ -169,7 +170,7 @@ public struct LLBCASBlob {
                 let chunkStart = i * chunkSize
                 let offset = max(range.lowerBound, chunkStart) - chunkStart
                 let endOffset = min(range.upperBound - chunkStart, chunkSize)
-                return readFromOneChunk(id: chunks[i], range: offset ..< endOffset)
+                return readFromOneChunk(id: chunks[i], range: offset ..< endOffset, ctx)
             }
 
             // FIXME: This is rather inefficient; we could at least alloc a
@@ -185,8 +186,8 @@ public struct LLBCASBlob {
     }
 
     /// Read a range from a chunked object.
-    private func readFromOneChunk(id: LLBDataID, range: Range<Int>) -> LLBFuture<LLBByteBufferView> {
-        return db.get(id).flatMap { object in
+    private func readFromOneChunk(id: LLBDataID, range: Range<Int>, _ ctx: Context) -> LLBFuture<LLBByteBufferView> {
+        return db.get(id, ctx).flatMap { object in
             guard let object = object else {
                 return self.db.group.next().makeFailedFuture(LLBCASBlobError.missingObject)
             }
@@ -213,7 +214,7 @@ public struct LLBCASBlob {
                 return self.db.group.next().makeFailedFuture(LLBCASBlobError.unexpectedEncoding)
             }
 
-            return self.db.get(object.refs[0]).flatMapThrowing { object in
+            return self.db.get(object.refs[0], ctx).flatMapThrowing { object in
                 guard let object = object else {
                     throw LLBCASBlobError.missingObject
                 }
@@ -241,12 +242,12 @@ public struct LLBCASBlob {
     /// Represent a single file in a CASFSNode-compatible format.
     /// Since CASFSNode can't represent a single file yet, this will
     /// return a DataID of the file info object directly.
-    public static func `import`(data: LLBByteBuffer, isExecutable: Bool = false, in db: LLBCASDatabase) -> LLBFuture<LLBCASBlob> {
+    public static func `import`(data: LLBByteBuffer, isExecutable: Bool = false, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASBlob> {
 
         guard isExecutable || data.readableBytes > Self.maxChunkSize else {
             // If a plain file, just put the file directly.
             // FIXME: large files should be split.
-            return db.put(refs: [], data: data).map { id in
+            return db.put(refs: [], data: data, ctx).map { id in
                 LLBCASBlob(db: db, receivedId: .inner(id),
                     type: .plainFile,
                     size: data.readableBytes,
@@ -259,9 +260,9 @@ public struct LLBCASBlob {
         fileInfo.size = UInt64(data.readableBytes)
         fileInfo.compression = .none
         fileInfo.fixedChunkSize = UInt64(data.readableBytes) // TODO: Split
-        return db.put(refs: [], data: data).flatMap { blobId in
+        return db.put(refs: [], data: data, ctx).flatMap { blobId in
             do {
-                return db.put(refs: [blobId], data: try fileInfo.toBytes()).map { outerId in
+                return db.put(refs: [blobId], data: try fileInfo.toBytes(), ctx).map { outerId in
                     LLBCASBlob(db: db, receivedId: .outer(outerId),
                         type: fileInfo.type,
                         size: data.readableBytes,
@@ -286,7 +287,7 @@ public struct LLBCASBlob {
     /// Create an 'exportable' version of the blob, the one that reconstructs
     /// into the same bytes when imported.
     /// FIXME: This export should be available only through CASFSNode.
-    public func export() -> LLBFuture<LLBDataID> {
+    public func export(_ ctx: Context) -> LLBFuture<LLBDataID> {
         switch receivedId {
         case .outer(let id):
             return db.group.next().makeSucceededFuture(id)
@@ -301,7 +302,7 @@ public struct LLBCASBlob {
             fileInfo.compression = .none
             fileInfo.fixedChunkSize = UInt64(size) // TODO: Split
             do {
-                return db.put(refs: [id], data: try fileInfo.toBytes())
+                return db.put(refs: [id], data: try fileInfo.toBytes(), ctx)
             } catch {
                 return db.group.next().makeFailedFuture(error)
             }

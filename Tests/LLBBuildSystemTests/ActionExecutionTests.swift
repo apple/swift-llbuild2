@@ -18,11 +18,11 @@ enum ActionExecutionDummyError: Error, Equatable {
 }
 
 private class ActionExecutionDummyExecutor: LLBExecutor {
-    func execute(request: LLBActionExecutionRequest, _ engineContext: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
         let command = request.actionSpec.arguments[0]
         if command == "success" {
-            let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)))
-            let stderrFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("".utf8)))
+            let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)), ctx)
+            let stderrFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("".utf8)), ctx)
 
             return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
                 return LLBActionExecutionResponse.with {
@@ -34,8 +34,8 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
                 }
             }
         } else if command == "failure" {
-            let stdoutFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("".utf8)))
-            let stderrFuture = engineContext.db.put(data: LLBByteBuffer.withData(Data("Failure".utf8)))
+            let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("".utf8)), ctx)
+            let stderrFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Failure".utf8)), ctx)
 
             return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
                 return LLBActionExecutionResponse.with {
@@ -45,22 +45,22 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
                 }
             }
         } else if command == "schedule-error" {
-            return engineContext.group.next().makeFailedFuture(ActionExecutionDummyError.expectedError)
+            return ctx.group.next().makeFailedFuture(ActionExecutionDummyError.expectedError)
         }
 
-        return engineContext.group.next().makeFailedFuture(ActionExecutionDummyError.unsupportedCommand(command))
+        return ctx.group.next().makeFailedFuture(ActionExecutionDummyError.unsupportedCommand(command))
     }
 }
 
 class ActionExecutionTests: XCTestCase {
     private var testExecutor: LLBExecutor! = nil
-    private var testEngineContext: LLBTestBuildEngineContext! = nil
+    private var testCtx: Context! = nil
     private var testEngine: LLBTestBuildEngine! = nil
 
     override func setUp() {
         self.testExecutor = ActionExecutionDummyExecutor()
-        self.testEngineContext = LLBTestBuildEngineContext()
-        self.testEngine = LLBTestBuildEngine(engineContext: testEngineContext, executor: self.testExecutor)
+        self.testCtx = LLBMakeTestContext()
+        self.testEngine = LLBTestBuildEngine(group: testCtx.group, db: testCtx.db, executor: self.testExecutor)
     }
 
     override func tearDown() {
@@ -68,14 +68,11 @@ class ActionExecutionTests: XCTestCase {
         self.testEngine = nil
     }
 
-    private var testDB: LLBTestCASDatabase {
-        return testEngineContext.testDB
-    }
-
     func testActionExecution() throws {
+        let ctx = Context()
         let bytes = LLBByteBuffer.withString("Hello, world!")
 
-        let dataID = try testDB.put(data: bytes).wait()
+        let dataID = try testCtx.db.put(data: bytes, ctx).wait()
 
         let actionExecutionKey = LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
@@ -98,12 +95,13 @@ class ActionExecutionTests: XCTestCase {
             })
         }
 
-        let actionExecutionValue: LLBActionExecutionValue = try testEngine.build(actionExecutionKey).wait()
-        let stdout = try XCTUnwrap(testDB.get(actionExecutionValue.stdoutID).wait()?.data.asString())
+        let actionExecutionValue: LLBActionExecutionValue = try testEngine.build(actionExecutionKey, ctx).wait()
+        let stdout = try XCTUnwrap(testCtx.db.get(actionExecutionValue.stdoutID, ctx).wait()?.data.asString())
         XCTAssertEqual(stdout, "Success")
     }
 
     func testActionExecutionFailure() throws {
+        let ctx = Context()
         let actionExecutionKey = LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
                 $0.actionSpec = .with {
@@ -112,7 +110,7 @@ class ActionExecutionTests: XCTestCase {
             })
         }
 
-        XCTAssertThrowsError(try testEngine.build(actionExecutionKey).wait()) { error in
+        XCTAssertThrowsError(try testEngine.build(actionExecutionKey, ctx).wait()) { error in
             do {
                 let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 
@@ -121,10 +119,10 @@ class ActionExecutionTests: XCTestCase {
                     return
                 }
 
-                let stdout = try XCTUnwrap(testDB.get(stdoutID).wait()?.data.asString())
+                let stdout = try XCTUnwrap(testCtx.db.get(stdoutID, ctx).wait()?.data.asString())
                 XCTAssertEqual(stdout, "")
 
-                let stderr = try XCTUnwrap(testDB.get(stderrID).wait()?.data.asString())
+                let stderr = try XCTUnwrap(testCtx.db.get(stderrID, ctx).wait()?.data.asString())
                 XCTAssertEqual(stderr, "Failure")
             } catch {
                 XCTFail("Unexpected error: \(error)")
@@ -133,6 +131,7 @@ class ActionExecutionTests: XCTestCase {
     }
 
     func testActionExecutionExecutorError() throws {
+        let ctx = Context()
         let actionExecutionKey = LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(.with {
                 $0.actionSpec = .with {
@@ -141,7 +140,7 @@ class ActionExecutionTests: XCTestCase {
             })
         }
 
-        XCTAssertThrowsError(try testEngine.build(actionExecutionKey).wait()) { error in
+        XCTAssertThrowsError(try testEngine.build(actionExecutionKey, ctx).wait()) { error in
             do {
                 let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 

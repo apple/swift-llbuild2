@@ -37,8 +37,8 @@ enum ActionIDError: Error {
 }
 
 final class ActionIDFunction: LLBBuildFunction<ActionIDKey, LLBActionKey> {
-    override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBActionKey> {
-        return engineContext.db.get(actionIDKey.dataID).flatMapThrowing { object in
+    override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionKey> {
+        return ctx.db.get(actionIDKey.dataID, ctx).flatMapThrowing { object in
             guard let object = object else {
                 throw ActionIDError.notFound
             }

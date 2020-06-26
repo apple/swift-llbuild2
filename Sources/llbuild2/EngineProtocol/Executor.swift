@@ -10,7 +10,7 @@
 /// Protocol definition for an executor that can fullfil action execution requests.
 public protocol LLBExecutor {
     /// Requests the execution of an action, returning a future action response.
-    func execute(request: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse>
+    func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse>
 }
 
 
@@ -20,7 +20,7 @@ public class LLBNullExecutor: LLBExecutor {
     }
     public init() {}
 
-    public func execute(request: LLBActionExecutionRequest, _ ctx: LLBBuildEngineContext) -> LLBFuture<LLBActionExecutionResponse> {
+    public func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
         return ctx.group.next().makeFailedFuture(Error.actionExecutionUnsupported)
     }
 }

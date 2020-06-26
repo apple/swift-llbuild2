@@ -100,17 +100,17 @@ fileprivate enum NamedProviderMapType: Comparable {
 final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, LLBConfiguredTargetValue> {
     let configuredTargetDelegate: LLBConfiguredTargetDelegate?
 
-    init(engineContext: LLBBuildEngineContext, configuredTargetDelegate: LLBConfiguredTargetDelegate?) {
+    init(configuredTargetDelegate: LLBConfiguredTargetDelegate?) {
         self.configuredTargetDelegate = configuredTargetDelegate
-        super.init(engineContext: engineContext)
+        super.init()
     }
 
-    override func evaluate(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<LLBConfiguredTargetValue> {
+    override func evaluate(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBConfiguredTargetValue> {
         guard let delegate = configuredTargetDelegate else {
-            return fi.group.next().makeFailedFuture(LLBConfiguredTargetError.noDelegate)
+            return ctx.group.next().makeFailedFuture(LLBConfiguredTargetError.noDelegate)
         }
         do {
-            return try delegate.configuredTarget(for: key, fi).flatMap { configuredTarget in
+            return try delegate.configuredTarget(for: key, fi, ctx).flatMap { configuredTarget in
                 var namedProviderMapFutures = [LLBFuture<NamedProviderMapType>]()
                 
                 // Request all dependencies as declared by the configured target, so they can be added to the
@@ -125,7 +125,7 @@ final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, L
                             // If there was no configurationKey specified, use this targets configuration.
                             configurationKey: configurationKey ?? key.configurationKey
                         )
-                        namedProviderMapFuture = fi.requestDependency(dependencyKey).map { NamedProviderMapType.single(name, $0) }
+                        namedProviderMapFuture = fi.requestDependency(dependencyKey, ctx).map { NamedProviderMapType.single(name, $0) }
                     case let .list(labels, configurationKey):
                         let dependencyKeys = labels.map {
                             LLBConfiguredTargetKey(
@@ -135,13 +135,13 @@ final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, L
                                 configurationKey: configurationKey ?? key.configurationKey
                             )
                         }
-                        namedProviderMapFuture = fi.requestDependencies(dependencyKeys).map { NamedProviderMapType.list(name, $0) }
+                        namedProviderMapFuture = fi.requestDependencies(dependencyKeys, ctx).map { NamedProviderMapType.list(name, $0) }
                     }
                     
                     namedProviderMapFutures.append(namedProviderMapFuture)
                 }
                 
-                return LLBFuture.whenAllSucceed(namedProviderMapFutures, on: fi.group.next()).map { (configuredTarget, $0) }
+                return LLBFuture.whenAllSucceed(namedProviderMapFutures, on: ctx.group.next()).map { (configuredTarget, $0) }
             }.flatMapThrowing { (configuredTarget: LLBConfiguredTarget, namedProviderMaps: [NamedProviderMapType]) in
                 // Wrap the ConfiguredTarget into an LLBAnySerializable and store that.
                 let serializedConfiguredTarget = try LLBAnySerializable(from: configuredTarget)
@@ -168,7 +168,7 @@ final class ConfiguredTargetFunction: LLBBuildFunction<LLBConfiguredTargetKey, L
                 }
             }
         } catch {
-            return fi.group.next().makeFailedFuture(LLBConfiguredTargetError.delegateError(error))
+            return ctx.group.next().makeFailedFuture(LLBConfiguredTargetError.delegateError(error))
         }
     }
 }

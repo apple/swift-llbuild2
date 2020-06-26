@@ -41,8 +41,8 @@ extension Int: LLBBuildValue {}
 
 /// A build function that sums the numbers specified in the build key.
 class SumFunction: LLBBuildFunction<SumKey, Int> {
-    override func evaluate(key sumKey: SumKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<Int> {
-        return engineContext.group.next().makeSucceededFuture(sumKey.numbers.reduce(0, +))
+    override func evaluate(key sumKey: SumKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<Int> {
+        return ctx.group.next().makeSucceededFuture(sumKey.numbers.reduce(0, +))
     }
 }
 
@@ -50,9 +50,9 @@ class SumFunction: LLBBuildFunction<SumKey, Int> {
 class MathematicsFunctionMap: LLBBuildFunctionLookupDelegate {
     let functionMap: [LLBBuildKeyIdentifier: LLBFunction]
 
-    init(engineContext: LLBBuildEngineContext) {
+    init() {
         self.functionMap = [
-            SumKey.identifier: SumFunction(engineContext: engineContext)
+            SumKey.identifier: SumFunction()
         ]
     }
 
@@ -63,18 +63,19 @@ class MathematicsFunctionMap: LLBBuildFunctionLookupDelegate {
 
 class LLBBuildEngineTests: XCTestCase {
     func testFunctionResolutionFailure() throws {
-        let testEngine = LLBTestBuildEngine()
+        let ctx = LLBMakeTestContext()
+        let testEngine = LLBTestBuildEngine(group: ctx.group, db: ctx.db)
 
-        XCTAssertThrowsError(try testEngine.build(SumKey(numbers: [1, 2, 3])).wait()) { error in
+        XCTAssertThrowsError(try testEngine.build(SumKey(numbers: [1, 2, 3]), ctx).wait()) { error in
             XCTAssertEqual(error as? LLBBuildEngineError, LLBBuildEngineError.unknownBuildKeyIdentifier("SumKey"))
         }
     }
 
     func testSimpleMathBuild() throws {
-        let testEngineContext = LLBTestBuildEngineContext()
-        let testEngine = LLBTestBuildEngine(buildFunctionLookupDelegate: MathematicsFunctionMap(engineContext: testEngineContext))
+        let ctx = LLBMakeTestContext()
+        let testEngine = LLBTestBuildEngine(group: ctx.group, db: ctx.db, buildFunctionLookupDelegate: MathematicsFunctionMap())
 
-        let result = try XCTUnwrap(testEngine.build(SumKey(numbers: [1, 2, 3])).wait() as Int)
+        let result = try XCTUnwrap(testEngine.build(SumKey(numbers: [1, 2, 3]), ctx).wait() as Int)
 
         XCTAssertEqual(result, 6)
     }

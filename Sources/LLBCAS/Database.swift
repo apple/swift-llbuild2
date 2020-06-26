@@ -8,6 +8,8 @@
 
 import Foundation
 
+import TSCUtility
+
 import LLBSupport
 
 
@@ -47,14 +49,14 @@ public protocol LLBCASDatabase: class {
     func supportedFeatures() -> LLBFuture<LLBCASFeatures>
 
     /// Check if the database contains the given `id`.
-    func contains(_ id: LLBDataID) -> LLBFuture<Bool>
+    func contains(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<Bool>
 
     /// Get the object corresponding to the given `id`.
     ///
     /// - Parameters:
     ///   - id: The id of the object to look up
     /// - Returns: The object, or nil if not present in the database.
-    func get(_ id: LLBDataID) -> LLBFuture<LLBCASObject?>
+    func get(_ id: LLBDataID, _ ctx: Context) -> LLBFuture<LLBCASObject?>
 
     /// Calculate the DataID for the given CAS object.
     ///
@@ -71,7 +73,7 @@ public protocol LLBCASDatabase: class {
     ///    - refs: The list of objects references.
     ///    - data: The object contents.
     /// - Returns: The id representing the combination of contents and refs.
-    func identify(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
+    func identify(refs: [LLBDataID], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID>
 
     /// Store an object.
     ///
@@ -79,7 +81,7 @@ public protocol LLBCASDatabase: class {
     ///    - refs: The list of objects references.
     ///    - data: The object contents.
     /// - Returns: The id representing the combination of contents and refs.
-    func put(refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
+    func put(refs: [LLBDataID], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID>
 
     /// Store an object with a known id.
     ///
@@ -98,44 +100,63 @@ public protocol LLBCASDatabase: class {
     ///    - id: The id of the object, if known.
     ///    - refs: The list of object references.
     ///    - data: The object contents.
-    func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer) -> LLBFuture<LLBDataID>
+    func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID>
 }
 
 public extension LLBCASDatabase {
     @inlinable
-    func identify(_ object: LLBCASObject) -> LLBFuture<LLBDataID> {
-        return identify(refs: object.refs, data: object.data)
+    func identify(_ object: LLBCASObject, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return identify(refs: object.refs, data: object.data, ctx)
     }
 
     @inlinable
-    func put(_ object: LLBCASObject) -> LLBFuture<LLBDataID> {
-        return put(refs: object.refs, data: object.data)
+    func put(_ object: LLBCASObject, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return put(refs: object.refs, data: object.data, ctx)
     }
 
     @inlinable
-    func put(knownID id: LLBDataID, object: LLBCASObject) -> LLBFuture<LLBDataID> {
-        return put(knownID: id, refs: object.refs, data: object.data)
+    func put(knownID id: LLBDataID, object: LLBCASObject, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return put(knownID: id, refs: object.refs, data: object.data, ctx)
     }
 }
 
 public extension LLBCASDatabase {
     @inlinable
-    func identify(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
-        return identify(refs: refs, data: LLBByteBuffer(data))
+    func identify(refs: [LLBDataID], data: LLBByteBufferView, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return identify(refs: refs, data: LLBByteBuffer(data), ctx)
     }
 
     @inlinable
-    func put(refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
-        return put(refs: refs, data: LLBByteBuffer(data))
+    func put(refs: [LLBDataID], data: LLBByteBufferView, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return put(refs: refs, data: LLBByteBuffer(data), ctx)
     }
 
     @inlinable
-    func put(data: LLBByteBuffer) -> LLBFuture<LLBDataID> {
-        return self.put(refs: [], data: data)
+    func put(data: LLBByteBuffer, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return self.put(refs: [], data: data, ctx)
     }
 
     @inlinable
-    func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBufferView) -> LLBFuture<LLBDataID> {
-        return put(knownID: id, refs: refs, data: LLBByteBuffer(data))
+    func put(knownID id: LLBDataID, refs: [LLBDataID], data: LLBByteBufferView, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        return put(knownID: id, refs: refs, data: LLBByteBuffer(data), ctx)
+    }
+}
+
+/// Support storing and retrieving a CAS database from a context
+public extension Context {
+    static func with(_ db: LLBCASDatabase) -> Context {
+        return Context(dictionaryLiteral: (ObjectIdentifier(LLBCASDatabase.self), db as Any))
+    }
+
+    var db: LLBCASDatabase {
+        get {
+            guard let db = self[ObjectIdentifier(LLBCASDatabase.self)] else {
+                fatalError("no CAS database")
+            }
+            return db as! LLBCASDatabase
+        }
+        set {
+            self[ObjectIdentifier(LLBCASDatabase.self)] = newValue
+        }
     }
 }

@@ -16,7 +16,7 @@ class LocalExecutorTests: XCTestCase {
     func testBasicExecution() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
 
             let request = LLBActionExecutionRequest.with {
                 $0.actionSpec = .with {
@@ -31,8 +31,8 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            let response = try localExecutor.execute(request: request, testEngineContext).wait()
-            let contents = try LLBCASFSClient(testEngineContext.db).fileContents(for: response.outputs[0])
+            let response = try localExecutor.execute(request: request, ctx).wait()
+            let contents = try LLBCASFSClient(ctx.db).fileContents(for: response.outputs[0], ctx)
             XCTAssertEqual(contents, "black lives matter\n")
         }
     }
@@ -40,7 +40,7 @@ class LocalExecutorTests: XCTestCase {
     func testCommandNotFoundError() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
 
             let request = LLBActionExecutionRequest.with {
                 $0.actionSpec = .with {
@@ -48,7 +48,7 @@ class LocalExecutorTests: XCTestCase {
                 }
             }
 
-            XCTAssertThrowsError(try localExecutor.execute(request: request, testEngineContext).wait()) { error in
+            XCTAssertThrowsError(try localExecutor.execute(request: request, ctx).wait()) { error in
                 guard case let LLBLocalExecutorError.unexpected(underlyingError) = error else {
                     XCTFail("Unexpected error type")
                     return
@@ -62,7 +62,7 @@ class LocalExecutorTests: XCTestCase {
     func testActionFailure() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
 
             let request = LLBActionExecutionRequest.with {
                 $0.actionSpec = .with {
@@ -70,7 +70,7 @@ class LocalExecutorTests: XCTestCase {
                 }
             }
 
-            let result = try localExecutor.execute(request: request, testEngineContext).wait()
+            let result = try localExecutor.execute(request: request, ctx).wait()
             XCTAssertEqual(result.exitCode, 1)
             XCTAssert(result.outputs.isEmpty)
         }
@@ -79,7 +79,7 @@ class LocalExecutorTests: XCTestCase {
     func testMissingOutputFile() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
 
             let request = LLBActionExecutionRequest.with {
                 $0.actionSpec = .with {
@@ -93,7 +93,7 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            XCTAssertThrowsError(try localExecutor.execute(request: request, testEngineContext).wait()) { error in
+            XCTAssertThrowsError(try localExecutor.execute(request: request, ctx).wait()) { error in
                 guard case let LLBLocalExecutorError.unexpected(underlyingError) = error,
                       let fsError = underlyingError as? FileSystemError else {
                     XCTFail("Unexpected error type")
@@ -108,7 +108,7 @@ class LocalExecutorTests: XCTestCase {
     func testMissingOutputDirectory() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
 
             let request = LLBActionExecutionRequest.with {
                 $0.actionSpec = .with {
@@ -122,8 +122,8 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            let result = try localExecutor.execute(request: request, testEngineContext).wait()
-            try LLBCASFSClient(testEngineContext.testDB).load(result.outputs[0]).map { node in
+            let result = try localExecutor.execute(request: request, ctx).wait()
+            try LLBCASFSClient(ctx.db).load(result.outputs[0], ctx).map { node in
                 guard let tree = node.tree else {
                     XCTFail("expected output to be a tree")
                     return
@@ -137,10 +137,10 @@ class LocalExecutorTests: XCTestCase {
     func testExecutionWithInput() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
-            let testEngineContext = LLBTestBuildEngineContext()
+            let ctx = LLBMakeTestContext()
 
             let bytes = LLBByteBuffer.withString("I can't breathe")
-            let dataID = try testEngineContext.testDB.put(data: bytes).wait()
+            let dataID = try ctx.db.put(data: bytes, ctx).wait()
 
             let request = LLBActionExecutionRequest.with {
                 $0.actionSpec = .with {
@@ -161,8 +161,8 @@ class LocalExecutorTests: XCTestCase {
                 ]
             }
 
-            let response = try localExecutor.execute(request: request, testEngineContext).wait()
-            let contents = try LLBCASFSClient(testEngineContext.db).fileContents(for: response.outputs[0])
+            let response = try localExecutor.execute(request: request, ctx).wait()
+            let contents = try LLBCASFSClient(ctx.db).fileContents(for: response.outputs[0], ctx)
             XCTAssertEqual(contents, "I can't breathe")
         }
     }

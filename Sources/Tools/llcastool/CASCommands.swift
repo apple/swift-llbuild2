@@ -33,9 +33,10 @@ struct CASPut: ParsableCommand {
         stderrStream.flush()
 
         let group = LLBMakeDefaultDispatchGroup()
+        let ctx = Context()
         let toolOptions = self.options.toToolOptions()
         let tool = try LLBCASTool(group: group, toolOptions)
-        let dataID = try tool.casPut(file: path).wait()
+        let dataID = try tool.casPut(file: path, ctx).wait()
         print(dataID)
     }
 }
@@ -61,9 +62,10 @@ struct CASGet: ParsableCommand {
         }
 
         let group = LLBMakeDefaultDispatchGroup()
+        let ctx = Context()
         let toolOptions = self.options.toToolOptions()
         let tool = try LLBCASTool(group: group, toolOptions)
-        try tool.casGet(id: id, to: path).wait()
+        try tool.casGet(id: id, to: path, ctx).wait()
     }
 }
 

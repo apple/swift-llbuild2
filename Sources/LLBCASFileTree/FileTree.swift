@@ -10,6 +10,7 @@ import Dispatch
 import Foundation
 
 import TSCBasic
+import TSCUtility
 
 import LLBCAS
 import LLBSupport
@@ -101,7 +102,8 @@ public final class LLBCASFileTree {
     /// decode redundantly.
     public static func create(
         files inputFiles: [LLBDirectoryEntryID],
-        in db: LLBCASDatabase
+        in db: LLBCASDatabase,
+        _ ctx: Context
     ) -> LLBFuture<LLBCASFileTree> {
 
         var refs = [LLBDataID]()
@@ -128,7 +130,7 @@ public final class LLBCASFileTree {
             dirBytes.writeBytes(dirData)
 
             // Write the object.
-            return db.put(refs: refs, data: dirBytes).flatMapThrowing { id in
+            return db.put(refs: refs, data: dirBytes, ctx).flatMapThrowing { id in
                 // FIXME: This does a wasteful redecode of what we just wrote. This
                 // API should be fixed. One option would be to change this class so
                 // it can directly operate on the encoded representation.
@@ -141,8 +143,8 @@ public final class LLBCASFileTree {
     }
 
     /// Try load CASTree from DataID
-    public static func load(id: LLBDataID, from db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
-        return db.get(id).flatMapThrowing { object -> LLBCASFileTree in
+    public static func load(id: LLBDataID, from db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
+        return db.get(id, ctx).flatMapThrowing { object -> LLBCASFileTree in
             guard let object = object else {
                 throw LLBCASFileTreeError.missingObject(id)
             }
@@ -186,7 +188,7 @@ public final class LLBCASFileTree {
     /// - Parameters:
     ///   - tree: The tree to merge with.
     ///   - db: The database to create any new objects in.
-    public func merge(with tree: LLBCASFileTree, in db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
+    public func merge(with tree: LLBCASFileTree, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
         // Enumerate the LHS and RHS file lists simultaneously.
         var files: [LLBDirectoryEntryID] = []
         var futures: [LLBFuture<(index: Int, name: String, result: LLBCASFileTree)>] = []
@@ -219,20 +221,20 @@ public final class LLBCASFileTree {
 
                 // Wneed to merge recursively; we add a dummy entry to the
                 // array and record a future.
-                let aTree = db.get(a.1).flatMapThrowing { objectOpt -> LLBCASFileTree in
+                let aTree = db.get(a.1, ctx).flatMapThrowing { objectOpt -> LLBCASFileTree in
                     guard let object = objectOpt else {
                         throw LLBCASFileTreeError.missingObject(a.1)
                     }
                     return try LLBCASFileTree(id: a.1, object: object)
                 }
-                let bTree = db.get(b.1).flatMapThrowing { objectOpt -> LLBCASFileTree in
+                let bTree = db.get(b.1, ctx).flatMapThrowing { objectOpt -> LLBCASFileTree in
                     guard let object = objectOpt else {
                         throw LLBCASFileTreeError.missingObject(b.1)
                     }
                     return try LLBCASFileTree(id: b.1, object: object)
                 }
                 let merged = aTree.and(bTree).flatMap { pair in
-                    return pair.0.merge(with: pair.1, in: db)
+                    return pair.0.merge(with: pair.1, in: db, ctx)
                 }
 
                 assert(a.0.name == b.0.name)
@@ -249,7 +251,7 @@ public final class LLBCASFileTree {
             for (idx, name, result) in mergedEntries {
                 files[idx] = .init(info: LLBDirectoryEntry(name: name, type: .directory, size: result.aggregateSize), id: result.id)
             }
-            return LLBCASFileTree.create(files: files, in: db)
+            return LLBCASFileTree.create(files: files, in: db, ctx)
         }
     }
 
@@ -264,7 +266,7 @@ public final class LLBCASFileTree {
     /// - Parameters:
     ///   - trees: The trees to merge.
     ///   - db: The database to create any new objects in.
-    public static func merge(trees: [LLBCASFileTree], in db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
+    public static func merge(trees: [LLBCASFileTree], in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
         // Handle degenerate cases.
         guard !trees.isEmpty else {
             return db.group.next().makeFailedFuture(LLBCASFileTreeError.cannotMergeEmptyList)
@@ -277,10 +279,10 @@ public final class LLBCASFileTree {
         // the core algorithm can walk from the beginning of each "row", while
         // preserving the semantics of the later trees in the list overriding
         // content from earlier ones (in keeping with the published semantics).
-        return _merge(reversedTrees: trees.reversed(), in: db)
+        return _merge(reversedTrees: trees.reversed(), in: db, ctx)
     }
 
-    private static func _merge(reversedTrees: [LLBCASFileTree], in db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
+    private static func _merge(reversedTrees: [LLBCASFileTree], in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
         assert(reversedTrees.count > 1)
 
         // Enumerate all trees simultaneously, collecting the merge entries and
@@ -325,13 +327,13 @@ public final class LLBCASFileTree {
 
             // Load the trees and dispatch the merge.
             let treesToMerge: [LLBFuture<LLBCASFileTree>] = uniqueDirOnlyChildren.map { item in
-                return db.get(item.1).flatMapThrowing {
+                return db.get(item.1, ctx).flatMapThrowing {
                     guard let object = $0 else { throw LLBCASFileTreeError.missingObject(item.1) }
                     return try LLBCASFileTree(id: item.1, object: object)
                 }
             }
             let merged = LLBFuture.whenAllSucceed(treesToMerge, on: db.group.next()).flatMap {
-                return _merge(reversedTrees: $0, in: db)
+                return _merge(reversedTrees: $0, in: db, ctx)
             }
 
             // Add a dummy entry to the array and record the merge future.
@@ -345,7 +347,7 @@ public final class LLBCASFileTree {
             for (idx, name, result) in mergedEntries {
                 files[idx] = .init(info: LLBDirectoryEntry(name: name, type: .directory, size: result.aggregateSize), id: result.id)
             }
-            return LLBCASFileTree.create(files: files, in: db)
+            return LLBCASFileTree.create(files: files, in: db, ctx)
         }
     }
 
@@ -354,7 +356,7 @@ public final class LLBCASFileTree {
     /// - Returns: The entry at the given path, if it exists. If any of the
     ///   intermediate path components do not refer to a directory, a nil result
     ///   is returned.
-    public func lookup(path: AbsolutePath, in db: LLBCASDatabase) -> LLBFuture<(id: LLBDataID, info: LLBDirectoryEntry)?> {
+    public func lookup(path: AbsolutePath, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<(id: LLBDataID, info: LLBDirectoryEntry)?> {
         // Resolve the parent tree.
         var tree: LLBFuture<LLBCASFileTree?> = db.group.next().makeSucceededFuture(self)
         for component in path.parentDirectory.components.dropFirst() {
@@ -364,7 +366,7 @@ public final class LLBCASFileTree {
                       result.info.type == .directory else {
                     return db.group.next().makeSucceededFuture(nil)
                 }
-                return db.get(result.id).flatMapThrowing { objectOpt in
+                return db.get(result.id, ctx).flatMapThrowing { objectOpt in
                     guard let object = objectOpt else {
                         return nil
                     }
@@ -397,7 +399,7 @@ public final class LLBCASFileTree {
     ///     created, if it does not exist. Any existing non-directory traversed
     ///     by `path` will be replaced with a directory, if necessary.
     public func merge(
-        with tree: LLBCASFileTree, in db: LLBCASDatabase, at path: AbsolutePath
+        with tree: LLBCASFileTree, in db: LLBCASDatabase, at path: AbsolutePath, _ ctx: Context
     ) -> LLBFuture<LLBCASFileTree> {
         // Create a new tree with `tree` nested at `path`, then merge.
         var rerootedTree: LLBFuture<LLBCASFileTree> = db.group.next().makeSucceededFuture(tree)
@@ -405,25 +407,25 @@ public final class LLBCASFileTree {
             rerootedTree = rerootedTree.flatMap { tree in
                 return LLBCASFileTree.create(files: [
                     .init(info: LLBDirectoryEntry(name: component, type: .directory, size: tree.aggregateSize),
-                          id: tree.id)], in: db)
+                          id: tree.id)], in: db, ctx)
             }
         }
 
         return rerootedTree.flatMap { tree in
-            self.merge(with: tree, in: db)
+            self.merge(with: tree, in: db, ctx)
         }
     }
 
-    public func remove(path: AbsolutePath, in db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
-        return remove(components: path.components.dropFirst(), in: db)
+    public func remove(path: AbsolutePath, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
+        return remove(components: path.components.dropFirst(), in: db, ctx)
     }
 
-    public func remove(components: ArraySlice<String>, in db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
+    public func remove(components: ArraySlice<String>, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
         guard !components.isEmpty else {
-            return LLBCASFileTree.create(files: [], in: db)
+            return LLBCASFileTree.create(files: [], in: db, ctx)
         }
         guard components.count > 1 else {
-            return remove(component: components.first!, in: db)
+            return remove(component: components.first!, in: db, ctx)
         }
         let indexOpt = lookupIndex(components.first!)
         guard let index = indexOpt else {
@@ -431,7 +433,7 @@ public final class LLBCASFileTree {
         }
         // Go deeper and recreate this tree
         let subId = object.refs[index]
-        return db.get(subId).flatMap { objectOpt in
+        return db.get(subId, ctx).flatMap { objectOpt in
             let subtree: LLBCASFileTree
             do {
                 guard let object = objectOpt else {
@@ -441,18 +443,18 @@ public final class LLBCASFileTree {
             } catch {
                 return db.group.next().makeFailedFuture(LLBCASFileTreeError.notDirectory)
             }
-            return subtree.remove(components: components.dropFirst(), in: db).flatMap { newSubtree in
+            return subtree.remove(components: components.dropFirst(), in: db, ctx).flatMap { newSubtree in
                 var newFiles = self.files
                 var newRefs = self.object.refs
                 newFiles[index].size = .init(clamping: newSubtree.aggregateSize)
                 newRefs[index] = newSubtree.id
-                return LLBCASFileTree.create(files: Array(zip(newFiles, newRefs)).map { .init(info: $0.0, id: $0.1) }, in: db)
+                return LLBCASFileTree.create(files: Array(zip(newFiles, newRefs)).map { .init(info: $0.0, id: $0.1) }, in: db, ctx)
             }
         }
     }
 
     // Removes component from the current tree
-    public func remove(component: String, in db: LLBCASDatabase) -> LLBFuture<LLBCASFileTree> {
+    public func remove(component: String, in db: LLBCASDatabase, _ ctx: Context) -> LLBFuture<LLBCASFileTree> {
         let indexOpt = lookupIndex(component)
         guard let index = indexOpt else {
             // No modifications
@@ -463,7 +465,7 @@ public final class LLBCASFileTree {
         var newRefs = object.refs
         newFiles.remove(at: index)
         newRefs.remove(at: index)
-        return LLBCASFileTree.create(files: Array(zip(newFiles, newRefs)).map { .init(info: $0.0, id: $0.1) }, in: db)
+        return LLBCASFileTree.create(files: Array(zip(newFiles, newRefs)).map { .init(info: $0.0, id: $0.1) }, in: db, ctx)
     }
 
     public func asDirectoryEntry(filename: String) -> LLBDirectoryEntryID {
