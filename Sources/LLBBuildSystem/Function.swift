@@ -49,7 +49,7 @@ public final class LLBBuildFunctionInterface {
     }
 
     /// Requests the value for a build key.
-    func request<K: LLBBuildKey, V: LLBBuildValue>(_ key: K, as valueType: V.Type = V.self) -> LLBFuture<V> {
+    public func request<K: LLBBuildKey, V: LLBBuildValue>(_ key: K, as valueType: V.Type = V.self) -> LLBFuture<V> {
         return self.fi.request(key).map { $0 as! V }
     }
 
