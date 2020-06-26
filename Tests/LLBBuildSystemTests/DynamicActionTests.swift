@@ -149,7 +149,7 @@ class DynamicActionTests: XCTestCase {
 
             let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
-            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
+            let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
             XCTAssertEqual(artifactContents, "black lives matter")
         }
     }

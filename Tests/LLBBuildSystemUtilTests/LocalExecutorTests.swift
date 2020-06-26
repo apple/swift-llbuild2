@@ -32,7 +32,7 @@ class LocalExecutorTests: XCTestCase {
             }
 
             let response = try localExecutor.execute(request: request, testEngineContext).wait()
-            let contents = try XCTUnwrap(testEngineContext.testDB.get(response.outputs[0]).wait()?.data.asString())
+            let contents = try LLBCASFSClient(testEngineContext.db).fileContents(for: response.outputs[0])
             XCTAssertEqual(contents, "black lives matter\n")
         }
     }
@@ -162,7 +162,7 @@ class LocalExecutorTests: XCTestCase {
             }
 
             let response = try localExecutor.execute(request: request, testEngineContext).wait()
-            let contents = try XCTUnwrap(testEngineContext.testDB.get(response.outputs[0]).wait()?.data.asString())
+            let contents = try LLBCASFSClient(testEngineContext.db).fileContents(for: response.outputs[0])
             XCTAssertEqual(contents, "I can't breathe")
         }
     }

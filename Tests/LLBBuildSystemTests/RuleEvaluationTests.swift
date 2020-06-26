@@ -203,7 +203,7 @@ class RuleEvaluationTests: XCTestCase {
 
             let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
-            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
+            let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
             XCTAssertEqual(artifactContents, "black lives matter\n")
         }
     }
@@ -233,7 +233,7 @@ class RuleEvaluationTests: XCTestCase {
             for (index, artifact) in try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts.enumerated() {
                 let artifactValue: LLBArtifactValue = try testEngine.build(artifact).wait()
 
-                let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
+                let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
 
                 switch index {
                 case 0:
@@ -337,7 +337,7 @@ class RuleEvaluationTests: XCTestCase {
 
             let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact).wait()
 
-            let artifactContents = try XCTUnwrap(testEngine.testDB.get(artifactValue.dataID).wait()?.data.asString())
+            let artifactContents = try LLBCASFSClient(testEngine.testDB).fileContents(for: artifactValue.dataID)
             XCTAssertEqual(artifactContents, "black lives matter\nI cant breathe\n")
         }
     }
