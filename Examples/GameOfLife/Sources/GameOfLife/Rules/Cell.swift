@@ -52,7 +52,7 @@ struct CellTarget: LLBConfiguredTarget, Codable {
     }
 
     /// Constructor for a CellTarget from the configuration key.
-    static func with(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<CellTarget> {
+    static func with(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) throws -> LLBFuture<CellTarget> {
         // CellTarget labels are defined as //cell/<generation>:<x>-<y>.
         let label = key.label
         let generation = Int(label.logicalPathComponents[1])!
@@ -63,7 +63,7 @@ struct CellTarget: LLBConfiguredTarget, Codable {
         // about definining what to build, not how. While we could in theory just read the initial state from the
         // configuration in the configuration key, just for generation 0, that's really the job of the rule evaluation.
         if generation == 0 {
-            return fi.group.next().makeSucceededFuture(
+            return ctx.group.next().makeSucceededFuture(
                 CellTarget(position: position, generation: generation, previousState: nil, neighbours: [])
             )
         }
@@ -89,7 +89,7 @@ struct CellTarget: LLBConfiguredTarget, Codable {
         // Request the dependency for the same point at the previous generation.
         let previousStateLabel = try LLBLabel("//cell/\(generation - 1):\(position.x)-\(position.y)")
         
-        return fi.group.next().makeSucceededFuture(
+        return ctx.group.next().makeSucceededFuture(
             CellTarget(
                 position: position,
                 generation: generation,

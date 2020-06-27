@@ -15,14 +15,14 @@ import llbuild2
 class GameOfLifeEnvironment: ObservableObject {
     let engine: LLBBuildEngine
 
-    let db: LLBCASDatabase
+    let ctx: Context
 
     /// Storage of the initial board to use when constructing the GenerationKey for each generation.
     var initialBoard: InitialBoard? = nil
 
-    init(engine: LLBBuildEngine, db: LLBCASDatabase) {
+    init(engine: LLBBuildEngine, _ ctx: Context) {
         self.engine = engine
-        self.db = db
+        self.ctx = ctx
     }
 }
 
@@ -122,7 +122,7 @@ struct GameOfLifeView: View {
         )
 
         self.loading = true
-        DispatchQueue.global(qos: .userInteractive).async {
+        DispatchQueue.global(qos: .userInteractive).async { [self] in
             defer {
                 DispatchQueue.main.async {
                     self.loading = false
@@ -133,10 +133,10 @@ struct GameOfLifeView: View {
             let elapsedS: Double
             do {
                 let start = DispatchTime.now()
-                generationValue = try self.environment.engine.build(generationKey).flatMap { (value: GenerationValue) in
+                generationValue = try environment.engine.build(generationKey, environment.ctx).flatMap { (value: GenerationValue) in
                     // Read the output data from the CAS.
-                    return LLBCASFSClient(self.environment.db).load(value.boardID).flatMap { node in
-                        return node.blob!.read().map { Data($0) }
+                    return LLBCASFSClient(environment.ctx.db).load(value.boardID, environment.ctx).flatMap { node in
+                        return node.blob!.read(environment.ctx).map { Data($0) }
                     }
                 }.map { (data: Data) in
                     // Process the data as a 0s and 1s matrix where 1s signal alive cells, so add them to the
@@ -157,6 +157,7 @@ struct GameOfLifeView: View {
                 elapsedS = Double(finish.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000_000
 
                 DispatchQueue.main.async {
+                    print(environment.ctx)
                     self.boardState = generationValue
                     self.updateTime = elapsedS
                 }

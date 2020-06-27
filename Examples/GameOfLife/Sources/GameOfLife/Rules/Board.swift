@@ -27,7 +27,7 @@ struct BoardTarget: LLBConfiguredTarget, Codable {
     }
 
     /// Constructor for a BoardTarget from the ConfigurationTargetKey.
-    static func with(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface) throws -> LLBFuture<BoardTarget> {
+    static func with(key: LLBConfiguredTargetKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) throws -> LLBFuture<BoardTarget> {
         // Board labels are defined as //board:<generation>, since that's all that needed to reference a board at a
         // specific generation (i.e. the target).
         let label = key.label
@@ -49,7 +49,7 @@ struct BoardTarget: LLBConfiguredTarget, Codable {
             }
         }
         
-        return fi.group.next().makeSucceededFuture(BoardTarget(dependencies: dependencies))
+        return ctx.group.next().makeSucceededFuture(BoardTarget(dependencies: dependencies))
     }
 }
 

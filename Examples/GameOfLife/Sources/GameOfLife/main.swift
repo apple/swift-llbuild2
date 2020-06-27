@@ -18,18 +18,24 @@ import TSCBasic
 let gameOfLifeDirectory = AbsolutePath("/tmp/game_of_life")
 try localFileSystem.createDirectory(gameOfLifeDirectory, recursive: true)
 
-// Create the build engine's dependencies.
-let group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
-let db = LLBFileBackedCASDatabase(group: group, path: gameOfLifeDirectory.appending(component: "cas"))
-let executor = LLBLocalExecutor(outputBase: gameOfLifeDirectory.appending(component: "executor_output"))
-let functionCache = LLBFileBackedFunctionCache(group: group, path: gameOfLifeDirectory.appending(component: "function_cache"))
+var ctx = Context()
+ctx.group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
+ctx.db = LLBFileBackedCASDatabase(group: ctx.group, path: gameOfLifeDirectory.appending(component: "cas"))
+class caca {
+    init() {}
+}
+ctx[ObjectIdentifier(caca.self)] = caca()
 
-let engineContext = LLBBasicBuildEngineContext(group: group, db: db, executor: executor)
-let buildSystemDelegate = GameOfLifeBuildSystemDelegate(engineContext: engineContext)
+// Create the build engine's dependencies.
+let executor = LLBLocalExecutor(outputBase: gameOfLifeDirectory.appending(component: "executor_output"))
+let functionCache = LLBFileBackedFunctionCache(group: ctx.group, path: gameOfLifeDirectory.appending(component: "function_cache"))
+
+let buildSystemDelegate = GameOfLifeBuildSystemDelegate()
 
 // Construct the build engine instance and
 let engine = LLBBuildEngine(
-    engineContext: engineContext,
+    group: ctx.group,
+    db: ctx.db,
     buildFunctionLookupDelegate: buildSystemDelegate,
     configuredTargetDelegate: buildSystemDelegate,
     ruleLookupDelegate: buildSystemDelegate,
@@ -39,7 +45,7 @@ let engine = LLBBuildEngine(
 )
 
 // Construct the SwiftUI environment object to access the build engine and database.
-let environment = GameOfLifeEnvironment(engine: engine, db: db)
+let environment = GameOfLifeEnvironment(engine: engine, ctx)
 
 // Run the UI.
 SwiftUIApplication(GameOfLifeView(), observable: environment).run()

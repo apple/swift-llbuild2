@@ -30,29 +30,26 @@ class GameOfLifeBuildSystemDelegate {
     /// Functions are used to access the raw llbuild2 engine capabilities for
     /// implementing generic functional computations that are not necesarily
     /// artifact related.
-    let functions: [LLBBuildKeyIdentifier: LLBFunction]
-
-    init(engineContext: LLBBuildEngineContext) {
-        self.functions = [
-            GameOfLifeConfigurationKey.identifier: GameOfLifeConfigurationFunction(engineContext: engineContext),
-            GenerationKey.identifier: GenerationFunction(engineContext: engineContext),
-        ]
-    }
+    let functions: [LLBBuildKeyIdentifier: LLBFunction] = [
+        GameOfLifeConfigurationKey.identifier: GameOfLifeConfigurationFunction(),
+        GenerationKey.identifier: GenerationFunction(),
+    ]
 }
 
 extension GameOfLifeBuildSystemDelegate: LLBConfiguredTargetDelegate {
     func configuredTarget(
         for key: LLBConfiguredTargetKey,
-        _ fi: LLBBuildFunctionInterface
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
     ) throws -> LLBFuture<LLBConfiguredTarget> {
         let label = key.label
 
         if label.logicalPathComponents[0] == "cell" {
             // Cell targets are identified using the `//cell/<generation>:<x>-<y>` scheme.
-            return try CellTarget.with(key: key, fi).map { $0 }
+            return try CellTarget.with(key: key, fi, ctx).map { $0 }
         } else if label.logicalPathComponents[0] == "board" {
             // Board targets are identified using the `//board:<generation>` scheme.
-            return try BoardTarget.with(key: key, fi).map { $0 }
+            return try BoardTarget.with(key: key, fi, ctx).map { $0 }
         }
 
         // Only cell and board targets are supported.

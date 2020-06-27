@@ -35,7 +35,7 @@ struct GenerationValue: LLBBuildValue, Codable {
 }
 
 class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
-    override func evaluate(key: GenerationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<GenerationValue> {
+    override func evaluate(key: GenerationKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<GenerationValue> {
         do {
             // Construct the GameOfLife configuration key with the initial board and board size.
             let configurationKey = try LLBConfigurationKey(
@@ -51,20 +51,20 @@ class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
 
             // Request the evaluation of the board target and retrieve the
             // BoardProvider's board artifact.
-            return fi.requestDependency(configuredTargetKey).flatMap { providerMap in
+            return fi.requestDependency(configuredTargetKey, ctx).flatMap { providerMap in
                 do {
                     let artifact = try providerMap.get(BoardProvider.self).board
                     // Request the board artifact to evaluate and trigger action execution.
-                    return fi.requestArtifact(artifact)
+                    return fi.requestArtifact(artifact, ctx)
                 } catch {
-                    return fi.group.next().makeFailedFuture(error)
+                    return ctx.group.next().makeFailedFuture(error)
                 }
             }.map { (artifactValue: LLBArtifactValue) in
                 // With the data ID for the artifact, return the GenerationValue.
                 return GenerationValue(boardID: artifactValue.dataID)
             }
         } catch {
-            return fi.group.next().makeFailedFuture(error)
+            return ctx.group.next().makeFailedFuture(error)
         }
     }
 }

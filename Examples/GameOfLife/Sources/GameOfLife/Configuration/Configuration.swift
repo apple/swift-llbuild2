@@ -56,7 +56,7 @@ struct GameOfLifeConfigurationFragment: LLBConfigurationFragment, Codable {
 /// The configuration key to configuration fragment function. Since the key has
 /// mostly static data, the function just copies the results into the fragment.
 class GameOfLifeConfigurationFunction: LLBBuildFunction<GameOfLifeConfigurationKey, GameOfLifeConfigurationFragment> {
-    override func evaluate(key: GameOfLifeConfigurationKey, _ fi: LLBBuildFunctionInterface) -> LLBFuture<GameOfLifeConfigurationFragment> {
-        return fi.group.next().makeSucceededFuture(.fromKey(key))
+    override func evaluate(key: GameOfLifeConfigurationKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<GameOfLifeConfigurationFragment> {
+        return ctx.group.next().makeSucceededFuture(.fromKey(key))
     }
 }
