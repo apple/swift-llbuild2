@@ -15,7 +15,7 @@ public typealias LLBPreAction = (arguments: [String], environment: [String: Stri
 public enum LLBRuleContextError: Error {
     case outputAlreadyRegistered
     case writeError
-    case invalidRedeclarationOfArtifact
+    case invalidRedeclarationOfArtifact(existing: LLBArtifact, new: LLBArtifactType)
     case missingDependencyName
     case dependencyTypeMismatch
 }
@@ -149,8 +149,8 @@ public class LLBRuleContext {
     private func declareArtifact(_ path: String, type: LLBArtifactType) throws -> LLBArtifact {
         return try queue.sync {
             if let artifact = declaredArtifacts[path] {
-                guard case .directory = artifact.type else {
-                    throw LLBRuleContextError.invalidRedeclarationOfArtifact
+                guard artifact.type == type else {
+                    throw LLBRuleContextError.invalidRedeclarationOfArtifact(existing: artifact, new: type)
                 }
                 return artifact
             }
