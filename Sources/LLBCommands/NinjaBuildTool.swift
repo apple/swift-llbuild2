@@ -17,7 +17,7 @@ public struct NinjaBuildTool: ParsableCommand {
         abstract: "NinjaBuild tool")
 
     @Flag(help: "Print verbose output")
-    var verbose: Bool
+    var verbose: Bool = false
 
     @Option(help: "Path to the Ninja manifest file")
     var manifest: String

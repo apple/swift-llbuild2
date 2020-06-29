@@ -6,7 +6,6 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import llbuild2ZSTD
 import TSCUtility
 
 import LLBCAS
@@ -208,33 +207,18 @@ public struct LLBCASBlob {
                 return self.db.group.next().makeFailedFuture(error)
             }
             guard info.type == .plainFile || info.type == .executable,
-                  case .fixedChunkSize(let overestimatedSize) = info.payload,
+                  case .fixedChunkSize(_) = info.payload,
                   object.refs.count == 1,
                   info.compression != .none else {
                 return self.db.group.next().makeFailedFuture(LLBCASBlobError.unexpectedEncoding)
             }
 
             return self.db.get(object.refs[0], ctx).flatMapThrowing { object in
-                guard let object = object else {
+                guard let _ = object else {
                     throw LLBCASBlobError.missingObject
                 }
 
-                let zstd = ZSTDStream()
-                try zstd.startDecompression()
-                let allocator = LLBByteBufferAllocator()
-                var decompressed = allocator.buffer(capacity: max(3 * (1 + object.data.readableBytes), Int(clamping: overestimatedSize)))
-                var isDone = false
-                try object.data.withUnsafeReadableBytes { ptr in
-                    _ = try zstd.decompress(input: ptr, into: &decompressed, isDone: &isDone)
-                }
-                guard isDone else {
-                    throw LLBCASBlobError.uncompressFailed
-                }
-
-                // FIXME: This needs to be optimized; we should instead write
-                // directly into the result buffer.
-                let view = LLBByteBufferView(decompressed)
-                return view[range.relative(to: view)]
+                throw LLBCASBlobError.uncompressFailed
             }
         }
     }

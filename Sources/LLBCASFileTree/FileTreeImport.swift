@@ -8,7 +8,6 @@
 
 import Foundation
 
-import llbuild2ZSTD
 import NIO
 import NIOConcurrencyHelpers
 import TSCBasic
@@ -34,6 +33,7 @@ public extension LLBCASFileTree {
         case unreadableLink(AbsolutePath)
         case unreadableFile(AbsolutePath)
         case modifiedFile(AbsolutePath, reason: String)
+        case compressionFailed(String)
     }
 
     enum ImportPhase: Int, Comparable {
@@ -749,6 +749,7 @@ private final class CASTreeImport {
 
             let segment: AnnotatedSegment
             if useCompression, let compressedSegment = try? data.compressed(allocator: options.compressBufferAllocator!) {
+
                 segment = AnnotatedSegment(isCompressed: true, uncompressedSize: data.count, data: compressedSegment)
             } else {
                 useCompression = false
@@ -908,7 +909,10 @@ private final class CASTreeImport {
                     fileInfo.type = .plainFile
                 }
                 fileInfo.size = UInt64(segm.uncompressedSize)
-                fileInfo.compression = segm.isCompressed ? .zstd : .none
+                // FIXME: no compression supported right now
+                // fileInfo.compression = segm.isCompressed ? ... : .none
+                assert(!segm.isCompressed)
+                fileInfo.compression = .none
                 fileInfo.fixedChunkSize = UInt64(segm.uncompressedSize)
                 do {
                     return dbPut(refs: [blobId], data: try fileInfo.toBytes(), importSize: importSize, ctx).map { id in
@@ -1158,22 +1162,7 @@ private final class CASTreeImport {
 
 extension LLBFastData {
     func compressed(allocator: LLBByteBufferAllocator) throws -> LLBFastData {
-        let priorSize = count
-
-        // Tolerate up to 1% overhead of non-compressible data.
-        // If the overhead is larger, we'll assert in a debug mode.
-        // This should prompt to reconsider the overhead value.
-        let overhead = priorSize / 100 + 20
-        var compressed = allocator.buffer(capacity: priorSize + overhead)
-
-        let zstd = ZSTDStream()
-        try zstd.startCompression(compressionLevel: 2)
-        _ = try withContiguousStorage { ptr in
-            try zstd.compress(input: UnsafeRawBufferPointer(ptr), andFinalize: true, into: &compressed)
-        }
-
-        assert(compressed.readableBytes <= priorSize + overhead, "Resize of the initial capacity estimate had just happened \(priorSize)+\(overhead)=\(priorSize+overhead) => \(compressed.readableBytes)")
-        return LLBFastData(compressed)
+        throw LLBCASFileTree.ImportError.compressionFailed("unsupported")
     }
 }
 

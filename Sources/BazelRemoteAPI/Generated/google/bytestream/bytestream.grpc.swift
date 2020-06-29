@@ -57,11 +57,17 @@ public final class Google_Bytestream_ByteStreamClient: GRPCClient, Google_Bytest
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func read(_ request: Google_Bytestream_ReadRequest, callOptions: CallOptions? = nil, handler: @escaping (Google_Bytestream_ReadResponse) -> Void) -> ServerStreamingCall<Google_Bytestream_ReadRequest, Google_Bytestream_ReadResponse> {
-    return self.makeServerStreamingCall(path: "/google.bytestream.ByteStream/Read",
-                                        request: request,
-                                        callOptions: callOptions ?? self.defaultCallOptions,
-                                        handler: handler)
+  public func read(
+    _ request: Google_Bytestream_ReadRequest,
+    callOptions: CallOptions? = nil,
+    handler: @escaping (Google_Bytestream_ReadResponse) -> Void
+  ) -> ServerStreamingCall<Google_Bytestream_ReadRequest, Google_Bytestream_ReadResponse> {
+    return self.makeServerStreamingCall(
+      path: "/google.bytestream.ByteStream/Read",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      handler: handler
+    )
   }
 
   /// `Write()` is used to send the contents of a resource as a sequence of
@@ -93,9 +99,13 @@ public final class Google_Bytestream_ByteStreamClient: GRPCClient, Google_Bytest
   /// - Parameters:
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `ClientStreamingCall` with futures for the metadata, status and response.
-  public func write(callOptions: CallOptions? = nil) -> ClientStreamingCall<Google_Bytestream_WriteRequest, Google_Bytestream_WriteResponse> {
-    return self.makeClientStreamingCall(path: "/google.bytestream.ByteStream/Write",
-                                        callOptions: callOptions ?? self.defaultCallOptions)
+  public func write(
+    callOptions: CallOptions? = nil
+  ) -> ClientStreamingCall<Google_Bytestream_WriteRequest, Google_Bytestream_WriteResponse> {
+    return self.makeClientStreamingCall(
+      path: "/google.bytestream.ByteStream/Write",
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// `QueryWriteStatus()` is used to find the `committed_size` for a resource
@@ -117,12 +127,16 @@ public final class Google_Bytestream_ByteStreamClient: GRPCClient, Google_Bytest
   ///   - request: Request to send to QueryWriteStatus.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func queryWriteStatus(_ request: Google_Bytestream_QueryWriteStatusRequest, callOptions: CallOptions? = nil) -> UnaryCall<Google_Bytestream_QueryWriteStatusRequest, Google_Bytestream_QueryWriteStatusResponse> {
-    return self.makeUnaryCall(path: "/google.bytestream.ByteStream/QueryWriteStatus",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func queryWriteStatus(
+    _ request: Google_Bytestream_QueryWriteStatusRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Google_Bytestream_QueryWriteStatusRequest, Google_Bytestream_QueryWriteStatusResponse> {
+    return self.makeUnaryCall(
+      path: "/google.bytestream.ByteStream/QueryWriteStatus",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
-
 }
 
 /// To build a server, implement a class that conforms to this protocol.

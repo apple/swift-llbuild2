@@ -116,11 +116,17 @@ public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, 
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func execute(_ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest, callOptions: CallOptions? = nil, handler: @escaping (Google_Longrunning_Operation) -> Void) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation> {
-    return self.makeServerStreamingCall(path: "/build.bazel.remote.execution.v2.Execution/Execute",
-                                        request: request,
-                                        callOptions: callOptions ?? self.defaultCallOptions,
-                                        handler: handler)
+  public func execute(
+    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+    callOptions: CallOptions? = nil,
+    handler: @escaping (Google_Longrunning_Operation) -> Void
+  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation> {
+    return self.makeServerStreamingCall(
+      path: "/build.bazel.remote.execution.v2.Execution/Execute",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      handler: handler
+    )
   }
 
   /// Wait for an execution operation to complete. When the client initially
@@ -135,13 +141,18 @@ public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, 
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func waitExecution(_ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, callOptions: CallOptions? = nil, handler: @escaping (Google_Longrunning_Operation) -> Void) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation> {
-    return self.makeServerStreamingCall(path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
-                                        request: request,
-                                        callOptions: callOptions ?? self.defaultCallOptions,
-                                        handler: handler)
+  public func waitExecution(
+    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+    callOptions: CallOptions? = nil,
+    handler: @escaping (Google_Longrunning_Operation) -> Void
+  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation> {
+    return self.makeServerStreamingCall(
+      path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      handler: handler
+    )
   }
-
 }
 
 /// Usage: instantiate Build_Bazel_Remote_Execution_V2_ActionCacheClient, then call methods of this protocol to make API calls.
@@ -181,10 +192,15 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
   ///   - request: Request to send to GetActionResult.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func getActionResult(_ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func getActionResult(
+    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Upload a new execution result.
@@ -195,6 +211,9 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
   /// result, along with its
   /// [Command][build.bazel.remote.execution.v2.Command], into the
   /// `ContentAddressableStorage`.
+  ///
+  /// Server implementations MAY modify the
+  /// `UpdateActionResultRequest.action_result` and return an equivalent value.
   ///
   /// Errors:
   ///
@@ -208,12 +227,16 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
   ///   - request: Request to send to UpdateActionResult.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func updateActionResult(_ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func updateActionResult(
+    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
-
 }
 
 /// Usage: instantiate Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient, then call methods of this protocol to make API calls.
@@ -252,10 +275,15 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///   - request: Request to send to FindMissingBlobs.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func findMissingBlobs(_ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func findMissingBlobs(
+    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Upload many blobs at once.
@@ -287,10 +315,15 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///   - request: Request to send to BatchUpdateBlobs.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func batchUpdateBlobs(_ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func batchUpdateBlobs(
+    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Download many blobs at once.
@@ -318,10 +351,15 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///   - request: Request to send to BatchReadBlobs.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func batchReadBlobs(_ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func batchReadBlobs(
+    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Fetch the entire directory tree rooted at a node.
@@ -353,13 +391,18 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func getTree(_ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest, callOptions: CallOptions? = nil, handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
-    return self.makeServerStreamingCall(path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
-                                        request: request,
-                                        callOptions: callOptions ?? self.defaultCallOptions,
-                                        handler: handler)
+  public func getTree(
+    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+    callOptions: CallOptions? = nil,
+    handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void
+  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
+    return self.makeServerStreamingCall(
+      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      handler: handler
+    )
   }
-
 }
 
 /// Usage: instantiate Build_Bazel_Remote_Execution_V2_CapabilitiesClient, then call methods of this protocol to make API calls.
@@ -394,12 +437,16 @@ public final class Build_Bazel_Remote_Execution_V2_CapabilitiesClient: GRPCClien
   ///   - request: Request to send to GetCapabilities.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func getCapabilities(_ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func getCapabilities(
+    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
-
 }
 
 /// To build a server, implement a class that conforms to this protocol.
@@ -526,6 +573,9 @@ public protocol Build_Bazel_Remote_Execution_V2_ActionCacheProvider: CallHandler
   /// result, along with its
   /// [Command][build.bazel.remote.execution.v2.Command], into the
   /// `ContentAddressableStorage`.
+  ///
+  /// Server implementations MAY modify the
+  /// `UpdateActionResultRequest.action_result` and return an equivalent value.
   ///
   /// Errors:
   ///

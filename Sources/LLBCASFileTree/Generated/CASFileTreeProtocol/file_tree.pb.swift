@@ -89,12 +89,6 @@ public enum LLBFileDataCompressionMethod: SwiftProtobuf.Enum {
 
   //// No compression is applied.
   case none // = 0
-
-  //// Each data blob (chunk) is individually compressed.
-  case zstd // = 1
-
-  //// The first data reference contains a dictionary.
-  case zstdWithDictionary // = 2
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -104,8 +98,6 @@ public enum LLBFileDataCompressionMethod: SwiftProtobuf.Enum {
   public init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .none
-    case 1: self = .zstd
-    case 2: self = .zstdWithDictionary
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -113,8 +105,6 @@ public enum LLBFileDataCompressionMethod: SwiftProtobuf.Enum {
   public var rawValue: Int {
     switch self {
     case .none: return 0
-    case .zstd: return 1
-    case .zstdWithDictionary: return 2
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -127,8 +117,6 @@ extension LLBFileDataCompressionMethod: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static var allCases: [LLBFileDataCompressionMethod] = [
     .none,
-    .zstd,
-    .zstdWithDictionary,
   ]
 }
 
@@ -270,8 +258,6 @@ extension LLBFileType: SwiftProtobuf._ProtoNameProviding {
 extension LLBFileDataCompressionMethod: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "NONE"),
-    1: .same(proto: "ZSTD"),
-    2: .same(proto: "ZSTD_WITH_DICTIONARY"),
   ]
 }
 

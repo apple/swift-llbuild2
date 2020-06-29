@@ -65,10 +65,15 @@ public final class Google_Longrunning_OperationsClient: GRPCClient, Google_Longr
   ///   - request: Request to send to ListOperations.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func listOperations(_ request: Google_Longrunning_ListOperationsRequest, callOptions: CallOptions? = nil) -> UnaryCall<Google_Longrunning_ListOperationsRequest, Google_Longrunning_ListOperationsResponse> {
-    return self.makeUnaryCall(path: "/google.longrunning.Operations/ListOperations",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func listOperations(
+    _ request: Google_Longrunning_ListOperationsRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Google_Longrunning_ListOperationsRequest, Google_Longrunning_ListOperationsResponse> {
+    return self.makeUnaryCall(
+      path: "/google.longrunning.Operations/ListOperations",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Gets the latest state of a long-running operation.  Clients can use this
@@ -79,10 +84,15 @@ public final class Google_Longrunning_OperationsClient: GRPCClient, Google_Longr
   ///   - request: Request to send to GetOperation.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func getOperation(_ request: Google_Longrunning_GetOperationRequest, callOptions: CallOptions? = nil) -> UnaryCall<Google_Longrunning_GetOperationRequest, Google_Longrunning_Operation> {
-    return self.makeUnaryCall(path: "/google.longrunning.Operations/GetOperation",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func getOperation(
+    _ request: Google_Longrunning_GetOperationRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Google_Longrunning_GetOperationRequest, Google_Longrunning_Operation> {
+    return self.makeUnaryCall(
+      path: "/google.longrunning.Operations/GetOperation",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Deletes a long-running operation. This method indicates that the client is
@@ -94,10 +104,15 @@ public final class Google_Longrunning_OperationsClient: GRPCClient, Google_Longr
   ///   - request: Request to send to DeleteOperation.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func deleteOperation(_ request: Google_Longrunning_DeleteOperationRequest, callOptions: CallOptions? = nil) -> UnaryCall<Google_Longrunning_DeleteOperationRequest, SwiftProtobuf.Google_Protobuf_Empty> {
-    return self.makeUnaryCall(path: "/google.longrunning.Operations/DeleteOperation",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func deleteOperation(
+    _ request: Google_Longrunning_DeleteOperationRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Google_Longrunning_DeleteOperationRequest, SwiftProtobuf.Google_Protobuf_Empty> {
+    return self.makeUnaryCall(
+      path: "/google.longrunning.Operations/DeleteOperation",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Starts asynchronous cancellation on a long-running operation.  The server
@@ -115,10 +130,15 @@ public final class Google_Longrunning_OperationsClient: GRPCClient, Google_Longr
   ///   - request: Request to send to CancelOperation.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func cancelOperation(_ request: Google_Longrunning_CancelOperationRequest, callOptions: CallOptions? = nil) -> UnaryCall<Google_Longrunning_CancelOperationRequest, SwiftProtobuf.Google_Protobuf_Empty> {
-    return self.makeUnaryCall(path: "/google.longrunning.Operations/CancelOperation",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func cancelOperation(
+    _ request: Google_Longrunning_CancelOperationRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Google_Longrunning_CancelOperationRequest, SwiftProtobuf.Google_Protobuf_Empty> {
+    return self.makeUnaryCall(
+      path: "/google.longrunning.Operations/CancelOperation",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Waits for the specified long-running operation until it is done or reaches
@@ -135,12 +155,16 @@ public final class Google_Longrunning_OperationsClient: GRPCClient, Google_Longr
   ///   - request: Request to send to WaitOperation.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func waitOperation(_ request: Google_Longrunning_WaitOperationRequest, callOptions: CallOptions? = nil) -> UnaryCall<Google_Longrunning_WaitOperationRequest, Google_Longrunning_Operation> {
-    return self.makeUnaryCall(path: "/google.longrunning.Operations/WaitOperation",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func waitOperation(
+    _ request: Google_Longrunning_WaitOperationRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Google_Longrunning_WaitOperationRequest, Google_Longrunning_Operation> {
+    return self.makeUnaryCall(
+      path: "/google.longrunning.Operations/WaitOperation",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
-
 }
 
 /// To build a server, implement a class that conforms to this protocol.

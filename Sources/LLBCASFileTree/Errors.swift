@@ -31,6 +31,6 @@ public enum LLBCASFileTreeFormatError: Error {
     case fileTooLarge(path: AbsolutePath)
 
     /// Decompression failed
-    case decompressFailed(path: AbsolutePath)
+    case decompressFailed(String)
 }
 
