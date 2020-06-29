@@ -8,6 +8,7 @@
 
 import llbuild2
 import TSCBasic
+import Dispatch
 
 public enum LLBLocalExecutorError: Error {
     case unimplemented(String)
@@ -16,12 +17,20 @@ public enum LLBLocalExecutorError: Error {
     case preActionFailure(String)
 }
 
+public protocol LLBLocalExecutorDelegate {
+    func launchingProcess(arguments: [String], workingDir: AbsolutePath, environment: [String: String])
+    func finishedProcess(with result: ProcessResult)
+}
+
 /// Simple local executor that uses the host machine's resources to execute actions.
 final public class LLBLocalExecutor: LLBExecutor {
     let outputBase: AbsolutePath
+    let delegateCallbackQueue: DispatchQueue = DispatchQueue(label: "org.swift.llbuild2-\(LLBLocalExecutor.self)-delegate")
+    let delegate: LLBLocalExecutorDelegate?
 
-    public init(outputBase: AbsolutePath) {
+    public init(outputBase: AbsolutePath, delegate: LLBLocalExecutorDelegate? = nil) {
         self.outputBase = outputBase
+        self.delegate = delegate
     }
 
     public func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
@@ -111,17 +120,27 @@ final public class LLBLocalExecutor: LLBExecutor {
             }
 
             // Execute the main action of the request.
+            let arguments = request.actionSpec.arguments
+            let workingDir = self.outputBase.appending(RelativePath(request.actionSpec.workingDirectory))
             let process = TSCBasic.Process(
-                arguments: request.actionSpec.arguments,
+                arguments: arguments,
                 environment: environment,
-                workingDirectory: self.outputBase.appending(RelativePath(request.actionSpec.workingDirectory)),
+                workingDirectory: workingDir,
                 outputRedirection: .collect,
                 verbose: false,
                 startNewProcessGroup: false
             )
 
+            self.delegateCallbackQueue.async {
+                self.delegate?.launchingProcess(arguments: arguments, workingDir: workingDir, environment: environment)
+            }
+
             try process.launch()
             let result = try process.waitUntilExit()
+
+            self.delegateCallbackQueue.async {
+                self.delegate?.finishedProcess(with: result)
+            }
 
             let resultExitCode: Int
             switch result.exitStatus {
