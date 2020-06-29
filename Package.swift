@@ -23,23 +23,10 @@ let package = Package(
         .package(url: "https://github.com/grpc/grpc-swift.git", .revision("efb67a324eaf1696b50e66bc471a53690e41fbf6")),
     ],
     targets: [
-        // ZSTD Compression support
-        .target(
-            name: "llbuild2CZSTD",
-            path: "Sources/CZSTD"
-
-        ),
-        .target(
-            name: "llbuild2ZSTD", 
-            dependencies: ["llbuild2CZSTD"],
-            path: "Sources/ZSTD"
-        ),
-        .testTarget(name: "ZSTDTests", dependencies: ["llbuild2ZSTD"]),
-
         // Support types and methods
         .target(
             name: "LLBSupport",
-            dependencies: ["NIO", "SwiftToolsSupport-auto", "llbuild2ZSTD"]
+            dependencies: ["NIO", "SwiftToolsSupport-auto"]
         ),
         .testTarget(
             name: "LLBSupportTests",
@@ -57,7 +44,7 @@ let package = Package(
         ),
         .target(
             name: "LLBCASFileTree",
-            dependencies: ["LLBCAS", "llbuild2ZSTD"]
+            dependencies: ["LLBCAS"]
         ),
         .testTarget(
             name: "LLBCASFileTreeTests",

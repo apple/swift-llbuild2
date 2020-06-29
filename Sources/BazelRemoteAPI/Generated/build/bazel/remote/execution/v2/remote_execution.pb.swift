@@ -601,8 +601,11 @@ public struct Build_Bazel_Remote_Execution_V2_SymlinkNode {
   /// The target path can be relative to the parent directory of the symlink or
   /// it can be an absolute path starting with `/`. Support for absolute paths
   /// can be checked using the [Capabilities][build.bazel.remote.execution.v2.Capabilities]
-  /// API. The canonical form forbids the substrings `/./` and `//` in the target
-  /// path. `..` components are allowed anywhere in the target path.
+  /// API. `..` components are allowed anywhere in the target path as logical
+  /// canonicalization may lead to different behavior in the presence of
+  /// directory symlinks (e.g. `foo/../bar` may not be the same as `bar`).
+  /// To reduce potential cache misses, canonicalization is still recommended
+  /// where this is possible without impacting correctness.
   public var target: String = String()
 
   public var nodeProperties: Build_Bazel_Remote_Execution_V2_NodeProperties {
@@ -785,6 +788,11 @@ public struct Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata {
 
 /// An ActionResult represents the result of an
 /// [Action][build.bazel.remote.execution.v2.Action] being run.
+///
+/// It is advised that at least one field (for example
+/// `ActionResult.execution_metadata.Worker`) have a non-default value, to
+/// ensure that the serialized value is non-empty, which can then be used
+/// as a basic data sanity check.
 public struct Build_Bazel_Remote_Execution_V2_ActionResult {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -1116,8 +1124,7 @@ public struct Build_Bazel_Remote_Execution_V2_OutputSymlink {
   /// The target path can be relative to the parent directory of the symlink or
   /// it can be an absolute path starting with `/`. Support for absolute paths
   /// can be checked using the [Capabilities][build.bazel.remote.execution.v2.Capabilities]
-  /// API. The canonical form forbids the substrings `/./` and `//` in the target
-  /// path. `..` components are allowed anywhere in the target path.
+  /// API. `..` components are allowed anywhere in the target path.
   public var target: String = String()
 
   public var nodeProperties: Build_Bazel_Remote_Execution_V2_NodeProperties {

@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIO
-import llbuild2ZSTD
 
 
 public typealias LLBByteBuffer = NIO.ByteBuffer
@@ -24,7 +23,7 @@ public extension LLBByteBuffer {
     }
 }
 
-extension LLBByteBuffer: WriteAdvanceableBuffer {
+extension LLBByteBuffer {
     public mutating func reserveWriteCapacity(_ count: Int) {
         self.reserveCapacity(self.writerIndex + count)
     }

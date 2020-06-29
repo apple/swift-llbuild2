@@ -43,10 +43,6 @@ message LLBDirectoryEntries {
 enum LLBFileDataCompressionMethod {
     /// No compression is applied.
     NONE = 0x0;
-    /// Each data blob (chunk) is individually compressed.
-    ZSTD = 0x1;
-    /// The first data reference contains a dictionary.
-    ZSTD_WITH_DICTIONARY = 0x2;
 }
 
 message LLBFileInfo {

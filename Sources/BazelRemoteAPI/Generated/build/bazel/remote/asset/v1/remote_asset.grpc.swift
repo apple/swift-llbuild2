@@ -109,10 +109,15 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
   ///   - request: Request to send to FetchBlob.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func fetchBlob(_ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func fetchBlob(
+    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Unary call to FetchDirectory
@@ -121,12 +126,16 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
   ///   - request: Request to send to FetchDirectory.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func fetchDirectory(_ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func fetchDirectory(
+    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
-
 }
 
 /// Usage: instantiate Build_Bazel_Remote_Asset_V1_PushClient, then call methods of this protocol to make API calls.
@@ -188,10 +197,15 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Baz
   ///   - request: Request to send to PushBlob.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func pushBlob(_ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.asset.v1.Push/PushBlob",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func pushBlob(
+    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.asset.v1.Push/PushBlob",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
 
   /// Unary call to PushDirectory
@@ -200,12 +214,16 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Baz
   ///   - request: Request to send to PushDirectory.
   ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func pushDirectory(_ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, callOptions: CallOptions? = nil) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse> {
-    return self.makeUnaryCall(path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func pushDirectory(
+    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse> {
+    return self.makeUnaryCall(
+      path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions
+    )
   }
-
 }
 
 /// To build a server, implement a class that conforms to this protocol.

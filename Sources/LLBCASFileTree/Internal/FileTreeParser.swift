@@ -9,7 +9,6 @@
 import Foundation
 
 import TSCBasic
-import llbuild2ZSTD
 
 import LLBCAS
 import LLBSupport
@@ -55,31 +54,13 @@ struct CASFileTreeParser {
         }
     }
 
-    private func decompress(compressedData: LLBByteBuffer, kind: AnnotatedCASTreeChunk.ItemKind, debugPath: AbsolutePath) throws -> LLBFastData {
-        guard let allocator = self.allocator else {
-            throw LLBCASFileTreeFormatError.decompressFailed(path: debugPath)
-        }
-
-        let zstd = ZSTDStream()
-        try zstd.startDecompression()
-        var decompressed = allocator.buffer(capacity: max(3 * (1 + compressedData.readableBytes), Int(clamping: kind.overestimatedSize)))
-        var isDone = false
-        try compressedData.withUnsafeReadableBytes { ptr in
-            _ = try zstd.decompress(input: ptr, into: &decompressed, isDone: &isDone)
-        }
-        guard isDone else {
-            throw LLBCASFileTreeFormatError.decompressFailed(path: debugPath)
-        }
-        return LLBFastData(decompressed)
-    }
-
     private func parseFile(id: LLBDataID, path: AbsolutePath, casObject: LLBCASObject, kind: AnnotatedCASTreeChunk.ItemKind) throws -> (LLBFilesystemObject, [AnnotatedCASTreeChunk]) {
         let exe: Bool = kind.type == .executable ? true : false
 
         guard casObject.refs.isEmpty == false else {
             let uncompressed: LLBFastData
             if kind.compressed {
-                uncompressed = try decompress(compressedData: casObject.data, kind: kind, debugPath: path)
+                throw LLBCASFileTreeFormatError.decompressFailed("unsupported")
             } else {
                 uncompressed = .init(casObject.data)
             }
@@ -106,9 +87,7 @@ struct CASFileTreeParser {
             switch info.compression {
             case .none:
                 compressed = false
-            case .zstd:
-                compressed = true
-            case .zstdWithDictionary, .UNRECOGNIZED:
+            case .UNRECOGNIZED:
                 throw LLBCASFileTreeFormatError.formatError(reason: "\(relative(path)): unrecognized compression format")
             }
 
