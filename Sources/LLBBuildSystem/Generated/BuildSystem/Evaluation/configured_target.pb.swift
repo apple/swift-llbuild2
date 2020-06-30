@@ -18,7 +18,7 @@
 import Foundation
 import SwiftProtobuf
 
-import LLBCAS
+import TSFCAS
 import llbuild2
 
 // If the compiler emits an error on this type, it is because this file
@@ -41,8 +41,8 @@ public struct LLBConfiguredTargetKey {
   // methods supported on all messages.
 
   /// The data ID for the workspace root on where to find the target definition.
-  public var rootID: LLBCAS.LLBDataID {
-    get {return _rootID ?? LLBCAS.LLBDataID()}
+  public var rootID: TSFCAS.LLBDataID {
+    get {return _rootID ?? TSFCAS.LLBDataID()}
     set {_rootID = newValue}
   }
   /// Returns true if `rootID` has been explicitly set.
@@ -76,7 +76,7 @@ public struct LLBConfiguredTargetKey {
 
   public init() {}
 
-  fileprivate var _rootID: LLBCAS.LLBDataID? = nil
+  fileprivate var _rootID: TSFCAS.LLBDataID? = nil
   fileprivate var _label: LLBLabel? = nil
   fileprivate var _configurationKey: LLBConfigurationKey? = nil
 }

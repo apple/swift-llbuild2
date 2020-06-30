@@ -18,7 +18,7 @@
 import Foundation
 import SwiftProtobuf
 
-import LLBCAS
+import TSFCAS
 import llbuild2
 
 // If the compiler emits an error on this type, it is because this file
@@ -44,10 +44,10 @@ public final class LLBArtifact {
   public var originType: LLBArtifact.OneOf_OriginType? = nil
 
   /// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
-  public var source: LLBCAS.LLBDataID {
+  public var source: TSFCAS.LLBDataID {
     get {
       if case .source(let v)? = originType {return v}
-      return LLBCAS.LLBDataID()
+      return TSFCAS.LLBDataID()
     }
     set {originType = .source(newValue)}
   }
@@ -63,10 +63,10 @@ public final class LLBArtifact {
 
   /// Derived static artifacts are artifacts populated directly in the rule implementation, such as file writes
   /// that do not require a heavyweight action to run.
-  public var derivedStatic: LLBCAS.LLBDataID {
+  public var derivedStatic: TSFCAS.LLBDataID {
     get {
       if case .derivedStatic(let v)? = originType {return v}
-      return LLBCAS.LLBDataID()
+      return TSFCAS.LLBDataID()
     }
     set {originType = .derivedStatic(newValue)}
   }
@@ -87,12 +87,12 @@ public final class LLBArtifact {
   /// Represents what type of Artifact reference this is.
   public enum OneOf_OriginType: Equatable {
     /// Source artifacts are inputs to the build, and as such, have a known dataID at the beginning of the build.
-    case source(LLBCAS.LLBDataID)
+    case source(TSFCAS.LLBDataID)
     /// Derived artifacts are produced by actions, referenced in the LLBArtifactOwner object.
     case derived(LLBArtifactOwner)
     /// Derived static artifacts are artifacts populated directly in the rule implementation, such as file writes
     /// that do not require a heavyweight action to run.
-    case derivedStatic(LLBCAS.LLBDataID)
+    case derivedStatic(TSFCAS.LLBDataID)
 
   #if !swift(>=4.1)
     public static func ==(lhs: LLBArtifact.OneOf_OriginType, rhs: LLBArtifact.OneOf_OriginType) -> Bool {
@@ -126,7 +126,7 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1:
-        var v: LLBCAS.LLBDataID?
+        var v: TSFCAS.LLBDataID?
         if let current = self.originType {
           try decoder.handleConflictingOneOf()
           if case .source(let m) = current {v = m}
@@ -145,7 +145,7 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.originType = .derived(v)}
       case 6:
-        var v: LLBCAS.LLBDataID?
+        var v: TSFCAS.LLBDataID?
         if let current = self.originType {
           try decoder.handleConflictingOneOf()
           if case .derivedStatic(let m) = current {v = m}

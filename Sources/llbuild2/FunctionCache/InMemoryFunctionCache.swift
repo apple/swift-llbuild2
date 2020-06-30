@@ -8,8 +8,6 @@
 
 import NIOConcurrencyHelpers
 
-import LLBCAS
-
 
 /// A simple in-memory implementation of the `LLBFunctionCache` protocol.
 public final class LLBInMemoryFunctionCache: LLBFunctionCache {

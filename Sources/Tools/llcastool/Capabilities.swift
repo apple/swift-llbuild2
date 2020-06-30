@@ -11,9 +11,9 @@ import Foundation
 import ArgumentParser
 import GRPC
 import TSCBasic
+import TSFFutures
 
 import LLBCASTool
-import LLBSupport
 
 
 struct Capabilities: ParsableCommand {

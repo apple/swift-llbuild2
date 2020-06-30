@@ -18,7 +18,7 @@
 import Foundation
 import SwiftProtobuf
 
-import LLBCAS
+import TSFCAS
 import llbuild2
 
 // If the compiler emits an error on this type, it is because this file
@@ -90,11 +90,11 @@ public struct LLBActionExecutionValue {
 
   /// The list of outputs IDs that the action produced. This will be in the same order as requested in
   /// actionExecutionType.
-  public var outputs: [LLBCAS.LLBDataID] = []
+  public var outputs: [TSFCAS.LLBDataID] = []
 
   /// The data ID for the stdout of the action.
-  public var stdoutID: LLBCAS.LLBDataID {
-    get {return _stdoutID ?? LLBCAS.LLBDataID()}
+  public var stdoutID: TSFCAS.LLBDataID {
+    get {return _stdoutID ?? TSFCAS.LLBDataID()}
     set {_stdoutID = newValue}
   }
   /// Returns true if `stdoutID` has been explicitly set.
@@ -103,8 +103,8 @@ public struct LLBActionExecutionValue {
   public mutating func clearStdoutID() {self._stdoutID = nil}
 
   /// The data ID for the stderr of the action.
-  public var stderrID: LLBCAS.LLBDataID {
-    get {return _stderrID ?? LLBCAS.LLBDataID()}
+  public var stderrID: TSFCAS.LLBDataID {
+    get {return _stderrID ?? TSFCAS.LLBDataID()}
     set {_stderrID = newValue}
   }
   /// Returns true if `stderrID` has been explicitly set.
@@ -116,8 +116,8 @@ public struct LLBActionExecutionValue {
 
   public init() {}
 
-  fileprivate var _stdoutID: LLBCAS.LLBDataID? = nil
-  fileprivate var _stderrID: LLBCAS.LLBDataID? = nil
+  fileprivate var _stdoutID: TSFCAS.LLBDataID? = nil
+  fileprivate var _stderrID: TSFCAS.LLBDataID? = nil
 }
 
 /// An action execution description for a command line invocation.
