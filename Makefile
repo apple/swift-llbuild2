@@ -52,25 +52,10 @@ clone-external-protos: clone-external-repos
 # checking in the generated sources.
 .PHONY:
 generate-protos: proto-toolchain Protos/BazelRemoteAPI
-	mkdir -p Sources/LLBCAS/Generated
-	Utilities/tools/bin/protoc \
-		-I=Protos \
-		--plugin=Utilities/tools/bin/protoc-gen-swift \
-		--swift_out=Sources/LLBCAS/Generated \
-		--swift_opt=Visibility=Public \
-		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb \
-		$$(find Protos/CASProtocol -name \*.proto)
-	mkdir -p Sources/LLBCASFileTree/Generated
-	Utilities/tools/bin/protoc \
-		-I=Protos \
-		--plugin=Utilities/tools/bin/protoc-gen-swift \
-		--swift_out=Sources/LLBCASFileTree/Generated \
-		--swift_opt=Visibility=Public \
-		--swift_opt=ProtoPathModuleMappings=Protos/module_map.asciipb \
-		$$(find Protos/CASFileTreeProtocol -name \*.proto)
 	mkdir -p Sources/LLBBuildSystem/Generated
 	Utilities/tools/bin/protoc \
 		-I=Protos \
+		-I=.build/checkouts/swift-tools-support-async/Protos \
 		--plugin=Utilities/tools/bin/protoc-gen-swift \
 		--swift_out=Sources/LLBBuildSystem/Generated \
 		--swift_opt=Visibility=Public \
@@ -79,6 +64,7 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 	mkdir -p Sources/llbuild2/Generated
 	Utilities/tools/bin/protoc \
 		-I=Protos \
+		-I=.build/checkouts/swift-tools-support-async/Protos \
 		--plugin=Utilities/tools/bin/protoc-gen-swift \
 		--swift_out=Sources/llbuild2/Generated \
 		--swift_opt=Visibility=Public \
@@ -106,8 +92,6 @@ proto-toolchain:
 .PHONY:
 clean:
 	rm -rf Sources/BazelRemoteAPI/Generated
-	rm -rf Sources/LLBCAS/Generated
-	rm -rf Sources/LLBCASFileTree/Generated
 	rm -rf Sources/LLBBuildSystem/Generated
 	rm -rf Sources/llbuild2/Generated
 

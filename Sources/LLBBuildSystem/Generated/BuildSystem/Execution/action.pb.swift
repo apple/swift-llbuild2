@@ -18,7 +18,7 @@
 import Foundation
 import SwiftProtobuf
 
-import LLBCAS
+import TSFCAS
 import llbuild2
 
 // If the compiler emits an error on this type, it is because this file
@@ -90,7 +90,7 @@ public struct LLBActionValue {
 
   /// The list of outputs IDs that the action produced. This will be in the same order as requested in
   /// actionType.
-  public var outputs: [LLBCAS.LLBDataID] = []
+  public var outputs: [TSFCAS.LLBDataID] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 

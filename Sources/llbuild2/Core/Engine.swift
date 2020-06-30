@@ -8,13 +8,11 @@
 
 import Foundation
 
-import Crypto
 import NIOConcurrencyHelpers
 import TSCUtility
 
-@_exported import LLBCAS
-@_exported import LLBCASFileTree
-@_exported import LLBSupport
+// Explicitly re-export all of Futures/Utility/CAS/CASFileTree for easy of use
+@_exported import TSFCASFileTree
 
 public typealias Context = TSCUtility.Context
 

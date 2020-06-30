@@ -7,7 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-import LLBCAS
+
 
 extension LLBArtifact: LLBBuildKey {}
 extension LLBArtifactValue: LLBBuildValue {}
