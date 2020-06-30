@@ -28,10 +28,6 @@ let package = Package(
             name: "LLBSupport",
             dependencies: ["NIO", "SwiftToolsSupport-auto"]
         ),
-        .testTarget(
-            name: "LLBSupportTests",
-            dependencies: ["LLBSupport"]
-        ),
 
         // CAS Protocol
         .target(

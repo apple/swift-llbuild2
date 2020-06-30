@@ -87,8 +87,8 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "7f36441e3372665b1b414f8ac93b5905cc42a405",
-          "version": "1.9.0"
+          "revision": "05cb9347bb095d9a28234a593d45cb9fcdc9d196",
+          "version": "1.10.0"
         }
       },
       {
@@ -96,7 +96,7 @@
         "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
         "state": {
           "branch": "master",
-          "revision": "81e2cda46447b4d78c18e03b0d284d76950f7c2b",
+          "revision": "d28e9e372f125c4581ccde20cb3ba6e46ef4c5ed",
           "version": null
         }
       }
