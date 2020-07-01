@@ -24,7 +24,11 @@ ctx.db = LLBFileBackedCASDatabase(group: ctx.group, path: gameOfLifeDirectory.ap
 
 // Create the build engine's dependencies.
 let executor = LLBLocalExecutor(outputBase: gameOfLifeDirectory.appending(component: "executor_output"))
-let functionCache = LLBFileBackedFunctionCache(group: ctx.group, path: gameOfLifeDirectory.appending(component: "function_cache"))
+let functionCache = LLBFileBackedFunctionCache(
+    group: ctx.group,
+    path: gameOfLifeDirectory.appending(component: "function_cache"),
+    version: "1"
+)
 
 let buildSystemDelegate = GameOfLifeBuildSystemDelegate()
 

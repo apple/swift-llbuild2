@@ -51,8 +51,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "120acb15c39aa3217e9888e515de160378fbcc1e",
-          "version": "2.18.0"
+          "revision": "8a865bd15e69526cbdfcfd7c47698eb20b2ba951",
+          "version": "2.19.0"
         }
       },
       {
@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
         "state": {
           "branch": null,
-          "revision": "f0b118d9af6c4e78bc4f3f4fbb464020172b0bf4",
-          "version": "2.7.5"
+          "revision": "d381bc53edd9de88a75480a2b969bfc26d61ee76",
+          "version": "2.8.0"
         }
       },
       {
@@ -78,8 +78,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio-transport-services.git",
         "state": {
           "branch": null,
-          "revision": "2ac8fde712c1b1a147ecb7065824a40d2c09d0cb",
-          "version": "1.6.0"
+          "revision": "f9a95e9bbb4ed70dd6e1e25d65c46e37187f7730",
+          "version": "1.7.0"
         }
       },
       {
@@ -87,8 +87,17 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "7f36441e3372665b1b414f8ac93b5905cc42a405",
-          "version": "1.9.0"
+          "revision": "05cb9347bb095d9a28234a593d45cb9fcdc9d196",
+          "version": "1.10.0"
+        }
+      },
+      {
+        "package": "swift-tools-support-async",
+        "repositoryURL": "https://github.com/apple/swift-tools-support-async.git",
+        "state": {
+          "branch": "master",
+          "revision": "5a2ca3c2d22aff63d07030db7e6bf9303dc18ff4",
+          "version": null
         }
       },
       {
@@ -96,7 +105,7 @@
         "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
         "state": {
           "branch": "master",
-          "revision": "81e2cda46447b4d78c18e03b0d284d76950f7c2b",
+          "revision": "d28e9e372f125c4581ccde20cb3ba6e46ef4c5ed",
           "version": null
         }
       }

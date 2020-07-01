@@ -22,15 +22,14 @@ public final class LLBFileBackedFunctionCache: LLBFunctionCache {
     let threadPool: NIOThreadPool
     let fileIO: NonBlockingFileIO
 
-
     /// Create an in-memory database.
-    public init(group: LLBFuturesDispatchGroup, path: AbsolutePath) {
+    public init(group: LLBFuturesDispatchGroup, path: AbsolutePath, version: String = "default") {
         self.group = group
         self.threadPool = NIOThreadPool(numberOfThreads: 6)
         threadPool.start()
         self.fileIO = NonBlockingFileIO(threadPool: threadPool)
-        self.path = path
-        try? localFileSystem.createDirectory(path, recursive: true)
+        self.path = path.appending(component: version)
+        try? localFileSystem.createDirectory(self.path, recursive: true)
     }
 
     deinit {
