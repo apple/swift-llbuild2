@@ -13,6 +13,7 @@ import NIO
 import Foundation
 import LLBUtil
 import LLBBuildSystemUtil
+import Logging
 import TSCBasic
 
 let gameOfLifeDirectory = AbsolutePath("/tmp/game_of_life")
@@ -21,6 +22,10 @@ try localFileSystem.createDirectory(gameOfLifeDirectory, recursive: true)
 var ctx = Context()
 ctx.group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo.processorCount)
 ctx.db = LLBFileBackedCASDatabase(group: ctx.group, path: gameOfLifeDirectory.appending(component: "cas"))
+
+var logger = Logger(label: "org.swift.llbuild2.game_of_life")
+logger.logLevel = .trace
+ctx.logger = logger
 
 // Create the build engine's dependencies.
 let executor = LLBLocalExecutor(outputBase: gameOfLifeDirectory.appending(component: "executor_output"))

@@ -19,8 +19,20 @@ public typealias Context = TSCUtility.Context
 public protocol LLBKey: LLBStablyHashable {
     func hash(into hasher: inout Hasher)
     var hashValue: Int { get }
+
+    /// Use for debugging purposes, should not be invoked by the engine unless the logger is configured for the trace
+    /// level.
+    func logDescription() -> String
 }
 public protocol LLBValue: LLBCASObjectRepresentable {}
+
+public extension LLBKey {
+    /// Default implementation for all keys. Keys can implement their own method if they want to display more relevant
+    /// information.
+    func logDescription() -> String {
+        String(describing: type(of: self))
+    }
+}
 
 
 public class LLBFunctionInterface {
@@ -88,6 +100,9 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
             } catch {
                 return ctx.group.next().makeFailedFuture(error)
             }
+        }.map { (value: LLBValue) in
+            ctx.logger?.trace("    evaluated \(key.logDescription())")
+            return value
         }
     }
 
@@ -113,6 +128,8 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
             return ctx.group.next().makeFailedFuture(LLBError.unexpectedKeyType(String(describing: type(of: key))))
         }
 
+        ctx.logger?.trace("evaluating \(key.logDescription())")
+
         return fi.functionCache.get(key: key, ctx).flatMap { result -> LLBFuture<LLBValue> in
             if let resultID = result {
                 return ctx.db.get(resultID, ctx).flatMap { objectOpt in
@@ -121,6 +138,7 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
                     }
                     do {
                         let value: V = try self.unpack(object, fi)
+                        ctx.logger?.trace("    cached \(key.logDescription())")
                         return ctx.group.next().makeSucceededFuture(value)
                     } catch {
                         return ctx.group.next().makeFailedFuture(error)

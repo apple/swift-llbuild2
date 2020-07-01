@@ -157,7 +157,6 @@ struct GameOfLifeView: View {
                 elapsedS = Double(finish.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000_000
 
                 DispatchQueue.main.async {
-                    print(environment.ctx)
                     self.boardState = generationValue
                     self.updateTime = elapsedS
                 }
