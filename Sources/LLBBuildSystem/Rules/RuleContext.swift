@@ -191,6 +191,7 @@ public class LLBRuleContext {
     ) throws {
         try registerAction(
             arguments: arguments,
+            environment: environment,
             inputs: inputs,
             outputs: outputs,
             workingDirectory: workingDirectory,
@@ -214,6 +215,7 @@ public class LLBRuleContext {
     ) throws {
         try registerAction(
             arguments: arguments,
+            environment: environment,
             inputs: inputs,
             outputs: outputs,
             workingDirectory: workingDirectory,
