@@ -10,10 +10,6 @@ import Logging
 
 /// Support storing and retrieving a logger instance from a Context.
 public extension Context {
-    static func with(_ logger: Logger) -> Context {
-        return Context(dictionaryLiteral: (ObjectIdentifier(Logger.self), logger as Any))
-    }
-
     var logger: Logger? {
         get {
             guard let logger = self[ObjectIdentifier(Logger.self)] as? Logger else {

@@ -24,7 +24,7 @@ ctx.group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo
 ctx.db = LLBFileBackedCASDatabase(group: ctx.group, path: gameOfLifeDirectory.appending(component: "cas"))
 
 var logger = Logger(label: "org.swift.llbuild2.game_of_life")
-logger.logLevel = .trace
+logger.logLevel = .info
 ctx.logger = logger
 
 // Create the build engine's dependencies.
@@ -36,6 +36,26 @@ let functionCache = LLBFileBackedFunctionCache(
 )
 
 let buildSystemDelegate = GameOfLifeBuildSystemDelegate()
+
+class GameOfLifeBuildEventDelegate: LLBBuildEventDelegate {
+    func targetEvaluationRequested(label: LLBLabel) {
+        logger.debug("Target \(label.canonical) being evaluated")
+    }
+
+    func targetEvaluationCompleted(label: LLBLabel) {
+        logger.debug("Target \(label.canonical) evaluated")
+    }
+
+    func actionRequested(actionKey: LLBActionExecutionKey) {
+        logger.debug("Action requested: \(actionKey.stableHashValue)")
+    }
+
+    func actionCompleted(actionKey: LLBActionExecutionKey, result: LLBActionResult) {
+        logger.debug("Action completed: \(actionKey.stableHashValue) - \(result)")
+    }
+}
+
+ctx.buildEventDelegate = GameOfLifeBuildEventDelegate()
 
 // Construct the build engine instance and
 let engine = LLBBuildEngine(

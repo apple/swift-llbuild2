@@ -70,10 +70,10 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                 throw LLBRuleEvaluationError.ruleEvaluationKeyDeserializationError
             }
 
+            ctx.buildEventDelegate?.targetEvaluationRequested(label: ruleEvaluationKey.label)
+
             return ruleEvaluationKey
         }.flatMap { ruleEvaluationKey in
-
-
             let configurationFuture: LLBFuture<LLBConfigurationValue> = fi.request(ruleEvaluationKey.configurationKey, ctx)
             return configurationFuture.map { (ruleEvaluationKey, $0) }
         }.flatMap { (ruleEvaluationKey: LLBRuleEvaluationKey, configurationValue: LLBConfigurationValue) in
@@ -141,7 +141,10 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
                 return ctx.group.next().makeFailedFuture(error)
             }
 
-            return providersFuture
+            return providersFuture.map { providers in
+                ctx.buildEventDelegate?.targetEvaluationCompleted(label: ruleEvaluationKey.label)
+                return providers
+            }
         }.flatMapThrowing { (actionIDs: [LLBDataID], providers: [LLBProvider]) in
             try LLBRuleEvaluationValue(actionIDs: actionIDs, providerMap: LLBProviderMap(providers: providers))
         }
