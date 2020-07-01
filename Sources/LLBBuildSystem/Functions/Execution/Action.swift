@@ -77,7 +77,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
     }
 
     private func evaluate(commandKey: LLBCommandAction, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
-        return fi.requestKeyed(commandKey.inputs, ctx).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
+        return fi.requestKeyed(commandKey.inputs, ctx).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<(LLBActionExecutionKey, LLBActionExecutionValue)> in
             let actionExecutionKey = LLBActionExecutionKey.command(
                 actionSpec: commandKey.actionSpec,
                 inputs: inputs.map { (artifact, artifactValue) in
@@ -90,8 +90,22 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier)
             )
 
+            ctx.buildEventDelegate?.actionRequested(actionKey: actionExecutionKey)
+
             return fi.request(actionExecutionKey, ctx)
-        }.map { actionExecutionValue in
+                .map { (value: LLBActionExecutionValue) -> (LLBActionExecutionKey, LLBActionExecutionValue) in
+                    (actionExecutionKey, value)
+                }.flatMapErrorThrowing { error in
+                    if case let LLBActionExecutionError.actionExecutionError(stdoutID, stderrID) = error {
+                        ctx.buildEventDelegate?.actionCompleted(
+                            actionKey: actionExecutionKey,
+                            result: .failure(stdoutID: stdoutID, stderrID: stderrID)
+                        )
+                    }
+                    throw error
+                }
+        }.map { (actionExecutionKey: LLBActionExecutionKey, actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
+            ctx.buildEventDelegate?.actionCompleted(actionKey: actionExecutionKey, result: .success(actionExecutionValue))
             return LLBActionValue(outputs: actionExecutionValue.outputs)
         }
     }
@@ -110,6 +124,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
             }
 
             let actionExecutionKey = LLBActionExecutionKey.mergeTrees(inputs: actionInputs)
+
             return fi.request(actionExecutionKey, ctx)
         }.map { actionExecutionValue in
             return LLBActionValue(outputs: actionExecutionValue.outputs)
