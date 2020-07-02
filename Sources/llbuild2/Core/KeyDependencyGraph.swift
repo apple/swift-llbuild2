@@ -6,7 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Dispatch
+import NIOConcurrencyHelpers
 
 public enum LLBKeyDependencyGraphError: Error {
     case cycleDetected([LLBKey])
@@ -23,15 +23,11 @@ public class LLBKeyDependencyGraph {
     // they can be useful when debugging.
     private var knownKeys: [Int: LLBKey]
 
-    private let lock = os_unfair_lock_t.allocate(capacity: 1)
+    private let lock = Lock()
 
     public init() {
         self.edges = [:]
         self.knownKeys = [:]
-    }
-
-    deinit {
-        lock.deallocate()
     }
 
     /// Attempts to add a detected dependency edge to the graph, but throws if a cycle is detected.
@@ -43,30 +39,30 @@ public class LLBKeyDependencyGraph {
 
         // Check if the direct dependency is already known, in which case, skip the check since the edge is already
         // been proven to not have a cycle.
-        os_unfair_lock_lock(lock)
+        lock.lock()
         if self.edges[originID]?.contains(destinationID) != nil {
-            defer { os_unfair_lock_unlock(lock) }
+            defer { lock.unlock() }
             return
         }
-        os_unfair_lock_unlock(lock)
+        lock.unlock()
 
         // Populate the knownKeys store with the new edge nodes, in case it doesn't exist.
-        os_unfair_lock_lock(lock)
+        lock.lock()
         if self.knownKeys[originID] == nil {
             self.knownKeys[originID] = origin
         }
         if self.knownKeys[destinationID] == nil {
             self.knownKeys[destinationID] = destination
         }
-        os_unfair_lock_unlock(lock)
+        lock.unlock()
 
         // Check if there's a path from the destination to the origin, as that would be a clear indication that adding
         // the edge from the origin to the destination would introduce a cycle. This works because the graph starts
         // by definition without cycles, so cycles can only be introduced if a new edge would create it.
         if let path = anyPath(from: destinationID, to: originID) {
-            os_unfair_lock_lock(lock)
+            lock.lock()
             let keyPath = path.map { self.knownKeys[$0]! }
-            os_unfair_lock_unlock(lock)
+            lock.unlock()
             throw LLBKeyDependencyGraphError.cycleDetected([origin] + keyPath)
         }
 
@@ -77,11 +73,11 @@ public class LLBKeyDependencyGraph {
         // _believe_ this should not be a problem. Of course, I could be wrong and someone could find such an edge case
         // in the wild. But until then, not having the locks mixed seems to make sense to me from a performance
         // perspective, to avoid unnecessary delays when processing.
-        os_unfair_lock_lock(lock)
+        lock.lock()
         var destinations = self.edges[originID, default: Set()]
         destinations.insert(destinationID)
         self.edges[originID] = destinations
-        os_unfair_lock_unlock(lock)
+        lock.unlock()
     }
 
     /// Simple mechanism to find a path between 2 nodes. It doesn't care if its the shortest path, only whether a path
@@ -93,9 +89,9 @@ public class LLBKeyDependencyGraph {
         }
 
         // Make a thread local copy since this method may be invoked from multiple threads.
-        os_unfair_lock_lock(lock)
+        lock.lock()
         let localEdges = self.edges
-        os_unfair_lock_unlock(lock)
+        lock.unlock()
 
         // Keeps track of the path between the nodes as it searches through.
         var path = [Int]()
