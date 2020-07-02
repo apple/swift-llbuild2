@@ -56,6 +56,16 @@ fileprivate extension LLBActionValue {
     init(outputs: [LLBDataID]) {
         self.outputs = outputs
     }
+
+    init(actionExecutionValue: LLBActionExecutionValue) {
+        self.outputs = actionExecutionValue.outputs
+        if !actionExecutionValue.stdoutID.bytes.isEmpty {
+            self.stdoutID = actionExecutionValue.stdoutID
+        }
+        if !actionExecutionValue.stderrID.bytes.isEmpty {
+            self.stderrID = actionExecutionValue.stderrID
+        }
+    }
 }
 
 public enum LLBActionError: Error {
@@ -109,7 +119,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 }
         }.map { (actionExecutionKey: LLBActionExecutionKey, actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
             ctx.buildEventDelegate?.actionCompleted(actionKey: actionExecutionKey, result: .success(actionExecutionValue))
-            return LLBActionValue(outputs: actionExecutionValue.outputs)
+            return LLBActionValue(actionExecutionValue: actionExecutionValue)
         }
     }
 

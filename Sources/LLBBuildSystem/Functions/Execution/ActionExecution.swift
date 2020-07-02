@@ -70,7 +70,7 @@ public extension LLBActionExecutionKey {
 
 /// Convenience initializer.
 fileprivate extension LLBActionExecutionValue {
-    init(outputs: [LLBDataID], stdoutID: LLBDataID?, stderrID: LLBDataID?) {
+    init(outputs: [LLBDataID], stdoutID: LLBDataID? = nil, stderrID: LLBDataID? = nil) {
         self.outputs = outputs
         if let stdoutID = stdoutID {
             self.stdoutID = stdoutID
@@ -171,7 +171,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         return LLBFuture.whenAllSucceed(prependedTrees, on: ctx.group.next()).flatMap { trees in
             return LLBCASFileTree.merge(trees: trees, in: ctx.db, ctx)
         }.map {
-            return LLBActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil)
+            return LLBActionExecutionValue(outputs: [$0.id])
         }
     }
 }

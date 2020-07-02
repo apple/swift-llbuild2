@@ -33,6 +33,12 @@ message LLBActionValue {
     // The list of outputs IDs that the action produced. This will be in the same order as requested in
     // actionType.
     repeated LLBDataID outputs = 1;
+
+    // The data ID for the stdout of the action.
+    LLBDataID stdoutID = 2;
+
+    // The data ID for the stderr of the action.
+    LLBDataID stderrID = 3;
 }
 
 // An action execution description for a command line invocation.
