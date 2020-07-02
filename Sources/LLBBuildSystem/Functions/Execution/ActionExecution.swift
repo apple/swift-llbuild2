@@ -43,6 +43,7 @@ public extension LLBActionExecutionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
+        mnemonic: String = "",
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil
     ) -> Self {
         return LLBActionExecutionKey.with {
@@ -53,6 +54,7 @@ public extension LLBActionExecutionKey {
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
+                $0.mnemonic = mnemonic
             })
         }
     }

@@ -157,7 +157,8 @@ class CellRule: LLBBuildRule<CellTarget> {
                 """
             ],
             inputs: neighbours + [previousState],
-            outputs: [stateArtifact]
+            outputs: [stateArtifact],
+            mnemonic: "CellTask"
         )
 
         return ruleContext.group.next().makeSucceededFuture(

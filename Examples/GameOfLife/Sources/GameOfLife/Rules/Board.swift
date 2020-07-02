@@ -104,7 +104,8 @@ class BoardRule: LLBBuildRule<BoardTarget> {
                 """
             ],
             inputs: Array(boardMap.values),
-            outputs: [board]
+            outputs: [board],
+            mnemonic: "BoardTask"
         )
 
         // Return the BoardProvider containing the board artifact so that dependents can read it and use it accordingly.

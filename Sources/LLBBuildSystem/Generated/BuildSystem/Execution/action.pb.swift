@@ -123,6 +123,11 @@ public struct LLBCommandAction {
   /// and only be used for actions that schedule additional actions based on the outputs of previous actions.
   public var dynamicIdentifier: String = String()
 
+  /// Identifier for the type of action this represents. This is only used for display and metrics purposes, it has no
+  /// effect in how the action is executed (but is considered to be part of the action key so changes to it invalidate
+  /// the action).
+  public var mnemonic: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -264,6 +269,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     2: .same(proto: "inputs"),
     3: .same(proto: "outputs"),
     4: .same(proto: "dynamicIdentifier"),
+    5: .same(proto: "mnemonic"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -273,6 +279,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       case 2: try decoder.decodeRepeatedMessageField(value: &self.inputs)
       case 3: try decoder.decodeRepeatedMessageField(value: &self.outputs)
       case 4: try decoder.decodeSingularStringField(value: &self.dynamicIdentifier)
+      case 5: try decoder.decodeSingularStringField(value: &self.mnemonic)
       default: break
       }
     }
@@ -291,6 +298,9 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if !self.dynamicIdentifier.isEmpty {
       try visitor.visitSingularStringField(value: self.dynamicIdentifier, fieldNumber: 4)
     }
+    if !self.mnemonic.isEmpty {
+      try visitor.visitSingularStringField(value: self.mnemonic, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -299,6 +309,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
     if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
+    if lhs.mnemonic != rhs.mnemonic {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

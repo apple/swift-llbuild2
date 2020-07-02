@@ -24,7 +24,7 @@ ctx.group = MultiThreadedEventLoopGroup(numberOfThreads: ProcessInfo.processInfo
 ctx.db = LLBFileBackedCASDatabase(group: ctx.group, path: gameOfLifeDirectory.appending(component: "cas"))
 
 var logger = Logger(label: "org.swift.llbuild2.game_of_life")
-logger.logLevel = .info
+logger.logLevel = .debug
 ctx.logger = logger
 
 // Create the build engine's dependencies.
@@ -47,11 +47,11 @@ class GameOfLifeBuildEventDelegate: LLBBuildEventDelegate {
     }
 
     func actionRequested(actionKey: LLBActionExecutionKey) {
-        logger.debug("Action requested: \(actionKey.stableHashValue)")
+        logger.debug("Action requested: \(actionKey.command.mnemonic)")
     }
 
     func actionCompleted(actionKey: LLBActionExecutionKey, result: LLBActionResult) {
-        logger.debug("Action completed: \(actionKey.stableHashValue) - \(result)")
+        logger.debug("Action completed: \(actionKey.command.mnemonic) - \(result)")
     }
 }
 

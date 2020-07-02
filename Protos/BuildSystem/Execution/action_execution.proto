@@ -56,6 +56,11 @@ message LLBCommandActionExecution {
     // cases) actions will be scheduled on the executor specified for the build. If set, action execution will find the
     // dynamic executor with this identifier from the dynamic execution delegate and invoke that instead.
     string dynamicIdentifier = 4;
+
+    // Identifier for the type of action this represents. This is only used for display and metrics purposes, it has no
+    // effect in how the action is executed (but is considered to be part of the action key so changes to it invalidate
+    // the action).
+    string mnemonic = 5;
 }
 
 // An action execution description for a merge trees action.

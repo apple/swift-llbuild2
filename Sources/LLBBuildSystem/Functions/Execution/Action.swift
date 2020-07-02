@@ -17,6 +17,7 @@ public extension LLBActionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBArtifact],
         outputs: [LLBActionOutput],
+        mnemonic: String,
         dynamicIdentifier: String? = nil
     ) -> Self {
         return LLBActionKey.with {
@@ -27,6 +28,7 @@ public extension LLBActionKey {
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
+                $0.mnemonic = mnemonic
             })
         }
     }
@@ -84,6 +86,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                     LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
                 },
                 outputs: commandKey.outputs,
+                mnemonic: commandKey.mnemonic,
                 // This should be empty most of the time. Only used for dynamic action registration. Need to check if
                 // the key has an empty dynamic identifier since SwiftProtobuf doesn't support optionals, but want to
                 // keep the Optional interface here.

@@ -186,6 +186,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
+        mnemonic: String = "",
         workingDirectory: String? = nil,
         preActions: [LLBPreAction] = []
     ) throws {
@@ -194,6 +195,7 @@ public class LLBRuleContext {
             environment: environment,
             inputs: inputs,
             outputs: outputs,
+            mnemonic: mnemonic,
             workingDirectory: workingDirectory,
             preActions: preActions,
             dynamicIdentifier: nil
@@ -210,6 +212,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
+        mnemonic: String = "",
         workingDirectory: String? = nil,
         preActions: [LLBPreAction] = []
     ) throws {
@@ -218,6 +221,7 @@ public class LLBRuleContext {
             environment: environment,
             inputs: inputs,
             outputs: outputs,
+            mnemonic: mnemonic,
             workingDirectory: workingDirectory,
             preActions: preActions,
             dynamicIdentifier: dynamicExecutorType.identifier
@@ -229,6 +233,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
+        mnemonic: String,
         workingDirectory: String? = nil,
         preActions: [LLBPreAction] = [],
         dynamicIdentifier: LLBDynamicActionIdentifier?
@@ -255,6 +260,7 @@ public class LLBRuleContext {
                 ),
                 inputs: inputs,
                 outputs: outputs.map { $0.asActionOutput() },
+                mnemonic: mnemonic,
                 dynamicIdentifier: dynamicIdentifier
             )
 
