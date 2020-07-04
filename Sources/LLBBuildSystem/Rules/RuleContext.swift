@@ -46,6 +46,9 @@ public class LLBRuleContext {
     /// The label for the target being evaluated.
     public let label: LLBLabel
 
+    /// The root components applied to each artifact that will be declared.
+    public let artifactRoots: [String]
+
     typealias ActionOutputIndex = (actionIndex: Int, outputIndex: Int)
 
     // Map of declared short paths to declared artifacts from the rule. Use short path as the index since that's unique
@@ -78,6 +81,12 @@ public class LLBRuleContext {
         self.label = label
         self.configurationValue = configurationValue
         self.artifactOwnerID = artifactOwnerID
+
+        if configurationValue.root.isEmpty {
+            self.artifactRoots = [label.asRoot]
+        } else {
+            self.artifactRoots = [configurationValue.root, label.asRoot]
+        }
 
         self.targetDependencies = targetDependencies.reduce(into: [:]) { (dict, entry) in
             switch entry.type {
@@ -155,19 +164,12 @@ public class LLBRuleContext {
                 return artifact
             }
 
-            let roots: [String]
-            if configurationValue.root.isEmpty {
-                roots = [label.asRoot]
-            } else {
-                roots = [configurationValue.root, label.asRoot]
-            }
-
             let artifact: LLBArtifact
             switch type {
             case .directory:
-                artifact = LLBArtifact.derivedUninitializedDirectory(shortPath: path, roots: roots)
+                artifact = LLBArtifact.derivedUninitializedDirectory(shortPath: path, roots: artifactRoots)
             case .file:
-                artifact = LLBArtifact.derivedUninitialized(shortPath: path, roots: roots)
+                artifact = LLBArtifact.derivedUninitialized(shortPath: path, roots: artifactRoots)
             default:
                 fatalError("No paths should lead to here")
             }
