@@ -88,7 +88,7 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
             }
 
             let ruleContext = LLBRuleContext(
-                group: ctx.group,
+                ctx: ctx,
                 label: ruleEvaluationKey.label,
                 configurationValue: configurationValue,
                 artifactOwnerID: key.ruleEvaluationKeyID,
