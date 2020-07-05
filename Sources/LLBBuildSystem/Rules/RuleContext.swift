@@ -24,10 +24,10 @@ public enum LLBRuleContextError: Error {
 fileprivate enum RuleContextTargetDependencyType {
     case single(LLBProviderMap)
     case list([LLBProviderMap])
-    
+
     init?(_ namedConfiguredTargetDependency: LLBNamedConfiguredTargetDependency) {
         switch namedConfiguredTargetDependency.type {
-        
+
         case .single:
             // FIXME: We should validate that there is 1 and only 1 providerMap. This is sort of managed by
             // LLBBuildSystem, so it shouldn't happen that we get 0 or more than 1 provider maps here.
@@ -46,8 +46,8 @@ public class LLBRuleContext {
     /// The label for the target being evaluated.
     public let label: LLBLabel
 
-    /// The root components applied to each artifact that will be declared.
-    public let artifactRoots: [String]
+    /// The execution relative path where declared artifacts are expected.
+    public let outputsDirectory: String
 
     typealias ActionOutputIndex = (actionIndex: Int, outputIndex: Int)
 
@@ -68,8 +68,10 @@ public class LLBRuleContext {
 
     // Private reference to the artifact owner ID to associate in ArtifactOwners.
     private let artifactOwnerID: LLBDataID
-    
+
     private let targetDependencies: [String: RuleContextTargetDependencyType]
+
+    private let artifactRoots: [String]
 
     init(
         group: LLBFuturesDispatchGroup,
@@ -88,6 +90,8 @@ public class LLBRuleContext {
             self.artifactRoots = [configurationValue.root, label.asRoot]
         }
 
+        self.outputsDirectory = self.artifactRoots.joined(separator: "/")
+
         self.targetDependencies = targetDependencies.reduce(into: [:]) { (dict, entry) in
             switch entry.type {
             case .single:
@@ -99,33 +103,33 @@ public class LLBRuleContext {
             }
         }
     }
-    
+
     /// Returns the provider of the specified type, for the given dependency name, or throws if none exists. This API
     /// enforces that the dependency type was declared as a single dependency.
     public func provider<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> P {
         guard let dependencyEntry = targetDependencies[name] else {
             throw LLBRuleContextError.missingDependencyName
         }
-        
+
         guard case let .single(providerMap) = dependencyEntry else {
             throw LLBRuleContextError.dependencyTypeMismatch
         }
-        
+
         // This is so cool, type inference FTW.
         return try providerMap.get()
     }
-    
+
     /// Returns the provider of the specified type, for the given dependency name, or throws if none exists. This API
     /// enforces that the dependency type was declared as a list.
     public func providers<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> [P] {
         guard let dependencyEntry = targetDependencies[name] else {
             throw LLBRuleContextError.missingDependencyName
         }
-        
+
         guard case let .list(providerMaps) = dependencyEntry else {
             throw LLBRuleContextError.dependencyTypeMismatch
         }
-        
+
         return try providerMaps.map { try $0.get() }
     }
 
