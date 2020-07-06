@@ -84,7 +84,7 @@ extension LLBAnySerializable {
         guard let serializableType = registry.lookupType(identifier: typeIdentifier) else {
             throw LLBAnySerializableError.unknownType(typeIdentifier)
         }
-        guard serializableType as? T.Type != nil else {
+        guard serializableType is T.Type else {
             throw LLBAnySerializableError.typeMismatch("\(typeIdentifier) not convertible to \(T.Type.self)")
         }
         // FIXME: this extra buffer copy is unfortunate
