@@ -106,7 +106,7 @@ public class LLBRuleContext {
 
     /// Returns the provider of the specified type, for the given dependency name, or throws if none exists. This API
     /// enforces that the dependency type was declared as a single dependency.
-    public func provider<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> P {
+    public func getProvider<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> P {
         guard let dependencyEntry = targetDependencies[name] else {
             throw LLBRuleContextError.missingDependencyName
         }
@@ -119,9 +119,9 @@ public class LLBRuleContext {
         return try providerMap.get()
     }
 
-    /// Returns the provider of the specified type, for the given dependency name, or throws if none exists. This API
-    /// enforces that the dependency type was declared as a list.
-    public func providers<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> [P] {
+    /// Returns the providers of the specified type, for the given dependency name, or throws if any of the dependencies
+    /// does not provide the requested provider.
+    public func getProviders<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> [P] {
         guard let dependencyEntry = targetDependencies[name] else {
             throw LLBRuleContextError.missingDependencyName
         }
@@ -133,8 +133,38 @@ public class LLBRuleContext {
         return try providerMaps.map { try $0.get() }
     }
 
+    /// Returns the provider of the specified type, for the given dependency name, or nil if none exists. This API
+    /// enforces that the dependency type was declared as a single dependency.
+    public func getOptionalProvider<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> P? {
+        guard let dependencyEntry = targetDependencies[name] else {
+            throw LLBRuleContextError.missingDependencyName
+        }
+
+        guard case let .single(providerMap) = dependencyEntry else {
+            throw LLBRuleContextError.dependencyTypeMismatch
+        }
+
+        // This is so cool, type inference FTW.
+        return try providerMap.getOptional()
+    }
+
+    /// Returns the providers of the specified type, for the given dependency name, if the dependency provides the
+    /// provider. If no dependency provides the provider, returns an empty list. This API enforces that the dependency
+    /// type was declared as a list.
+    public func getOptionalProviders<P: LLBProvider>(for name: String, as providerType: P.Type = P.self) throws -> [P] {
+        guard let dependencyEntry = targetDependencies[name] else {
+            throw LLBRuleContextError.missingDependencyName
+        }
+
+        guard case let .list(providerMaps) = dependencyEntry else {
+            throw LLBRuleContextError.dependencyTypeMismatch
+        }
+
+        return try providerMaps.compactMap { try $0.getOptional() }
+    }
+
     /// Returns a the requested configuration fragment if available on the configuration, or nil otherwise.
-    public func maybeGetFragment<C: LLBConfigurationFragment>(_ configurationType: C.Type = C.self) -> C? {
+    public func getOptionalFragment<C: LLBConfigurationFragment>(_ configurationType: C.Type = C.self) -> C? {
         if let fragment = try? getFragment(configurationType) {
             return fragment
         }

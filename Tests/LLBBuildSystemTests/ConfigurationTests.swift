@@ -76,7 +76,7 @@ private final class ConfigurationTestsBuildRule: LLBBuildRule<ConfigurationTests
         let platformConfiguration = try ruleContext.getFragment(PlatformFragment.self)
         returnValue += platformConfiguration.expensiveCompilerPath
 
-        if let provider: ConfigurationTestsProvider = try? ruleContext.provider(for: "dependency") {
+        if let provider: ConfigurationTestsProvider = try? ruleContext.getProvider(for: "dependency") {
             returnValue += "-\(provider.simpleString)"
         }
 

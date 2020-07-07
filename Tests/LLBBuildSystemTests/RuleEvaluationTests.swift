@@ -91,7 +91,7 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
         } else if configuredTarget.name == "top_level_target" {
             let output = try ruleContext.declareArtifact("top_level_artifact")
 
-            guard let provider: RuleEvaluationProvider = try? ruleContext.provider(for: "dependency") else {
+            guard let provider: RuleEvaluationProvider = try? ruleContext.getProvider(for: "dependency") else {
                 throw StringError("Dependency did not have artifact.")
             }
             

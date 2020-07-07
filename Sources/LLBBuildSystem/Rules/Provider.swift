@@ -42,13 +42,21 @@ public extension LLBProviderMap {
 extension LLBProviderMap {
     /// Returns the provider contained in the map for the given provider type, or throws if none is found.
     public func get<P: LLBProvider>(_ type: P.Type = P.self) throws -> P {
+        guard let provider = try getOptional(P.self) else {
+            throw LLBProviderMapError.providerTypeNotFound(P.polymorphicIdentifier)
+        }
+        
+        return provider
+    }
+
+    public func getOptional<P: LLBProvider>(_ type: P.Type = P.self) throws -> P? {
         for anyProvider in providers {
             if anyProvider.typeIdentifier == P.polymorphicIdentifier {
                 let byteBuffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(anyProvider.serializedBytes))
                 return try P.init(from: byteBuffer)
             }
         }
-        
-        throw LLBProviderMapError.providerTypeNotFound(P.polymorphicIdentifier)
+
+        return nil
     }
 }

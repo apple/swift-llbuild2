@@ -69,7 +69,7 @@ struct BoardProvider: LLBProvider, Codable {
 /// expected in the output.
 class BoardRule: LLBBuildRule<BoardTarget> {
     override func evaluate(configuredTarget: BoardTarget, _ ruleContext: LLBRuleContext) throws -> LLBFuture<[LLBProvider]> {
-        let dependencies: [CellProvider] = try ruleContext.providers(for: "dependencies")
+        let dependencies: [CellProvider] = try ruleContext.getProviders(for: "dependencies")
 
         // Make a dictionary lookup of the cell's point to the artifact containing that state.
         let boardMap = dependencies.reduce(into: [:]) { (dict, dep) in dict[dep.position] = dep.state }

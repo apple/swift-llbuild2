@@ -134,9 +134,9 @@ class CellRule: LLBBuildRule<CellTarget> {
         }
 
         // Get the list of neighbours state artifacts from the dependencies.
-        let neighbours: [LLBArtifact] = try ruleContext.providers(for: "neighbours", as: CellProvider.self).map(\.state)
+        let neighbours: [LLBArtifact] = try ruleContext.getProviders(for: "neighbours", as: CellProvider.self).map(\.state)
         // And also the previous state of the current position.
-        let previousState = try ruleContext.provider(for: "previousState", as: CellProvider.self).state
+        let previousState = try ruleContext.getProvider(for: "previousState", as: CellProvider.self).state
 
         // Register a rule that processes the neighbours and the previous state according to Conway's Game of Life rules
         // and returns an output containing either a 1 or a 0 depending on whether the cell is alive or dead.
