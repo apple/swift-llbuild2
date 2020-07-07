@@ -135,7 +135,16 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
             )
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
-        }
+        } else if configuredTarget.name == "tree_merge_file_output_error" {
+            let output = try ruleContext.declareArtifact("shouldBeDirectory")
+
+            try ruleContext.registerMergeDirectories(
+                [],
+                output: output
+            )
+
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+}
 
         return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [])])
     }
@@ -441,6 +450,40 @@ class RuleEvaluationTests: XCTestCase {
 
             XCTAssertEqual(file1Contents, "I cant breathe\n")
             XCTAssertEqual(file2Contents, "black lives matter\n")
+        }
+    }
+
+    func testOutputForMergeIsFile() throws {
+        try withTemporaryDirectory { tempDir in
+            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
+
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
+
+            let label = try LLBLabel("//some:tree_merge_file_output_error")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
+
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+
+            XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey, ctx).wait()) { error in
+                guard let ruleContextError = error as? LLBRuleContextError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+                guard case .mergeDirectoriesIntoFileError = ruleContextError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+            }
         }
     }
 }

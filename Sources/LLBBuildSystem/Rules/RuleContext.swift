@@ -18,6 +18,7 @@ public enum LLBRuleContextError: Error {
     case invalidRedeclarationOfArtifact(existing: LLBArtifact, new: LLBArtifactType)
     case missingDependencyName
     case dependencyTypeMismatch
+    case mergeDirectoriesIntoFileError
 }
 
 /// Helper storage for the provider maps that preserves the original type of dependency.
@@ -318,6 +319,10 @@ public class LLBRuleContext {
 
     /// Registers an action that merges the given artifacts into a single directory artifact.
     public func registerMergeDirectories(_ inputs: [(artifact: LLBArtifact, path: String?)], output: LLBArtifact) throws {
+        guard output.type == .directory else {
+            // Expected only to merge into a directory, merging into a file is an error.
+            throw LLBRuleContextError.mergeDirectoriesIntoFileError
+        }
         try queue.sync {
             guard output.originType == nil,
                   declaredArtifacts[output.shortPath] == output else {
