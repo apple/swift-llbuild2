@@ -11,13 +11,41 @@ import TSCUtility
 
 public enum LLBActionResult {
     /// The action was successful.
-    case success(LLBActionExecutionValue)
+    case success
 
     /// The action failed. Read the stdoutID and stderrID for further information.
     case failure(stdoutID: LLBDataID, stderrID: LLBDataID)
 
     /// Unknown action failure.
     case unknownFailure
+}
+
+public protocol LLBBuildEventPreAction {
+    var arguments: [String] { get }
+}
+
+public protocol LLBBuildEventActionDescription {
+    var identifier: String { get }
+    var arguments: [String] { get }
+    var environment: [String: String] { get }
+    var preActions: [LLBBuildEventPreAction] { get }
+    var mnemonic: String { get }
+}
+
+public extension LLBBuildEventActionDescription {
+    var identifier: String {
+        get {
+            var hasher = Hasher()
+            arguments.hash(into: &hasher)
+            environment.hash(into: &hasher)
+            preActions.forEach {
+                $0.arguments.hash(into: &hasher)
+            }
+            mnemonic.hash(into: &hasher)
+            let value = hasher.finalize()
+            return "\(value * value.signum())"
+        }
+    }
 }
 
 public protocol LLBBuildEventDelegate {
@@ -27,11 +55,17 @@ public protocol LLBBuildEventDelegate {
     /// Invoked when a target has completed evaluation.
     func targetEvaluationCompleted(label: LLBLabel)
 
-    /// Invoked when an action is being requested.
-    func actionRequested(actionKey: LLBActionExecutionKey)
+    /// Invoked when an action has been scheduled.
+    func actionScheduled(action: LLBBuildEventActionDescription)
 
     /// Invoked when an action has completed.
-    func actionCompleted(actionKey: LLBActionExecutionKey, result: LLBActionResult)
+    func actionCompleted(action: LLBBuildEventActionDescription)
+
+    /// Invoked when an action is starting execution.
+    func actionExecutionStarted(action: LLBBuildEventActionDescription)
+
+    /// Invoked when an action has completed.
+    func actionExecutionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult)
 }
 
 /// Support storing and retrieving a build event delegate instance from a Context.

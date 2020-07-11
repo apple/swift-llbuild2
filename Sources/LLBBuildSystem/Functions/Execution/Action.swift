@@ -89,7 +89,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
     }
 
     private func evaluate(commandKey: LLBCommandAction, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
-        return fi.requestKeyed(commandKey.inputs, ctx).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<(LLBActionExecutionKey, LLBActionExecutionValue)> in
+        return fi.requestKeyed(commandKey.inputs, ctx).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionValue> in
             let actionExecutionKey = LLBActionExecutionKey.command(
                 actionSpec: commandKey.actionSpec,
                 inputs: inputs.map { (artifact, artifactValue) in
@@ -103,23 +103,16 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier)
             )
 
-            ctx.buildEventDelegate?.actionRequested(actionKey: actionExecutionKey)
+            ctx.buildEventDelegate?.actionScheduled(action: actionExecutionKey)
 
             return fi.request(actionExecutionKey, ctx)
-                .map { (value: LLBActionExecutionValue) -> (LLBActionExecutionKey, LLBActionExecutionValue) in
-                    (actionExecutionKey, value)
+                .map { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
+                    ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey)
+                    return LLBActionValue(actionExecutionValue: actionExecutionValue)
                 }.flatMapErrorThrowing { error in
-                    if case let LLBActionExecutionError.actionExecutionError(stdoutID, stderrID) = error {
-                        ctx.buildEventDelegate?.actionCompleted(
-                            actionKey: actionExecutionKey,
-                            result: .failure(stdoutID: stdoutID, stderrID: stderrID)
-                        )
-                    }
+                    ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey)
                     throw error
                 }
-        }.map { (actionExecutionKey: LLBActionExecutionKey, actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
-            ctx.buildEventDelegate?.actionCompleted(actionKey: actionExecutionKey, result: .success(actionExecutionValue))
-            return LLBActionValue(actionExecutionValue: actionExecutionValue)
         }
     }
 

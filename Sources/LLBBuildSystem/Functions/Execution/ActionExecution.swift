@@ -68,6 +68,26 @@ public extension LLBActionExecutionKey {
     }
 }
 
+extension LLBPreActionSpec: LLBBuildEventPreAction {}
+
+extension LLBActionExecutionKey: LLBBuildEventActionDescription {
+    public var arguments: [String] {
+        command.actionSpec.arguments
+    }
+
+    public var environment: [String : String] {
+        command.actionSpec.environment.reduce(into: [:]) { $0[$1.name] = $1.value }
+    }
+
+    public var preActions: [LLBBuildEventPreAction] {
+        self.command.actionSpec.preActions
+    }
+
+    public var mnemonic: String {
+        command.mnemonic
+    }
+}
+
 /// Convenience initializer.
 fileprivate extension LLBActionExecutionValue {
     init(outputs: [LLBDataID], stdoutID: LLBDataID? = nil, stderrID: LLBDataID? = nil) {
@@ -109,7 +129,18 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
 
         switch actionExecutionKey.actionExecutionType {
         case let .command(commandKey):
-            return evaluateCommand(commandKey: commandKey, fi, ctx)
+            ctx.buildEventDelegate?.actionExecutionStarted(action: actionExecutionKey)
+            return evaluateCommand(commandKey: commandKey, fi, ctx).map {
+                ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey, result: .success)
+                return $0
+            }.flatMapErrorThrowing { error in
+                if case let LLBActionExecutionError.actionExecutionError(stdoutID, stderrID) = error {
+                    ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey, result: .failure(stdoutID: stdoutID, stderrID: stderrID))
+                } else {
+                    ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey, result: .unknownFailure)
+                }
+                throw error
+            }
         case let .mergeTrees(mergeTreesKey):
             return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, fi, ctx)
         case .none:
