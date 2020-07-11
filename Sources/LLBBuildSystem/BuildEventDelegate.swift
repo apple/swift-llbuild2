@@ -30,6 +30,7 @@ public protocol LLBBuildEventActionDescription {
     var environment: [String: String] { get }
     var preActions: [LLBBuildEventPreAction] { get }
     var mnemonic: String { get }
+    var description: String { get }
 }
 
 public extension LLBBuildEventActionDescription {

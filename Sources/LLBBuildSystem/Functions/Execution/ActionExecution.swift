@@ -20,6 +20,8 @@ public extension LLBActionExecutionKey {
         workingDirectory: String? = nil,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
+        mnemonic: String = "",
+        description: String = "",
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil
     ) -> Self {
         return LLBActionExecutionKey.with {
@@ -35,6 +37,8 @@ public extension LLBActionExecutionKey {
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
+                $0.mnemonic = mnemonic
+                $0.description_p = description
             })
         }
     }
@@ -43,7 +47,8 @@ public extension LLBActionExecutionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
-        mnemonic: String = "",
+        mnemonic: String,
+        description: String,
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil
     ) -> Self {
         return LLBActionExecutionKey.with {
@@ -55,6 +60,7 @@ public extension LLBActionExecutionKey {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
                 $0.mnemonic = mnemonic
+                $0.description_p = description
             })
         }
     }
@@ -85,6 +91,10 @@ extension LLBActionExecutionKey: LLBBuildEventActionDescription {
 
     public var mnemonic: String {
         command.mnemonic
+    }
+
+    public var description: String {
+        command.description_p
     }
 }
 

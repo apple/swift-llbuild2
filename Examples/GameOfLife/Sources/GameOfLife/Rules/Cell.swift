@@ -158,7 +158,8 @@ class CellRule: LLBBuildRule<CellTarget> {
             ],
             inputs: neighbours + [previousState],
             outputs: [stateArtifact],
-            mnemonic: "CellTask"
+            mnemonic: "CellTask",
+            description: "Evaluating cell \(ruleContext.label.canonical)..."
         )
 
         return ruleContext.group.next().makeSucceededFuture(

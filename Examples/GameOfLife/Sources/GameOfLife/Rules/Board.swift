@@ -105,7 +105,8 @@ class BoardRule: LLBBuildRule<BoardTarget> {
             ],
             inputs: Array(boardMap.values),
             outputs: [board],
-            mnemonic: "BoardTask"
+            mnemonic: "BoardTask",
+            description: "Evaluating board \(ruleContext.label.canonical)..."
         )
 
         // Return the BoardProvider containing the board artifact so that dependents can read it and use it accordingly.
