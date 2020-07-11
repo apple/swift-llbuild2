@@ -46,12 +46,20 @@ class GameOfLifeBuildEventDelegate: LLBBuildEventDelegate {
         logger.debug("Target \(label.canonical) evaluated")
     }
 
-    func actionRequested(actionKey: LLBActionExecutionKey) {
-        logger.debug("Action requested: \(actionKey.command.mnemonic)")
+    func actionScheduled(action: LLBBuildEventActionDescription) {
+        logger.debug("Action scheduled: \(action.mnemonic)")
     }
 
-    func actionCompleted(actionKey: LLBActionExecutionKey, result: LLBActionResult) {
-        logger.debug("Action completed: \(actionKey.command.mnemonic) - \(result)")
+    func actionCompleted(action: LLBBuildEventActionDescription) {
+        logger.debug("Action completed: \(action.mnemonic)")
+    }
+
+    func actionExecutionStarted(action: LLBBuildEventActionDescription) {
+        logger.debug("Action execution started: \(action.mnemonic)")
+    }
+
+    func actionExecutionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult) {
+        logger.debug("Action action execution completed: \(action.mnemonic) - \(result)")
     }
 }
 
