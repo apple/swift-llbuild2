@@ -47,19 +47,19 @@ class GameOfLifeBuildEventDelegate: LLBBuildEventDelegate {
     }
 
     func actionScheduled(action: LLBBuildEventActionDescription) {
-        logger.debug("Action scheduled: \(action.mnemonic)")
+        logger.debug("Action scheduled: \(action.description)")
     }
 
     func actionCompleted(action: LLBBuildEventActionDescription) {
-        logger.debug("Action completed: \(action.mnemonic)")
+        logger.debug("Action completed: \(action.description)")
     }
 
     func actionExecutionStarted(action: LLBBuildEventActionDescription) {
-        logger.debug("Action execution started: \(action.mnemonic)")
+        logger.debug("Action execution started: \(action.description)")
     }
 
     func actionExecutionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult) {
-        logger.debug("Action action execution completed: \(action.mnemonic) - \(result)")
+        logger.debug("Action action execution completed: \(action.description) - \(result)")
     }
 }
 

@@ -61,6 +61,10 @@ message LLBCommandAction {
     // effect in how the action is executed (but is considered to be part of the action key so changes to it invalidate
     // the action).
     string mnemonic = 5;
+
+    // A user presentable description for the action, can be used to display currently running actions in a UX friendly
+    // manner.
+    string description = 6;
 }
 
 // An action that merges artifacts into a single tree artifact. There is no output specification since that lies in the

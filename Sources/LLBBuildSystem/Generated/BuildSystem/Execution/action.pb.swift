@@ -151,6 +151,10 @@ public struct LLBCommandAction {
   /// the action).
   public var mnemonic: String = String()
 
+  /// A user presentable description for the action, can be used to display currently running actions in a UX friendly
+  /// manner.
+  public var description_p: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -305,6 +309,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     3: .same(proto: "outputs"),
     4: .same(proto: "dynamicIdentifier"),
     5: .same(proto: "mnemonic"),
+    6: .same(proto: "description"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -315,6 +320,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       case 3: try decoder.decodeRepeatedMessageField(value: &self.outputs)
       case 4: try decoder.decodeSingularStringField(value: &self.dynamicIdentifier)
       case 5: try decoder.decodeSingularStringField(value: &self.mnemonic)
+      case 6: try decoder.decodeSingularStringField(value: &self.description_p)
       default: break
       }
     }
@@ -336,6 +342,9 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if !self.mnemonic.isEmpty {
       try visitor.visitSingularStringField(value: self.mnemonic, fieldNumber: 5)
     }
+    if !self.description_p.isEmpty {
+      try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -345,6 +354,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if lhs.outputs != rhs.outputs {return false}
     if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
     if lhs.mnemonic != rhs.mnemonic {return false}
+    if lhs.description_p != rhs.description_p {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
