@@ -226,7 +226,8 @@ public class LLBRuleContext {
         mnemonic: String = "",
         description: String = "",
         workingDirectory: String? = nil,
-        preActions: [LLBPreAction] = []
+        preActions: [LLBPreAction] = [],
+        cacheableFailure: Bool = false
     ) throws {
         try registerAction(
             arguments: arguments,
@@ -237,7 +238,8 @@ public class LLBRuleContext {
             description: description,
             workingDirectory: workingDirectory,
             preActions: preActions,
-            dynamicIdentifier: nil
+            dynamicIdentifier: nil,
+            cacheableFailure: cacheableFailure
         )
     }
 
@@ -254,7 +256,8 @@ public class LLBRuleContext {
         mnemonic: String = "",
         description: String = "",
         workingDirectory: String? = nil,
-        preActions: [LLBPreAction] = []
+        preActions: [LLBPreAction] = [],
+        cacheableFailure: Bool = false
     ) throws {
         try registerAction(
             arguments: arguments,
@@ -265,20 +268,22 @@ public class LLBRuleContext {
             description: description,
             workingDirectory: workingDirectory,
             preActions: preActions,
-            dynamicIdentifier: dynamicExecutorType.identifier
+            dynamicIdentifier: dynamicExecutorType.identifier,
+            cacheableFailure: cacheableFailure
         )
     }
 
     private func registerAction(
         arguments: [String],
-        environment: [String: String] = [:],
+        environment: [String: String],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
         mnemonic: String,
         description: String,
-        workingDirectory: String? = nil,
-        preActions: [LLBPreAction] = [],
-        dynamicIdentifier: LLBDynamicActionIdentifier?
+        workingDirectory: String?,
+        preActions: [LLBPreAction],
+        dynamicIdentifier: LLBDynamicActionIdentifier?,
+        cacheableFailure: Bool
     ) throws {
         try queue.sync {
             // Check that all outputs for the action are uninitialized, have already been declared (and correspond to
@@ -304,7 +309,8 @@ public class LLBRuleContext {
                 outputs: outputs.map { $0.asActionOutput() },
                 mnemonic: mnemonic,
                 description: description,
-                dynamicIdentifier: dynamicIdentifier
+                dynamicIdentifier: dynamicIdentifier,
+                cacheableFailure: cacheableFailure
             )
 
             registeredActions.append(actionKey)

@@ -112,6 +112,9 @@ public struct LLBActionExecutionValue {
   /// Clears the value of `stderrID`. Subsequent reads from it will return its default value.
   public mutating func clearStderrID() {self._stderrID = nil}
 
+  /// Whether the action execution was a cached failure.
+  public var cachedFailure: Bool = false
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -155,6 +158,11 @@ public struct LLBCommandActionExecution {
   /// A user presentable description for the action, can be used to display currently running actions in a UX friendly
   /// manner.
   public var description_p: String = String()
+
+  /// Whether the action should be cached even if it resulted in an error. This can be useful in cases where large
+  /// actions are skipped if it has already been tried, in a context where it is known that the action is
+  /// deterministic. Most of the time this should be unset.
+  public var cacheableFailure: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -235,6 +243,7 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
     1: .same(proto: "outputs"),
     2: .same(proto: "stdoutID"),
     3: .same(proto: "stderrID"),
+    4: .same(proto: "cachedFailure"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -243,6 +252,7 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
       case 1: try decoder.decodeRepeatedMessageField(value: &self.outputs)
       case 2: try decoder.decodeSingularMessageField(value: &self._stdoutID)
       case 3: try decoder.decodeSingularMessageField(value: &self._stderrID)
+      case 4: try decoder.decodeSingularBoolField(value: &self.cachedFailure)
       default: break
       }
     }
@@ -258,6 +268,9 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
     if let v = self._stderrID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     }
+    if self.cachedFailure != false {
+      try visitor.visitSingularBoolField(value: self.cachedFailure, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -265,6 +278,7 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
     if lhs.outputs != rhs.outputs {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
     if lhs._stderrID != rhs._stderrID {return false}
+    if lhs.cachedFailure != rhs.cachedFailure {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -279,6 +293,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     4: .same(proto: "dynamicIdentifier"),
     5: .same(proto: "mnemonic"),
     6: .same(proto: "description"),
+    7: .same(proto: "cacheableFailure"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -290,6 +305,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 4: try decoder.decodeSingularStringField(value: &self.dynamicIdentifier)
       case 5: try decoder.decodeSingularStringField(value: &self.mnemonic)
       case 6: try decoder.decodeSingularStringField(value: &self.description_p)
+      case 7: try decoder.decodeSingularBoolField(value: &self.cacheableFailure)
       default: break
       }
     }
@@ -314,6 +330,9 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if !self.description_p.isEmpty {
       try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 6)
     }
+    if self.cacheableFailure != false {
+      try visitor.visitSingularBoolField(value: self.cacheableFailure, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -324,6 +343,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
     if lhs.mnemonic != rhs.mnemonic {return false}
     if lhs.description_p != rhs.description_p {return false}
+    if lhs.cacheableFailure != rhs.cacheableFailure {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

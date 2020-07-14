@@ -22,7 +22,8 @@ public extension LLBActionExecutionKey {
         outputs: [LLBActionOutput],
         mnemonic: String = "",
         description: String = "",
-        dynamicIdentifier: LLBDynamicActionIdentifier? = nil
+        dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
+        cacheableFailure: Bool = false
     ) -> Self {
         return LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(LLBCommandActionExecution.with {
@@ -39,6 +40,7 @@ public extension LLBActionExecutionKey {
                 }
                 $0.mnemonic = mnemonic
                 $0.description_p = description
+                $0.cacheableFailure = cacheableFailure
             })
         }
     }
@@ -49,7 +51,8 @@ public extension LLBActionExecutionKey {
         outputs: [LLBActionOutput],
         mnemonic: String,
         description: String,
-        dynamicIdentifier: LLBDynamicActionIdentifier? = nil
+        dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
+        cacheableFailure: Bool = false
     ) -> Self {
         return LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(LLBCommandActionExecution.with {
@@ -61,6 +64,7 @@ public extension LLBActionExecutionKey {
                 }
                 $0.mnemonic = mnemonic
                 $0.description_p = description
+                $0.cacheableFailure = cacheableFailure
             })
         }
     }
@@ -114,6 +118,14 @@ fileprivate extension LLBActionExecutionValue {
         self.outputs = executionResponse.outputs
         self.stdoutID = executionResponse.stdoutID
         self.stderrID = executionResponse.stderrID
+    }
+
+    static func cachedFailure(stdoutID: LLBDataID, stderrID: LLBDataID) -> LLBActionExecutionValue {
+        return LLBActionExecutionValue.with {
+            $0.cachedFailure = true
+            $0.stdoutID = stdoutID
+            $0.stderrID = stderrID
+        }
     }
 }
 
@@ -179,10 +191,17 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         }.flatMapThrowing { executionResponse in
             // If the action failed, convert it into an actual error with the dataIDs of the output logs.
             if executionResponse.exitCode != 0 {
-                throw LLBActionExecutionError.actionExecutionError(
-                    executionResponse.stdoutID,
-                    executionResponse.stderrID
-                )
+                if commandKey.cacheableFailure {
+                    return LLBActionExecutionValue.cachedFailure(
+                        stdoutID: executionResponse.stdoutID,
+                        stderrID: executionResponse.stderrID
+                    )
+                } else {
+                    throw LLBActionExecutionError.actionExecutionError(
+                        executionResponse.stdoutID,
+                        executionResponse.stderrID
+                    )
+                }
             }
 
             return LLBActionExecutionValue(from: executionResponse)

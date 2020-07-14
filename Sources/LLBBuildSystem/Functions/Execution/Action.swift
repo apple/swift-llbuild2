@@ -19,7 +19,8 @@ public extension LLBActionKey {
         outputs: [LLBActionOutput],
         mnemonic: String,
         description: String,
-        dynamicIdentifier: String? = nil
+        dynamicIdentifier: String? = nil,
+        cacheableFailure: Bool = false
     ) -> Self {
         return LLBActionKey.with {
             $0.actionType = .command(LLBCommandAction.with {
@@ -31,6 +32,7 @@ public extension LLBActionKey {
                 }
                 $0.mnemonic = mnemonic
                 $0.description_p = description
+                $0.cacheableFailure = cacheableFailure
             })
         }
     }
@@ -103,13 +105,20 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 // This should be empty most of the time. Only used for dynamic action registration. Need to check if
                 // the key has an empty dynamic identifier since SwiftProtobuf doesn't support optionals, but want to
                 // keep the Optional interface here.
-                dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier)
+                dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier),
+                cacheableFailure: commandKey.cacheableFailure
             )
 
             ctx.buildEventDelegate?.actionScheduled(action: actionExecutionKey)
 
             return fi.request(actionExecutionKey, ctx)
-                .map { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
+                .flatMapThrowing { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
+                    if actionExecutionValue.cachedFailure {
+                        throw LLBActionExecutionError.actionExecutionError(
+                            actionExecutionValue.stdoutID,
+                            actionExecutionValue.stderrID
+                        )
+                    }
                     ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey)
                     return LLBActionValue(actionExecutionValue: actionExecutionValue)
                 }.flatMapErrorThrowing { error in

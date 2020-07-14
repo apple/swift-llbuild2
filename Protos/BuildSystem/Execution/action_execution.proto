@@ -38,6 +38,9 @@ message LLBActionExecutionValue {
 
     // The data ID for the stderr of the action.
     LLBDataID stderrID = 3;
+
+    // Whether the action execution was a cached failure.
+    bool cachedFailure = 4;
 }
 
 // An action execution description for a command line invocation.
@@ -65,6 +68,11 @@ message LLBCommandActionExecution {
     // A user presentable description for the action, can be used to display currently running actions in a UX friendly
     // manner.
     string description = 6;
+
+    // Whether the action should be cached even if it resulted in an error. This can be useful in cases where large
+    // actions are skipped if it has already been tried, in a context where it is known that the action is
+    // deterministic. Most of the time this should be unset.
+    bool cacheableFailure = 7;
 }
 
 // An action execution description for a merge trees action.

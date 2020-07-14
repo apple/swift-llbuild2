@@ -155,6 +155,11 @@ public struct LLBCommandAction {
   /// manner.
   public var description_p: String = String()
 
+  /// Whether the action should be cached even if it resulted in an error. This can be useful in cases where large
+  /// actions are skipped if it has already been tried, in a context where it is known that the action is
+  /// deterministic. Most of the time this should be unset.
+  public var cacheableFailure: Bool = false
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -310,6 +315,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     4: .same(proto: "dynamicIdentifier"),
     5: .same(proto: "mnemonic"),
     6: .same(proto: "description"),
+    7: .same(proto: "cacheableFailure"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -321,6 +327,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       case 4: try decoder.decodeSingularStringField(value: &self.dynamicIdentifier)
       case 5: try decoder.decodeSingularStringField(value: &self.mnemonic)
       case 6: try decoder.decodeSingularStringField(value: &self.description_p)
+      case 7: try decoder.decodeSingularBoolField(value: &self.cacheableFailure)
       default: break
       }
     }
@@ -345,6 +352,9 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if !self.description_p.isEmpty {
       try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 6)
     }
+    if self.cacheableFailure != false {
+      try visitor.visitSingularBoolField(value: self.cacheableFailure, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -355,6 +365,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
     if lhs.mnemonic != rhs.mnemonic {return false}
     if lhs.description_p != rhs.description_p {return false}
+    if lhs.cacheableFailure != rhs.cacheableFailure {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

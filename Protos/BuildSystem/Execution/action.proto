@@ -65,6 +65,11 @@ message LLBCommandAction {
     // A user presentable description for the action, can be used to display currently running actions in a UX friendly
     // manner.
     string description = 6;
+
+    // Whether the action should be cached even if it resulted in an error. This can be useful in cases where large
+    // actions are skipped if it has already been tried, in a context where it is known that the action is
+    // deterministic. Most of the time this should be unset.
+    bool cacheableFailure = 7;
 }
 
 // An action that merges artifacts into a single tree artifact. There is no output specification since that lies in the
