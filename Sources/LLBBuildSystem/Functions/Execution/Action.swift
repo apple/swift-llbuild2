@@ -80,10 +80,33 @@ public enum LLBActionError: Error {
     case invalidMergeTreeInput(String)
 }
 
+extension LLBActionKey: LLBBuildEventActionDescription {
+    public var arguments: [String] {
+        command.actionSpec.arguments
+    }
+
+    public var environment: [String : String] {
+        command.actionSpec.environment.reduce(into: [:]) { $0[$1.name] = $1.value }
+    }
+
+    public var preActions: [LLBBuildEventPreAction] {
+        self.command.actionSpec.preActions
+    }
+
+    public var mnemonic: String {
+        command.mnemonic
+    }
+
+    public var description: String {
+        command.description_p
+    }
+}
+
 final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
     override func evaluate(key actionKey: LLBActionKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
         switch actionKey.actionType {
         case let .command(commandKey):
+            ctx.buildEventDelegate?.actionScheduled(action: actionKey)
             return evaluate(commandKey: commandKey, fi, ctx)
         case let .mergeTrees(mergeTreesKey):
             return evaluate(mergeTreesKey: mergeTreesKey, fi, ctx)
@@ -108,8 +131,6 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier),
                 cacheableFailure: commandKey.cacheableFailure
             )
-
-            ctx.buildEventDelegate?.actionScheduled(action: actionExecutionKey)
 
             return fi.request(actionExecutionKey, ctx)
                 .flatMapThrowing { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
