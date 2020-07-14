@@ -102,7 +102,7 @@ private final class DummyBuildEventDelegate: LLBBuildEventDelegate {
         semaphore.signal()
     }
 
-    func actionCompleted(action: LLBBuildEventActionDescription) {
+    func actionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult) {
         markEvent("actionCompleted \(action.identifier)")
     }
 
@@ -110,7 +110,7 @@ private final class DummyBuildEventDelegate: LLBBuildEventDelegate {
         markEvent("actionExecutionStarted \(action.identifier)")
     }
 
-    func actionExecutionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult) {
+    func actionExecutionCompleted(action: LLBBuildEventActionDescription) {
         markEvent("actionExecutionCompleted \(action.identifier)")
     }
 }

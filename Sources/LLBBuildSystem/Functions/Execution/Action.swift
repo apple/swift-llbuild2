@@ -119,10 +119,23 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                             actionExecutionValue.stderrID
                         )
                     }
-                    ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey)
+                    ctx.buildEventDelegate?.actionCompleted(
+                        action: actionExecutionKey,
+                        result: .success(
+                            stdoutID: actionExecutionValue.stdoutID,
+                            stderrID: actionExecutionValue.stderrID
+                        )
+                    )
                     return LLBActionValue(actionExecutionValue: actionExecutionValue)
                 }.flatMapErrorThrowing { error in
-                    ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey)
+                    if case let LLBActionExecutionError.actionExecutionError(stdoutID, stderrID) = error {
+                        ctx.buildEventDelegate?.actionCompleted(
+                            action: actionExecutionKey,
+                            result: .failure(stdoutID: stdoutID, stderrID: stderrID)
+                        )
+                    } else {
+                        ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey, result: .unknownFailure)
+                    }
                     throw error
                 }
         }

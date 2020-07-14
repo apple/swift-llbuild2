@@ -50,16 +50,16 @@ class GameOfLifeBuildEventDelegate: LLBBuildEventDelegate {
         logger.debug("Action scheduled: \(action.description)")
     }
 
-    func actionCompleted(action: LLBBuildEventActionDescription) {
-        logger.debug("Action completed: \(action.description)")
+    func actionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult) {
+        logger.debug("Action completed: \(action.description) - \(result)")
     }
 
     func actionExecutionStarted(action: LLBBuildEventActionDescription) {
         logger.debug("Action execution started: \(action.description)")
     }
 
-    func actionExecutionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult) {
-        logger.debug("Action action execution completed: \(action.description) - \(result)")
+    func actionExecutionCompleted(action: LLBBuildEventActionDescription) {
+        logger.debug("Action action execution completed: \(action.description)")
     }
 }
 

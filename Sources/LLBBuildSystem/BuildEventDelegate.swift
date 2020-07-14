@@ -11,7 +11,7 @@ import TSCUtility
 
 public enum LLBActionResult {
     /// The action was successful.
-    case success
+    case success(stdoutID: LLBDataID, stderrID: LLBDataID)
 
     /// The action failed. Read the stdoutID and stderrID for further information.
     case failure(stdoutID: LLBDataID, stderrID: LLBDataID)
@@ -60,13 +60,13 @@ public protocol LLBBuildEventDelegate {
     func actionScheduled(action: LLBBuildEventActionDescription)
 
     /// Invoked when an action has completed.
-    func actionCompleted(action: LLBBuildEventActionDescription)
+    func actionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult)
 
     /// Invoked when an action is starting execution.
     func actionExecutionStarted(action: LLBBuildEventActionDescription)
 
     /// Invoked when an action has completed.
-    func actionExecutionCompleted(action: LLBBuildEventActionDescription, result: LLBActionResult)
+    func actionExecutionCompleted(action: LLBBuildEventActionDescription)
 }
 
 /// Support storing and retrieving a build event delegate instance from a Context.

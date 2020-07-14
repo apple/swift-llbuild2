@@ -153,14 +153,10 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         case let .command(commandKey):
             ctx.buildEventDelegate?.actionExecutionStarted(action: actionExecutionKey)
             return evaluateCommand(commandKey: commandKey, fi, ctx).map {
-                ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey, result: .success)
+                ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
                 return $0
             }.flatMapErrorThrowing { error in
-                if case let LLBActionExecutionError.actionExecutionError(stdoutID, stderrID) = error {
-                    ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey, result: .failure(stdoutID: stdoutID, stderrID: stderrID))
-                } else {
-                    ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey, result: .unknownFailure)
-                }
+                ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
                 throw error
             }
         case let .mergeTrees(mergeTreesKey):
