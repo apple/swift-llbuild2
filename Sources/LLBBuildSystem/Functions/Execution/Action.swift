@@ -167,7 +167,19 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                             result: .failure(stdoutID: stdoutID, stderrID: stderrID)
                         )
                     } else {
-                        ctx.buildEventDelegate?.actionCompleted(action: actionExecutionKey, result: .unknownFailure)
+                        // Log it just in case there's an issue with saving into the db.
+                        ctx.logger?.debug("unknown action error: \(error)")
+
+                        let stdoutIDFuture = ctx.db.put(data: LLBByteBuffer.init(repeating: 0, count: 0), ctx)
+                        let stderr = "error: unknown: \(error)"
+                        let stderrIDFuture = ctx.db.put(data: LLBByteBuffer.init(string: stderr), ctx)
+
+                        _ = stdoutIDFuture.and(stderrIDFuture).map { stdoutID, stderrID in
+                            ctx.buildEventDelegate?.actionCompleted(
+                                action: actionExecutionKey,
+                                result: .failure(stdoutID: stdoutID, stderrID: stderrID)
+                            )
+                        }
                     }
                     throw error
                 }

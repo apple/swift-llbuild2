@@ -15,9 +15,6 @@ public enum LLBActionResult {
 
     /// The action failed. Read the stdoutID and stderrID for further information.
     case failure(stdoutID: LLBDataID, stderrID: LLBDataID)
-
-    /// Unknown action failure.
-    case unknownFailure
 }
 
 public protocol LLBBuildEventPreAction {
