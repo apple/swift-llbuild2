@@ -52,7 +52,8 @@ public extension LLBActionExecutionKey {
         mnemonic: String,
         description: String,
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
-        cacheableFailure: Bool = false
+        cacheableFailure: Bool = false,
+        label: LLBLabel? = nil
     ) -> Self {
         return LLBActionExecutionKey.with {
             $0.actionExecutionType = .command(LLBCommandActionExecution.with {
@@ -65,6 +66,9 @@ public extension LLBActionExecutionKey {
                 $0.mnemonic = mnemonic
                 $0.description_p = description
                 $0.cacheableFailure = cacheableFailure
+                if let label = label {
+                    $0.label = label
+                }
             })
         }
     }
@@ -99,6 +103,13 @@ extension LLBActionExecutionKey: LLBBuildEventActionDescription {
 
     public var description: String {
         command.description_p
+    }
+
+    public var owner: LLBLabel? {
+        if command.hasLabel {
+            return command.label
+        }
+        return nil
     }
 }
 

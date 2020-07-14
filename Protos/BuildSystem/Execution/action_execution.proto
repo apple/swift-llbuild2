@@ -8,6 +8,7 @@
 
 syntax = "proto3";
 
+import "BuildSystem/Evaluation/label.proto";
 import "EngineProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
@@ -73,6 +74,9 @@ message LLBCommandActionExecution {
     // actions are skipped if it has already been tried, in a context where it is known that the action is
     // deterministic. Most of the time this should be unset.
     bool cacheableFailure = 7;
+
+    // The label for the target that registered the action.
+    LLBLabel label = 8;
 }
 
 // An action execution description for a merge trees action.

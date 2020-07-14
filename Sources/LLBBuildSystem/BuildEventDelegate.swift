@@ -31,6 +31,7 @@ public protocol LLBBuildEventActionDescription {
     var preActions: [LLBBuildEventPreAction] { get }
     var mnemonic: String { get }
     var description: String { get }
+    var owner: LLBLabel? { get }
 }
 
 public extension LLBBuildEventActionDescription {

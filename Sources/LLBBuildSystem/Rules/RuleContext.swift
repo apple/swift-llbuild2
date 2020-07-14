@@ -310,7 +310,8 @@ public class LLBRuleContext {
                 mnemonic: mnemonic,
                 description: description,
                 dynamicIdentifier: dynamicIdentifier,
-                cacheableFailure: cacheableFailure
+                cacheableFailure: cacheableFailure,
+                label: label
             )
 
             registeredActions.append(actionKey)

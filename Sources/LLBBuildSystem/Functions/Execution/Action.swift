@@ -20,7 +20,8 @@ public extension LLBActionKey {
         mnemonic: String,
         description: String,
         dynamicIdentifier: String? = nil,
-        cacheableFailure: Bool = false
+        cacheableFailure: Bool = false,
+        label: LLBLabel? = nil
     ) -> Self {
         return LLBActionKey.with {
             $0.actionType = .command(LLBCommandAction.with {
@@ -33,6 +34,9 @@ public extension LLBActionKey {
                 $0.mnemonic = mnemonic
                 $0.description_p = description
                 $0.cacheableFailure = cacheableFailure
+                if let label = label {
+                    $0.label = label
+                }
             })
         }
     }
@@ -100,6 +104,13 @@ extension LLBActionKey: LLBBuildEventActionDescription {
     public var description: String {
         command.description_p
     }
+
+    public var owner: LLBLabel? {
+        if command.hasLabel {
+            return command.label
+        }
+        return nil
+    }
 }
 
 final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
@@ -129,7 +140,8 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 // the key has an empty dynamic identifier since SwiftProtobuf doesn't support optionals, but want to
                 // keep the Optional interface here.
                 dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier),
-                cacheableFailure: commandKey.cacheableFailure
+                cacheableFailure: commandKey.cacheableFailure,
+                label: (commandKey.hasLabel ? commandKey.label : nil)
             )
 
             return fi.request(actionExecutionKey, ctx)

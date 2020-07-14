@@ -9,6 +9,7 @@
 syntax = "proto3";
 
 import "BuildSystem/Evaluation/artifact.proto";
+import "BuildSystem/Evaluation/label.proto";
 import "EngineProtocol/action_execution.proto";
 import "CASProtocol/data_id.proto";
 
@@ -70,6 +71,9 @@ message LLBCommandAction {
     // actions are skipped if it has already been tried, in a context where it is known that the action is
     // deterministic. Most of the time this should be unset.
     bool cacheableFailure = 7;
+
+    // The label for the target that registered the action.
+    LLBLabel label = 8;
 }
 
 // An action that merges artifacts into a single tree artifact. There is no output specification since that lies in the

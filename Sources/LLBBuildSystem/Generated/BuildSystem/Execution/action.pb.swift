@@ -160,11 +160,22 @@ public struct LLBCommandAction {
   /// deterministic. Most of the time this should be unset.
   public var cacheableFailure: Bool = false
 
+  /// The label for the target that registered the action.
+  public var label: LLBLabel {
+    get {return _label ?? LLBLabel()}
+    set {_label = newValue}
+  }
+  /// Returns true if `label` has been explicitly set.
+  public var hasLabel: Bool {return self._label != nil}
+  /// Clears the value of `label`. Subsequent reads from it will return its default value.
+  public mutating func clearLabel() {self._label = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _actionSpec: llbuild2.LLBActionSpec? = nil
+  fileprivate var _label: LLBLabel? = nil
 }
 
 /// An action that merges artifacts into a single tree artifact. There is no output specification since that lies in the
@@ -316,6 +327,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     5: .same(proto: "mnemonic"),
     6: .same(proto: "description"),
     7: .same(proto: "cacheableFailure"),
+    8: .same(proto: "label"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -328,6 +340,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       case 5: try decoder.decodeSingularStringField(value: &self.mnemonic)
       case 6: try decoder.decodeSingularStringField(value: &self.description_p)
       case 7: try decoder.decodeSingularBoolField(value: &self.cacheableFailure)
+      case 8: try decoder.decodeSingularMessageField(value: &self._label)
       default: break
       }
     }
@@ -355,6 +368,9 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if self.cacheableFailure != false {
       try visitor.visitSingularBoolField(value: self.cacheableFailure, fieldNumber: 7)
     }
+    if let v = self._label {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -366,6 +382,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if lhs.mnemonic != rhs.mnemonic {return false}
     if lhs.description_p != rhs.description_p {return false}
     if lhs.cacheableFailure != rhs.cacheableFailure {return false}
+    if lhs._label != rhs._label {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
