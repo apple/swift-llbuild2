@@ -9,6 +9,7 @@
 syntax = "proto3";
 
 import "CASProtocol/data_id.proto";
+import "google/protobuf/any.proto";
 
 /// Enum representing the supported artifact types for remote action execution.
 enum LLBArtifactType {
@@ -120,4 +121,7 @@ message LLBActionExecutionResponse {
 
     /// The dataID for the contents of the stderr of the action.
     LLBDataID stderrID = 4;
+
+    // Any container for moving around unspecified data.
+    repeated google.protobuf.Any additionalData = 5;
 }

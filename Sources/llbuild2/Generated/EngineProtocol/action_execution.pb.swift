@@ -261,6 +261,9 @@ public struct LLBActionExecutionResponse {
   /// Clears the value of `stderrID`. Subsequent reads from it will return its default value.
   public mutating func clearStderrID() {self._stderrID = nil}
 
+  /// Any container for moving around unspecified data.
+  public var additionalData: [SwiftProtobuf.Google_Protobuf_Any] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -525,6 +528,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     2: .same(proto: "exitCode"),
     3: .same(proto: "stdoutID"),
     4: .same(proto: "stderrID"),
+    5: .same(proto: "additionalData"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -534,6 +538,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
       case 2: try decoder.decodeSingularInt32Field(value: &self.exitCode)
       case 3: try decoder.decodeSingularMessageField(value: &self._stdoutID)
       case 4: try decoder.decodeSingularMessageField(value: &self._stderrID)
+      case 5: try decoder.decodeRepeatedMessageField(value: &self.additionalData)
       default: break
       }
     }
@@ -552,6 +557,9 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if let v = self._stderrID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
     }
+    if !self.additionalData.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -560,6 +568,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if lhs.exitCode != rhs.exitCode {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
     if lhs._stderrID != rhs._stderrID {return false}
+    if lhs.additionalData != rhs.additionalData {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

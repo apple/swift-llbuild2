@@ -6,6 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import SwiftProtobuf
 
 public extension LLBActionSpec {
     init(
@@ -44,11 +45,12 @@ public extension LLBActionExecutionRequest {
 }
 
 public extension LLBActionExecutionResponse {
-    init(outputs: [LLBDataID], exitCode: Int = 0, stdoutID: LLBDataID, stderrID: LLBDataID) {
+    init(outputs: [LLBDataID], exitCode: Int = 0, stdoutID: LLBDataID, stderrID: LLBDataID, additionalData: [Google_Protobuf_Any] = []) {
         self.outputs = outputs
         self.exitCode = Int32(exitCode)
         self.stdoutID = stdoutID
         self.stderrID = stderrID
+        self.additionalData = additionalData
     }
 }
 
