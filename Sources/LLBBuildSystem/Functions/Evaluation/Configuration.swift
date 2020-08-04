@@ -8,12 +8,25 @@
 
 import llbuild2
 import Crypto
+import Foundation
 
 extension LLBConfigurationKey: LLBBuildKey {}
 extension LLBConfigurationValue: LLBBuildValue {}
 
 public protocol LLBConfigurationFragmentKey: LLBBuildKey, LLBPolymorphicSerializable {}
-public protocol LLBConfigurationFragment: LLBBuildValue, LLBPolymorphicSerializable {}
+public protocol LLBConfigurationFragment: LLBBuildValue, LLBPolymorphicSerializable {
+    /// Overrideable method to signal whether this fragment contributes to the hash calculation, which is generally
+    /// used as an artifact path root to differentiate artifacts created under different configurations. Some
+    /// configurations are known to not affect cross-configuration actions, so in those cases, it's better to not
+    /// include them in the hash.
+    static func contributesToHash() -> Bool
+}
+
+public extension LLBConfigurationFragment {
+    static func contributesToHash() -> Bool {
+        return true
+    }
+}
 
 public enum LLBConfigurationError: Error {
     /// Unexpected type when deserializing the configured target
@@ -102,9 +115,14 @@ final class ConfigurationFunction: LLBBuildFunction<LLBConfigurationKey, LLBConf
                     return configurationValue
                 }
 
+                var hash = SHA256()
+
                 // Calculate the hash of the configuration and create a root value for it.
-                let hash = SHA256.hash(data: try! configurationValue.serializedData())
-                configurationValue.root = hash.compactMap { String(format: "%02x", $0) }.joined()
+                try fragments.filter { type(of: $0).contributesToHash() }.forEach {
+                    hash.update(data: try Data($0.toBytes().readableBytesView))
+                }
+
+                configurationValue.root = hash.finalize().compactMap { String(format: "%02x", $0) }.joined()
 
                 return configurationValue
 
