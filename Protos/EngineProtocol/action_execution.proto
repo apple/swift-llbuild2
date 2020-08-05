@@ -104,6 +104,9 @@ message LLBActionExecutionRequest {
 
     /// The expected outputs from the action execution.
     repeated LLBActionOutput outputs = 3;
+
+    // Any container for moving around unspecified data.
+    repeated google.protobuf.Any additionalData = 5;
 }
 
 /// The response for a remote action execution request.

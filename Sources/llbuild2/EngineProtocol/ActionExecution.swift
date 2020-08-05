@@ -37,10 +37,11 @@ public extension LLBPreActionSpec {
 }
 
 public extension LLBActionExecutionRequest {
-    init(actionSpec: LLBActionSpec, inputs: [LLBActionInput], outputs: [LLBActionOutput]) {
+    init(actionSpec: LLBActionSpec, inputs: [LLBActionInput], outputs: [LLBActionOutput], additionalData: [Google_Protobuf_Any] = []) {
         self.actionSpec = actionSpec
         self.inputs = inputs
         self.outputs = outputs
+        self.additionalData = additionalData
     }
 }
 

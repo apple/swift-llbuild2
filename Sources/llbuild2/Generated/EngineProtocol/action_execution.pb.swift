@@ -220,6 +220,9 @@ public struct LLBActionExecutionRequest {
   //// The expected outputs from the action execution.
   public var outputs: [LLBActionOutput] = []
 
+  /// Any container for moving around unspecified data.
+  public var additionalData: [SwiftProtobuf.Google_Protobuf_Any] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -486,6 +489,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     1: .same(proto: "actionSpec"),
     2: .same(proto: "inputs"),
     3: .same(proto: "outputs"),
+    5: .same(proto: "additionalData"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -494,6 +498,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 1: try decoder.decodeSingularMessageField(value: &self._actionSpec)
       case 2: try decoder.decodeRepeatedMessageField(value: &self.inputs)
       case 3: try decoder.decodeRepeatedMessageField(value: &self.outputs)
+      case 5: try decoder.decodeRepeatedMessageField(value: &self.additionalData)
       default: break
       }
     }
@@ -509,6 +514,9 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if !self.outputs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.outputs, fieldNumber: 3)
     }
+    if !self.additionalData.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -516,6 +524,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs._actionSpec != rhs._actionSpec {return false}
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
+    if lhs.additionalData != rhs.additionalData {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
