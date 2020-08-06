@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import SwiftProtobuf
 
 extension LLBActionExecutionKey: LLBBuildKey {}
 extension LLBActionExecutionValue: LLBBuildValue {}
@@ -178,8 +179,18 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
     }
 
     private func evaluateCommand(commandKey: LLBCommandActionExecution, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
+        let additionalRequestData: [Google_Protobuf_Any]
+        if commandKey.hasLabel, let labelAny = try? Google_Protobuf_Any(message: commandKey.label) {
+            additionalRequestData = [labelAny]
+        } else {
+            additionalRequestData = []
+        }
+
         let actionExecutionRequest = LLBActionExecutionRequest(
-            actionSpec: commandKey.actionSpec, inputs: commandKey.inputs, outputs: commandKey.outputs
+            actionSpec: commandKey.actionSpec,
+            inputs: commandKey.inputs,
+            outputs: commandKey.outputs,
+            additionalData: additionalRequestData
         )
 
         let resultFuture: LLBFuture<LLBActionExecutionResponse>
