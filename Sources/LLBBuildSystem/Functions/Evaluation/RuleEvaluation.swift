@@ -88,11 +88,12 @@ final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLB
             }
 
             let ruleContext = LLBRuleContext(
-                group: ctx.group,
+                ctx: ctx,
                 label: ruleEvaluationKey.label,
                 configurationValue: configurationValue,
                 artifactOwnerID: key.ruleEvaluationKeyID,
-                targetDependencies: ruleEvaluationKey.configuredTargetValue.targetDependencies
+                targetDependencies: ruleEvaluationKey.configuredTargetValue.targetDependencies,
+                fi: fi
             )
 
             let providersFuture: LLBFuture<([LLBDataID], [LLBProvider])>
