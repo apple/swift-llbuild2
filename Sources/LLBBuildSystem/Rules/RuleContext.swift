@@ -42,7 +42,11 @@ fileprivate enum RuleContextTargetDependencyType {
 }
 
 public class LLBRuleContext {
-    public let group: LLBFuturesDispatchGroup
+
+    /// The global context.
+    public let ctx: Context
+
+    public var group: LLBFuturesDispatchGroup { ctx.group }
 
     /// The label for the target being evaluated.
     public let label: LLBLabel
@@ -74,16 +78,25 @@ public class LLBRuleContext {
 
     private let artifactRoots: [String]
 
+    /// The function interface for evaluating requests.
+    ///
+    /// Note: This should be only used for complex rule implementations. Most rule implementations
+    /// should not need to evaluate functions on the fly.
+    public let fi: LLBBuildFunctionInterface
+
     init(
-        group: LLBFuturesDispatchGroup,
+        ctx: Context,
         label: LLBLabel,
         configurationValue: LLBConfigurationValue,
         artifactOwnerID: LLBDataID,
-        targetDependencies: [LLBNamedConfiguredTargetDependency]) {
-        self.group = group
+        targetDependencies: [LLBNamedConfiguredTargetDependency],
+        fi: LLBBuildFunctionInterface
+    ) {
+        self.ctx = ctx
         self.label = label
         self.configurationValue = configurationValue
         self.artifactOwnerID = artifactOwnerID
+        self.fi = fi
 
         if configurationValue.root.isEmpty {
             self.artifactRoots = [label.asRoot]
