@@ -164,7 +164,12 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         switch actionExecutionKey.actionExecutionType {
         case let .command(commandKey):
             ctx.buildEventDelegate?.actionExecutionStarted(action: actionExecutionKey)
-            return evaluateCommand(commandKey: commandKey, fi, ctx).map {
+            let requestExtras = LLBActionExecutionRequestExtras(
+                mnemonic: actionExecutionKey.mnemonic,
+                description: actionExecutionKey.description,
+                owner: actionExecutionKey.owner
+            )
+            return evaluateCommand(commandKey: commandKey, requestExtras: requestExtras, fi, ctx).map {
                 ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
                 return $0
             }.flatMapErrorThrowing { error in
@@ -178,10 +183,16 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         }
     }
 
-    private func evaluateCommand(commandKey: LLBCommandActionExecution, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
+    private func evaluateCommand(
+        commandKey: LLBCommandActionExecution,
+        requestExtras: LLBActionExecutionRequestExtras,
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
+    ) -> LLBFuture<LLBActionExecutionValue> {
+
         let additionalRequestData: [Google_Protobuf_Any]
-        if commandKey.hasLabel, let labelAny = try? Google_Protobuf_Any(message: commandKey.label) {
-            additionalRequestData = [labelAny]
+        if let requestExtrasAny = try? Google_Protobuf_Any(message: requestExtras) {
+            additionalRequestData = [requestExtrasAny]
         } else {
             additionalRequestData = []
         }

@@ -197,6 +197,37 @@ public struct LLBMergeTreesActionExecution {
   public init() {}
 }
 
+/// Additional data to pass through the LLBActionExecutionRequest additionalData parameters, that are LLBBuildSystem
+/// specific. These include parameters related to the LLBBuildEventActionDescription which are missing from the
+/// generic execution request message.
+public struct LLBActionExecutionRequestExtras {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The mnemonic of the action.
+  public var mnemonic: String = String()
+
+  /// A user provided description for the action.
+  public var description_p: String = String()
+
+  /// The owning target of the action.
+  public var owner: LLBLabel {
+    get {return _owner ?? LLBLabel()}
+    set {_owner = newValue}
+  }
+  /// Returns true if `owner` has been explicitly set.
+  public var hasOwner: Bool {return self._owner != nil}
+  /// Clears the value of `owner`. Subsequent reads from it will return its default value.
+  public mutating func clearOwner() {self._owner = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _owner: LLBLabel? = nil
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
@@ -390,6 +421,47 @@ extension LLBMergeTreesActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Me
 
   public static func ==(lhs: LLBMergeTreesActionExecution, rhs: LLBMergeTreesActionExecution) -> Bool {
     if lhs.inputs != rhs.inputs {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension LLBActionExecutionRequestExtras: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = "LLBActionExecutionRequestExtras"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "mnemonic"),
+    2: .same(proto: "description"),
+    3: .same(proto: "owner"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularStringField(value: &self.mnemonic)
+      case 2: try decoder.decodeSingularStringField(value: &self.description_p)
+      case 3: try decoder.decodeSingularMessageField(value: &self._owner)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.mnemonic.isEmpty {
+      try visitor.visitSingularStringField(value: self.mnemonic, fieldNumber: 1)
+    }
+    if !self.description_p.isEmpty {
+      try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 2)
+    }
+    if let v = self._owner {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: LLBActionExecutionRequestExtras, rhs: LLBActionExecutionRequestExtras) -> Bool {
+    if lhs.mnemonic != rhs.mnemonic {return false}
+    if lhs.description_p != rhs.description_p {return false}
+    if lhs._owner != rhs._owner {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

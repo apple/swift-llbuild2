@@ -86,3 +86,17 @@ message LLBMergeTreesActionExecution {
     // root under which the artifact will be placed into.
     repeated LLBActionInput inputs = 1;
 }
+
+// Additional data to pass through the LLBActionExecutionRequest additionalData parameters, that are LLBBuildSystem
+// specific. These include parameters related to the LLBBuildEventActionDescription which are missing from the
+// generic execution request message.
+message LLBActionExecutionRequestExtras {
+    // The mnemonic of the action.
+    string mnemonic = 1;
+
+    // A user provided description for the action.
+    string description = 2;
+
+    // The owning target of the action.
+    LLBLabel owner = 3;
+}
