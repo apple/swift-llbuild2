@@ -84,12 +84,14 @@ extension LLBAnySerializable {
         guard let serializableType = registry.lookupType(identifier: typeIdentifier) else {
             throw LLBAnySerializableError.unknownType(typeIdentifier)
         }
-        guard serializableType is T.Type else {
-            throw LLBAnySerializableError.typeMismatch("\(typeIdentifier) not convertible to \(T.Type.self)")
-        }
+
         // FIXME: this extra buffer copy is unfortunate
         let buffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(serializedBytes))
-        return try serializableType.init(from: buffer) as! T
+        guard let deserialized = try serializableType.init(from: buffer) as? T else {
+            throw LLBAnySerializableError.typeMismatch("\(typeIdentifier) not convertible to \(T.Type.self)")
+        }
+
+        return deserialized
     }
 }
 
