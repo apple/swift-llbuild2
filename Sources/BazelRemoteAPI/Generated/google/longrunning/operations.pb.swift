@@ -114,9 +114,18 @@ public struct Google_Longrunning_Operation {
 
   #if !swift(>=4.1)
     public static func ==(lhs: Google_Longrunning_Operation.OneOf_Result, rhs: Google_Longrunning_Operation.OneOf_Result) -> Bool {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch (lhs, rhs) {
-      case (.error(let l), .error(let r)): return l == r
-      case (.response(let l), .response(let r)): return l == r
+      case (.error, .error): return {
+        guard case .error(let l) = lhs, case .error(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.response, .response): return {
+        guard case .response(let l) = lhs, case .response(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
       default: return false
       }
     }
@@ -353,11 +362,14 @@ extension Google_Longrunning_Operation: SwiftProtobuf.Message, SwiftProtobuf._Me
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularMessageField(value: &self._metadata)
-      case 3: try decoder.decodeSingularBoolField(value: &self.done)
-      case 4:
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._metadata) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.done) }()
+      case 4: try {
         var v: Google_Rpc_Status?
         if let current = self.result {
           try decoder.handleConflictingOneOf()
@@ -365,7 +377,8 @@ extension Google_Longrunning_Operation: SwiftProtobuf.Message, SwiftProtobuf._Me
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.result = .error(v)}
-      case 5:
+      }()
+      case 5: try {
         var v: SwiftProtobuf.Google_Protobuf_Any?
         if let current = self.result {
           try decoder.handleConflictingOneOf()
@@ -373,6 +386,7 @@ extension Google_Longrunning_Operation: SwiftProtobuf.Message, SwiftProtobuf._Me
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.result = .response(v)}
+      }()
       default: break
       }
     }
@@ -388,11 +402,18 @@ extension Google_Longrunning_Operation: SwiftProtobuf.Message, SwiftProtobuf._Me
     if self.done != false {
       try visitor.visitSingularBoolField(value: self.done, fieldNumber: 3)
     }
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every case branch when no optimizations are
+    // enabled. https://github.com/apple/swift-protobuf/issues/1034
     switch self.result {
-    case .error(let v)?:
+    case .error?: try {
+      guard case .error(let v)? = self.result else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    case .response(let v)?:
+    }()
+    case .response?: try {
+      guard case .response(let v)? = self.result else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -416,8 +437,11 @@ extension Google_Longrunning_GetOperationRequest: SwiftProtobuf.Message, SwiftPr
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
       default: break
       }
     }
@@ -448,11 +472,14 @@ extension Google_Longrunning_ListOperationsRequest: SwiftProtobuf.Message, Swift
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.filter)
-      case 2: try decoder.decodeSingularInt32Field(value: &self.pageSize)
-      case 3: try decoder.decodeSingularStringField(value: &self.pageToken)
-      case 4: try decoder.decodeSingularStringField(value: &self.name)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.filter) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.pageSize) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.pageToken) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.name) }()
       default: break
       }
     }
@@ -493,9 +520,12 @@ extension Google_Longrunning_ListOperationsResponse: SwiftProtobuf.Message, Swif
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.operations)
-      case 2: try decoder.decodeSingularStringField(value: &self.nextPageToken)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.operations) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.nextPageToken) }()
       default: break
       }
     }
@@ -527,8 +557,11 @@ extension Google_Longrunning_CancelOperationRequest: SwiftProtobuf.Message, Swif
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
       default: break
       }
     }
@@ -556,8 +589,11 @@ extension Google_Longrunning_DeleteOperationRequest: SwiftProtobuf.Message, Swif
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
       default: break
       }
     }
@@ -586,9 +622,12 @@ extension Google_Longrunning_WaitOperationRequest: SwiftProtobuf.Message, SwiftP
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularMessageField(value: &self._timeout)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._timeout) }()
       default: break
       }
     }
@@ -621,9 +660,12 @@ extension Google_Longrunning_OperationInfo: SwiftProtobuf.Message, SwiftProtobuf
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.responseType)
-      case 2: try decoder.decodeSingularStringField(value: &self.metadataType)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.responseType) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.metadataType) }()
       default: break
       }
     }

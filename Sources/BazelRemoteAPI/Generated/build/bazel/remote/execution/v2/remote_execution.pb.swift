@@ -117,6 +117,14 @@ public struct Build_Bazel_Remote_Execution_V2_Action {
   /// requests for the same `Action` may not be merged.
   public var doNotCache: Bool = false
 
+  /// An optional additional salt value used to place this `Action` into a
+  /// separate cache namespace from other instances having the same field
+  /// contents. This salt typically comes from operational configuration
+  /// specific to sources such as repo and service configuration,
+  /// and allows disowning an entire set of ActionResults that might have been
+  /// poisoned by buggy software or tool failures.
+  public var salt: Data = Data()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -331,6 +339,11 @@ public struct Build_Bazel_Remote_Execution_V2_Platform {
   /// The server MAY use the `value` of one or more properties to determine how
   /// it sets up the execution environment, such as by making specific system
   /// files available to the worker.
+  ///
+  /// Both names and values are typically case-sensitive. Note that the platform
+  /// is implicitly part of the action digest, so even tiny changes in the names
+  /// or values (like changing case) may result in different action cache
+  /// entries.
   public struct Property {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -679,111 +692,106 @@ public struct Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata {
   // methods supported on all messages.
 
   /// The name of the worker which ran the execution.
-  public var worker: String = String()
+  public var worker: String {
+    get {return _storage._worker}
+    set {_uniqueStorage()._worker = newValue}
+  }
 
   /// When was the action added to the queue.
   public var queuedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _queuedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_queuedTimestamp = newValue}
+    get {return _storage._queuedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._queuedTimestamp = newValue}
   }
   /// Returns true if `queuedTimestamp` has been explicitly set.
-  public var hasQueuedTimestamp: Bool {return self._queuedTimestamp != nil}
+  public var hasQueuedTimestamp: Bool {return _storage._queuedTimestamp != nil}
   /// Clears the value of `queuedTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearQueuedTimestamp() {self._queuedTimestamp = nil}
+  public mutating func clearQueuedTimestamp() {_uniqueStorage()._queuedTimestamp = nil}
 
   /// When the worker received the action.
   public var workerStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _workerStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_workerStartTimestamp = newValue}
+    get {return _storage._workerStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._workerStartTimestamp = newValue}
   }
   /// Returns true if `workerStartTimestamp` has been explicitly set.
-  public var hasWorkerStartTimestamp: Bool {return self._workerStartTimestamp != nil}
+  public var hasWorkerStartTimestamp: Bool {return _storage._workerStartTimestamp != nil}
   /// Clears the value of `workerStartTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearWorkerStartTimestamp() {self._workerStartTimestamp = nil}
+  public mutating func clearWorkerStartTimestamp() {_uniqueStorage()._workerStartTimestamp = nil}
 
   /// When the worker completed the action, including all stages.
   public var workerCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _workerCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_workerCompletedTimestamp = newValue}
+    get {return _storage._workerCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._workerCompletedTimestamp = newValue}
   }
   /// Returns true if `workerCompletedTimestamp` has been explicitly set.
-  public var hasWorkerCompletedTimestamp: Bool {return self._workerCompletedTimestamp != nil}
+  public var hasWorkerCompletedTimestamp: Bool {return _storage._workerCompletedTimestamp != nil}
   /// Clears the value of `workerCompletedTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearWorkerCompletedTimestamp() {self._workerCompletedTimestamp = nil}
+  public mutating func clearWorkerCompletedTimestamp() {_uniqueStorage()._workerCompletedTimestamp = nil}
 
   /// When the worker started fetching action inputs.
   public var inputFetchStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _inputFetchStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_inputFetchStartTimestamp = newValue}
+    get {return _storage._inputFetchStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._inputFetchStartTimestamp = newValue}
   }
   /// Returns true if `inputFetchStartTimestamp` has been explicitly set.
-  public var hasInputFetchStartTimestamp: Bool {return self._inputFetchStartTimestamp != nil}
+  public var hasInputFetchStartTimestamp: Bool {return _storage._inputFetchStartTimestamp != nil}
   /// Clears the value of `inputFetchStartTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearInputFetchStartTimestamp() {self._inputFetchStartTimestamp = nil}
+  public mutating func clearInputFetchStartTimestamp() {_uniqueStorage()._inputFetchStartTimestamp = nil}
 
   /// When the worker finished fetching action inputs.
   public var inputFetchCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _inputFetchCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_inputFetchCompletedTimestamp = newValue}
+    get {return _storage._inputFetchCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._inputFetchCompletedTimestamp = newValue}
   }
   /// Returns true if `inputFetchCompletedTimestamp` has been explicitly set.
-  public var hasInputFetchCompletedTimestamp: Bool {return self._inputFetchCompletedTimestamp != nil}
+  public var hasInputFetchCompletedTimestamp: Bool {return _storage._inputFetchCompletedTimestamp != nil}
   /// Clears the value of `inputFetchCompletedTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearInputFetchCompletedTimestamp() {self._inputFetchCompletedTimestamp = nil}
+  public mutating func clearInputFetchCompletedTimestamp() {_uniqueStorage()._inputFetchCompletedTimestamp = nil}
 
   /// When the worker started executing the action command.
   public var executionStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _executionStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_executionStartTimestamp = newValue}
+    get {return _storage._executionStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._executionStartTimestamp = newValue}
   }
   /// Returns true if `executionStartTimestamp` has been explicitly set.
-  public var hasExecutionStartTimestamp: Bool {return self._executionStartTimestamp != nil}
+  public var hasExecutionStartTimestamp: Bool {return _storage._executionStartTimestamp != nil}
   /// Clears the value of `executionStartTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearExecutionStartTimestamp() {self._executionStartTimestamp = nil}
+  public mutating func clearExecutionStartTimestamp() {_uniqueStorage()._executionStartTimestamp = nil}
 
   /// When the worker completed executing the action command.
   public var executionCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _executionCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_executionCompletedTimestamp = newValue}
+    get {return _storage._executionCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._executionCompletedTimestamp = newValue}
   }
   /// Returns true if `executionCompletedTimestamp` has been explicitly set.
-  public var hasExecutionCompletedTimestamp: Bool {return self._executionCompletedTimestamp != nil}
+  public var hasExecutionCompletedTimestamp: Bool {return _storage._executionCompletedTimestamp != nil}
   /// Clears the value of `executionCompletedTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearExecutionCompletedTimestamp() {self._executionCompletedTimestamp = nil}
+  public mutating func clearExecutionCompletedTimestamp() {_uniqueStorage()._executionCompletedTimestamp = nil}
 
   /// When the worker started uploading action outputs.
   public var outputUploadStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _outputUploadStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_outputUploadStartTimestamp = newValue}
+    get {return _storage._outputUploadStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._outputUploadStartTimestamp = newValue}
   }
   /// Returns true if `outputUploadStartTimestamp` has been explicitly set.
-  public var hasOutputUploadStartTimestamp: Bool {return self._outputUploadStartTimestamp != nil}
+  public var hasOutputUploadStartTimestamp: Bool {return _storage._outputUploadStartTimestamp != nil}
   /// Clears the value of `outputUploadStartTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearOutputUploadStartTimestamp() {self._outputUploadStartTimestamp = nil}
+  public mutating func clearOutputUploadStartTimestamp() {_uniqueStorage()._outputUploadStartTimestamp = nil}
 
   /// When the worker finished uploading action outputs.
   public var outputUploadCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _outputUploadCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_outputUploadCompletedTimestamp = newValue}
+    get {return _storage._outputUploadCompletedTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._outputUploadCompletedTimestamp = newValue}
   }
   /// Returns true if `outputUploadCompletedTimestamp` has been explicitly set.
-  public var hasOutputUploadCompletedTimestamp: Bool {return self._outputUploadCompletedTimestamp != nil}
+  public var hasOutputUploadCompletedTimestamp: Bool {return _storage._outputUploadCompletedTimestamp != nil}
   /// Clears the value of `outputUploadCompletedTimestamp`. Subsequent reads from it will return its default value.
-  public mutating func clearOutputUploadCompletedTimestamp() {self._outputUploadCompletedTimestamp = nil}
+  public mutating func clearOutputUploadCompletedTimestamp() {_uniqueStorage()._outputUploadCompletedTimestamp = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _queuedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _workerStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _workerCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _inputFetchStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _inputFetchCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _executionStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _executionCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _outputUploadStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _outputUploadCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// An ActionResult represents the result of an
@@ -939,7 +947,7 @@ public struct Build_Bazel_Remote_Execution_V2_ActionResult {
   /// [GetActionResultRequest][build.bazel.remote.execution.v2.GetActionResultRequest]
   /// message. The server MAY omit inlining, even if requested, and MUST do so if inlining
   /// would cause the response to exceed message size limits.
-  public var stdoutRaw: Data = SwiftProtobuf.Internal.emptyData
+  public var stdoutRaw: Data = Data()
 
   /// The digest for a blob containing the standard output of the action, which
   /// can be retrieved from the
@@ -958,7 +966,7 @@ public struct Build_Bazel_Remote_Execution_V2_ActionResult {
   /// [GetActionResultRequest][build.bazel.remote.execution.v2.GetActionResultRequest]
   /// message. The server MAY omit inlining, even if requested, and MUST do so if inlining
   /// would cause the response to exceed message size limits.
-  public var stderrRaw: Data = SwiftProtobuf.Internal.emptyData
+  public var stderrRaw: Data = Data()
 
   /// The digest for a blob containing the standard error of the action, which
   /// can be retrieved from the
@@ -1023,7 +1031,7 @@ public struct Build_Bazel_Remote_Execution_V2_OutputFile {
   /// [GetActionResultRequest][build.bazel.remote.execution.v2.GetActionResultRequest]
   /// message. The server MAY omit inlining, even if requested, and MUST do so if inlining
   /// would cause the response to exceed message size limits.
-  public var contents: Data = SwiftProtobuf.Internal.emptyData
+  public var contents: Data = Data()
 
   public var nodeProperties: Build_Bazel_Remote_Execution_V2_NodeProperties {
     get {return _nodeProperties ?? Build_Bazel_Remote_Execution_V2_NodeProperties()}
@@ -1301,16 +1309,19 @@ public struct Build_Bazel_Remote_Execution_V2_ExecuteResponse {
 
   /// The result of the action.
   public var result: Build_Bazel_Remote_Execution_V2_ActionResult {
-    get {return _result ?? Build_Bazel_Remote_Execution_V2_ActionResult()}
-    set {_result = newValue}
+    get {return _storage._result ?? Build_Bazel_Remote_Execution_V2_ActionResult()}
+    set {_uniqueStorage()._result = newValue}
   }
   /// Returns true if `result` has been explicitly set.
-  public var hasResult: Bool {return self._result != nil}
+  public var hasResult: Bool {return _storage._result != nil}
   /// Clears the value of `result`. Subsequent reads from it will return its default value.
-  public mutating func clearResult() {self._result = nil}
+  public mutating func clearResult() {_uniqueStorage()._result = nil}
 
   /// True if the result was served from cache, false if it was executed.
-  public var cachedResult: Bool = false
+  public var cachedResult: Bool {
+    get {return _storage._cachedResult}
+    set {_uniqueStorage()._cachedResult = newValue}
+  }
 
   /// If the status has a code other than `OK`, it indicates that the action did
   /// not finish execution. For example, if the operation times out during
@@ -1323,13 +1334,13 @@ public struct Build_Bazel_Remote_Execution_V2_ExecuteResponse {
   /// populate the output-, stdout-, and stderr-related fields if it has any
   /// information available, such as the stdout and stderr of a timed-out action.
   public var status: Google_Rpc_Status {
-    get {return _status ?? Google_Rpc_Status()}
-    set {_status = newValue}
+    get {return _storage._status ?? Google_Rpc_Status()}
+    set {_uniqueStorage()._status = newValue}
   }
   /// Returns true if `status` has been explicitly set.
-  public var hasStatus: Bool {return self._status != nil}
+  public var hasStatus: Bool {return _storage._status != nil}
   /// Clears the value of `status`. Subsequent reads from it will return its default value.
-  public mutating func clearStatus() {self._status = nil}
+  public mutating func clearStatus() {_uniqueStorage()._status = nil}
 
   /// An optional list of additional log outputs the server wishes to provide. A
   /// server can use this to return execution-specific logs however it wishes.
@@ -1338,18 +1349,23 @@ public struct Build_Bazel_Remote_Execution_V2_ExecuteResponse {
   /// worker executing the action or by providing logs from the worker's setup
   /// phase. The keys SHOULD be human readable so that a client can display them
   /// to a user.
-  public var serverLogs: Dictionary<String,Build_Bazel_Remote_Execution_V2_LogFile> = [:]
+  public var serverLogs: Dictionary<String,Build_Bazel_Remote_Execution_V2_LogFile> {
+    get {return _storage._serverLogs}
+    set {_uniqueStorage()._serverLogs = newValue}
+  }
 
   /// Freeform informational message with details on the execution of the action
   /// that may be displayed to the user upon failure or when requested explicitly.
-  public var message: String = String()
+  public var message: String {
+    get {return _storage._message}
+    set {_uniqueStorage()._message = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _result: Build_Bazel_Remote_Execution_V2_ActionResult? = nil
-  fileprivate var _status: Google_Rpc_Status? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// The current stage of action execution.
@@ -1516,7 +1532,8 @@ public struct Build_Bazel_Remote_Execution_V2_GetActionResultRequest {
   public var inlineStderr: Bool = false
 
   /// A hint to the server to inline the contents of the listed output files.
-  /// Each path needs to exactly match one path in `output_files` in the
+  /// Each path needs to exactly match one file path in either `output_paths` or
+  /// `output_files` (DEPRECATED since v2.1) in the
   /// [Command][build.bazel.remote.execution.v2.Command] message.
   public var inlineOutputFiles: [String] = []
 
@@ -1539,49 +1556,50 @@ public struct Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest {
   /// storage, caches, etc.). The server MAY require use of this field to select
   /// between them in an implementation-defined fashion, otherwise it can be
   /// omitted.
-  public var instanceName: String = String()
+  public var instanceName: String {
+    get {return _storage._instanceName}
+    set {_uniqueStorage()._instanceName = newValue}
+  }
 
   /// The digest of the [Action][build.bazel.remote.execution.v2.Action]
   /// whose result is being uploaded.
   public var actionDigest: Build_Bazel_Remote_Execution_V2_Digest {
-    get {return _actionDigest ?? Build_Bazel_Remote_Execution_V2_Digest()}
-    set {_actionDigest = newValue}
+    get {return _storage._actionDigest ?? Build_Bazel_Remote_Execution_V2_Digest()}
+    set {_uniqueStorage()._actionDigest = newValue}
   }
   /// Returns true if `actionDigest` has been explicitly set.
-  public var hasActionDigest: Bool {return self._actionDigest != nil}
+  public var hasActionDigest: Bool {return _storage._actionDigest != nil}
   /// Clears the value of `actionDigest`. Subsequent reads from it will return its default value.
-  public mutating func clearActionDigest() {self._actionDigest = nil}
+  public mutating func clearActionDigest() {_uniqueStorage()._actionDigest = nil}
 
   /// The [ActionResult][build.bazel.remote.execution.v2.ActionResult]
   /// to store in the cache.
   public var actionResult: Build_Bazel_Remote_Execution_V2_ActionResult {
-    get {return _actionResult ?? Build_Bazel_Remote_Execution_V2_ActionResult()}
-    set {_actionResult = newValue}
+    get {return _storage._actionResult ?? Build_Bazel_Remote_Execution_V2_ActionResult()}
+    set {_uniqueStorage()._actionResult = newValue}
   }
   /// Returns true if `actionResult` has been explicitly set.
-  public var hasActionResult: Bool {return self._actionResult != nil}
+  public var hasActionResult: Bool {return _storage._actionResult != nil}
   /// Clears the value of `actionResult`. Subsequent reads from it will return its default value.
-  public mutating func clearActionResult() {self._actionResult = nil}
+  public mutating func clearActionResult() {_uniqueStorage()._actionResult = nil}
 
   /// An optional policy for the results of this execution in the remote cache.
   /// The server will have a default policy if this is not provided.
   /// This may be applied to both the ActionResult and the associated blobs.
   public var resultsCachePolicy: Build_Bazel_Remote_Execution_V2_ResultsCachePolicy {
-    get {return _resultsCachePolicy ?? Build_Bazel_Remote_Execution_V2_ResultsCachePolicy()}
-    set {_resultsCachePolicy = newValue}
+    get {return _storage._resultsCachePolicy ?? Build_Bazel_Remote_Execution_V2_ResultsCachePolicy()}
+    set {_uniqueStorage()._resultsCachePolicy = newValue}
   }
   /// Returns true if `resultsCachePolicy` has been explicitly set.
-  public var hasResultsCachePolicy: Bool {return self._resultsCachePolicy != nil}
+  public var hasResultsCachePolicy: Bool {return _storage._resultsCachePolicy != nil}
   /// Clears the value of `resultsCachePolicy`. Subsequent reads from it will return its default value.
-  public mutating func clearResultsCachePolicy() {self._resultsCachePolicy = nil}
+  public mutating func clearResultsCachePolicy() {_uniqueStorage()._resultsCachePolicy = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _actionDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
-  fileprivate var _actionResult: Build_Bazel_Remote_Execution_V2_ActionResult? = nil
-  fileprivate var _resultsCachePolicy: Build_Bazel_Remote_Execution_V2_ResultsCachePolicy? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// A request message for
@@ -1657,7 +1675,7 @@ public struct Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest {
     public mutating func clearDigest() {self._digest = nil}
 
     /// The raw binary data.
-    public var data: Data = SwiftProtobuf.Internal.emptyData
+    public var data: Data = Data()
 
     public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1769,7 +1787,7 @@ public struct Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse {
     public mutating func clearDigest() {self._digest = nil}
 
     /// The raw binary data.
-    public var data: Data = SwiftProtobuf.Internal.emptyData
+    public var data: Data = Data()
 
     /// The result of attempting to download that blob.
     public var status: Google_Rpc_Status {
@@ -1887,63 +1905,59 @@ public struct Build_Bazel_Remote_Execution_V2_ServerCapabilities {
 
   /// Capabilities of the remote cache system.
   public var cacheCapabilities: Build_Bazel_Remote_Execution_V2_CacheCapabilities {
-    get {return _cacheCapabilities ?? Build_Bazel_Remote_Execution_V2_CacheCapabilities()}
-    set {_cacheCapabilities = newValue}
+    get {return _storage._cacheCapabilities ?? Build_Bazel_Remote_Execution_V2_CacheCapabilities()}
+    set {_uniqueStorage()._cacheCapabilities = newValue}
   }
   /// Returns true if `cacheCapabilities` has been explicitly set.
-  public var hasCacheCapabilities: Bool {return self._cacheCapabilities != nil}
+  public var hasCacheCapabilities: Bool {return _storage._cacheCapabilities != nil}
   /// Clears the value of `cacheCapabilities`. Subsequent reads from it will return its default value.
-  public mutating func clearCacheCapabilities() {self._cacheCapabilities = nil}
+  public mutating func clearCacheCapabilities() {_uniqueStorage()._cacheCapabilities = nil}
 
   /// Capabilities of the remote execution system.
   public var executionCapabilities: Build_Bazel_Remote_Execution_V2_ExecutionCapabilities {
-    get {return _executionCapabilities ?? Build_Bazel_Remote_Execution_V2_ExecutionCapabilities()}
-    set {_executionCapabilities = newValue}
+    get {return _storage._executionCapabilities ?? Build_Bazel_Remote_Execution_V2_ExecutionCapabilities()}
+    set {_uniqueStorage()._executionCapabilities = newValue}
   }
   /// Returns true if `executionCapabilities` has been explicitly set.
-  public var hasExecutionCapabilities: Bool {return self._executionCapabilities != nil}
+  public var hasExecutionCapabilities: Bool {return _storage._executionCapabilities != nil}
   /// Clears the value of `executionCapabilities`. Subsequent reads from it will return its default value.
-  public mutating func clearExecutionCapabilities() {self._executionCapabilities = nil}
+  public mutating func clearExecutionCapabilities() {_uniqueStorage()._executionCapabilities = nil}
 
   /// Earliest RE API version supported, including deprecated versions.
   public var deprecatedApiVersion: Build_Bazel_Semver_SemVer {
-    get {return _deprecatedApiVersion ?? Build_Bazel_Semver_SemVer()}
-    set {_deprecatedApiVersion = newValue}
+    get {return _storage._deprecatedApiVersion ?? Build_Bazel_Semver_SemVer()}
+    set {_uniqueStorage()._deprecatedApiVersion = newValue}
   }
   /// Returns true if `deprecatedApiVersion` has been explicitly set.
-  public var hasDeprecatedApiVersion: Bool {return self._deprecatedApiVersion != nil}
+  public var hasDeprecatedApiVersion: Bool {return _storage._deprecatedApiVersion != nil}
   /// Clears the value of `deprecatedApiVersion`. Subsequent reads from it will return its default value.
-  public mutating func clearDeprecatedApiVersion() {self._deprecatedApiVersion = nil}
+  public mutating func clearDeprecatedApiVersion() {_uniqueStorage()._deprecatedApiVersion = nil}
 
   /// Earliest non-deprecated RE API version supported.
   public var lowApiVersion: Build_Bazel_Semver_SemVer {
-    get {return _lowApiVersion ?? Build_Bazel_Semver_SemVer()}
-    set {_lowApiVersion = newValue}
+    get {return _storage._lowApiVersion ?? Build_Bazel_Semver_SemVer()}
+    set {_uniqueStorage()._lowApiVersion = newValue}
   }
   /// Returns true if `lowApiVersion` has been explicitly set.
-  public var hasLowApiVersion: Bool {return self._lowApiVersion != nil}
+  public var hasLowApiVersion: Bool {return _storage._lowApiVersion != nil}
   /// Clears the value of `lowApiVersion`. Subsequent reads from it will return its default value.
-  public mutating func clearLowApiVersion() {self._lowApiVersion = nil}
+  public mutating func clearLowApiVersion() {_uniqueStorage()._lowApiVersion = nil}
 
   /// Latest RE API version supported.
   public var highApiVersion: Build_Bazel_Semver_SemVer {
-    get {return _highApiVersion ?? Build_Bazel_Semver_SemVer()}
-    set {_highApiVersion = newValue}
+    get {return _storage._highApiVersion ?? Build_Bazel_Semver_SemVer()}
+    set {_uniqueStorage()._highApiVersion = newValue}
   }
   /// Returns true if `highApiVersion` has been explicitly set.
-  public var hasHighApiVersion: Bool {return self._highApiVersion != nil}
+  public var hasHighApiVersion: Bool {return _storage._highApiVersion != nil}
   /// Clears the value of `highApiVersion`. Subsequent reads from it will return its default value.
-  public mutating func clearHighApiVersion() {self._highApiVersion = nil}
+  public mutating func clearHighApiVersion() {_uniqueStorage()._highApiVersion = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _cacheCapabilities: Build_Bazel_Remote_Execution_V2_CacheCapabilities? = nil
-  fileprivate var _executionCapabilities: Build_Bazel_Remote_Execution_V2_ExecutionCapabilities? = nil
-  fileprivate var _deprecatedApiVersion: Build_Bazel_Semver_SemVer? = nil
-  fileprivate var _lowApiVersion: Build_Bazel_Semver_SemVer? = nil
-  fileprivate var _highApiVersion: Build_Bazel_Semver_SemVer? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// The digest function used for converting values into keys for CAS and Action
@@ -1979,6 +1993,11 @@ public struct Build_Bazel_Remote_Execution_V2_DigestFunction {
 
     /// The SHA-512 digest function.
     case sha512 // = 6
+
+    /// Murmur3 128-bit digest function, x64 variant. Note that this is not a
+    /// cryptographic hash function and its collision properties are not strongly guaranteed.
+    /// See https://github.com/aappleby/smhasher/wiki/MurmurHash3 .
+    case murmur3 // = 7
     case UNRECOGNIZED(Int)
 
     public init() {
@@ -1994,6 +2013,7 @@ public struct Build_Bazel_Remote_Execution_V2_DigestFunction {
       case 4: self = .vso
       case 5: self = .sha384
       case 6: self = .sha512
+      case 7: self = .murmur3
       default: self = .UNRECOGNIZED(rawValue)
       }
     }
@@ -2007,6 +2027,7 @@ public struct Build_Bazel_Remote_Execution_V2_DigestFunction {
       case .vso: return 4
       case .sha384: return 5
       case .sha512: return 6
+      case .murmur3: return 7
       case .UNRECOGNIZED(let i): return i
       }
     }
@@ -2028,6 +2049,7 @@ extension Build_Bazel_Remote_Execution_V2_DigestFunction.Value: CaseIterable {
     .vso,
     .sha384,
     .sha512,
+    .murmur3,
   ]
 }
 
@@ -2300,15 +2322,20 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
     2: .standard(proto: "input_root_digest"),
     6: .same(proto: "timeout"),
     7: .standard(proto: "do_not_cache"),
+    9: .same(proto: "salt"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._commandDigest)
-      case 2: try decoder.decodeSingularMessageField(value: &self._inputRootDigest)
-      case 6: try decoder.decodeSingularMessageField(value: &self._timeout)
-      case 7: try decoder.decodeSingularBoolField(value: &self.doNotCache)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._commandDigest) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._inputRootDigest) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._timeout) }()
+      case 7: try { try decoder.decodeSingularBoolField(value: &self.doNotCache) }()
+      case 9: try { try decoder.decodeSingularBytesField(value: &self.salt) }()
       default: break
       }
     }
@@ -2327,6 +2354,9 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
     if self.doNotCache != false {
       try visitor.visitSingularBoolField(value: self.doNotCache, fieldNumber: 7)
     }
+    if !self.salt.isEmpty {
+      try visitor.visitSingularBytesField(value: self.salt, fieldNumber: 9)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2335,6 +2365,7 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
     if lhs._inputRootDigest != rhs._inputRootDigest {return false}
     if lhs._timeout != rhs._timeout {return false}
     if lhs.doNotCache != rhs.doNotCache {return false}
+    if lhs.salt != rhs.salt {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -2355,15 +2386,18 @@ extension Build_Bazel_Remote_Execution_V2_Command: SwiftProtobuf.Message, SwiftP
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedStringField(value: &self.arguments)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.environmentVariables)
-      case 3: try decoder.decodeRepeatedStringField(value: &self.outputFiles)
-      case 4: try decoder.decodeRepeatedStringField(value: &self.outputDirectories)
-      case 5: try decoder.decodeSingularMessageField(value: &self._platform)
-      case 6: try decoder.decodeSingularStringField(value: &self.workingDirectory)
-      case 7: try decoder.decodeRepeatedStringField(value: &self.outputPaths)
-      case 8: try decoder.decodeRepeatedStringField(value: &self.outputNodeProperties)
+      case 1: try { try decoder.decodeRepeatedStringField(value: &self.arguments) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.environmentVariables) }()
+      case 3: try { try decoder.decodeRepeatedStringField(value: &self.outputFiles) }()
+      case 4: try { try decoder.decodeRepeatedStringField(value: &self.outputDirectories) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._platform) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.workingDirectory) }()
+      case 7: try { try decoder.decodeRepeatedStringField(value: &self.outputPaths) }()
+      case 8: try { try decoder.decodeRepeatedStringField(value: &self.outputNodeProperties) }()
       default: break
       }
     }
@@ -2420,9 +2454,12 @@ extension Build_Bazel_Remote_Execution_V2_Command.EnvironmentVariable: SwiftProt
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularStringField(value: &self.value)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.value) }()
       default: break
       }
     }
@@ -2454,8 +2491,11 @@ extension Build_Bazel_Remote_Execution_V2_Platform: SwiftProtobuf.Message, Swift
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.properties)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.properties) }()
       default: break
       }
     }
@@ -2484,9 +2524,12 @@ extension Build_Bazel_Remote_Execution_V2_Platform.Property: SwiftProtobuf.Messa
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularStringField(value: &self.value)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.value) }()
       default: break
       }
     }
@@ -2521,11 +2564,14 @@ extension Build_Bazel_Remote_Execution_V2_Directory: SwiftProtobuf.Message, Swif
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.files)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.directories)
-      case 3: try decoder.decodeRepeatedMessageField(value: &self.symlinks)
-      case 5: try decoder.decodeSingularMessageField(value: &self._nodeProperties)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.files) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.directories) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.symlinks) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._nodeProperties) }()
       default: break
       }
     }
@@ -2566,9 +2612,12 @@ extension Build_Bazel_Remote_Execution_V2_NodeProperty: SwiftProtobuf.Message, S
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularStringField(value: &self.value)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.value) }()
       default: break
       }
     }
@@ -2602,10 +2651,13 @@ extension Build_Bazel_Remote_Execution_V2_NodeProperties: SwiftProtobuf.Message,
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.properties)
-      case 2: try decoder.decodeSingularMessageField(value: &self._mtime)
-      case 3: try decoder.decodeSingularMessageField(value: &self._unixMode)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.properties) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._mtime) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._unixMode) }()
       default: break
       }
     }
@@ -2644,11 +2696,14 @@ extension Build_Bazel_Remote_Execution_V2_FileNode: SwiftProtobuf.Message, Swift
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularMessageField(value: &self._digest)
-      case 4: try decoder.decodeSingularBoolField(value: &self.isExecutable)
-      case 6: try decoder.decodeSingularMessageField(value: &self._nodeProperties)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.isExecutable) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._nodeProperties) }()
       default: break
       }
     }
@@ -2689,9 +2744,12 @@ extension Build_Bazel_Remote_Execution_V2_DirectoryNode: SwiftProtobuf.Message, 
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularMessageField(value: &self._digest)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
       default: break
       }
     }
@@ -2725,10 +2783,13 @@ extension Build_Bazel_Remote_Execution_V2_SymlinkNode: SwiftProtobuf.Message, Sw
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularStringField(value: &self.target)
-      case 4: try decoder.decodeSingularMessageField(value: &self._nodeProperties)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.target) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._nodeProperties) }()
       default: break
       }
     }
@@ -2765,9 +2826,12 @@ extension Build_Bazel_Remote_Execution_V2_Digest: SwiftProtobuf.Message, SwiftPr
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.hash)
-      case 2: try decoder.decodeSingularInt64Field(value: &self.sizeBytes)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.hash) }()
+      case 2: try { try decoder.decodeSingularInt64Field(value: &self.sizeBytes) }()
       default: break
       }
     }
@@ -2806,69 +2870,122 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
     10: .standard(proto: "output_upload_completed_timestamp"),
   ]
 
+  fileprivate class _StorageClass {
+    var _worker: String = String()
+    var _queuedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _workerStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _workerCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _inputFetchStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _inputFetchCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _executionStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _executionCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _outputUploadStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _outputUploadCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _worker = source._worker
+      _queuedTimestamp = source._queuedTimestamp
+      _workerStartTimestamp = source._workerStartTimestamp
+      _workerCompletedTimestamp = source._workerCompletedTimestamp
+      _inputFetchStartTimestamp = source._inputFetchStartTimestamp
+      _inputFetchCompletedTimestamp = source._inputFetchCompletedTimestamp
+      _executionStartTimestamp = source._executionStartTimestamp
+      _executionCompletedTimestamp = source._executionCompletedTimestamp
+      _outputUploadStartTimestamp = source._outputUploadStartTimestamp
+      _outputUploadCompletedTimestamp = source._outputUploadCompletedTimestamp
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.worker)
-      case 2: try decoder.decodeSingularMessageField(value: &self._queuedTimestamp)
-      case 3: try decoder.decodeSingularMessageField(value: &self._workerStartTimestamp)
-      case 4: try decoder.decodeSingularMessageField(value: &self._workerCompletedTimestamp)
-      case 5: try decoder.decodeSingularMessageField(value: &self._inputFetchStartTimestamp)
-      case 6: try decoder.decodeSingularMessageField(value: &self._inputFetchCompletedTimestamp)
-      case 7: try decoder.decodeSingularMessageField(value: &self._executionStartTimestamp)
-      case 8: try decoder.decodeSingularMessageField(value: &self._executionCompletedTimestamp)
-      case 9: try decoder.decodeSingularMessageField(value: &self._outputUploadStartTimestamp)
-      case 10: try decoder.decodeSingularMessageField(value: &self._outputUploadCompletedTimestamp)
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularStringField(value: &_storage._worker) }()
+        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._queuedTimestamp) }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._workerStartTimestamp) }()
+        case 4: try { try decoder.decodeSingularMessageField(value: &_storage._workerCompletedTimestamp) }()
+        case 5: try { try decoder.decodeSingularMessageField(value: &_storage._inputFetchStartTimestamp) }()
+        case 6: try { try decoder.decodeSingularMessageField(value: &_storage._inputFetchCompletedTimestamp) }()
+        case 7: try { try decoder.decodeSingularMessageField(value: &_storage._executionStartTimestamp) }()
+        case 8: try { try decoder.decodeSingularMessageField(value: &_storage._executionCompletedTimestamp) }()
+        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadStartTimestamp) }()
+        case 10: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadCompletedTimestamp) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.worker.isEmpty {
-      try visitor.visitSingularStringField(value: self.worker, fieldNumber: 1)
-    }
-    if let v = self._queuedTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._workerStartTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
-    if let v = self._workerCompletedTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
-    if let v = self._inputFetchStartTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-    }
-    if let v = self._inputFetchCompletedTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    }
-    if let v = self._executionStartTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
-    }
-    if let v = self._executionCompletedTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
-    }
-    if let v = self._outputUploadStartTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
-    }
-    if let v = self._outputUploadCompletedTimestamp {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if !_storage._worker.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._worker, fieldNumber: 1)
+      }
+      if let v = _storage._queuedTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      }
+      if let v = _storage._workerStartTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      }
+      if let v = _storage._workerCompletedTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+      }
+      if let v = _storage._inputFetchStartTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+      }
+      if let v = _storage._inputFetchCompletedTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+      }
+      if let v = _storage._executionStartTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+      }
+      if let v = _storage._executionCompletedTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+      }
+      if let v = _storage._outputUploadStartTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+      }
+      if let v = _storage._outputUploadCompletedTimestamp {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata, rhs: Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata) -> Bool {
-    if lhs.worker != rhs.worker {return false}
-    if lhs._queuedTimestamp != rhs._queuedTimestamp {return false}
-    if lhs._workerStartTimestamp != rhs._workerStartTimestamp {return false}
-    if lhs._workerCompletedTimestamp != rhs._workerCompletedTimestamp {return false}
-    if lhs._inputFetchStartTimestamp != rhs._inputFetchStartTimestamp {return false}
-    if lhs._inputFetchCompletedTimestamp != rhs._inputFetchCompletedTimestamp {return false}
-    if lhs._executionStartTimestamp != rhs._executionStartTimestamp {return false}
-    if lhs._executionCompletedTimestamp != rhs._executionCompletedTimestamp {return false}
-    if lhs._outputUploadStartTimestamp != rhs._outputUploadStartTimestamp {return false}
-    if lhs._outputUploadCompletedTimestamp != rhs._outputUploadCompletedTimestamp {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._worker != rhs_storage._worker {return false}
+        if _storage._queuedTimestamp != rhs_storage._queuedTimestamp {return false}
+        if _storage._workerStartTimestamp != rhs_storage._workerStartTimestamp {return false}
+        if _storage._workerCompletedTimestamp != rhs_storage._workerCompletedTimestamp {return false}
+        if _storage._inputFetchStartTimestamp != rhs_storage._inputFetchStartTimestamp {return false}
+        if _storage._inputFetchCompletedTimestamp != rhs_storage._inputFetchCompletedTimestamp {return false}
+        if _storage._executionStartTimestamp != rhs_storage._executionStartTimestamp {return false}
+        if _storage._executionCompletedTimestamp != rhs_storage._executionCompletedTimestamp {return false}
+        if _storage._outputUploadStartTimestamp != rhs_storage._outputUploadStartTimestamp {return false}
+        if _storage._outputUploadCompletedTimestamp != rhs_storage._outputUploadCompletedTimestamp {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -2892,18 +3009,21 @@ extension Build_Bazel_Remote_Execution_V2_ActionResult: SwiftProtobuf.Message, S
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.outputFiles)
-      case 3: try decoder.decodeRepeatedMessageField(value: &self.outputDirectories)
-      case 4: try decoder.decodeSingularInt32Field(value: &self.exitCode)
-      case 5: try decoder.decodeSingularBytesField(value: &self.stdoutRaw)
-      case 6: try decoder.decodeSingularMessageField(value: &self._stdoutDigest)
-      case 7: try decoder.decodeSingularBytesField(value: &self.stderrRaw)
-      case 8: try decoder.decodeSingularMessageField(value: &self._stderrDigest)
-      case 9: try decoder.decodeSingularMessageField(value: &self._executionMetadata)
-      case 10: try decoder.decodeRepeatedMessageField(value: &self.outputFileSymlinks)
-      case 11: try decoder.decodeRepeatedMessageField(value: &self.outputDirectorySymlinks)
-      case 12: try decoder.decodeRepeatedMessageField(value: &self.outputSymlinks)
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.outputFiles) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.outputDirectories) }()
+      case 4: try { try decoder.decodeSingularInt32Field(value: &self.exitCode) }()
+      case 5: try { try decoder.decodeSingularBytesField(value: &self.stdoutRaw) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._stdoutDigest) }()
+      case 7: try { try decoder.decodeSingularBytesField(value: &self.stderrRaw) }()
+      case 8: try { try decoder.decodeSingularMessageField(value: &self._stderrDigest) }()
+      case 9: try { try decoder.decodeSingularMessageField(value: &self._executionMetadata) }()
+      case 10: try { try decoder.decodeRepeatedMessageField(value: &self.outputFileSymlinks) }()
+      case 11: try { try decoder.decodeRepeatedMessageField(value: &self.outputDirectorySymlinks) }()
+      case 12: try { try decoder.decodeRepeatedMessageField(value: &self.outputSymlinks) }()
       default: break
       }
     }
@@ -2975,12 +3095,15 @@ extension Build_Bazel_Remote_Execution_V2_OutputFile: SwiftProtobuf.Message, Swi
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.path)
-      case 2: try decoder.decodeSingularMessageField(value: &self._digest)
-      case 4: try decoder.decodeSingularBoolField(value: &self.isExecutable)
-      case 5: try decoder.decodeSingularBytesField(value: &self.contents)
-      case 7: try decoder.decodeSingularMessageField(value: &self._nodeProperties)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.isExecutable) }()
+      case 5: try { try decoder.decodeSingularBytesField(value: &self.contents) }()
+      case 7: try { try decoder.decodeSingularMessageField(value: &self._nodeProperties) }()
       default: break
       }
     }
@@ -3025,9 +3148,12 @@ extension Build_Bazel_Remote_Execution_V2_Tree: SwiftProtobuf.Message, SwiftProt
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._root)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.children)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._root) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.children) }()
       default: break
       }
     }
@@ -3060,9 +3186,12 @@ extension Build_Bazel_Remote_Execution_V2_OutputDirectory: SwiftProtobuf.Message
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.path)
-      case 3: try decoder.decodeSingularMessageField(value: &self._treeDigest)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._treeDigest) }()
       default: break
       }
     }
@@ -3096,10 +3225,13 @@ extension Build_Bazel_Remote_Execution_V2_OutputSymlink: SwiftProtobuf.Message, 
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.path)
-      case 2: try decoder.decodeSingularStringField(value: &self.target)
-      case 4: try decoder.decodeSingularMessageField(value: &self._nodeProperties)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.target) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._nodeProperties) }()
       default: break
       }
     }
@@ -3135,8 +3267,11 @@ extension Build_Bazel_Remote_Execution_V2_ExecutionPolicy: SwiftProtobuf.Message
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularInt32Field(value: &self.priority)
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.priority) }()
       default: break
       }
     }
@@ -3164,8 +3299,11 @@ extension Build_Bazel_Remote_Execution_V2_ResultsCachePolicy: SwiftProtobuf.Mess
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularInt32Field(value: &self.priority)
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.priority) }()
       default: break
       }
     }
@@ -3197,12 +3335,15 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteRequest: SwiftProtobuf.Message,
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 3: try decoder.decodeSingularBoolField(value: &self.skipCacheLookup)
-      case 6: try decoder.decodeSingularMessageField(value: &self._actionDigest)
-      case 7: try decoder.decodeSingularMessageField(value: &self._executionPolicy)
-      case 8: try decoder.decodeSingularMessageField(value: &self._resultsCachePolicy)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.skipCacheLookup) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._actionDigest) }()
+      case 7: try { try decoder.decodeSingularMessageField(value: &self._executionPolicy) }()
+      case 8: try { try decoder.decodeSingularMessageField(value: &self._resultsCachePolicy) }()
       default: break
       }
     }
@@ -3247,9 +3388,12 @@ extension Build_Bazel_Remote_Execution_V2_LogFile: SwiftProtobuf.Message, SwiftP
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._digest)
-      case 2: try decoder.decodeSingularBoolField(value: &self.humanReadable)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.humanReadable) }()
       default: break
       }
     }
@@ -3283,44 +3427,87 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteResponse: SwiftProtobuf.Message
     5: .same(proto: "message"),
   ]
 
+  fileprivate class _StorageClass {
+    var _result: Build_Bazel_Remote_Execution_V2_ActionResult? = nil
+    var _cachedResult: Bool = false
+    var _status: Google_Rpc_Status? = nil
+    var _serverLogs: Dictionary<String,Build_Bazel_Remote_Execution_V2_LogFile> = [:]
+    var _message: String = String()
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _result = source._result
+      _cachedResult = source._cachedResult
+      _status = source._status
+      _serverLogs = source._serverLogs
+      _message = source._message
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._result)
-      case 2: try decoder.decodeSingularBoolField(value: &self.cachedResult)
-      case 3: try decoder.decodeSingularMessageField(value: &self._status)
-      case 4: try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.ProtobufString,Build_Bazel_Remote_Execution_V2_LogFile>.self, value: &self.serverLogs)
-      case 5: try decoder.decodeSingularStringField(value: &self.message)
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularMessageField(value: &_storage._result) }()
+        case 2: try { try decoder.decodeSingularBoolField(value: &_storage._cachedResult) }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._status) }()
+        case 4: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.ProtobufString,Build_Bazel_Remote_Execution_V2_LogFile>.self, value: &_storage._serverLogs) }()
+        case 5: try { try decoder.decodeSingularStringField(value: &_storage._message) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._result {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
-    if self.cachedResult != false {
-      try visitor.visitSingularBoolField(value: self.cachedResult, fieldNumber: 2)
-    }
-    if let v = self._status {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
-    if !self.serverLogs.isEmpty {
-      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.ProtobufString,Build_Bazel_Remote_Execution_V2_LogFile>.self, value: self.serverLogs, fieldNumber: 4)
-    }
-    if !self.message.isEmpty {
-      try visitor.visitSingularStringField(value: self.message, fieldNumber: 5)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if let v = _storage._result {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      }
+      if _storage._cachedResult != false {
+        try visitor.visitSingularBoolField(value: _storage._cachedResult, fieldNumber: 2)
+      }
+      if let v = _storage._status {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      }
+      if !_storage._serverLogs.isEmpty {
+        try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.ProtobufString,Build_Bazel_Remote_Execution_V2_LogFile>.self, value: _storage._serverLogs, fieldNumber: 4)
+      }
+      if !_storage._message.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._message, fieldNumber: 5)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_ExecuteResponse, rhs: Build_Bazel_Remote_Execution_V2_ExecuteResponse) -> Bool {
-    if lhs._result != rhs._result {return false}
-    if lhs.cachedResult != rhs.cachedResult {return false}
-    if lhs._status != rhs._status {return false}
-    if lhs.serverLogs != rhs.serverLogs {return false}
-    if lhs.message != rhs.message {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._result != rhs_storage._result {return false}
+        if _storage._cachedResult != rhs_storage._cachedResult {return false}
+        if _storage._status != rhs_storage._status {return false}
+        if _storage._serverLogs != rhs_storage._serverLogs {return false}
+        if _storage._message != rhs_storage._message {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3366,11 +3553,14 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata: SwiftProtobu
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularEnumField(value: &self.stage)
-      case 2: try decoder.decodeSingularMessageField(value: &self._actionDigest)
-      case 3: try decoder.decodeSingularStringField(value: &self.stdoutStreamName)
-      case 4: try decoder.decodeSingularStringField(value: &self.stderrStreamName)
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.stage) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._actionDigest) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.stdoutStreamName) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.stderrStreamName) }()
       default: break
       }
     }
@@ -3410,8 +3600,11 @@ extension Build_Bazel_Remote_Execution_V2_WaitExecutionRequest: SwiftProtobuf.Me
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
       default: break
       }
     }
@@ -3443,12 +3636,15 @@ extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: SwiftProtobuf.
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 2: try decoder.decodeSingularMessageField(value: &self._actionDigest)
-      case 3: try decoder.decodeSingularBoolField(value: &self.inlineStdout)
-      case 4: try decoder.decodeSingularBoolField(value: &self.inlineStderr)
-      case 5: try decoder.decodeRepeatedStringField(value: &self.inlineOutputFiles)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._actionDigest) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.inlineStdout) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.inlineStderr) }()
+      case 5: try { try decoder.decodeRepeatedStringField(value: &self.inlineOutputFiles) }()
       default: break
       }
     }
@@ -3493,39 +3689,80 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
     4: .standard(proto: "results_cache_policy"),
   ]
 
+  fileprivate class _StorageClass {
+    var _instanceName: String = String()
+    var _actionDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
+    var _actionResult: Build_Bazel_Remote_Execution_V2_ActionResult? = nil
+    var _resultsCachePolicy: Build_Bazel_Remote_Execution_V2_ResultsCachePolicy? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _instanceName = source._instanceName
+      _actionDigest = source._actionDigest
+      _actionResult = source._actionResult
+      _resultsCachePolicy = source._resultsCachePolicy
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 2: try decoder.decodeSingularMessageField(value: &self._actionDigest)
-      case 3: try decoder.decodeSingularMessageField(value: &self._actionResult)
-      case 4: try decoder.decodeSingularMessageField(value: &self._resultsCachePolicy)
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularStringField(value: &_storage._instanceName) }()
+        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._actionDigest) }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._actionResult) }()
+        case 4: try { try decoder.decodeSingularMessageField(value: &_storage._resultsCachePolicy) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.instanceName.isEmpty {
-      try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
-    }
-    if let v = self._actionDigest {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._actionResult {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
-    if let v = self._resultsCachePolicy {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if !_storage._instanceName.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._instanceName, fieldNumber: 1)
+      }
+      if let v = _storage._actionDigest {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      }
+      if let v = _storage._actionResult {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      }
+      if let v = _storage._resultsCachePolicy {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, rhs: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest) -> Bool {
-    if lhs.instanceName != rhs.instanceName {return false}
-    if lhs._actionDigest != rhs._actionDigest {return false}
-    if lhs._actionResult != rhs._actionResult {return false}
-    if lhs._resultsCachePolicy != rhs._resultsCachePolicy {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._instanceName != rhs_storage._instanceName {return false}
+        if _storage._actionDigest != rhs_storage._actionDigest {return false}
+        if _storage._actionResult != rhs_storage._actionResult {return false}
+        if _storage._resultsCachePolicy != rhs_storage._resultsCachePolicy {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3540,9 +3777,12 @@ extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest: SwiftProtobuf
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.blobDigests)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.blobDigests) }()
       default: break
       }
     }
@@ -3574,8 +3814,11 @@ extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse: SwiftProtobu
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.missingBlobDigests)
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.missingBlobDigests) }()
       default: break
       }
     }
@@ -3604,9 +3847,12 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest: SwiftProtobuf
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.requests)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.requests) }()
       default: break
       }
     }
@@ -3639,9 +3885,12 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request: Swift
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._digest)
-      case 2: try decoder.decodeSingularBytesField(value: &self.data)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
+      case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
       default: break
       }
     }
@@ -3673,8 +3922,11 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse: SwiftProtobu
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.responses)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.responses) }()
       default: break
       }
     }
@@ -3703,9 +3955,12 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse.Response: Swi
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._digest)
-      case 2: try decoder.decodeSingularMessageField(value: &self._status)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._status) }()
       default: break
       }
     }
@@ -3738,9 +3993,12 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest: SwiftProtobuf.M
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.digests)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.digests) }()
       default: break
       }
     }
@@ -3772,8 +4030,11 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse: SwiftProtobuf.
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.responses)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.responses) }()
       default: break
       }
     }
@@ -3803,10 +4064,13 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response: Swift
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._digest)
-      case 2: try decoder.decodeSingularBytesField(value: &self.data)
-      case 3: try decoder.decodeSingularMessageField(value: &self._status)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
+      case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._status) }()
       default: break
       }
     }
@@ -3845,11 +4109,14 @@ extension Build_Bazel_Remote_Execution_V2_GetTreeRequest: SwiftProtobuf.Message,
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
-      case 2: try decoder.decodeSingularMessageField(value: &self._rootDigest)
-      case 3: try decoder.decodeSingularInt32Field(value: &self.pageSize)
-      case 4: try decoder.decodeSingularStringField(value: &self.pageToken)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._rootDigest) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.pageSize) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.pageToken) }()
       default: break
       }
     }
@@ -3890,9 +4157,12 @@ extension Build_Bazel_Remote_Execution_V2_GetTreeResponse: SwiftProtobuf.Message
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.directories)
-      case 2: try decoder.decodeSingularStringField(value: &self.nextPageToken)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.directories) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.nextPageToken) }()
       default: break
       }
     }
@@ -3924,8 +4194,11 @@ extension Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest: SwiftProtobuf.
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.instanceName)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
       default: break
       }
     }
@@ -3955,44 +4228,87 @@ extension Build_Bazel_Remote_Execution_V2_ServerCapabilities: SwiftProtobuf.Mess
     5: .standard(proto: "high_api_version"),
   ]
 
+  fileprivate class _StorageClass {
+    var _cacheCapabilities: Build_Bazel_Remote_Execution_V2_CacheCapabilities? = nil
+    var _executionCapabilities: Build_Bazel_Remote_Execution_V2_ExecutionCapabilities? = nil
+    var _deprecatedApiVersion: Build_Bazel_Semver_SemVer? = nil
+    var _lowApiVersion: Build_Bazel_Semver_SemVer? = nil
+    var _highApiVersion: Build_Bazel_Semver_SemVer? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _cacheCapabilities = source._cacheCapabilities
+      _executionCapabilities = source._executionCapabilities
+      _deprecatedApiVersion = source._deprecatedApiVersion
+      _lowApiVersion = source._lowApiVersion
+      _highApiVersion = source._highApiVersion
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._cacheCapabilities)
-      case 2: try decoder.decodeSingularMessageField(value: &self._executionCapabilities)
-      case 3: try decoder.decodeSingularMessageField(value: &self._deprecatedApiVersion)
-      case 4: try decoder.decodeSingularMessageField(value: &self._lowApiVersion)
-      case 5: try decoder.decodeSingularMessageField(value: &self._highApiVersion)
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularMessageField(value: &_storage._cacheCapabilities) }()
+        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._executionCapabilities) }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._deprecatedApiVersion) }()
+        case 4: try { try decoder.decodeSingularMessageField(value: &_storage._lowApiVersion) }()
+        case 5: try { try decoder.decodeSingularMessageField(value: &_storage._highApiVersion) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._cacheCapabilities {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
-    if let v = self._executionCapabilities {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._deprecatedApiVersion {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
-    if let v = self._lowApiVersion {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
-    if let v = self._highApiVersion {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if let v = _storage._cacheCapabilities {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      }
+      if let v = _storage._executionCapabilities {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      }
+      if let v = _storage._deprecatedApiVersion {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      }
+      if let v = _storage._lowApiVersion {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+      }
+      if let v = _storage._highApiVersion {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_ServerCapabilities, rhs: Build_Bazel_Remote_Execution_V2_ServerCapabilities) -> Bool {
-    if lhs._cacheCapabilities != rhs._cacheCapabilities {return false}
-    if lhs._executionCapabilities != rhs._executionCapabilities {return false}
-    if lhs._deprecatedApiVersion != rhs._deprecatedApiVersion {return false}
-    if lhs._lowApiVersion != rhs._lowApiVersion {return false}
-    if lhs._highApiVersion != rhs._highApiVersion {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._cacheCapabilities != rhs_storage._cacheCapabilities {return false}
+        if _storage._executionCapabilities != rhs_storage._executionCapabilities {return false}
+        if _storage._deprecatedApiVersion != rhs_storage._deprecatedApiVersion {return false}
+        if _storage._lowApiVersion != rhs_storage._lowApiVersion {return false}
+        if _storage._highApiVersion != rhs_storage._highApiVersion {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4026,6 +4342,7 @@ extension Build_Bazel_Remote_Execution_V2_DigestFunction.Value: SwiftProtobuf._P
     4: .same(proto: "VSO"),
     5: .same(proto: "SHA384"),
     6: .same(proto: "SHA512"),
+    7: .same(proto: "MURMUR3"),
   ]
 }
 
@@ -4037,8 +4354,11 @@ extension Build_Bazel_Remote_Execution_V2_ActionCacheUpdateCapabilities: SwiftPr
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularBoolField(value: &self.updateEnabled)
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.updateEnabled) }()
       default: break
       }
     }
@@ -4066,8 +4386,11 @@ extension Build_Bazel_Remote_Execution_V2_PriorityCapabilities: SwiftProtobuf.Me
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.priorities)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.priorities) }()
       default: break
       }
     }
@@ -4096,9 +4419,12 @@ extension Build_Bazel_Remote_Execution_V2_PriorityCapabilities.PriorityRange: Sw
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularInt32Field(value: &self.minPriority)
-      case 2: try decoder.decodeSingularInt32Field(value: &self.maxPriority)
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.minPriority) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.maxPriority) }()
       default: break
       }
     }
@@ -4161,12 +4487,15 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedEnumField(value: &self.digestFunction)
-      case 2: try decoder.decodeSingularMessageField(value: &self._actionCacheUpdateCapabilities)
-      case 3: try decoder.decodeSingularMessageField(value: &self._cachePriorityCapabilities)
-      case 4: try decoder.decodeSingularInt64Field(value: &self.maxBatchTotalSizeBytes)
-      case 5: try decoder.decodeSingularEnumField(value: &self.symlinkAbsolutePathStrategy)
+      case 1: try { try decoder.decodeRepeatedEnumField(value: &self.digestFunction) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._actionCacheUpdateCapabilities) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._cachePriorityCapabilities) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.maxBatchTotalSizeBytes) }()
+      case 5: try { try decoder.decodeSingularEnumField(value: &self.symlinkAbsolutePathStrategy) }()
       default: break
       }
     }
@@ -4213,11 +4542,14 @@ extension Build_Bazel_Remote_Execution_V2_ExecutionCapabilities: SwiftProtobuf.M
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularEnumField(value: &self.digestFunction)
-      case 2: try decoder.decodeSingularBoolField(value: &self.execEnabled)
-      case 3: try decoder.decodeSingularMessageField(value: &self._executionPriorityCapabilities)
-      case 4: try decoder.decodeRepeatedStringField(value: &self.supportedNodeProperties)
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.execEnabled) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._executionPriorityCapabilities) }()
+      case 4: try { try decoder.decodeRepeatedStringField(value: &self.supportedNodeProperties) }()
       default: break
       }
     }
@@ -4258,9 +4590,12 @@ extension Build_Bazel_Remote_Execution_V2_ToolDetails: SwiftProtobuf.Message, Sw
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.toolName)
-      case 2: try decoder.decodeSingularStringField(value: &self.toolVersion)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.toolName) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.toolVersion) }()
       default: break
       }
     }
@@ -4295,11 +4630,14 @@ extension Build_Bazel_Remote_Execution_V2_RequestMetadata: SwiftProtobuf.Message
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._toolDetails)
-      case 2: try decoder.decodeSingularStringField(value: &self.actionID)
-      case 3: try decoder.decodeSingularStringField(value: &self.toolInvocationID)
-      case 4: try decoder.decodeSingularStringField(value: &self.correlatedInvocationsID)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._toolDetails) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.actionID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.toolInvocationID) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.correlatedInvocationsID) }()
       default: break
       }
     }

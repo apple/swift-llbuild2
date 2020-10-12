@@ -181,7 +181,7 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
   /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
   /// are available at the time of returning the
   /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
-  /// for some period of time afterwards. The TTLs of the referenced blobs SHOULD be increased
+  /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
   /// if necessary and applicable.
   ///
   /// Errors:
@@ -266,7 +266,7 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   /// Clients can use this API before uploading blobs to determine which ones are
   /// already present in the CAS and do not need to be uploaded again.
   ///
-  /// Servers SHOULD increase the TTLs of the referenced blobs if necessary and
+  /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
   /// applicable.
   ///
   /// There are no method-specific errors.
@@ -558,7 +558,7 @@ public protocol Build_Bazel_Remote_Execution_V2_ActionCacheProvider: CallHandler
   /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
   /// are available at the time of returning the
   /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
-  /// for some period of time afterwards. The TTLs of the referenced blobs SHOULD be increased
+  /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
   /// if necessary and applicable.
   ///
   /// Errors:
@@ -620,7 +620,7 @@ public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvide
   /// Clients can use this API before uploading blobs to determine which ones are
   /// already present in the CAS and do not need to be uploaded again.
   ///
-  /// Servers SHOULD increase the TTLs of the referenced blobs if necessary and
+  /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
   /// applicable.
   ///
   /// There are no method-specific errors.

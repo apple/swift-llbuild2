@@ -448,13 +448,34 @@ public struct Google_Api_HttpRule {
 
   #if !swift(>=4.1)
     public static func ==(lhs: Google_Api_HttpRule.OneOf_Pattern, rhs: Google_Api_HttpRule.OneOf_Pattern) -> Bool {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch (lhs, rhs) {
-      case (.get(let l), .get(let r)): return l == r
-      case (.put(let l), .put(let r)): return l == r
-      case (.post(let l), .post(let r)): return l == r
-      case (.delete(let l), .delete(let r)): return l == r
-      case (.patch(let l), .patch(let r)): return l == r
-      case (.custom(let l), .custom(let r)): return l == r
+      case (.get, .get): return {
+        guard case .get(let l) = lhs, case .get(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.put, .put): return {
+        guard case .put(let l) = lhs, case .put(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.post, .post): return {
+        guard case .post(let l) = lhs, case .post(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.delete, .delete): return {
+        guard case .delete(let l) = lhs, case .delete(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.patch, .patch): return {
+        guard case .patch(let l) = lhs, case .patch(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.custom, .custom): return {
+        guard case .custom(let l) = lhs, case .custom(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
       default: return false
       }
     }
@@ -494,9 +515,12 @@ extension Google_Api_Http: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.rules)
-      case 2: try decoder.decodeSingularBoolField(value: &self.fullyDecodeReservedExpansion)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.rules) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.fullyDecodeReservedExpansion) }()
       default: break
       }
     }
@@ -537,35 +561,43 @@ extension Google_Api_HttpRule: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.selector)
-      case 2:
+      case 1: try { try decoder.decodeSingularStringField(value: &self.selector) }()
+      case 2: try {
         if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
         if let v = v {self.pattern = .get(v)}
-      case 3:
+      }()
+      case 3: try {
         if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
         if let v = v {self.pattern = .put(v)}
-      case 4:
+      }()
+      case 4: try {
         if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
         if let v = v {self.pattern = .post(v)}
-      case 5:
+      }()
+      case 5: try {
         if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
         if let v = v {self.pattern = .delete(v)}
-      case 6:
+      }()
+      case 6: try {
         if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
         if let v = v {self.pattern = .patch(v)}
-      case 7: try decoder.decodeSingularStringField(value: &self.body)
-      case 8:
+      }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.body) }()
+      case 8: try {
         var v: Google_Api_CustomHttpPattern?
         if let current = self.pattern {
           try decoder.handleConflictingOneOf()
@@ -573,8 +605,9 @@ extension Google_Api_HttpRule: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.pattern = .custom(v)}
-      case 11: try decoder.decodeRepeatedMessageField(value: &self.additionalBindings)
-      case 12: try decoder.decodeSingularStringField(value: &self.responseBody)
+      }()
+      case 11: try { try decoder.decodeRepeatedMessageField(value: &self.additionalBindings) }()
+      case 12: try { try decoder.decodeSingularStringField(value: &self.responseBody) }()
       default: break
       }
     }
@@ -584,18 +617,30 @@ extension Google_Api_HttpRule: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     if !self.selector.isEmpty {
       try visitor.visitSingularStringField(value: self.selector, fieldNumber: 1)
     }
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every case branch when no optimizations are
+    // enabled. https://github.com/apple/swift-protobuf/issues/1034
     switch self.pattern {
-    case .get(let v)?:
+    case .get?: try {
+      guard case .get(let v)? = self.pattern else { preconditionFailure() }
       try visitor.visitSingularStringField(value: v, fieldNumber: 2)
-    case .put(let v)?:
+    }()
+    case .put?: try {
+      guard case .put(let v)? = self.pattern else { preconditionFailure() }
       try visitor.visitSingularStringField(value: v, fieldNumber: 3)
-    case .post(let v)?:
+    }()
+    case .post?: try {
+      guard case .post(let v)? = self.pattern else { preconditionFailure() }
       try visitor.visitSingularStringField(value: v, fieldNumber: 4)
-    case .delete(let v)?:
+    }()
+    case .delete?: try {
+      guard case .delete(let v)? = self.pattern else { preconditionFailure() }
       try visitor.visitSingularStringField(value: v, fieldNumber: 5)
-    case .patch(let v)?:
+    }()
+    case .patch?: try {
+      guard case .patch(let v)? = self.pattern else { preconditionFailure() }
       try visitor.visitSingularStringField(value: v, fieldNumber: 6)
-    case nil: break
+    }()
     default: break
     }
     if !self.body.isEmpty {
@@ -633,9 +678,12 @@ extension Google_Api_CustomHttpPattern: SwiftProtobuf.Message, SwiftProtobuf._Me
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.kind)
-      case 2: try decoder.decodeSingularStringField(value: &self.path)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.kind) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.path) }()
       default: break
       }
     }

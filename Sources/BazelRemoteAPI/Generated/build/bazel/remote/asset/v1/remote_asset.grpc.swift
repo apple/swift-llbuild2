@@ -55,7 +55,7 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
   ///
   /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
   /// time of the response, and (if supported) that they will remain available
-  /// for a reasonable period of time. The TTLs of the referenced blobs *SHOULD*
+  /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
   /// be increased if necessary and applicable.
   /// In the event that a client receives a reference to content that is no
   /// longer present, it *MAY* re-issue the request with
@@ -236,7 +236,7 @@ public protocol Build_Bazel_Remote_Asset_V1_FetchProvider: CallHandlerProvider {
   ///
   /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
   /// time of the response, and (if supported) that they will remain available
-  /// for a reasonable period of time. The TTLs of the referenced blobs *SHOULD*
+  /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
   /// be increased if necessary and applicable.
   /// In the event that a client receives a reference to content that is no
   /// longer present, it *MAY* re-issue the request with

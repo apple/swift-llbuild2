@@ -142,7 +142,7 @@ service ActionCache {
   // [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
   // are available at the time of returning the
   // [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
-  // for some period of time afterwards. The TTLs of the referenced blobs SHOULD be increased
+  // for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
   // if necessary and applicable.
   //
   // Errors:
@@ -254,7 +254,7 @@ service ContentAddressableStorage {
   // Clients can use this API before uploading blobs to determine which ones are
   // already present in the CAS and do not need to be uploaded again.
   //
-  // Servers SHOULD increase the TTLs of the referenced blobs if necessary and
+  // Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
   // applicable.
   //
   // There are no method-specific errors.
@@ -425,6 +425,14 @@ message Action {
   bool do_not_cache = 7;
 
   reserved 8; // Used for field moved to [Command][build.bazel.remote.execution.v2.Command].
+
+  // An optional additional salt value used to place this `Action` into a
+  // separate cache namespace from other instances having the same field
+  // contents. This salt typically comes from operational configuration
+  // specific to sources such as repo and service configuration,
+  // and allows disowning an entire set of ActionResults that might have been
+  // poisoned by buggy software or tool failures.
+  bytes salt = 9;
 }
 
 // A `Command` is the actual command executed by a worker running an
@@ -595,6 +603,11 @@ message Platform {
   // The server MAY use the `value` of one or more properties to determine how
   // it sets up the execution environment, such as by making specific system
   // files available to the worker.
+  //
+  // Both names and values are typically case-sensitive. Note that the platform
+  // is implicitly part of the action digest, so even tiny changes in the names
+  // or values (like changing case) may result in different action cache
+  // entries.
   message Property {
     // The property name.
     string name = 1;
@@ -1311,7 +1324,8 @@ message GetActionResultRequest {
   bool inline_stderr = 4;
 
   // A hint to the server to inline the contents of the listed output files.
-  // Each path needs to exactly match one path in `output_files` in the
+  // Each path needs to exactly match one file path in either `output_paths` or
+  // `output_files` (DEPRECATED since v2.1) in the
   // [Command][build.bazel.remote.execution.v2.Command] message.
   repeated string inline_output_files = 5;
 }
@@ -1530,6 +1544,11 @@ message DigestFunction {
 
     // The SHA-512 digest function.
     SHA512 = 6;
+
+    // Murmur3 128-bit digest function, x64 variant. Note that this is not a
+    // cryptographic hash function and its collision properties are not strongly guaranteed.
+    // See https://github.com/aappleby/smhasher/wiki/MurmurHash3 .
+    MURMUR3 = 7;
   }
 }
 
