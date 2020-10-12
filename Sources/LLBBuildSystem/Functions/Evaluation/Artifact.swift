@@ -93,8 +93,13 @@ public extension LLBArtifactOwner {
 
 /// Convenience initializer.
 fileprivate extension LLBArtifactValue {
-    init(dataID: LLBDataID) {
-        self.dataID = dataID
+    init(dataID: LLBDataID, logsID: LLBDataID? = nil) {
+        self = Self.with {
+            $0.dataID = dataID
+            if let logsID = logsID {
+                $0.logsID = logsID
+            }
+        }
     }
 }
 
@@ -134,7 +139,10 @@ final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
             guard actionValue.outputs.count >= artifactOwner.outputIndex + 1 else {
                 throw LLBArtifactError.actionWithTooFewOutputs
             }
-            return LLBArtifactValue(dataID: actionValue.outputs[Int(artifactOwner.outputIndex)])
+            return LLBArtifactValue(
+                dataID: actionValue.outputs[Int(artifactOwner.outputIndex)],
+                logsID: actionValue.hasStdoutID ? actionValue.stdoutID : nil
+            )
         }
     }
 }

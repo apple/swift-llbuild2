@@ -67,10 +67,10 @@ fileprivate extension LLBActionValue {
 
     init(actionExecutionValue: LLBActionExecutionValue) {
         self.outputs = actionExecutionValue.outputs
-        if !actionExecutionValue.stdoutID.bytes.isEmpty {
+        if actionExecutionValue.hasStdoutID {
             self.stdoutID = actionExecutionValue.stdoutID
         }
-        if !actionExecutionValue.stderrID.bytes.isEmpty {
+        if actionExecutionValue.hasStderrID {
             self.stderrID = actionExecutionValue.stderrID
         }
     }
