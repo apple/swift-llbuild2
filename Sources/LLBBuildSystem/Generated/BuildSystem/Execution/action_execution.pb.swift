@@ -70,9 +70,18 @@ public struct LLBActionExecutionKey {
 
   #if !swift(>=4.1)
     public static func ==(lhs: LLBActionExecutionKey.OneOf_ActionExecutionType, rhs: LLBActionExecutionKey.OneOf_ActionExecutionType) -> Bool {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch (lhs, rhs) {
-      case (.command(let l), .command(let r)): return l == r
-      case (.mergeTrees(let l), .mergeTrees(let r)): return l == r
+      case (.command, .command): return {
+        guard case .command(let l) = lhs, case .command(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.mergeTrees, .mergeTrees): return {
+        guard case .mergeTrees(let l) = lhs, case .mergeTrees(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
       default: return false
       }
     }
@@ -239,8 +248,11 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 16:
+      case 16: try {
         var v: LLBCommandActionExecution?
         if let current = self.actionExecutionType {
           try decoder.handleConflictingOneOf()
@@ -248,7 +260,8 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.actionExecutionType = .command(v)}
-      case 17:
+      }()
+      case 17: try {
         var v: LLBMergeTreesActionExecution?
         if let current = self.actionExecutionType {
           try decoder.handleConflictingOneOf()
@@ -256,17 +269,25 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.actionExecutionType = .mergeTrees(v)}
+      }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every case branch when no optimizations are
+    // enabled. https://github.com/apple/swift-protobuf/issues/1034
     switch self.actionExecutionType {
-    case .command(let v)?:
+    case .command?: try {
+      guard case .command(let v)? = self.actionExecutionType else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 16)
-    case .mergeTrees(let v)?:
+    }()
+    case .mergeTrees?: try {
+      guard case .mergeTrees(let v)? = self.actionExecutionType else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -290,11 +311,14 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.outputs)
-      case 2: try decoder.decodeSingularMessageField(value: &self._stdoutID)
-      case 3: try decoder.decodeSingularMessageField(value: &self._stderrID)
-      case 4: try decoder.decodeSingularBoolField(value: &self.cachedFailure)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._stdoutID) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._stderrID) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.cachedFailure) }()
       default: break
       }
     }
@@ -341,15 +365,18 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._actionSpec)
-      case 2: try decoder.decodeRepeatedMessageField(value: &self.inputs)
-      case 3: try decoder.decodeRepeatedMessageField(value: &self.outputs)
-      case 4: try decoder.decodeSingularStringField(value: &self.dynamicIdentifier)
-      case 5: try decoder.decodeSingularStringField(value: &self.mnemonic)
-      case 6: try decoder.decodeSingularStringField(value: &self.description_p)
-      case 7: try decoder.decodeSingularBoolField(value: &self.cacheableFailure)
-      case 8: try decoder.decodeSingularMessageField(value: &self._label)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._actionSpec) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.inputs) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.dynamicIdentifier) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.mnemonic) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
+      case 7: try { try decoder.decodeSingularBoolField(value: &self.cacheableFailure) }()
+      case 8: try { try decoder.decodeSingularMessageField(value: &self._label) }()
       default: break
       }
     }
@@ -405,8 +432,11 @@ extension LLBMergeTreesActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Me
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.inputs)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.inputs) }()
       default: break
       }
     }
@@ -436,10 +466,13 @@ extension LLBActionExecutionRequestExtras: SwiftProtobuf.Message, SwiftProtobuf.
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.mnemonic)
-      case 2: try decoder.decodeSingularStringField(value: &self.description_p)
-      case 3: try decoder.decodeSingularMessageField(value: &self._owner)
+      case 1: try { try decoder.decodeSingularStringField(value: &self.mnemonic) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._owner) }()
       default: break
       }
     }

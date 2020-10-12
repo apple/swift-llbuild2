@@ -96,10 +96,22 @@ public final class LLBArtifact {
 
   #if !swift(>=4.1)
     public static func ==(lhs: LLBArtifact.OneOf_OriginType, rhs: LLBArtifact.OneOf_OriginType) -> Bool {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch (lhs, rhs) {
-      case (.source(let l), .source(let r)): return l == r
-      case (.derived(let l), .derived(let r)): return l == r
-      case (.derivedStatic(let l), .derivedStatic(let r)): return l == r
+      case (.source, .source): return {
+        guard case .source(let l) = lhs, case .source(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.derived, .derived): return {
+        guard case .derived(let l) = lhs, case .derived(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.derivedStatic, .derivedStatic): return {
+        guard case .derivedStatic(let l) = lhs, case .derivedStatic(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
       default: return false
       }
     }
@@ -124,8 +136,11 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
 
   public func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1:
+      case 1: try {
         var v: TSFCAS.LLBDataID?
         if let current = self.originType {
           try decoder.handleConflictingOneOf()
@@ -133,10 +148,11 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.originType = .source(v)}
-      case 2: try decoder.decodeSingularStringField(value: &self.shortPath)
-      case 3: try decoder.decodeRepeatedStringField(value: &self.roots)
-      case 4: try decoder.decodeSingularEnumField(value: &self.type)
-      case 5:
+      }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.shortPath) }()
+      case 3: try { try decoder.decodeRepeatedStringField(value: &self.roots) }()
+      case 4: try { try decoder.decodeSingularEnumField(value: &self.type) }()
+      case 5: try {
         var v: LLBArtifactOwner?
         if let current = self.originType {
           try decoder.handleConflictingOneOf()
@@ -144,7 +160,8 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.originType = .derived(v)}
-      case 6:
+      }()
+      case 6: try {
         var v: TSFCAS.LLBDataID?
         if let current = self.originType {
           try decoder.handleConflictingOneOf()
@@ -152,6 +169,7 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.originType = .derivedStatic(v)}
+      }()
       default: break
       }
     }
@@ -170,12 +188,18 @@ extension LLBArtifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementati
     if self.type != .file {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 4)
     }
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every case branch when no optimizations are
+    // enabled. https://github.com/apple/swift-protobuf/issues/1034
     switch self.originType {
-    case .derived(let v)?:
+    case .derived?: try {
+      guard case .derived(let v)? = self.originType else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-    case .derivedStatic(let v)?:
+    }()
+    case .derivedStatic?: try {
+      guard case .derivedStatic(let v)? = self.originType else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    case nil: break
+    }()
     default: break
     }
     try unknownFields.traverse(visitor: &visitor)

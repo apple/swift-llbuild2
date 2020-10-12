@@ -146,8 +146,11 @@ extension LLBRuleEvaluationKeyID: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._ruleEvaluationKeyID)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._ruleEvaluationKeyID) }()
       default: break
       }
     }
@@ -177,10 +180,13 @@ extension LLBRuleEvaluationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._label)
-      case 2: try decoder.decodeSingularMessageField(value: &self._configuredTargetValue)
-      case 3: try decoder.decodeSingularMessageField(value: &self._configurationKey)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._label) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._configuredTargetValue) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._configurationKey) }()
       default: break
       }
     }
@@ -217,9 +223,12 @@ extension LLBRuleEvaluationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.actionIds)
-      case 2: try decoder.decodeSingularMessageField(value: &self._providerMap)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.actionIds) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._providerMap) }()
       default: break
       }
     }

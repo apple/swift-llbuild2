@@ -74,8 +74,11 @@ extension LLBConfigurationKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.fragmentKeys)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.fragmentKeys) }()
       default: break
       }
     }
@@ -104,9 +107,12 @@ extension LLBConfigurationValue: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeRepeatedMessageField(value: &self.fragments)
-      case 2: try decoder.decodeSingularStringField(value: &self.root)
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.fragments) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.root) }()
       default: break
       }
     }

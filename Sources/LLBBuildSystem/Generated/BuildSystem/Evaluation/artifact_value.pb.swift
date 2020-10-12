@@ -30,13 +30,13 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// An ArtifactValue contains a reference to the actual bytes that is expected to exist in a CAS database.
+/// An ArtifactValue contains a reference to the actual bytes that is expected to exist in a CAS database.
 public struct LLBArtifactValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The dataID with a reference to the contents of the artifact.
+  /// The dataID with a reference to the contents of the artifact.
   public var dataID: TSFCAS.LLBDataID {
     get {return _dataID ?? TSFCAS.LLBDataID()}
     set {_dataID = newValue}
@@ -46,11 +46,22 @@ public struct LLBArtifactValue {
   /// Clears the value of `dataID`. Subsequent reads from it will return its default value.
   public mutating func clearDataID() {self._dataID = nil}
 
+  /// Optional dataID for the logs of the action that generated this artifact value.
+  public var logsID: TSFCAS.LLBDataID {
+    get {return _logsID ?? TSFCAS.LLBDataID()}
+    set {_logsID = newValue}
+  }
+  /// Returns true if `logsID` has been explicitly set.
+  public var hasLogsID: Bool {return self._logsID != nil}
+  /// Clears the value of `logsID`. Subsequent reads from it will return its default value.
+  public mutating func clearLogsID() {self._logsID = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _dataID: TSFCAS.LLBDataID? = nil
+  fileprivate var _logsID: TSFCAS.LLBDataID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -59,12 +70,17 @@ extension LLBArtifactValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
   public static let protoMessageName: String = "LLBArtifactValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "dataID"),
+    2: .same(proto: "logsID"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try decoder.decodeSingularMessageField(value: &self._dataID)
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._dataID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._logsID) }()
       default: break
       }
     }
@@ -74,11 +90,15 @@ extension LLBArtifactValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if let v = self._dataID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     }
+    if let v = self._logsID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBArtifactValue, rhs: LLBArtifactValue) -> Bool {
     if lhs._dataID != rhs._dataID {return false}
+    if lhs._logsID != rhs._logsID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
