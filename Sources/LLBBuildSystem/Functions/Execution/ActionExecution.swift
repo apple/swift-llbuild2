@@ -121,22 +121,17 @@ fileprivate extension LLBActionExecutionValue {
         if let stdoutID = stdoutID {
             self.stdoutID = stdoutID
         }
-        if let stderrID = stderrID {
-            self.stderrID = stderrID
-        }
     }
 
     init(from executionResponse: LLBActionExecutionResponse) {
         self.outputs = executionResponse.outputs
         self.stdoutID = executionResponse.stdoutID
-        self.stderrID = executionResponse.stderrID
     }
 
-    static func cachedFailure(stdoutID: LLBDataID, stderrID: LLBDataID) -> LLBActionExecutionValue {
+    static func cachedFailure(stdoutID: LLBDataID) -> LLBActionExecutionValue {
         return LLBActionExecutionValue.with {
             $0.cachedFailure = true
             $0.stdoutID = stdoutID
-            $0.stderrID = stderrID
         }
     }
 }
@@ -149,7 +144,7 @@ public enum LLBActionExecutionError: Error {
     case executorError(Error)
 
     /// Error related to an actual action (i.e. action completed but did not finish successfully).
-    case actionExecutionError(LLBDataID, LLBDataID)
+    case actionExecutionError(LLBDataID)
 }
 
 final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
@@ -221,15 +216,9 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             // If the action failed, convert it into an actual error with the dataIDs of the output logs.
             if executionResponse.exitCode != 0 {
                 if commandKey.cacheableFailure {
-                    return LLBActionExecutionValue.cachedFailure(
-                        stdoutID: executionResponse.stdoutID,
-                        stderrID: executionResponse.stderrID
-                    )
+                    return LLBActionExecutionValue.cachedFailure(stdoutID: executionResponse.stdoutID)
                 } else {
-                    throw LLBActionExecutionError.actionExecutionError(
-                        executionResponse.stdoutID,
-                        executionResponse.stderrID
-                    )
+                    throw LLBActionExecutionError.actionExecutionError(executionResponse.stdoutID)
                 }
             }
 

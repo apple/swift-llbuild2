@@ -22,26 +22,22 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
         let command = request.actionSpec.arguments[0]
         if command == "success" {
             let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)), ctx)
-            let stderrFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("".utf8)), ctx)
 
-            return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
+            return stdoutFuture.map { stdoutID in
                 return LLBActionExecutionResponse.with {
                     $0.exitCode = 0
                     // Map the input contents as the outputs.
                     $0.outputs = request.inputs.map { $0.dataID }
                     $0.stdoutID = stdoutID
-                    $0.stderrID = stderrID
                 }
             }
         } else if command == "failure" {
-            let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("".utf8)), ctx)
-            let stderrFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Failure".utf8)), ctx)
+            let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Failure".utf8)), ctx)
 
-            return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
+            return stdoutFuture.map { stdoutID in
                 return LLBActionExecutionResponse.with {
                     $0.exitCode = 1
                     $0.stdoutID = stdoutID
-                    $0.stderrID = stderrID
                 }
             }
         } else if command == "schedule-error" {
@@ -114,16 +110,13 @@ class ActionExecutionTests: XCTestCase {
             do {
                 let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 
-                guard case let .actionExecutionError(stdoutID, stderrID) = actionExecutionError else {
+                guard case let .actionExecutionError(stdoutID) = actionExecutionError else {
                     XCTFail("Expected an actionExecutionError")
                     return
                 }
 
                 let stdout = try XCTUnwrap(testCtx.db.get(stdoutID, ctx).wait()?.data.asString())
-                XCTAssertEqual(stdout, "")
-
-                let stderr = try XCTUnwrap(testCtx.db.get(stderrID, ctx).wait()?.data.asString())
-                XCTAssertEqual(stderr, "Failure")
+                XCTAssertEqual(stdout, "Failure")
             } catch {
                 XCTFail("Unexpected error: \(error)")
             }

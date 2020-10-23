@@ -101,7 +101,7 @@ public struct LLBActionValue {
   /// actionType.
   public var outputs: [TSFCAS.LLBDataID] = []
 
-  /// The data ID for the stdout of the action.
+  /// The data ID for the stdout/stderr of the action.
   public var stdoutID: TSFCAS.LLBDataID {
     get {return _stdoutID ?? TSFCAS.LLBDataID()}
     set {_stdoutID = newValue}
@@ -111,22 +111,11 @@ public struct LLBActionValue {
   /// Clears the value of `stdoutID`. Subsequent reads from it will return its default value.
   public mutating func clearStdoutID() {self._stdoutID = nil}
 
-  /// The data ID for the stderr of the action.
-  public var stderrID: TSFCAS.LLBDataID {
-    get {return _stderrID ?? TSFCAS.LLBDataID()}
-    set {_stderrID = newValue}
-  }
-  /// Returns true if `stderrID` has been explicitly set.
-  public var hasStderrID: Bool {return self._stderrID != nil}
-  /// Clears the value of `stderrID`. Subsequent reads from it will return its default value.
-  public mutating func clearStderrID() {self._stderrID = nil}
-
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _stdoutID: TSFCAS.LLBDataID? = nil
-  fileprivate var _stderrID: TSFCAS.LLBDataID? = nil
 }
 
 /// An action execution description for a command line invocation.
@@ -302,7 +291,6 @@ extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "outputs"),
     2: .same(proto: "stdoutID"),
-    3: .same(proto: "stderrID"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -313,7 +301,6 @@ extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._stdoutID) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._stderrID) }()
       default: break
       }
     }
@@ -326,16 +313,12 @@ extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
     if let v = self._stdoutID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
-    if let v = self._stderrID {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBActionValue, rhs: LLBActionValue) -> Bool {
     if lhs.outputs != rhs.outputs {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
-    if lhs._stderrID != rhs._stderrID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

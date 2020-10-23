@@ -34,14 +34,11 @@ message LLBActionExecutionValue {
     // actionExecutionType.
     repeated LLBDataID outputs = 1;
 
-    // The data ID for the stdout of the action.
+    // The data ID for the stdout and stderr of the action.
     LLBDataID stdoutID = 2;
 
-    // The data ID for the stderr of the action.
-    LLBDataID stderrID = 3;
-
     // Whether the action execution was a cached failure.
-    bool cachedFailure = 4;
+    bool cachedFailure = 3;
 }
 
 // An action execution description for a command line invocation.

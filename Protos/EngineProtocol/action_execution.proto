@@ -11,120 +11,117 @@ syntax = "proto3";
 import "CASProtocol/data_id.proto";
 import "google/protobuf/any.proto";
 
-/// Enum representing the supported artifact types for remote action execution.
+// Enum representing the supported artifact types for remote action execution.
 enum LLBArtifactType {
-    /// Artifact represents a regular file.
+    // Artifact represents a regular file.
     FILE = 0;
 
-    /// Artifact represents a directory containing files and/or other directories.
+    // Artifact represents a directory containing files and/or other directories.
     DIRECTORY = 1;
 }
 
-/// Represents a remote action execution input artifact.
+// Represents a remote action execution input artifact.
 message LLBActionInput {
-    /// The path where the file should be expected to be placed. This path can't be absolute, but instead it must be
-    /// relative to the execution root.
+    // The path where the file should be expected to be placed. This path can't be absolute, but instead it must be
+    // relative to the execution root.
     string path = 1;
 
-    /// The dataID representing the contents of the input. The remote execution service should be able to retrieve the
-    /// contents of the input from the CAS system.
+    // The dataID representing the contents of the input. The remote execution service should be able to retrieve the
+    // contents of the input from the CAS system.
     LLBDataID dataID = 2;
 
-    /// The type of artifact that this input represents.
+    // The type of artifact that this input represents.
     LLBArtifactType type = 3;
 }
 
-/// Represents a remote action execution output artifact. This is the declaration of an artifact that is expected to be
-/// produced by the action execution.
+// Represents a remote action execution output artifact. This is the declaration of an artifact that is expected to be
+// produced by the action execution.
 message LLBActionOutput {
-    /// The path where the file is expected to be produced. This path must be relative to the execution root.
+    // The path where the file is expected to be produced. This path must be relative to the execution root.
     string path = 1;
 
-    /// The type of artifact expected to be produced by the action.
+    // The type of artifact expected to be produced by the action.
     LLBArtifactType type = 2;
 }
 
-/// An environment variable entry.
+// An environment variable entry.
 message LLBEnvironmentVariable {
-    /// The name of the environment variable.
+    // The name of the environment variable.
     string name = 1;
 
-    /// The value of the environment variable.
+    // The value of the environment variable.
     string value = 2;
 }
 
-/// The action specification. This value is part of the action execution key, so in order to ensure cache hits, the
-/// contents of repeated fields must have stable ordering, especially for the preActions and environment fields. This
-/// spec doesn't enforce any ordering, but it is expected that the environment variables are ordered lexicographically
-/// by their name.
+// The action specification. This value is part of the action execution key, so in order to ensure cache hits, the
+// contents of repeated fields must have stable ordering, especially for the preActions and environment fields. This
+// spec doesn't enforce any ordering, but it is expected that the environment variables are ordered lexicographically
+// by their name.
 message LLBActionSpec {
-    /// The command line arguments to execute on the remote machine.
+    // The command line arguments to execute on the remote machine.
     repeated string arguments = 1;
 
-    /// The environment variables to set while executing the arguments.
+    // The environment variables to set while executing the arguments.
     repeated LLBEnvironmentVariable environment = 2;
 
-    /// Optional working directory that should be relative to the execution root. This might be needed for specific
-    /// tools that do not support relative input paths. For such tools, the workingDirectory may have the
-    /// `<LLB_EXECUTION_ROOT>/` prefix, which will get replaced by the actual remote execution root. This feature may
-    /// not be supported in all remote execution environments.
+    // Optional working directory that should be relative to the execution root. This might be needed for specific
+    // tools that do not support relative input paths. For such tools, the workingDirectory may have the
+    // `<LLB_EXECUTION_ROOT>/` prefix, which will get replaced by the actual remote execution root. This feature may
+    // not be supported in all remote execution environments.
     string workingDirectory = 3;
 
-    /// A list of actions that should be executed before executing the main action. These are simpler action specs that
-    /// allow running setup commands that may be required for the action to succeed. These pre-actions do not specify
-    /// inputs or outputs, and it's expected that any required inputs are represented in the action execution request.
-    /// These pre-actions are expected to be executed in the same host as the action, so they may make action execution
-    /// slower. This feature may not be supported in all remote execution environments and should be used as a last
-    /// resort.
+    // A list of actions that should be executed before executing the main action. These are simpler action specs that
+    // allow running setup commands that may be required for the action to succeed. These pre-actions do not specify
+    // inputs or outputs, and it's expected that any required inputs are represented in the action execution request.
+    // These pre-actions are expected to be executed in the same host as the action, so they may make action execution
+    // slower. This feature may not be supported in all remote execution environments and should be used as a last
+    // resort.
     repeated LLBPreActionSpec preActions = 4;
 }
 
-/// The specification for a pre-action. For more info check the preActions field in LLBActionSpec.
+// The specification for a pre-action. For more info check the preActions field in LLBActionSpec.
 message LLBPreActionSpec {
-    /// The command line arguments to execute.
+    // The command line arguments to execute.
     repeated string arguments = 1;
 
-    /// Additional environment variables to be added for this particular pre-action. It is expected that these
-    /// environment variables are added on top of the main action's environment, overriding any environment variables if
-    /// there is a collision.
+    // Additional environment variables to be added for this particular pre-action. It is expected that these
+    // environment variables are added on top of the main action's environment, overriding any environment variables if
+    // there is a collision.
     repeated LLBEnvironmentVariable environment = 2;
 
-    /// Whether this pre-action should run in the background while the main action is being executed. It is up to the
-    /// remote execution service to manage the lifetime of these processes.
+    // Whether this pre-action should run in the background while the main action is being executed. It is up to the
+    // remote execution service to manage the lifetime of these processes.
     bool background = 3;
 }
 
-/// The request for a remote action execution.
+// The request for a remote action execution.
 message LLBActionExecutionRequest {
-    /// The specificiation of the action to execute.
+    // The specificiation of the action to execute.
     LLBActionSpec actionSpec = 1;
 
-    /// The list of input artifacts required for this action to execute.
+    // The list of input artifacts required for this action to execute.
     repeated LLBActionInput inputs = 2;
 
-    /// The expected outputs from the action execution.
+    // The expected outputs from the action execution.
     repeated LLBActionOutput outputs = 3;
 
     // Any container for moving around unspecified data.
     repeated google.protobuf.Any additionalData = 5;
 }
 
-/// The response for a remote action execution request.
+// The response for a remote action execution request.
 message LLBActionExecutionResponse {
-    /// The list of dataIDs representing the contents of the outputs. This list is expected to contain 1 dataID per
-    /// output requested, in the same order as they appear in the action execution request. This value is expected to be
-    /// populated only if the action completed successfully.
+    // The list of dataIDs representing the contents of the outputs. This list is expected to contain 1 dataID per
+    // output requested, in the same order as they appear in the action execution request. This value is expected to be
+    // populated only if the action completed successfully.
     repeated LLBDataID outputs = 1;
 
-    /// The exit code for the action execution.
+    // The exit code for the action execution.
     int32 exitCode = 2;
 
-    /// The dataID for the contents of the stdout of the action.
+    // The dataID for the contents of the stdout and stderr of the action (expected to be intermixed).
     LLBDataID stdoutID = 3;
 
-    /// The dataID for the contents of the stderr of the action.
-    LLBDataID stderrID = 4;
-
     // Any container for moving around unspecified data.
-    repeated google.protobuf.Any additionalData = 5;
+    repeated google.protobuf.Any additionalData = 4;
 }
