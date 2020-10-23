@@ -46,7 +46,7 @@ public struct LLBArtifactValue {
   /// Clears the value of `dataID`. Subsequent reads from it will return its default value.
   public mutating func clearDataID() {self._dataID = nil}
 
-  /// Optional dataID for the logs of the action that generated this artifact value.
+  /// Optional dataID for the logs (e.g. stdout) of the action that generated this artifact value.
   public var logsID: TSFCAS.LLBDataID {
     get {return _logsID ?? TSFCAS.LLBDataID()}
     set {_logsID = newValue}

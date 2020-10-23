@@ -32,8 +32,8 @@
         "package": "llbuild",
         "repositoryURL": "https://github.com/apple/swift-llbuild.git",
         "state": {
-          "branch": "master",
-          "revision": "145c113cde37318f3cef38843f9ce6a678aaa4fd",
+          "branch": "main",
+          "revision": "5b5421a12fea9c5ec63fd9a797c05f7aebd8142b",
           "version": null
         }
       },
@@ -95,18 +95,18 @@
         "package": "swift-tools-support-async",
         "repositoryURL": "https://github.com/apple/swift-tools-support-async.git",
         "state": {
-          "branch": "master",
-          "revision": "5a2ca3c2d22aff63d07030db7e6bf9303dc18ff4",
-          "version": null
+          "branch": null,
+          "revision": "0cf9a894b72c813ac2efaac2c56db208cdcd1bd9",
+          "version": "0.1.3"
         }
       },
       {
         "package": "swift-tools-support-core",
         "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
         "state": {
-          "branch": "master",
-          "revision": "d28e9e372f125c4581ccde20cb3ba6e46ef4c5ed",
-          "version": null
+          "branch": null,
+          "revision": "243beea77d20db46647a3de4765c96e2c801c7c7",
+          "version": "0.1.12"
         }
       }
     ]

@@ -16,6 +16,6 @@ message LLBArtifactValue {
     // The dataID with a reference to the contents of the artifact.
     LLBDataID dataID = 1;
 
-    // Optional dataID for the logs of the action that generated this artifact value.
+    // Optional dataID for the logs (e.g. stdout) of the action that generated this artifact value.
     LLBDataID logsID = 2;
 }

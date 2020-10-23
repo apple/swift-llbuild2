@@ -100,11 +100,7 @@ private final class DynamicActionExecutor: LLBDynamicActionExecutor {
 
             return fi.requestActionExecution(actionExecutionKey, ctx)
         }.map { (actionResult: LLBActionExecutionValue) in
-            return LLBActionExecutionResponse(
-                outputs: actionResult.outputs,
-                stdoutID: actionResult.stdoutID,
-                stderrID: actionResult.stderrID
-            )
+            return LLBActionExecutionResponse(outputs: actionResult.outputs, stdoutID: actionResult.stdoutID)
         }
     }
 }

@@ -30,14 +30,14 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// Enum representing the supported artifact types for remote action execution.
+/// Enum representing the supported artifact types for remote action execution.
 public enum LLBArtifactType: SwiftProtobuf.Enum {
   public typealias RawValue = Int
 
-  //// Artifact represents a regular file.
+  /// Artifact represents a regular file.
   case file // = 0
 
-  //// Artifact represents a directory containing files and/or other directories.
+  /// Artifact represents a directory containing files and/or other directories.
   case directory // = 1
   case UNRECOGNIZED(Int)
 
@@ -75,18 +75,18 @@ extension LLBArtifactType: CaseIterable {
 
 #endif  // swift(>=4.2)
 
-//// Represents a remote action execution input artifact.
+/// Represents a remote action execution input artifact.
 public struct LLBActionInput {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The path where the file should be expected to be placed. This path can't be absolute, but instead it must be
-  //// relative to the execution root.
+  /// The path where the file should be expected to be placed. This path can't be absolute, but instead it must be
+  /// relative to the execution root.
   public var path: String = String()
 
-  //// The dataID representing the contents of the input. The remote execution service should be able to retrieve the
-  //// contents of the input from the CAS system.
+  /// The dataID representing the contents of the input. The remote execution service should be able to retrieve the
+  /// contents of the input from the CAS system.
   public var dataID: TSFCAS.LLBDataID {
     get {return _dataID ?? TSFCAS.LLBDataID()}
     set {_dataID = newValue}
@@ -96,7 +96,7 @@ public struct LLBActionInput {
   /// Clears the value of `dataID`. Subsequent reads from it will return its default value.
   public mutating func clearDataID() {self._dataID = nil}
 
-  //// The type of artifact that this input represents.
+  /// The type of artifact that this input represents.
   public var type: LLBArtifactType = .file
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -106,17 +106,17 @@ public struct LLBActionInput {
   fileprivate var _dataID: TSFCAS.LLBDataID? = nil
 }
 
-//// Represents a remote action execution output artifact. This is the declaration of an artifact that is expected to be
-//// produced by the action execution.
+/// Represents a remote action execution output artifact. This is the declaration of an artifact that is expected to be
+/// produced by the action execution.
 public struct LLBActionOutput {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The path where the file is expected to be produced. This path must be relative to the execution root.
+  /// The path where the file is expected to be produced. This path must be relative to the execution root.
   public var path: String = String()
 
-  //// The type of artifact expected to be produced by the action.
+  /// The type of artifact expected to be produced by the action.
   public var type: LLBArtifactType = .file
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -124,16 +124,16 @@ public struct LLBActionOutput {
   public init() {}
 }
 
-//// An environment variable entry.
+/// An environment variable entry.
 public struct LLBEnvironmentVariable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The name of the environment variable.
+  /// The name of the environment variable.
   public var name: String = String()
 
-  //// The value of the environment variable.
+  /// The value of the environment variable.
   public var value: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -141,33 +141,33 @@ public struct LLBEnvironmentVariable {
   public init() {}
 }
 
-//// The action specification. This value is part of the action execution key, so in order to ensure cache hits, the
-//// contents of repeated fields must have stable ordering, especially for the preActions and environment fields. This
-//// spec doesn't enforce any ordering, but it is expected that the environment variables are ordered lexicographically
-//// by their name.
+/// The action specification. This value is part of the action execution key, so in order to ensure cache hits, the
+/// contents of repeated fields must have stable ordering, especially for the preActions and environment fields. This
+/// spec doesn't enforce any ordering, but it is expected that the environment variables are ordered lexicographically
+/// by their name.
 public struct LLBActionSpec {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The command line arguments to execute on the remote machine.
+  /// The command line arguments to execute on the remote machine.
   public var arguments: [String] = []
 
-  //// The environment variables to set while executing the arguments.
+  /// The environment variables to set while executing the arguments.
   public var environment: [LLBEnvironmentVariable] = []
 
-  //// Optional working directory that should be relative to the execution root. This might be needed for specific
-  //// tools that do not support relative input paths. For such tools, the workingDirectory may have the
-  //// `<LLB_EXECUTION_ROOT>/` prefix, which will get replaced by the actual remote execution root. This feature may
-  //// not be supported in all remote execution environments.
+  /// Optional working directory that should be relative to the execution root. This might be needed for specific
+  /// tools that do not support relative input paths. For such tools, the workingDirectory may have the
+  /// `<LLB_EXECUTION_ROOT>/` prefix, which will get replaced by the actual remote execution root. This feature may
+  /// not be supported in all remote execution environments.
   public var workingDirectory: String = String()
 
-  //// A list of actions that should be executed before executing the main action. These are simpler action specs that
-  //// allow running setup commands that may be required for the action to succeed. These pre-actions do not specify
-  //// inputs or outputs, and it's expected that any required inputs are represented in the action execution request.
-  //// These pre-actions are expected to be executed in the same host as the action, so they may make action execution
-  //// slower. This feature may not be supported in all remote execution environments and should be used as a last
-  //// resort.
+  /// A list of actions that should be executed before executing the main action. These are simpler action specs that
+  /// allow running setup commands that may be required for the action to succeed. These pre-actions do not specify
+  /// inputs or outputs, and it's expected that any required inputs are represented in the action execution request.
+  /// These pre-actions are expected to be executed in the same host as the action, so they may make action execution
+  /// slower. This feature may not be supported in all remote execution environments and should be used as a last
+  /// resort.
   public var preActions: [LLBPreActionSpec] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -175,22 +175,22 @@ public struct LLBActionSpec {
   public init() {}
 }
 
-//// The specification for a pre-action. For more info check the preActions field in LLBActionSpec.
+/// The specification for a pre-action. For more info check the preActions field in LLBActionSpec.
 public struct LLBPreActionSpec {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The command line arguments to execute.
+  /// The command line arguments to execute.
   public var arguments: [String] = []
 
-  //// Additional environment variables to be added for this particular pre-action. It is expected that these
-  //// environment variables are added on top of the main action's environment, overriding any environment variables if
-  //// there is a collision.
+  /// Additional environment variables to be added for this particular pre-action. It is expected that these
+  /// environment variables are added on top of the main action's environment, overriding any environment variables if
+  /// there is a collision.
   public var environment: [LLBEnvironmentVariable] = []
 
-  //// Whether this pre-action should run in the background while the main action is being executed. It is up to the
-  //// remote execution service to manage the lifetime of these processes.
+  /// Whether this pre-action should run in the background while the main action is being executed. It is up to the
+  /// remote execution service to manage the lifetime of these processes.
   public var background: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -198,13 +198,13 @@ public struct LLBPreActionSpec {
   public init() {}
 }
 
-//// The request for a remote action execution.
+/// The request for a remote action execution.
 public struct LLBActionExecutionRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The specificiation of the action to execute.
+  /// The specificiation of the action to execute.
   public var actionSpec: LLBActionSpec {
     get {return _actionSpec ?? LLBActionSpec()}
     set {_actionSpec = newValue}
@@ -214,10 +214,10 @@ public struct LLBActionExecutionRequest {
   /// Clears the value of `actionSpec`. Subsequent reads from it will return its default value.
   public mutating func clearActionSpec() {self._actionSpec = nil}
 
-  //// The list of input artifacts required for this action to execute.
+  /// The list of input artifacts required for this action to execute.
   public var inputs: [LLBActionInput] = []
 
-  //// The expected outputs from the action execution.
+  /// The expected outputs from the action execution.
   public var outputs: [LLBActionOutput] = []
 
   /// Any container for moving around unspecified data.
@@ -230,21 +230,21 @@ public struct LLBActionExecutionRequest {
   fileprivate var _actionSpec: LLBActionSpec? = nil
 }
 
-//// The response for a remote action execution request.
+/// The response for a remote action execution request.
 public struct LLBActionExecutionResponse {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// The list of dataIDs representing the contents of the outputs. This list is expected to contain 1 dataID per
-  //// output requested, in the same order as they appear in the action execution request. This value is expected to be
-  //// populated only if the action completed successfully.
+  /// The list of dataIDs representing the contents of the outputs. This list is expected to contain 1 dataID per
+  /// output requested, in the same order as they appear in the action execution request. This value is expected to be
+  /// populated only if the action completed successfully.
   public var outputs: [TSFCAS.LLBDataID] = []
 
-  //// The exit code for the action execution.
+  /// The exit code for the action execution.
   public var exitCode: Int32 = 0
 
-  //// The dataID for the contents of the stdout of the action.
+  /// The dataID for the contents of the stdout and stderr of the action (expected to be intermixed).
   public var stdoutID: TSFCAS.LLBDataID {
     get {return _stdoutID ?? TSFCAS.LLBDataID()}
     set {_stdoutID = newValue}
@@ -254,16 +254,6 @@ public struct LLBActionExecutionResponse {
   /// Clears the value of `stdoutID`. Subsequent reads from it will return its default value.
   public mutating func clearStdoutID() {self._stdoutID = nil}
 
-  //// The dataID for the contents of the stderr of the action.
-  public var stderrID: TSFCAS.LLBDataID {
-    get {return _stderrID ?? TSFCAS.LLBDataID()}
-    set {_stderrID = newValue}
-  }
-  /// Returns true if `stderrID` has been explicitly set.
-  public var hasStderrID: Bool {return self._stderrID != nil}
-  /// Clears the value of `stderrID`. Subsequent reads from it will return its default value.
-  public mutating func clearStderrID() {self._stderrID = nil}
-
   /// Any container for moving around unspecified data.
   public var additionalData: [SwiftProtobuf.Google_Protobuf_Any] = []
 
@@ -272,7 +262,6 @@ public struct LLBActionExecutionResponse {
   public init() {}
 
   fileprivate var _stdoutID: TSFCAS.LLBDataID? = nil
-  fileprivate var _stderrID: TSFCAS.LLBDataID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -554,8 +543,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     1: .same(proto: "outputs"),
     2: .same(proto: "exitCode"),
     3: .same(proto: "stdoutID"),
-    4: .same(proto: "stderrID"),
-    5: .same(proto: "additionalData"),
+    4: .same(proto: "additionalData"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -567,8 +555,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
       case 2: try { try decoder.decodeSingularInt32Field(value: &self.exitCode) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._stdoutID) }()
-      case 4: try { try decoder.decodeSingularMessageField(value: &self._stderrID) }()
-      case 5: try { try decoder.decodeRepeatedMessageField(value: &self.additionalData) }()
+      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.additionalData) }()
       default: break
       }
     }
@@ -584,11 +571,8 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if let v = self._stdoutID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     }
-    if let v = self._stderrID {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
     if !self.additionalData.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 5)
+      try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -597,7 +581,6 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if lhs.outputs != rhs.outputs {return false}
     if lhs.exitCode != rhs.exitCode {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
-    if lhs._stderrID != rhs._stderrID {return false}
     if lhs.additionalData != rhs.additionalData {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

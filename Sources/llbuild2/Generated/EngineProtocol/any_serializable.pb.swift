@@ -28,17 +28,17 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// AnyCodable is a wrapper type for polymorphic codables, in which the type of the serialized data is not known at
-//// compile time.
+/// AnyCodable is a wrapper type for polymorphic codables, in which the type of the serialized data is not known at
+/// compile time.
 public struct LLBAnySerializable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// A string identifier to map the runtime bytes into a specific type, for deserialization.
+  /// A string identifier to map the runtime bytes into a specific type, for deserialization.
   public var typeIdentifier: String = String()
 
-  //// The serialized bytes of the underlying data structure.
+  /// The serialized bytes of the underlying data structure.
   public var serializedBytes: Data = Data()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()

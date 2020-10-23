@@ -11,10 +11,10 @@ import TSCUtility
 
 public enum LLBActionResult {
     /// The action was successful.
-    case success(stdoutID: LLBDataID, stderrID: LLBDataID)
+    case success(stdoutID: LLBDataID)
 
     /// The action failed. Read the stdoutID and stderrID for further information.
-    case failure(stdoutID: LLBDataID, stderrID: LLBDataID)
+    case failure(error: Error)
 }
 
 public protocol LLBBuildEventPreAction {

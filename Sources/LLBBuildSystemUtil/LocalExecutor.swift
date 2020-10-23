@@ -86,7 +86,7 @@ final public class LLBLocalExecutor: LLBExecutor {
                     recursive: true
                 )
             }
-        }.flatMapThrowing { _ -> (Int, [UInt8], [UInt8]) in
+        }.flatMapThrowing { _ -> (Int, [UInt8]) in
             let environment = request.actionSpec.environment.reduce(into: [String: String]()) { (dict, pair) in
                 dict[pair.name] = pair.value
             }
@@ -126,7 +126,7 @@ final public class LLBLocalExecutor: LLBExecutor {
                 arguments: arguments,
                 environment: environment,
                 workingDirectory: workingDir,
-                outputRedirection: .collect,
+                outputRedirection: .collect(redirectStderr: true),
                 verbose: false,
                 startNewProcessGroup: false
             )
@@ -150,11 +150,10 @@ final public class LLBLocalExecutor: LLBExecutor {
                 resultExitCode = -1
             }
 
-            return (resultExitCode, try result.output.get(), try result.stderrOutput.get())
-        }.flatMap { (exitCode, stdout, stderr) in
+            return (resultExitCode, try result.output.get())
+        }.flatMap { (exitCode, stdout) in
             // Upload the stdout and stderr of the action into the CAS.
             let stdoutFuture = ctx.db.put(data: .withBytes(stdout[...]), ctx)
-            let stderrFuture = ctx.db.put(data: .withBytes(stderr[...]), ctx)
 
             let uploadFutures: [LLBFuture<LLBDataID>]
 
@@ -177,12 +176,11 @@ final public class LLBLocalExecutor: LLBExecutor {
 
             let uploadsFuture = LLBFuture.whenAllSucceed(uploadFutures, on: ctx.group.next())
 
-            return stdoutFuture.and(stderrFuture).and(uploadsFuture).map { stdouterrIDs, outputUploads in
+            return stdoutFuture.and(uploadsFuture).map { stdoutID, outputUploads in
                 return LLBActionExecutionResponse(
                     outputs: outputUploads,
                     exitCode: exitCode,
-                    stdoutID: stdouterrIDs.0,
-                    stderrID: stdouterrIDs.1
+                    stdoutID: stdoutID
                 )
             }
         }.flatMapErrorThrowing { error in

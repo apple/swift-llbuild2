@@ -70,9 +70,6 @@ fileprivate extension LLBActionValue {
         if actionExecutionValue.hasStdoutID {
             self.stdoutID = actionExecutionValue.stdoutID
         }
-        if actionExecutionValue.hasStderrID {
-            self.stderrID = actionExecutionValue.stderrID
-        }
     }
 }
 
@@ -147,40 +144,18 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
             return fi.request(actionExecutionKey, ctx)
                 .flatMapThrowing { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
                     if actionExecutionValue.cachedFailure {
-                        throw LLBActionExecutionError.actionExecutionError(
-                            actionExecutionValue.stdoutID,
-                            actionExecutionValue.stderrID
-                        )
+                        throw LLBActionExecutionError.actionExecutionError(actionExecutionValue.stdoutID)
                     }
                     ctx.buildEventDelegate?.actionCompleted(
                         action: actionExecutionKey,
-                        result: .success(
-                            stdoutID: actionExecutionValue.stdoutID,
-                            stderrID: actionExecutionValue.stderrID
-                        )
+                        result: .success(stdoutID: actionExecutionValue.stdoutID)
                     )
                     return LLBActionValue(actionExecutionValue: actionExecutionValue)
                 }.flatMapErrorThrowing { error in
-                    if case let LLBActionExecutionError.actionExecutionError(stdoutID, stderrID) = error {
-                        ctx.buildEventDelegate?.actionCompleted(
-                            action: actionExecutionKey,
-                            result: .failure(stdoutID: stdoutID, stderrID: stderrID)
-                        )
-                    } else {
-                        // Log it just in case there's an issue with saving into the db.
-                        ctx.logger?.debug("unknown action error: \(error)")
-
-                        let stdoutIDFuture = ctx.db.put(data: LLBByteBuffer.init(repeating: 0, count: 0), ctx)
-                        let stderr = "error: unknown: \(error)"
-                        let stderrIDFuture = ctx.db.put(data: LLBByteBuffer.init(string: stderr), ctx)
-
-                        _ = stdoutIDFuture.and(stderrIDFuture).map { stdoutID, stderrID in
-                            ctx.buildEventDelegate?.actionCompleted(
-                                action: actionExecutionKey,
-                                result: .failure(stdoutID: stdoutID, stderrID: stderrID)
-                            )
-                        }
-                    }
+                    ctx.buildEventDelegate?.actionCompleted(
+                        action: actionExecutionKey,
+                        result: .failure(error: error)
+                    )
                     throw error
                 }
         }

@@ -20,14 +20,12 @@ enum ActionDummyError: Error, Equatable {
 private class ActionDummyExecutor: LLBExecutor {
     func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
         let stdoutFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("Success".utf8)), ctx)
-        let stderrFuture = ctx.db.put(data: LLBByteBuffer.withData(Data("".utf8)), ctx)
 
-        return stdoutFuture.and(stderrFuture).map { (stdoutID, stderrID) in
+        return stdoutFuture.map { stdoutID in
             return LLBActionExecutionResponse.with {
                 $0.exitCode = 0
                 $0.outputs = []
                 $0.stdoutID = stdoutID
-                $0.stderrID = stderrID
             }
         }
     }

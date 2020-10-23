@@ -46,11 +46,10 @@ public extension LLBActionExecutionRequest {
 }
 
 public extension LLBActionExecutionResponse {
-    init(outputs: [LLBDataID], exitCode: Int = 0, stdoutID: LLBDataID, stderrID: LLBDataID, additionalData: [Google_Protobuf_Any] = []) {
+    init(outputs: [LLBDataID], exitCode: Int = 0, stdoutID: LLBDataID, additionalData: [Google_Protobuf_Any] = []) {
         self.outputs = outputs
         self.exitCode = Int32(exitCode)
         self.stdoutID = stdoutID
-        self.stderrID = stderrID
         self.additionalData = additionalData
     }
 }
