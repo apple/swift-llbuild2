@@ -59,7 +59,7 @@ public final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKey
         self.ruleLookupDelegate = ruleLookupDelegate
     }
 
-    override func evaluate(key: LLBRuleEvaluationKeyID, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBRuleEvaluationValue> {
+    public override func evaluate(key: LLBRuleEvaluationKeyID, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBRuleEvaluationValue> {
         guard let ruleLookupDelegate = ruleLookupDelegate else {
             return ctx.group.next().makeFailedFuture(LLBRuleEvaluationError.noRuleLookupDelegate)
         }
