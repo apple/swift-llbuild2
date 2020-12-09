@@ -13,14 +13,14 @@ extension LLBRuleEvaluationKey: LLBSerializable {}
 extension LLBRuleEvaluationValue: LLBBuildValue {}
 
 extension LLBRuleEvaluationKeyID {
-    init(ruleEvaluationKeyID: LLBDataID) {
+    public init(ruleEvaluationKeyID: LLBDataID) {
         self.ruleEvaluationKeyID = ruleEvaluationKeyID
     }
 }
 
 // Convenience initializer.
 extension LLBRuleEvaluationKey {
-    init(label: LLBLabel, configuredTargetValue: LLBConfiguredTargetValue, configurationKey: LLBConfigurationKey? = nil) {
+    public init(label: LLBLabel, configuredTargetValue: LLBConfiguredTargetValue, configurationKey: LLBConfigurationKey? = nil) {
         self.label = label
         self.configuredTargetValue = configuredTargetValue
         self.configurationKey = configurationKey ?? LLBConfigurationKey()
@@ -29,7 +29,7 @@ extension LLBRuleEvaluationKey {
 
 // Convenience initializer.
 extension LLBRuleEvaluationValue {
-    init(actionIDs: [LLBDataID], providerMap: LLBProviderMap) {
+    public init(actionIDs: [LLBDataID], providerMap: LLBProviderMap) {
         self.actionIds = actionIDs
         self.providerMap = providerMap
     }
@@ -52,10 +52,10 @@ public enum LLBRuleEvaluationError: Error {
     case unassignedOutput(LLBArtifact)
 }
 
-final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLBRuleEvaluationValue> {
+public final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLBRuleEvaluationValue> {
     let ruleLookupDelegate: LLBRuleLookupDelegate?
 
-    init(ruleLookupDelegate: LLBRuleLookupDelegate?) {
+    public init(ruleLookupDelegate: LLBRuleLookupDelegate?) {
         self.ruleLookupDelegate = ruleLookupDelegate
     }
 
