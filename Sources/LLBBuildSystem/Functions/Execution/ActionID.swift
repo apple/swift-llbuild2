@@ -17,13 +17,13 @@ extension LLBActionKey: LLBBuildValue {}
 /// and deserialization of previously deserialized instances of the same action are shared. Without this, each
 /// ArtifactFunction invocation would have to deserialize the ActionKey, which is potentially a problem for actions that
 /// have many declared outputs.
-struct ActionIDKey: LLBBuildKey, Hashable {
+public struct ActionIDKey: LLBBuildKey, Hashable {
     public static let identifier = "ActionIDKey"
 
     /// The data ID representing the serialized form of an ActionKey.
-    let dataID: LLBDataID
+    public let dataID: LLBDataID
 
-    init(dataID: LLBDataID) {
+    public init(dataID: LLBDataID) {
         self.dataID = dataID
     }
 
@@ -32,12 +32,12 @@ struct ActionIDKey: LLBBuildKey, Hashable {
     }
 }
 
-enum ActionIDError: Error {
+public enum ActionIDError: Error {
     case notFound
 }
 
-final class ActionIDFunction: LLBBuildFunction<ActionIDKey, LLBActionKey> {
-    override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionKey> {
+public final class ActionIDFunction: LLBBuildFunction<ActionIDKey, LLBActionKey> {
+    public override func evaluate(key actionIDKey: ActionIDKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionKey> {
         return ctx.db.get(actionIDKey.dataID, ctx).flatMapThrowing { object in
             guard let object = object else {
                 throw ActionIDError.notFound
