@@ -20,32 +20,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import Foundation
 import GRPC
 import NIO
-import NIOHTTP1
 import SwiftProtobuf
 
 
 /// Usage: instantiate Build_Bazel_Remote_Execution_V2_ExecutionClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
-  func execute(_ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest, callOptions: CallOptions?, handler: @escaping (Google_Longrunning_Operation) -> Void) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>
-  func waitExecution(_ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, callOptions: CallOptions?, handler: @escaping (Google_Longrunning_Operation) -> Void) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>
+public protocol Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? { get }
+
+  func execute(
+    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+    callOptions: CallOptions?,
+    handler: @escaping (Google_Longrunning_Operation) -> Void
+  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>
+
+  func waitExecution(
+    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+    callOptions: CallOptions?,
+    handler: @escaping (Google_Longrunning_Operation) -> Void
+  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>
 }
 
-public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-
-  /// Creates a client for the build.bazel.remote.execution.v2.Execution service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-  }
+extension Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
 
   /// Execute an action remotely.
   ///
@@ -111,9 +108,14 @@ public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, 
   /// `Violation` with a `type` of `MISSING` and a `subject` of
   /// `"blobs/{hash}/{size}"` indicating the digest of the missing blob.
   ///
+  /// The server does not need to guarantee that a call to this method leads to
+  /// at most one execution of the action. The server MAY execute the action
+  /// multiple times, potentially in parallel. These redundant executions MAY
+  /// continue to run, even if the operation is completed.
+  ///
   /// - Parameters:
   ///   - request: Request to send to Execute.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
   public func execute(
@@ -125,6 +127,7 @@ public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, 
       path: "/build.bazel.remote.execution.v2.Execution/Execute",
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
       handler: handler
     )
   }
@@ -138,7 +141,7 @@ public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, 
   ///
   /// - Parameters:
   ///   - request: Request to send to WaitExecution.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
   public func waitExecution(
@@ -150,30 +153,59 @@ public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: GRPCClient, 
       path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
       handler: handler
     )
   }
 }
 
-/// Usage: instantiate Build_Bazel_Remote_Execution_V2_ActionCacheClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
-  func getActionResult(_ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
-  func updateActionResult(_ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+public protocol Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'execute'.
+  func makeExecuteInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>]
+
+  /// - Returns: Interceptors to use when invoking 'waitExecution'.
+  func makeWaitExecutionInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>]
 }
 
-public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient, Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
+public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
   public let channel: GRPCChannel
   public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.ActionCache service.
+  /// Creates a client for the build.bazel.remote.execution.v2.Execution service.
   ///
   /// - Parameters:
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
+}
+
+/// Usage: instantiate Build_Bazel_Remote_Execution_V2_ActionCacheClient, then call methods of this protocol to make API calls.
+public protocol Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? { get }
+
+  func getActionResult(
+    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+
+  func updateActionResult(
+    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+}
+
+extension Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
 
   /// Retrieve a cached execution result.
   ///
@@ -190,7 +222,7 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
   ///
   /// - Parameters:
   ///   - request: Request to send to GetActionResult.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func getActionResult(
     _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
@@ -199,7 +231,8 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
     return self.makeUnaryCall(
       path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
     )
   }
 
@@ -225,7 +258,7 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
   ///
   /// - Parameters:
   ///   - request: Request to send to UpdateActionResult.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func updateActionResult(
     _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
@@ -234,32 +267,70 @@ public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: GRPCClient
     return self.makeUnaryCall(
       path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
     )
   }
 }
 
-/// Usage: instantiate Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
-  func findMissingBlobs(_ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
-  func batchUpdateBlobs(_ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
-  func batchReadBlobs(_ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
-  func getTree(_ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest, callOptions: CallOptions?, handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>
+public protocol Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'getActionResult'.
+  func makeGetActionResultInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+
+  /// - Returns: Interceptors to use when invoking 'updateActionResult'.
+  func makeUpdateActionResultInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
 }
 
-public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient: GRPCClient, Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
+public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
   public let channel: GRPCChannel
   public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.ContentAddressableStorage service.
+  /// Creates a client for the build.bazel.remote.execution.v2.ActionCache service.
   ///
   /// - Parameters:
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
+}
+
+/// Usage: instantiate Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient, then call methods of this protocol to make API calls.
+public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? { get }
+
+  func findMissingBlobs(
+    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
+
+  func batchUpdateBlobs(
+    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
+
+  func batchReadBlobs(
+    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
+
+  func getTree(
+    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+    callOptions: CallOptions?,
+    handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void
+  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>
+}
+
+extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
 
   /// Determine if blobs are present in the CAS.
   ///
@@ -273,7 +344,7 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///
   /// - Parameters:
   ///   - request: Request to send to FindMissingBlobs.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func findMissingBlobs(
     _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
@@ -282,7 +353,8 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
     return self.makeUnaryCall(
       path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
     )
   }
 
@@ -313,7 +385,7 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///
   /// - Parameters:
   ///   - request: Request to send to BatchUpdateBlobs.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func batchUpdateBlobs(
     _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
@@ -322,7 +394,8 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
     return self.makeUnaryCall(
       path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
     )
   }
 
@@ -349,7 +422,7 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///
   /// - Parameters:
   ///   - request: Request to send to BatchReadBlobs.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func batchReadBlobs(
     _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
@@ -358,7 +431,8 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
     return self.makeUnaryCall(
       path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
     )
   }
 
@@ -388,7 +462,7 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
   ///
   /// - Parameters:
   ///   - request: Request to send to GetTree.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   ///   - handler: A closure called when each response is received from the server.
   /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
   public func getTree(
@@ -400,29 +474,60 @@ public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClie
       path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
       handler: handler
     )
   }
 }
 
-/// Usage: instantiate Build_Bazel_Remote_Execution_V2_CapabilitiesClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
-  func getCapabilities(_ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>
+public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'findMissingBlobs'.
+  func makeFindMissingBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>]
+
+  /// - Returns: Interceptors to use when invoking 'batchUpdateBlobs'.
+  func makeBatchUpdateBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>]
+
+  /// - Returns: Interceptors to use when invoking 'batchReadBlobs'.
+  func makeBatchReadBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>]
+
+  /// - Returns: Interceptors to use when invoking 'getTree'.
+  func makeGetTreeInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>]
 }
 
-public final class Build_Bazel_Remote_Execution_V2_CapabilitiesClient: GRPCClient, Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
+public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
   public let channel: GRPCChannel
   public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.Capabilities service.
+  /// Creates a client for the build.bazel.remote.execution.v2.ContentAddressableStorage service.
   ///
   /// - Parameters:
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
+}
+
+/// Usage: instantiate Build_Bazel_Remote_Execution_V2_CapabilitiesClient, then call methods of this protocol to make API calls.
+public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? { get }
+
+  func getCapabilities(
+    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>
+}
+
+extension Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
 
   /// GetCapabilities returns the server capabilities configuration of the
   /// remote endpoint.
@@ -435,7 +540,7 @@ public final class Build_Bazel_Remote_Execution_V2_CapabilitiesClient: GRPCClien
   ///
   /// - Parameters:
   ///   - request: Request to send to GetCapabilities.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func getCapabilities(
     _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
@@ -444,13 +549,44 @@ public final class Build_Bazel_Remote_Execution_V2_CapabilitiesClient: GRPCClien
     return self.makeUnaryCall(
       path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
     )
+  }
+}
+
+public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'getCapabilities'.
+  func makeGetCapabilitiesInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>]
+}
+
+public final class Build_Bazel_Remote_Execution_V2_CapabilitiesClient: Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
+
+  /// Creates a client for the build.bazel.remote.execution.v2.Capabilities service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
 }
 
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_ExecutionProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? { get }
+
   /// Execute an action remotely.
   ///
   /// In order to execute an action, the client must first upload all of the
@@ -514,7 +650,13 @@ public protocol Build_Bazel_Remote_Execution_V2_ExecutionProvider: CallHandlerPr
   /// where, for each requested blob not present in the CAS, there is a
   /// `Violation` with a `type` of `MISSING` and a `subject` of
   /// `"blobs/{hash}/{size}"` indicating the digest of the missing blob.
+  ///
+  /// The server does not need to guarantee that a call to this method leads to
+  /// at most one execution of the action. The server MAY execute the action
+  /// multiple times, potentially in parallel. These redundant executions MAY
+  /// continue to run, even if the operation is completed.
   func execute(request: Build_Bazel_Remote_Execution_V2_ExecuteRequest, context: StreamingResponseCallContext<Google_Longrunning_Operation>) -> EventLoopFuture<GRPCStatus>
+
   /// Wait for an execution operation to complete. When the client initially
   /// makes the request, the server immediately responds with the current status
   /// of the execution. The server will leave the request stream open until the
@@ -525,33 +667,55 @@ public protocol Build_Bazel_Remote_Execution_V2_ExecutionProvider: CallHandlerPr
 }
 
 extension Build_Bazel_Remote_Execution_V2_ExecutionProvider {
-  public var serviceName: String { return "build.bazel.remote.execution.v2.Execution" }
+  public var serviceName: Substring { return "build.bazel.remote.execution.v2.Execution" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "Execute":
-      return ServerStreamingCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeServerStreaming(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeExecuteInterceptors() ?? []
+      ) { context in
         return { request in
           self.execute(request: request, context: context)
         }
       }
 
     case "WaitExecution":
-      return ServerStreamingCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeServerStreaming(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? []
+      ) { context in
         return { request in
           self.waitExecution(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when handling 'execute'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeExecuteInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>]
+
+  /// - Returns: Interceptors to use when handling 'waitExecution'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeWaitExecutionInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>]
+}
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_ActionCacheProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? { get }
+
   /// Retrieve a cached execution result.
   ///
   /// Implementations SHOULD ensure that any blobs referenced from the
@@ -565,6 +729,7 @@ public protocol Build_Bazel_Remote_Execution_V2_ActionCacheProvider: CallHandler
   ///
   /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
   func getActionResult(request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ActionResult>
+
   /// Upload a new execution result.
   ///
   /// In order to allow the server to perform access control based on the type of
@@ -588,33 +753,55 @@ public protocol Build_Bazel_Remote_Execution_V2_ActionCacheProvider: CallHandler
 }
 
 extension Build_Bazel_Remote_Execution_V2_ActionCacheProvider {
-  public var serviceName: String { return "build.bazel.remote.execution.v2.ActionCache" }
+  public var serviceName: Substring { return "build.bazel.remote.execution.v2.ActionCache" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "GetActionResult":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
+      ) { context in
         return { request in
           self.getActionResult(request: request, context: context)
         }
       }
 
     case "UpdateActionResult":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
+      ) { context in
         return { request in
           self.updateActionResult(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when handling 'getActionResult'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeGetActionResultInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+
+  /// - Returns: Interceptors to use when handling 'updateActionResult'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeUpdateActionResultInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+}
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? { get }
+
   /// Determine if blobs are present in the CAS.
   ///
   /// Clients can use this API before uploading blobs to determine which ones are
@@ -625,6 +812,7 @@ public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvide
   ///
   /// There are no method-specific errors.
   func findMissingBlobs(request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
+
   /// Upload many blobs at once.
   ///
   /// The server may enforce a limit of the combined total size of blobs
@@ -650,6 +838,7 @@ public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvide
   /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
   /// provided data.
   func batchUpdateBlobs(request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
+
   /// Download many blobs at once.
   ///
   /// The server may enforce a limit of the combined total size of blobs
@@ -671,6 +860,7 @@ public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvide
   /// Every error on individual read will be returned in the corresponding digest
   /// status.
   func batchReadBlobs(request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
+
   /// Fetch the entire directory tree rooted at a node.
   ///
   /// This request must be targeted at a
@@ -698,47 +888,83 @@ public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvide
 }
 
 extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvider {
-  public var serviceName: String { return "build.bazel.remote.execution.v2.ContentAddressableStorage" }
+  public var serviceName: Substring { return "build.bazel.remote.execution.v2.ContentAddressableStorage" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "FindMissingBlobs":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
+      ) { context in
         return { request in
           self.findMissingBlobs(request: request, context: context)
         }
       }
 
     case "BatchUpdateBlobs":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
+      ) { context in
         return { request in
           self.batchUpdateBlobs(request: request, context: context)
         }
       }
 
     case "BatchReadBlobs":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
+      ) { context in
         return { request in
           self.batchReadBlobs(request: request, context: context)
         }
       }
 
     case "GetTree":
-      return ServerStreamingCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeServerStreaming(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeGetTreeInterceptors() ?? []
+      ) { context in
         return { request in
           self.getTree(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when handling 'findMissingBlobs'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeFindMissingBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>]
+
+  /// - Returns: Interceptors to use when handling 'batchUpdateBlobs'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeBatchUpdateBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>]
+
+  /// - Returns: Interceptors to use when handling 'batchReadBlobs'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeBatchReadBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>]
+
+  /// - Returns: Interceptors to use when handling 'getTree'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeGetTreeInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>]
+}
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? { get }
+
   /// GetCapabilities returns the server capabilities configuration of the
   /// remote endpoint.
   /// Only the capabilities of the services supported by the endpoint will
@@ -751,67 +977,34 @@ public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesProvider: CallHandle
 }
 
 extension Build_Bazel_Remote_Execution_V2_CapabilitiesProvider {
-  public var serviceName: String { return "build.bazel.remote.execution.v2.Capabilities" }
+  public var serviceName: Substring { return "build.bazel.remote.execution.v2.Capabilities" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "GetCapabilities":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
+      ) { context in
         return { request in
           self.getCapabilities(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol {
 
-// Provides conformance to `GRPCPayload`
-extension Build_Bazel_Remote_Execution_V2_Action: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_Command: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_Platform: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_Directory: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_NodeProperty: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_NodeProperties: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_FileNode: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_DirectoryNode: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_SymlinkNode: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_Digest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ActionResult: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_OutputFile: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_Tree: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_OutputDirectory: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_OutputSymlink: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecutionPolicy: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ResultsCachePolicy: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecuteRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_LogFile: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecuteResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecutionStage: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_WaitExecutionRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_GetTreeRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_GetTreeResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ServerCapabilities: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_DigestFunction: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ActionCacheUpdateCapabilities: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_PriorityCapabilities: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_SymlinkAbsolutePathStrategy: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ExecutionCapabilities: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_ToolDetails: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Execution_V2_RequestMetadata: GRPCProtobufPayload {}
+  /// - Returns: Interceptors to use when handling 'getCapabilities'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeGetCapabilitiesInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>]
+}

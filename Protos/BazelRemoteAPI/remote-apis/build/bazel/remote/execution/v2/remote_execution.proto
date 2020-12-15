@@ -19,6 +19,7 @@ package build.bazel.remote.execution.v2;
 import "build/bazel/semver/semver.proto";
 import "google/api/annotations.proto";
 import "google/longrunning/operations.proto";
+import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
@@ -104,6 +105,11 @@ service Execution {
   // where, for each requested blob not present in the CAS, there is a
   // `Violation` with a `type` of `MISSING` and a `subject` of
   // `"blobs/{hash}/{size}"` indicating the digest of the missing blob.
+  //
+  // The server does not need to guarantee that a call to this method leads to
+  // at most one execution of the action. The server MAY execute the action
+  // multiple times, potentially in parallel. These redundant executions MAY
+  // continue to run, even if the operation is completed.
   rpc Execute(ExecuteRequest) returns (stream google.longrunning.Operation) {
     option (google.api.http) = { post: "/v2/{instance_name=**}/actions:execute" body: "*" };
   }
@@ -433,6 +439,16 @@ message Action {
   // and allows disowning an entire set of ActionResults that might have been
   // poisoned by buggy software or tool failures.
   bytes salt = 9;
+
+  // The optional platform requirements for the execution environment. The
+  // server MAY choose to execute the action on any worker satisfying the
+  // requirements, so the client SHOULD ensure that running the action on any
+  // such worker will have the same result.  A detailed lexicon for this can be
+  // found in the accompanying platform.md.
+  // New in version 2.2: clients SHOULD set these platform properties as well
+  // as those in the [Command][build.bazel.remote.execution.v2.Command]. Servers
+  // SHOULD prefer those set here.
+  Platform platform = 10;
 }
 
 // A `Command` is the actual command executed by a worker running an
@@ -557,8 +573,11 @@ message Command {
   // The platform requirements for the execution environment. The server MAY
   // choose to execute the action on any worker satisfying the requirements, so
   // the client SHOULD ensure that running the action on any such worker will
-  // have the same result.
-  // A detailed lexicon for this can be found in the accompanying platform.md.
+  // have the same result.  A detailed lexicon for this can be found in the
+  // accompanying platform.md.
+  // DEPRECATED as of v2.2: platform properties are now specified directly in
+  // the action. See documentation note in the
+  // [Action][build.bazel.remote.execution.v2.Action] for migration.
   Platform platform = 5;
 
   // The working directory, relative to the input root, for the command to run
@@ -868,6 +887,11 @@ message ExecutedActionMetadata {
 
   // When the worker finished uploading action outputs.
   google.protobuf.Timestamp output_upload_completed_timestamp = 10;
+
+  // Details that are specific to the kind of worker used. For example,
+  // on POSIX-like systems this could contain a message with
+  // getrusage(2) statistics.
+  repeated google.protobuf.Any auxiliary_metadata = 11;
 }
 
 // An ActionResult represents the result of an

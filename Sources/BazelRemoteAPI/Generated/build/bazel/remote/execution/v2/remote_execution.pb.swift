@@ -125,6 +125,23 @@ public struct Build_Bazel_Remote_Execution_V2_Action {
   /// poisoned by buggy software or tool failures.
   public var salt: Data = Data()
 
+  /// The optional platform requirements for the execution environment. The
+  /// server MAY choose to execute the action on any worker satisfying the
+  /// requirements, so the client SHOULD ensure that running the action on any
+  /// such worker will have the same result.  A detailed lexicon for this can be
+  /// found in the accompanying platform.md.
+  /// New in version 2.2: clients SHOULD set these platform properties as well
+  /// as those in the [Command][build.bazel.remote.execution.v2.Command]. Servers
+  /// SHOULD prefer those set here.
+  public var platform: Build_Bazel_Remote_Execution_V2_Platform {
+    get {return _platform ?? Build_Bazel_Remote_Execution_V2_Platform()}
+    set {_platform = newValue}
+  }
+  /// Returns true if `platform` has been explicitly set.
+  public var hasPlatform: Bool {return self._platform != nil}
+  /// Clears the value of `platform`. Subsequent reads from it will return its default value.
+  public mutating func clearPlatform() {self._platform = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -132,6 +149,7 @@ public struct Build_Bazel_Remote_Execution_V2_Action {
   fileprivate var _commandDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
   fileprivate var _inputRootDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
   fileprivate var _timeout: SwiftProtobuf.Google_Protobuf_Duration? = nil
+  fileprivate var _platform: Build_Bazel_Remote_Execution_V2_Platform? = nil
 }
 
 /// A `Command` is the actual command executed by a worker running an
@@ -250,8 +268,11 @@ public struct Build_Bazel_Remote_Execution_V2_Command {
   /// The platform requirements for the execution environment. The server MAY
   /// choose to execute the action on any worker satisfying the requirements, so
   /// the client SHOULD ensure that running the action on any such worker will
-  /// have the same result.
-  /// A detailed lexicon for this can be found in the accompanying platform.md.
+  /// have the same result.  A detailed lexicon for this can be found in the
+  /// accompanying platform.md.
+  /// DEPRECATED as of v2.2: platform properties are now specified directly in
+  /// the action. See documentation note in the
+  /// [Action][build.bazel.remote.execution.v2.Action] for migration.
   public var platform: Build_Bazel_Remote_Execution_V2_Platform {
     get {return _platform ?? Build_Bazel_Remote_Execution_V2_Platform()}
     set {_platform = newValue}
@@ -786,6 +807,14 @@ public struct Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata {
   public var hasOutputUploadCompletedTimestamp: Bool {return _storage._outputUploadCompletedTimestamp != nil}
   /// Clears the value of `outputUploadCompletedTimestamp`. Subsequent reads from it will return its default value.
   public mutating func clearOutputUploadCompletedTimestamp() {_uniqueStorage()._outputUploadCompletedTimestamp = nil}
+
+  /// Details that are specific to the kind of worker used. For example,
+  /// on POSIX-like systems this could contain a message with
+  /// getrusage(2) statistics.
+  public var auxiliaryMetadata: [SwiftProtobuf.Google_Protobuf_Any] {
+    get {return _storage._auxiliaryMetadata}
+    set {_uniqueStorage()._auxiliaryMetadata = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -2323,6 +2352,7 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
     6: .same(proto: "timeout"),
     7: .standard(proto: "do_not_cache"),
     9: .same(proto: "salt"),
+    10: .same(proto: "platform"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2336,6 +2366,7 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
       case 6: try { try decoder.decodeSingularMessageField(value: &self._timeout) }()
       case 7: try { try decoder.decodeSingularBoolField(value: &self.doNotCache) }()
       case 9: try { try decoder.decodeSingularBytesField(value: &self.salt) }()
+      case 10: try { try decoder.decodeSingularMessageField(value: &self._platform) }()
       default: break
       }
     }
@@ -2357,6 +2388,9 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
     if !self.salt.isEmpty {
       try visitor.visitSingularBytesField(value: self.salt, fieldNumber: 9)
     }
+    if let v = self._platform {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2366,6 +2400,7 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
     if lhs._timeout != rhs._timeout {return false}
     if lhs.doNotCache != rhs.doNotCache {return false}
     if lhs.salt != rhs.salt {return false}
+    if lhs._platform != rhs._platform {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -2868,6 +2903,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
     8: .standard(proto: "execution_completed_timestamp"),
     9: .standard(proto: "output_upload_start_timestamp"),
     10: .standard(proto: "output_upload_completed_timestamp"),
+    11: .standard(proto: "auxiliary_metadata"),
   ]
 
   fileprivate class _StorageClass {
@@ -2881,6 +2917,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
     var _executionCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _outputUploadStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _outputUploadCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _auxiliaryMetadata: [SwiftProtobuf.Google_Protobuf_Any] = []
 
     static let defaultInstance = _StorageClass()
 
@@ -2897,6 +2934,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
       _executionCompletedTimestamp = source._executionCompletedTimestamp
       _outputUploadStartTimestamp = source._outputUploadStartTimestamp
       _outputUploadCompletedTimestamp = source._outputUploadCompletedTimestamp
+      _auxiliaryMetadata = source._auxiliaryMetadata
     }
   }
 
@@ -2925,6 +2963,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
         case 8: try { try decoder.decodeSingularMessageField(value: &_storage._executionCompletedTimestamp) }()
         case 9: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadStartTimestamp) }()
         case 10: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadCompletedTimestamp) }()
+        case 11: try { try decoder.decodeRepeatedMessageField(value: &_storage._auxiliaryMetadata) }()
         default: break
         }
       }
@@ -2963,6 +3002,9 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
       if let v = _storage._outputUploadCompletedTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
       }
+      if !_storage._auxiliaryMetadata.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._auxiliaryMetadata, fieldNumber: 11)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -2982,6 +3024,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
         if _storage._executionCompletedTimestamp != rhs_storage._executionCompletedTimestamp {return false}
         if _storage._outputUploadStartTimestamp != rhs_storage._outputUploadStartTimestamp {return false}
         if _storage._outputUploadCompletedTimestamp != rhs_storage._outputUploadCompletedTimestamp {return false}
+        if _storage._auxiliaryMetadata != rhs_storage._auxiliaryMetadata {return false}
         return true
       }
       if !storagesAreEqual {return false}

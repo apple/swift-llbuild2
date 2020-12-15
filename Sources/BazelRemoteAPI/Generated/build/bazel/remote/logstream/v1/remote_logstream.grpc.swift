@@ -20,31 +20,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import Foundation
 import GRPC
 import NIO
-import NIOHTTP1
 import SwiftProtobuf
 
 
 /// Usage: instantiate Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
-  func createLogStream(_ request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>
+public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? { get }
+
+  func createLogStream(
+    _ request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>
 }
 
-public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: GRPCClient, Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-
-  /// Creates a client for the build.bazel.remote.logstream.v1.LogStreamService service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-  }
+extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
 
   /// Create a LogStream which may be written to.
   ///
@@ -55,7 +46,7 @@ public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: GRPCC
   ///
   /// - Parameters:
   ///   - request: Request to send to CreateLogStream.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func createLogStream(
     _ request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest,
@@ -64,13 +55,44 @@ public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: GRPCC
     return self.makeUnaryCall(
       path: "/build.bazel.remote.logstream.v1.LogStreamService/CreateLogStream",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeCreateLogStreamInterceptors() ?? []
     )
+  }
+}
+
+public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'createLogStream'.
+  func makeCreateLogStreamInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>]
+}
+
+public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol?
+
+  /// Creates a client for the build.bazel.remote.logstream.v1.LogStreamService service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
 }
 
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerInterceptorFactoryProtocol? { get }
+
   /// Create a LogStream which may be written to.
   ///
   /// The returned LogStream resource name will include a `write_resource_name`
@@ -81,25 +103,34 @@ public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceProvider: CallHa
 }
 
 extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceProvider {
-  public var serviceName: String { return "build.bazel.remote.logstream.v1.LogStreamService" }
+  public var serviceName: Substring { return "build.bazel.remote.logstream.v1.LogStreamService" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "CreateLogStream":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeCreateLogStreamInterceptors() ?? []
+      ) { context in
         return { request in
           self.createLogStream(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerInterceptorFactoryProtocol {
 
-// Provides conformance to `GRPCPayload`
-extension Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Logstream_V1_LogStream: GRPCProtobufPayload {}
+  /// - Returns: Interceptors to use when handling 'createLogStream'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeCreateLogStreamInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>]
+}
