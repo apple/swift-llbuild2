@@ -20,32 +20,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import Foundation
 import GRPC
 import NIO
-import NIOHTTP1
 import SwiftProtobuf
 
 
 /// Usage: instantiate Build_Bazel_Remote_Asset_V1_FetchClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
-  func fetchBlob(_ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
-  func fetchDirectory(_ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
+public protocol Build_Bazel_Remote_Asset_V1_FetchClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? { get }
+
+  func fetchBlob(
+    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
+
+  func fetchDirectory(
+    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
 }
 
-public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-
-  /// Creates a client for the build.bazel.remote.asset.v1.Fetch service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-  }
+extension Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
 
   /// Resolve or fetch referenced assets, making them available to the caller and
   /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
@@ -107,7 +102,7 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
   ///
   /// - Parameters:
   ///   - request: Request to send to FetchBlob.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func fetchBlob(
     _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
@@ -116,7 +111,8 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
     return self.makeUnaryCall(
       path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
     )
   }
 
@@ -124,7 +120,7 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
   ///
   /// - Parameters:
   ///   - request: Request to send to FetchDirectory.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func fetchDirectory(
     _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
@@ -133,30 +129,59 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: GRPCClient, Build_Ba
     return self.makeUnaryCall(
       path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
     )
   }
 }
 
-/// Usage: instantiate Build_Bazel_Remote_Asset_V1_PushClient, then call methods of this protocol to make API calls.
-public protocol Build_Bazel_Remote_Asset_V1_PushClientProtocol {
-  func pushBlob(_ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>
-  func pushDirectory(_ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, callOptions: CallOptions?) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
+public protocol Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'fetchBlob'.
+  func makeFetchBlobInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>]
+
+  /// - Returns: Interceptors to use when invoking 'fetchDirectory'.
+  func makeFetchDirectoryInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
 }
 
-public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Bazel_Remote_Asset_V1_PushClientProtocol {
+public final class Build_Bazel_Remote_Asset_V1_FetchClient: Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
   public let channel: GRPCChannel
   public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.asset.v1.Push service.
+  /// Creates a client for the build.bazel.remote.asset.v1.Fetch service.
   ///
   /// - Parameters:
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
+}
+
+/// Usage: instantiate Build_Bazel_Remote_Asset_V1_PushClient, then call methods of this protocol to make API calls.
+public protocol Build_Bazel_Remote_Asset_V1_PushClientProtocol: GRPCClient {
+  var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? { get }
+
+  func pushBlob(
+    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>
+
+  func pushDirectory(
+    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
+}
+
+extension Build_Bazel_Remote_Asset_V1_PushClientProtocol {
 
   /// These APIs associate the identifying information of a resource, as
   /// indicated by URI and optionally Qualifiers, with content available in the
@@ -195,7 +220,7 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Baz
   ///
   /// - Parameters:
   ///   - request: Request to send to PushBlob.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func pushBlob(
     _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
@@ -204,7 +229,8 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Baz
     return self.makeUnaryCall(
       path: "/build.bazel.remote.asset.v1.Push/PushBlob",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
     )
   }
 
@@ -212,7 +238,7 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Baz
   ///
   /// - Parameters:
   ///   - request: Request to send to PushDirectory.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
   public func pushDirectory(
     _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
@@ -221,13 +247,47 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: GRPCClient, Build_Baz
     return self.makeUnaryCall(
       path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
       request: request,
-      callOptions: callOptions ?? self.defaultCallOptions
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
     )
+  }
+}
+
+public protocol Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'pushBlob'.
+  func makePushBlobInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>]
+
+  /// - Returns: Interceptors to use when invoking 'pushDirectory'.
+  func makePushDirectoryInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>]
+}
+
+public final class Build_Bazel_Remote_Asset_V1_PushClient: Build_Bazel_Remote_Asset_V1_PushClientProtocol {
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
+
+  /// Creates a client for the build.bazel.remote.asset.v1.Push service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
   }
 }
 
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Asset_V1_FetchProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? { get }
+
   /// Resolve or fetch referenced assets, making them available to the caller and
   /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
   ///
@@ -286,37 +346,60 @@ public protocol Build_Bazel_Remote_Asset_V1_FetchProvider: CallHandlerProvider {
   /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
   /// indicating the name of the unsupported qualifier.
   func fetchBlob(request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
+
   func fetchDirectory(request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
 }
 
 extension Build_Bazel_Remote_Asset_V1_FetchProvider {
-  public var serviceName: String { return "build.bazel.remote.asset.v1.Fetch" }
+  public var serviceName: Substring { return "build.bazel.remote.asset.v1.Fetch" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "FetchBlob":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
+      ) { context in
         return { request in
           self.fetchBlob(request: request, context: context)
         }
       }
 
     case "FetchDirectory":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
+      ) { context in
         return { request in
           self.fetchDirectory(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when handling 'fetchBlob'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeFetchBlobInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>]
+
+  /// - Returns: Interceptors to use when handling 'fetchDirectory'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeFetchDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
+}
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Asset_V1_PushProvider: CallHandlerProvider {
+  var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? { get }
+
   /// These APIs associate the identifying information of a resource, as
   /// indicated by URI and optionally Qualifiers, with content available in the
   /// CAS. For example, associating a repository url and a commit id with a
@@ -352,43 +435,53 @@ public protocol Build_Bazel_Remote_Asset_V1_PushProvider: CallHandlerProvider {
   /// * `INTERNAL`: An internal error occurred while performing the operation.
   ///   The client should retry.
   func pushBlob(request: Build_Bazel_Remote_Asset_V1_PushBlobRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_PushBlobResponse>
+
   func pushDirectory(request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
 }
 
 extension Build_Bazel_Remote_Asset_V1_PushProvider {
-  public var serviceName: String { return "build.bazel.remote.asset.v1.Push" }
+  public var serviceName: Substring { return "build.bazel.remote.asset.v1.Push" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
+  public func handleMethod(
+    _ methodName: Substring,
+    callHandlerContext: CallHandlerContext
+  ) -> GRPCCallHandler? {
     switch methodName {
     case "PushBlob":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
+      ) { context in
         return { request in
           self.pushBlob(request: request, context: context)
         }
       }
 
     case "PushDirectory":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
+      return CallHandlerFactory.makeUnary(
+        callHandlerContext: callHandlerContext,
+        interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
+      ) { context in
         return { request in
           self.pushDirectory(request: request, context: context)
         }
       }
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol {
 
-// Provides conformance to `GRPCPayload`
-extension Build_Bazel_Remote_Asset_V1_Qualifier: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_FetchBlobRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_FetchBlobResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_PushBlobRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_PushBlobResponse: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_PushDirectoryRequest: GRPCProtobufPayload {}
-extension Build_Bazel_Remote_Asset_V1_PushDirectoryResponse: GRPCProtobufPayload {}
+  /// - Returns: Interceptors to use when handling 'pushBlob'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makePushBlobInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>]
+
+  /// - Returns: Interceptors to use when handling 'pushDirectory'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makePushDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>]
+}
