@@ -284,7 +284,12 @@ class RuleEvaluationTests: XCTestCase {
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
             XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey, ctx).wait()) { error in
-                guard let ruleContextError = error as? LLBRuleContextError else {
+                guard let evaluationError = error as? LLBRuleEvaluationError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+                guard case let .ruleEvaluationError(innerError) = evaluationError,
+                      let ruleContextError = innerError as? LLBRuleContextError else {
                     XCTFail("unexpected error type")
                     return
                 }
@@ -475,7 +480,13 @@ class RuleEvaluationTests: XCTestCase {
             let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
 
             XCTAssertThrowsError(try testEngine.build(evaluatedTargetKey, ctx).wait()) { error in
-                guard let ruleContextError = error as? LLBRuleContextError else {
+                guard let evaluationError = error as? LLBRuleEvaluationError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+
+                guard case let .ruleEvaluationError(innerError) = evaluationError,
+                      let ruleContextError = innerError as? LLBRuleContextError else {
                     XCTFail("unexpected error type \(error)")
                     return
                 }
