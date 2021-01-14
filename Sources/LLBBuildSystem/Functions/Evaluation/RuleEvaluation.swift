@@ -50,6 +50,9 @@ public enum LLBRuleEvaluationError: Error {
 
     /// Error thrown when an artifact did not get registered as an output to an action.
     case unassignedOutput(LLBArtifact)
+
+    /// Error thrown when the rule evaluation was not successful.
+    case ruleEvaluationError(Error)
 }
 
 public final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLBRuleEvaluationValue> {
@@ -99,7 +102,12 @@ public final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKey
             let providersFuture: LLBFuture<([LLBDataID], [LLBProvider])>
             do {
                 // Evaluate the rule with the configured target.
-                providersFuture = try rule.compute(configuredTarget: configuredTarget, ruleContext).flatMap { providers in
+                providersFuture = try rule.compute(
+                    configuredTarget: configuredTarget,
+                    ruleContext
+                ).flatMapErrorThrowing { error in
+                    throw LLBRuleEvaluationError.ruleEvaluationError(error)
+                }.flatMap { providers in
                     // Upload the static write contents directly into the CAS and associate the dataIDs to the
                     // artifacts. This needs to happen before we serialize the actions, otherwise we risk actions
                     // serializing artifacts that have not yet been updated to contain origin reference.
@@ -139,7 +147,7 @@ public final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKey
                     }
                 }
             } catch {
-                return ctx.group.next().makeFailedFuture(error)
+                return ctx.group.next().makeFailedFuture(LLBRuleEvaluationError.ruleEvaluationError(error))
             }
 
             return providersFuture.map { providers in
