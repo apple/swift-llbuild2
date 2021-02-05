@@ -16,11 +16,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-llbuild.git", .branch("main")),
+        .package(url: "https://github.com/apple/swift-llbuild.git", from: "0.4.0"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.8.0"),
-        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0-alpha.21"),
+        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.2.0"),
     ],
     targets: [
