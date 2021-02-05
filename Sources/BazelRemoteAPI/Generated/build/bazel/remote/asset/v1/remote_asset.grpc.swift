@@ -25,8 +25,18 @@ import NIO
 import SwiftProtobuf
 
 
-/// Usage: instantiate Build_Bazel_Remote_Asset_V1_FetchClient, then call methods of this protocol to make API calls.
+/// The Fetch service resolves or fetches assets referenced by URI and
+/// Qualifiers, returning a Digest for the content in 
+/// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+///
+/// As with other services in the Remote Execution API, any call may return an
+/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+/// information about when the client should retry the request; clients SHOULD
+/// respect the information provided.
+///
+/// Usage: instantiate `Build_Bazel_Remote_Asset_V1_FetchClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Asset_V1_FetchClientProtocol: GRPCClient {
+  var serviceName: String { get }
   var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? { get }
 
   func fetchBlob(
@@ -41,6 +51,9 @@ public protocol Build_Bazel_Remote_Asset_V1_FetchClientProtocol: GRPCClient {
 }
 
 extension Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
+  public var serviceName: String {
+    return "build.bazel.remote.asset.v1.Fetch"
+  }
 
   /// Resolve or fetch referenced assets, making them available to the caller and
   /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
@@ -166,8 +179,17 @@ public final class Build_Bazel_Remote_Asset_V1_FetchClient: Build_Bazel_Remote_A
   }
 }
 
-/// Usage: instantiate Build_Bazel_Remote_Asset_V1_PushClient, then call methods of this protocol to make API calls.
+/// The Push service is complementary to the Fetch, and allows for
+/// associating contents of URLs to be returned in future Fetch API calls.
+///
+/// As with other services in the Remote Execution API, any call may return an
+/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+/// information about when the client should retry the request; clients SHOULD
+/// respect the information provided.
+///
+/// Usage: instantiate `Build_Bazel_Remote_Asset_V1_PushClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Asset_V1_PushClientProtocol: GRPCClient {
+  var serviceName: String { get }
   var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? { get }
 
   func pushBlob(
@@ -182,6 +204,9 @@ public protocol Build_Bazel_Remote_Asset_V1_PushClientProtocol: GRPCClient {
 }
 
 extension Build_Bazel_Remote_Asset_V1_PushClientProtocol {
+  public var serviceName: String {
+    return "build.bazel.remote.asset.v1.Push"
+  }
 
   /// These APIs associate the identifying information of a resource, as
   /// indicated by URI and optionally Qualifiers, with content available in the
@@ -284,6 +309,15 @@ public final class Build_Bazel_Remote_Asset_V1_PushClient: Build_Bazel_Remote_As
   }
 }
 
+/// The Fetch service resolves or fetches assets referenced by URI and
+/// Qualifiers, returning a Digest for the content in 
+/// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+///
+/// As with other services in the Remote Execution API, any call may return an
+/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+/// information about when the client should retry the request; clients SHOULD
+/// respect the information provided.
+///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Asset_V1_FetchProvider: CallHandlerProvider {
   var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? { get }
@@ -355,30 +389,28 @@ extension Build_Bazel_Remote_Asset_V1_FetchProvider {
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(
-    _ methodName: Substring,
-    callHandlerContext: CallHandlerContext
-  ) -> GRPCCallHandler? {
-    switch methodName {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
     case "FetchBlob":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.fetchBlob(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchBlobRequest>(),
+        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>(),
+        interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? [],
+        userFunction: self.fetchBlob(request:context:)
+      )
 
     case "FetchDirectory":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.fetchDirectory(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest>(),
+        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>(),
+        interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? [],
+        userFunction: self.fetchDirectory(request:context:)
+      )
 
     default:
       return nil
@@ -396,6 +428,14 @@ public protocol Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtoco
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeFetchDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
 }
+/// The Push service is complementary to the Fetch, and allows for
+/// associating contents of URLs to be returned in future Fetch API calls.
+///
+/// As with other services in the Remote Execution API, any call may return an
+/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+/// information about when the client should retry the request; clients SHOULD
+/// respect the information provided.
+///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Asset_V1_PushProvider: CallHandlerProvider {
   var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? { get }
@@ -444,30 +484,28 @@ extension Build_Bazel_Remote_Asset_V1_PushProvider {
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(
-    _ methodName: Substring,
-    callHandlerContext: CallHandlerContext
-  ) -> GRPCCallHandler? {
-    switch methodName {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
     case "PushBlob":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.pushBlob(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushBlobRequest>(),
+        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushBlobResponse>(),
+        interceptors: self.interceptors?.makePushBlobInterceptors() ?? [],
+        userFunction: self.pushBlob(request:context:)
+      )
 
     case "PushDirectory":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.pushDirectory(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest>(),
+        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>(),
+        interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? [],
+        userFunction: self.pushDirectory(request:context:)
+      )
 
     default:
       return nil

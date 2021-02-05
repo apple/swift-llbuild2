@@ -25,8 +25,19 @@ import NIO
 import SwiftProtobuf
 
 
-/// Usage: instantiate Google_Longrunning_OperationsClient, then call methods of this protocol to make API calls.
+/// Manages long-running operations with an API service.
+///
+/// When an API method normally takes long time to complete, it can be designed
+/// to return [Operation][google.longrunning.Operation] to the client, and the client can use this
+/// interface to receive the real response asynchronously by polling the
+/// operation resource, or pass the operation resource to another API (such as
+/// Google Cloud Pub/Sub API) to receive the response.  Any API service that
+/// returns long-running operations should implement the `Operations` interface
+/// so developers can have a consistent client experience.
+///
+/// Usage: instantiate `Google_Longrunning_OperationsClient`, then call methods of this protocol to make API calls.
 public protocol Google_Longrunning_OperationsClientProtocol: GRPCClient {
+  var serviceName: String { get }
   var interceptors: Google_Longrunning_OperationsClientInterceptorFactoryProtocol? { get }
 
   func listOperations(
@@ -56,6 +67,9 @@ public protocol Google_Longrunning_OperationsClientProtocol: GRPCClient {
 }
 
 extension Google_Longrunning_OperationsClientProtocol {
+  public var serviceName: String {
+    return "google.longrunning.Operations"
+  }
 
   /// Lists operations that match the specified filter in the request. If the
   /// server doesn't support this method, it returns `UNIMPLEMENTED`.
@@ -219,6 +233,16 @@ public final class Google_Longrunning_OperationsClient: Google_Longrunning_Opera
   }
 }
 
+/// Manages long-running operations with an API service.
+///
+/// When an API method normally takes long time to complete, it can be designed
+/// to return [Operation][google.longrunning.Operation] to the client, and the client can use this
+/// interface to receive the real response asynchronously by polling the
+/// operation resource, or pass the operation resource to another API (such as
+/// Google Cloud Pub/Sub API) to receive the response.  Any API service that
+/// returns long-running operations should implement the `Operations` interface
+/// so developers can have a consistent client experience.
+///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Google_Longrunning_OperationsProvider: CallHandlerProvider {
   var interceptors: Google_Longrunning_OperationsServerInterceptorFactoryProtocol? { get }
@@ -275,60 +299,55 @@ extension Google_Longrunning_OperationsProvider {
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(
-    _ methodName: Substring,
-    callHandlerContext: CallHandlerContext
-  ) -> GRPCCallHandler? {
-    switch methodName {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
     case "ListOperations":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeListOperationsInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.listOperations(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Longrunning_ListOperationsRequest>(),
+        responseSerializer: ProtobufSerializer<Google_Longrunning_ListOperationsResponse>(),
+        interceptors: self.interceptors?.makeListOperationsInterceptors() ?? [],
+        userFunction: self.listOperations(request:context:)
+      )
 
     case "GetOperation":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeGetOperationInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.getOperation(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Longrunning_GetOperationRequest>(),
+        responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
+        interceptors: self.interceptors?.makeGetOperationInterceptors() ?? [],
+        userFunction: self.getOperation(request:context:)
+      )
 
     case "DeleteOperation":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeDeleteOperationInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.deleteOperation(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Longrunning_DeleteOperationRequest>(),
+        responseSerializer: ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        interceptors: self.interceptors?.makeDeleteOperationInterceptors() ?? [],
+        userFunction: self.deleteOperation(request:context:)
+      )
 
     case "CancelOperation":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeCancelOperationInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.cancelOperation(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Longrunning_CancelOperationRequest>(),
+        responseSerializer: ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+        interceptors: self.interceptors?.makeCancelOperationInterceptors() ?? [],
+        userFunction: self.cancelOperation(request:context:)
+      )
 
     case "WaitOperation":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeWaitOperationInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.waitOperation(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Longrunning_WaitOperationRequest>(),
+        responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
+        interceptors: self.interceptors?.makeWaitOperationInterceptors() ?? [],
+        userFunction: self.waitOperation(request:context:)
+      )
 
     default:
       return nil

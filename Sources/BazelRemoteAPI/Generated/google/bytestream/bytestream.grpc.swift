@@ -25,8 +25,33 @@ import NIO
 import SwiftProtobuf
 
 
-/// Usage: instantiate Google_Bytestream_ByteStreamClient, then call methods of this protocol to make API calls.
+/// #### Introduction
+///
+/// The Byte Stream API enables a client to read and write a stream of bytes to
+/// and from a resource. Resources have names, and these names are supplied in
+/// the API calls below to identify the resource that is being read from or
+/// written to.
+///
+/// All implementations of the Byte Stream API export the interface defined here:
+///
+/// * `Read()`: Reads the contents of a resource.
+///
+/// * `Write()`: Writes the contents of a resource. The client can call `Write()`
+///   multiple times with the same resource and can check the status of the write
+///   by calling `QueryWriteStatus()`.
+///
+/// #### Service parameters and metadata
+///
+/// The ByteStream API provides no direct way to access/modify any metadata
+/// associated with the resource.
+///
+/// #### Errors
+///
+/// The errors returned by the service are in the Google canonical error space.
+///
+/// Usage: instantiate `Google_Bytestream_ByteStreamClient`, then call methods of this protocol to make API calls.
 public protocol Google_Bytestream_ByteStreamClientProtocol: GRPCClient {
+  var serviceName: String { get }
   var interceptors: Google_Bytestream_ByteStreamClientInterceptorFactoryProtocol? { get }
 
   func read(
@@ -46,6 +71,9 @@ public protocol Google_Bytestream_ByteStreamClientProtocol: GRPCClient {
 }
 
 extension Google_Bytestream_ByteStreamClientProtocol {
+  public var serviceName: String {
+    return "google.bytestream.ByteStream"
+  }
 
   /// `Read()` is used to retrieve the contents of a resource as a sequence
   /// of bytes. The bytes are returned in a sequence of responses, and the
@@ -175,6 +203,30 @@ public final class Google_Bytestream_ByteStreamClient: Google_Bytestream_ByteStr
   }
 }
 
+/// #### Introduction
+///
+/// The Byte Stream API enables a client to read and write a stream of bytes to
+/// and from a resource. Resources have names, and these names are supplied in
+/// the API calls below to identify the resource that is being read from or
+/// written to.
+///
+/// All implementations of the Byte Stream API export the interface defined here:
+///
+/// * `Read()`: Reads the contents of a resource.
+///
+/// * `Write()`: Writes the contents of a resource. The client can call `Write()`
+///   multiple times with the same resource and can check the status of the write
+///   by calling `QueryWriteStatus()`.
+///
+/// #### Service parameters and metadata
+///
+/// The ByteStream API provides no direct way to access/modify any metadata
+/// associated with the resource.
+///
+/// #### Errors
+///
+/// The errors returned by the service are in the Google canonical error space.
+///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Google_Bytestream_ByteStreamProvider: CallHandlerProvider {
   var interceptors: Google_Bytestream_ByteStreamServerInterceptorFactoryProtocol? { get }
@@ -230,38 +282,37 @@ extension Google_Bytestream_ByteStreamProvider {
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(
-    _ methodName: Substring,
-    callHandlerContext: CallHandlerContext
-  ) -> GRPCCallHandler? {
-    switch methodName {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
     case "Read":
-      return CallHandlerFactory.makeServerStreaming(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeReadInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.read(request: request, context: context)
-        }
-      }
+      return ServerStreamingServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Bytestream_ReadRequest>(),
+        responseSerializer: ProtobufSerializer<Google_Bytestream_ReadResponse>(),
+        interceptors: self.interceptors?.makeReadInterceptors() ?? [],
+        userFunction: self.read(request:context:)
+      )
 
     case "Write":
-      return CallHandlerFactory.makeClientStreaming(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeWriteInterceptors() ?? []
-      ) { context in
-        self.write(context: context)
-      }
+      return ClientStreamingServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Bytestream_WriteRequest>(),
+        responseSerializer: ProtobufSerializer<Google_Bytestream_WriteResponse>(),
+        interceptors: self.interceptors?.makeWriteInterceptors() ?? [],
+        observerFactory: self.write(context:)
+      )
 
     case "QueryWriteStatus":
-      return CallHandlerFactory.makeUnary(
-        callHandlerContext: callHandlerContext,
-        interceptors: self.interceptors?.makeQueryWriteStatusInterceptors() ?? []
-      ) { context in
-        return { request in
-          self.queryWriteStatus(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Google_Bytestream_QueryWriteStatusRequest>(),
+        responseSerializer: ProtobufSerializer<Google_Bytestream_QueryWriteStatusResponse>(),
+        interceptors: self.interceptors?.makeQueryWriteStatusInterceptors() ?? [],
+        userFunction: self.queryWriteStatus(request:context:)
+      )
 
     default:
       return nil
