@@ -79,6 +79,9 @@ public enum LLBActionError: Error {
 
     /// Error for an invalid merge tree action input.
     case invalidMergeTreeInput(String)
+
+    /// Error in case one the inputs into the action failed to build.
+    case dependencyFailure(Error)
 }
 
 extension LLBActionKey: LLBBuildEventActionDescription {
@@ -111,7 +114,11 @@ extension LLBActionKey: LLBBuildEventActionDescription {
 }
 
 final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
-    override func evaluate(key actionKey: LLBActionKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
+    override func evaluate(
+        key actionKey: LLBActionKey,
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
+    ) -> LLBFuture<LLBActionValue> {
         switch actionKey.actionType {
         case let .command(commandKey):
             ctx.buildEventDelegate?.actionScheduled(action: actionKey)
@@ -123,54 +130,72 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
         }
     }
 
-    private func evaluate(commandKey: LLBCommandAction, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
-        return fi.requestKeyed(commandKey.inputs, ctx).flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionValue> in
-            let actionExecutionKey = LLBActionExecutionKey.command(
-                actionSpec: commandKey.actionSpec,
-                inputs: inputs.map { (artifact, artifactValue) in
-                    LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
-                },
-                outputs: commandKey.outputs,
-                mnemonic: commandKey.mnemonic,
-                description: commandKey.description_p,
-                // This should be empty most of the time. Only used for dynamic action registration. Need to check if
-                // the key has an empty dynamic identifier since SwiftProtobuf doesn't support optionals, but want to
-                // keep the Optional interface here.
-                dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier),
-                cacheableFailure: commandKey.cacheableFailure,
-                label: (commandKey.hasLabel ? commandKey.label : nil)
-            )
+    private func evaluate(
+        commandKey: LLBCommandAction,
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
+    ) -> LLBFuture<LLBActionValue> {
+        return fi.requestInputs(commandKey.inputs, ctx)
+            .flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionValue> in
+                let actionExecutionKey = LLBActionExecutionKey.command(
+                    actionSpec: commandKey.actionSpec,
+                    inputs: inputs.map { (artifact, artifactValue) in
+                        LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
+                    },
+                    outputs: commandKey.outputs,
+                    mnemonic: commandKey.mnemonic,
+                    description: commandKey.description_p,
+                    // This should be empty most of the time. Only used for dynamic action registration. Need to check
+                    // if the key has an empty dynamic identifier since SwiftProtobuf doesn't support optionals, but
+                    // want to keep the Optional interface here.
+                    dynamicIdentifier: (commandKey.dynamicIdentifier.isEmpty ? nil : commandKey.dynamicIdentifier),
+                    cacheableFailure: commandKey.cacheableFailure,
+                    label: (commandKey.hasLabel ? commandKey.label : nil)
+                )
 
-            return fi.request(actionExecutionKey, ctx)
-                .flatMapThrowing { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
-                    if actionExecutionValue.cachedFailure {
-                        throw LLBActionExecutionError.actionExecutionError(actionExecutionValue.stdoutID)
+                return fi.request(actionExecutionKey, ctx)
+                    .flatMapThrowing { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
+                        if actionExecutionValue.cachedFailure {
+                            throw LLBActionExecutionError.actionExecutionError(actionExecutionValue.stdoutID)
+                        }
+                        ctx.buildEventDelegate?.actionCompleted(
+                            action: actionExecutionKey,
+                            result: .success(stdoutID: actionExecutionValue.stdoutID)
+                        )
+                        return LLBActionValue(actionExecutionValue: actionExecutionValue)
+                    }.flatMapErrorThrowing { error in
+                        ctx.buildEventDelegate?.actionCompleted(
+                            action: actionExecutionKey,
+                            result: .failure(error: error)
+                        )
+                        throw error
                     }
-                    ctx.buildEventDelegate?.actionCompleted(
-                        action: actionExecutionKey,
-                        result: .success(stdoutID: actionExecutionValue.stdoutID)
-                    )
-                    return LLBActionValue(actionExecutionValue: actionExecutionValue)
-                }.flatMapErrorThrowing { error in
-                    ctx.buildEventDelegate?.actionCompleted(
-                        action: actionExecutionKey,
-                        result: .failure(error: error)
-                    )
-                    throw error
-                }
-        }
+            }
     }
 
-    private func evaluate(mergeTreesKey: LLBMergeTreesAction, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionValue> {
-        return fi.requestKeyed(mergeTreesKey.inputs.map(\.artifact), ctx).flatMap { (inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
+    private func evaluate(
+        mergeTreesKey: LLBMergeTreesAction,
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
+    ) -> LLBFuture<LLBActionValue> {
+        return fi.requestInputs(
+            mergeTreesKey.inputs.map(\.artifact),
+            ctx
+        ).flatMap { (inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
             var actionInputs = [LLBActionInput]()
             for (index, input) in mergeTreesKey.inputs.enumerated() {
                 guard inputs[index].artifact.type == .directory || !input.path.isEmpty else {
-                    return ctx.group.next().makeFailedFuture(LLBActionError.invalidMergeTreeInput("expected a path for the non directory artifact"))
+                    return ctx.group.next().makeFailedFuture(
+                        LLBActionError.invalidMergeTreeInput("expected a path for the non directory artifact")
+                    )
                 }
 
                 actionInputs.append(
-                    LLBActionInput(path: input.path, dataID: inputs[index].artifactValue.dataID, type: inputs[index].artifact.type)
+                    LLBActionInput(
+                        path: input.path,
+                        dataID: inputs[index].artifactValue.dataID,
+                        type: inputs[index].artifact.type
+                    )
                 )
             }
 
@@ -179,6 +204,32 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
             return fi.request(actionExecutionKey, ctx)
         }.map { actionExecutionValue in
             return LLBActionValue(outputs: actionExecutionValue.outputs)
+        }
+    }
+}
+
+extension LLBBuildFunctionInterface {
+    /// Requests the values for a list of keys of the same type, returned as a tuple containing the key and the value.
+    func requestInputs(_ artifacts: [LLBArtifact], _ ctx: Context) -> LLBFuture<[(LLBArtifact, LLBArtifactValue)]> {
+        let requestFutures = artifacts.map { artifact in
+            self.requestArtifact(artifact, ctx).map { (artifact, $0) }
+        }
+        return LLBFuture.whenAllComplete(requestFutures, on: ctx.group.next()).flatMapThrowing { results in
+            for result in results {
+                switch result {
+                case .failure(let error):
+                    if case LLBActionError.dependencyFailure = error {
+                        throw error
+                    } else {
+                        throw LLBActionError.dependencyFailure(error)
+                    }
+                default:
+                    break
+                }
+            }
+
+            // Should not throw since we would have already thrown when searching for errors above.
+            return try results.map { try $0.get() }
         }
     }
 }

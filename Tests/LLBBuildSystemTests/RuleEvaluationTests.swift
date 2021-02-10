@@ -88,6 +88,16 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
             )
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+        } else if configuredTarget.name == "bottom_level_target_failed" {
+            let output = try ruleContext.declareArtifact("bottom_level_artifact")
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "exit 1"],
+                inputs: [],
+                outputs: [output]
+            )
+
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
         } else if configuredTarget.name == "top_level_target" {
             let output = try ruleContext.declareArtifact("top_level_artifact")
 
@@ -95,6 +105,22 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
                 throw StringError("Dependency did not have artifact.")
             }
             
+            let bottomArtifact = provider.artifacts[0]
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "cat \(bottomArtifact.path) > \(output.path); echo I cant breathe >> \(output.path)"],
+                inputs: [bottomArtifact],
+                outputs: [output]
+            )
+
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+        } else if configuredTarget.name == "top_level_target_with_failed_dependency" {
+            let output = try ruleContext.declareArtifact("top_level_artifact")
+
+            guard let provider: RuleEvaluationProvider = try? ruleContext.getProvider(for: "dependency") else {
+                throw StringError("Dependency did not have artifact.")
+            }
+
             let bottomArtifact = provider.artifacts[0]
 
             try ruleContext.registerAction(
@@ -165,6 +191,11 @@ private final class DummyConfiguredTargetDelegate: LLBConfiguredTargetDelegate {
             configuredTarget = RuleEvaluationConfiguredTarget(
                 name: key.label.targetName,
                 dependency: try LLBLabel("//some:bottom_level_target")
+            )
+        } else if key.label.targetName == "top_level_target_with_failed_dependency" {
+            configuredTarget = RuleEvaluationConfiguredTarget(
+                name: key.label.targetName,
+                dependency: try LLBLabel("//some:bottom_level_target_failed")
             )
         } else {
             configuredTarget = RuleEvaluationConfiguredTarget(name: key.label.targetName)
@@ -368,6 +399,52 @@ class RuleEvaluationTests: XCTestCase {
 
             let artifactContents = try LLBCASFSClient(ctx.db).fileContents(for: artifactValue.dataID, ctx)
             XCTAssertEqual(artifactContents, "black lives matter\nI cant breathe\n")
+        }
+    }
+
+    func testRuleEvaluation2TargetsWithFailureOnDependency() throws {
+        try withTemporaryDirectory { tempDir in
+            let localExecutor = LLBLocalExecutor(outputBase: tempDir)
+            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate,
+                executor: localExecutor
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
+
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
+
+            let label = try LLBLabel("//some:top_level_target_with_failed_dependency")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
+
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
+
+            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
+
+            XCTAssertThrowsError(try testEngine.build(outputArtifact, ctx).wait()) { error in
+                guard let actionError = error as? LLBActionError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+
+                guard case let .dependencyFailure(innerError) = actionError,
+                      let innerActionError = innerError as? LLBActionExecutionError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+                guard case .actionExecutionError = innerActionError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+            }
         }
     }
 
