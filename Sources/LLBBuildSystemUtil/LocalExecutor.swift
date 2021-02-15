@@ -162,7 +162,9 @@ final public class LLBLocalExecutor: LLBExecutor {
                 uploadFutures = request.outputs.map { output in
                     let outputPath = self.outputBase.appending(RelativePath(output.path))
                     return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapError { error in
-                        if output.type == .directory, case FileSystemError.noEntry = error {
+                        if output.type == .directory,
+                           let fsError = error as? FileSystemError,
+                           fsError.kind == .noEntry {
                             // If we didn't find an output artifact that was a directory, create an empty CASTree to
                             // represent it.
                             return LLBCASFileTree.create(files: [], in: ctx.db, ctx).map { $0.id }

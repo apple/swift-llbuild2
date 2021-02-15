@@ -105,8 +105,8 @@
         "repositoryURL": "https://github.com/apple/swift-tools-support-async.git",
         "state": {
           "branch": null,
-          "revision": "98b4b5bf52fe8b54e4a13cf46b7a64c453ef43cc",
-          "version": "0.1.5"
+          "revision": "b843a05f287a476990e7633b892311e21d0e9163",
+          "version": "0.1.8"
         }
       },
       {
@@ -114,8 +114,8 @@
         "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
         "state": {
           "branch": null,
-          "revision": "243beea77d20db46647a3de4765c96e2c801c7c7",
-          "version": "0.1.12"
+          "revision": "2954e55faee5bfee928e844bb09e97fcfa8d24af",
+          "version": "0.2.0"
         }
       }
     ]

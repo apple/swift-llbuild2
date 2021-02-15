@@ -100,7 +100,7 @@ class LocalExecutorTests: XCTestCase {
                     return
                 }
 
-                XCTAssertEqual(fsError, FileSystemError.noEntry)
+                XCTAssertEqual(fsError.kind, .noEntry)
             }
         }
     }
