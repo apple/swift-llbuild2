@@ -8,6 +8,8 @@
 
 syntax = "proto3";
 
+option java_package = "com.apple.llbuild2.buildsystem.evaluation";
+
 import "EngineProtocol/any_serializable.proto";
 
 // A ConfigurationKey represents the configuration to use while evaluating a project. It should contain the minimum set

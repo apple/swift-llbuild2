@@ -8,6 +8,8 @@
 
 syntax = "proto3";
 
+option java_package = "com.apple.llbuild2.engineprotocol";
+
 // AnyCodable is a wrapper type for polymorphic codables, in which the type of the serialized data is not known at
 // compile time.
 message LLBAnySerializable {

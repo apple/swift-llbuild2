@@ -8,6 +8,8 @@
 
 syntax = "proto3";
 
+option java_package = "com.apple.llbuild2.buildsystem.evaluation";
+
 import "BuildSystem/Evaluation/configuration.proto";
 import "BuildSystem/Evaluation/label.proto";
 import "BuildSystem/Evaluation/configured_target.proto";
