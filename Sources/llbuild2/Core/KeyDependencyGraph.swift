@@ -40,7 +40,7 @@ public class LLBKeyDependencyGraph {
         // Check if the direct dependency is already known, in which case, skip the check since the edge is already
         // been proven to not have a cycle.
         lock.lock()
-        if self.edges[originID]?.contains(destinationID) != nil {
+        if self.edges[originID]?.contains(destinationID) == true {
             defer { lock.unlock() }
             return
         }
@@ -58,22 +58,15 @@ public class LLBKeyDependencyGraph {
 
         // Check if there's a path from the destination to the origin, as that would be a clear indication that adding
         // the edge from the origin to the destination would introduce a cycle. This works because the graph starts
-        // by definition without cycles, so cycles can only be introduced if a new edge would create it.
+        // by definition without cycles, so cycles can only be introduced if a new edge would create it. The edges are
+        // updated within the same lock to avoid a race condition where 2 threads might add edges that would conflict.
+        lock.lock()
         if let path = anyPath(from: destinationID, to: originID) {
-            lock.lock()
             let keyPath = path.map { self.knownKeys[$0]! }
             lock.unlock()
             throw LLBKeyDependencyGraphError.cycleDetected([origin] + keyPath)
         }
 
-        // Update the edges using the lock to avoid race conditions. The fact that this lock is separate from the lock
-        // in anyPath does seem to imply that there could be some race condition where 2 threads might not find cycles
-        // independently when run in parallel but would indeed find one if they were done serially. In practice, because
-        // of the nature of how edges are added (they are not random, but in fact constructed in dependency order) I
-        // _believe_ this should not be a problem. Of course, I could be wrong and someone could find such an edge case
-        // in the wild. But until then, not having the locks mixed seems to make sense to me from a performance
-        // perspective, to avoid unnecessary delays when processing.
-        lock.lock()
         var destinations = self.edges[originID, default: Set()]
         destinations.insert(destinationID)
         self.edges[originID] = destinations
@@ -82,16 +75,12 @@ public class LLBKeyDependencyGraph {
 
     /// Simple mechanism to find a path between 2 nodes. It doesn't care if its the shortest path, only whether a path
     /// exists. If a path is found, it returns it.
+    /// Must be called inside the lock.
     private func anyPath(from origin: Int, to destination: Int) -> [Int]? {
         // If the origin is the destination, then the path is itself.
         if origin == destination {
             return [origin]
         }
-
-        // Make a thread local copy since this method may be invoked from multiple threads.
-        lock.lock()
-        let localEdges = self.edges
-        lock.unlock()
 
         // Keeps track of the path between the nodes as it searches through.
         var path = [Int]()
@@ -120,7 +109,7 @@ public class LLBKeyDependencyGraph {
             }
 
             // If the current key does not have dependencies, skip it.
-            guard let dependencies = localEdges[current] else {
+            guard let dependencies = self.edges[current] else {
                 continue
             }
 
