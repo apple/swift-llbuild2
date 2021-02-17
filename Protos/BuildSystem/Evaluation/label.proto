@@ -8,6 +8,8 @@
 
 syntax = "proto3";
 
+option java_package = "com.apple.llbuild2.buildsystem.evaluation";
+
 /// A Label represents a handle for finding a target within a workspace. It is made up of 2 components: the logical path
 /// to the target's container (i.e. a package or project, depends on the context) and the name of the target within that
 /// container. Build systems can choose to interpret the components of a label as needed, but they must all resolve into
