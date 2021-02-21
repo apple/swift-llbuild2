@@ -122,7 +122,22 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
         switch actionKey.actionType {
         case let .command(commandKey):
             ctx.buildEventDelegate?.actionScheduled(action: actionKey)
-            return evaluate(commandKey: commandKey, fi, ctx)
+            let resultFuture = evaluate(commandKey: commandKey, fi, ctx)
+            return LLBFuture.whenAllComplete([resultFuture], on: ctx.group.next()).flatMapThrowing { results in
+                switch results[0] {
+                case .success(let value):
+                    ctx.buildEventDelegate?.actionCompleted(
+                        action: actionKey,
+                        result: .success(stdoutID: value.stdoutID)
+                    )
+                case .failure(let error):
+                    ctx.buildEventDelegate?.actionCompleted(
+                        action: actionKey,
+                        result: .failure(error: error)
+                    )
+                }
+                return try results[0].get()
+            }
         case let .mergeTrees(mergeTreesKey):
             return evaluate(mergeTreesKey: mergeTreesKey, fi, ctx)
         case .none:
@@ -158,17 +173,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                         if actionExecutionValue.cachedFailure {
                             throw LLBActionExecutionError.actionExecutionError(actionExecutionValue.stdoutID)
                         }
-                        ctx.buildEventDelegate?.actionCompleted(
-                            action: actionExecutionKey,
-                            result: .success(stdoutID: actionExecutionValue.stdoutID)
-                        )
                         return LLBActionValue(actionExecutionValue: actionExecutionValue)
-                    }.flatMapErrorThrowing { error in
-                        ctx.buildEventDelegate?.actionCompleted(
-                            action: actionExecutionKey,
-                            result: .failure(error: error)
-                        )
-                        throw error
                     }
             }
     }
