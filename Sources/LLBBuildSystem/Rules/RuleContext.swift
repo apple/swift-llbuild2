@@ -307,7 +307,7 @@ public class LLBRuleContext {
             // Check that all outputs for the action are uninitialized, have already been declared (and correspond to
             // the declared one) and that they have not been associated to another action. If this turns out to be too
             // slow, we can store more runtime info and validate after rule evaluation is done.
-            for output in outputs {
+            for output in outputs + inconditionalOutputs {
                 guard output.originType == nil,
                       declaredArtifacts[output.shortPath] == output else {
                     throw LLBRuleContextError.outputAlreadyRegistered
@@ -325,7 +325,7 @@ public class LLBRuleContext {
                 ),
                 inputs: inputs,
                 outputs: outputs.map { $0.asActionOutput() },
-                inconditionalOutputs: [],
+                inconditionalOutputs: inconditionalOutputs.map { $0.asActionOutput() },
                 mnemonic: mnemonic,
                 description: description,
                 dynamicIdentifier: dynamicIdentifier,
