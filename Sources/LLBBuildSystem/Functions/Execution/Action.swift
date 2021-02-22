@@ -17,6 +17,7 @@ public extension LLBActionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBArtifact],
         outputs: [LLBActionOutput],
+        inconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String,
         description: String,
         dynamicIdentifier: String? = nil,
@@ -28,6 +29,7 @@ public extension LLBActionKey {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
+                $0.inconditionalOutputs = inconditionalOutputs
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
@@ -67,6 +69,7 @@ fileprivate extension LLBActionValue {
 
     init(actionExecutionValue: LLBActionExecutionValue) {
         self.outputs = actionExecutionValue.outputs
+        self.inconditionalOutputs = actionExecutionValue.inconditionalOutputs
         if actionExecutionValue.hasStdoutID {
             self.stdoutID = actionExecutionValue.stdoutID
         }
@@ -158,6 +161,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                         LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
                     },
                     outputs: commandKey.outputs,
+                    inconditionalOutputs: commandKey.inconditionalOutputs,
                     mnemonic: commandKey.mnemonic,
                     description: commandKey.description_p,
                     // This should be empty most of the time. Only used for dynamic action registration. Need to check
@@ -171,7 +175,10 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 return fi.request(actionExecutionKey, ctx)
                     .flatMapThrowing { (actionExecutionValue: LLBActionExecutionValue) -> LLBActionValue in
                         if actionExecutionValue.cachedFailure {
-                            throw LLBActionExecutionError.actionExecutionError(actionExecutionValue.stdoutID)
+                            throw LLBActionExecutionError.actionExecutionError(
+                                stdoutID: actionExecutionValue.stdoutID,
+                                inconditionalOutputs: actionExecutionValue.inconditionalOutputs
+                            )
                         }
                         return LLBActionValue(actionExecutionValue: actionExecutionValue)
                     }

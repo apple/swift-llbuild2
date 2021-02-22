@@ -101,6 +101,10 @@ public struct LLBActionValue {
   /// actionType.
   public var outputs: [TSFCAS.LLBDataID] = []
 
+  /// The list of inconditional outputs IDs that the action produced. This will be in the same order as requested in
+  /// actionType.
+  public var inconditionalOutputs: [TSFCAS.LLBDataID] = []
+
   /// The data ID for the stdout/stderr of the action.
   public var stdoutID: TSFCAS.LLBDataID {
     get {return _stdoutID ?? TSFCAS.LLBDataID()}
@@ -139,6 +143,11 @@ public struct LLBCommandAction {
 
   /// The list of outputs expected from this action evaluation.
   public var outputs: [llbuild2.LLBActionOutput] = []
+
+  /// List of inconditional outputs, these are outputs that are returned even if the action failed (i.e. exitCode != 0)
+  /// but it might still be empty if there was an executor error and the action didn't run at all. This is an advanced
+  /// so use with care.
+  public var inconditionalOutputs: [llbuild2.LLBActionOutput] = []
 
   /// Identifier for the dynamic action executor for this action. Should be empty for the vast majority of the cases,
   /// and only be used for actions that schedule additional actions based on the outputs of previous actions.
@@ -290,6 +299,7 @@ extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
   public static let protoMessageName: String = "LLBActionValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "outputs"),
+    3: .same(proto: "inconditionalOutputs"),
     2: .same(proto: "stdoutID"),
   ]
 
@@ -301,6 +311,7 @@ extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._stdoutID) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.inconditionalOutputs) }()
       default: break
       }
     }
@@ -313,11 +324,15 @@ extension LLBActionValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplement
     if let v = self._stdoutID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }
+    if !self.inconditionalOutputs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.inconditionalOutputs, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBActionValue, rhs: LLBActionValue) -> Bool {
     if lhs.outputs != rhs.outputs {return false}
+    if lhs.inconditionalOutputs != rhs.inconditionalOutputs {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -330,6 +345,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     1: .same(proto: "actionSpec"),
     2: .same(proto: "inputs"),
     3: .same(proto: "outputs"),
+    9: .same(proto: "inconditionalOutputs"),
     4: .same(proto: "dynamicIdentifier"),
     5: .same(proto: "mnemonic"),
     6: .same(proto: "description"),
@@ -351,6 +367,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       case 6: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
       case 7: try { try decoder.decodeSingularBoolField(value: &self.cacheableFailure) }()
       case 8: try { try decoder.decodeSingularMessageField(value: &self._label) }()
+      case 9: try { try decoder.decodeRepeatedMessageField(value: &self.inconditionalOutputs) }()
       default: break
       }
     }
@@ -381,6 +398,9 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if let v = self._label {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
     }
+    if !self.inconditionalOutputs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.inconditionalOutputs, fieldNumber: 9)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -388,6 +408,7 @@ extension LLBCommandAction: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if lhs._actionSpec != rhs._actionSpec {return false}
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
+    if lhs.inconditionalOutputs != rhs.inconditionalOutputs {return false}
     if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
     if lhs.mnemonic != rhs.mnemonic {return false}
     if lhs.description_p != rhs.description_p {return false}

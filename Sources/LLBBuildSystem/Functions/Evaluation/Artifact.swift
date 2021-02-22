@@ -89,6 +89,14 @@ public extension LLBArtifactOwner {
             $0.outputIndex = outputIndex
         }
     }
+
+    init(actionsOwner: LLBDataID, actionIndex: Int32, inconditionalOutputIndex: Int32) {
+        self = Self.with {
+            $0.actionsOwner = actionsOwner
+            $0.actionIndex = actionIndex
+            $0.inconditionalOutputIndex = inconditionalOutputIndex
+        }
+    }
 }
 
 /// Convenience initializer.
@@ -106,7 +114,9 @@ fileprivate extension LLBArtifactValue {
 public enum LLBArtifactError: Error {
     case unimplemented
     case invalidOriginType
+    case invalidOutputType
     case actionWithTooFewOutputs
+    case inconditionalOutput(LLBDataID)
 }
 
 final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
@@ -136,13 +146,37 @@ final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
         }.flatMap { (actionKey: LLBActionKey) -> LLBFuture<LLBActionValue> in
             return fi.request(actionKey, ctx)
         }.flatMapThrowing { (actionValue: LLBActionValue) -> LLBArtifactValue in
-            guard actionValue.outputs.count >= artifactOwner.outputIndex + 1 else {
+            let outputList: [LLBDataID]
+            let artifactIndex: Int32
+            switch artifactOwner.outputType {
+            case .outputIndex(let index):
+                outputList = actionValue.outputs
+                artifactIndex = index
+            case .inconditionalOutputIndex(let index):
+                outputList = actionValue.inconditionalOutputs
+                artifactIndex = index
+            default:
+                throw LLBArtifactError.invalidOutputType
+            }
+
+            guard outputList.count >= artifactIndex + 1 else {
                 throw LLBArtifactError.actionWithTooFewOutputs
             }
             return LLBArtifactValue(
-                dataID: actionValue.outputs[Int(artifactOwner.outputIndex)],
+                dataID: outputList[Int(artifactIndex)],
                 logsID: actionValue.hasStdoutID ? actionValue.stdoutID : nil
             )
+        }.flatMapErrorThrowing { error in
+            if
+                case let .actionExecutionError(_, inconditionalOutputs) = error as? LLBActionExecutionError,
+                case let .inconditionalOutputIndex(index) = artifactOwner.outputType,
+                inconditionalOutputs.count >= index + 1
+            {
+                // We throw here instead of returning a valid ArtifactValue to avoid any kind of caching mechanism
+                // the build system might be configured with.
+                throw LLBArtifactError.inconditionalOutput(inconditionalOutputs[Int(index)])
+            }
+            throw error
         }
     }
 }

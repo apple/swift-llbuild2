@@ -36,6 +36,10 @@ message LLBActionExecutionValue {
     // actionExecutionType.
     repeated LLBDataID outputs = 1;
 
+    // The list of inconditional outputs that this action produced. This will be in the same order as rquested in
+    // actionExecutionType.
+    repeated LLBDataID inconditionalOutputs = 4;
+
     // The data ID for the stdout and stderr of the action.
     LLBDataID stdoutID = 2;
 
@@ -54,6 +58,11 @@ message LLBCommandActionExecution {
 
     // The list of outputs expected from this action execution.
     repeated LLBActionOutput outputs = 3;
+
+    // List of inconditional outputs, these are outputs that are returned even if the action failed (i.e. exitCode != 0)
+    // but it might still be empty if there was an executor error and the action didn't run at all. This is an advanced
+    // so use with care.
+    repeated LLBActionOutput inconditionalOutputs = 9;
 
     // Identifier for the dynamic action executor for this action. If this is empty (which should be the majority of the
     // cases) actions will be scheduled on the executor specified for the build. If set, action execution will find the

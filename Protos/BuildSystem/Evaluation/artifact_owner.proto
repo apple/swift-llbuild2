@@ -23,6 +23,11 @@ message LLBArtifactOwner {
     // The index of the action in the action list.
     int32 actionIndex = 2;
 
-    // The index of the artifact in the list of outputs.
-    int32 outputIndex = 3;
+    oneof outputType {
+        // The index of the artifact in the list of outputs.
+        int32 outputIndex = 3;
+
+        // The index of the artifact in the list of inconditional outputs.
+        int32 inconditionalOutputIndex = 4;
+    }
 }
