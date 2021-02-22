@@ -236,6 +236,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
+        inconditionalOutputs: [LLBArtifact] = [],
         mnemonic: String = "",
         description: String = "",
         workingDirectory: String? = nil,
@@ -247,6 +248,7 @@ public class LLBRuleContext {
             environment: environment,
             inputs: inputs,
             outputs: outputs,
+            inconditionalOutputs: inconditionalOutputs,
             mnemonic: mnemonic,
             description: description,
             workingDirectory: workingDirectory,
@@ -266,6 +268,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
+        inconditionalOutputs: [LLBArtifact] = [],
         mnemonic: String = "",
         description: String = "",
         workingDirectory: String? = nil,
@@ -277,6 +280,7 @@ public class LLBRuleContext {
             environment: environment,
             inputs: inputs,
             outputs: outputs,
+            inconditionalOutputs: inconditionalOutputs,
             mnemonic: mnemonic,
             description: description,
             workingDirectory: workingDirectory,
@@ -291,6 +295,7 @@ public class LLBRuleContext {
         environment: [String: String],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
+        inconditionalOutputs: [LLBArtifact],
         mnemonic: String,
         description: String,
         workingDirectory: String?,
@@ -320,6 +325,7 @@ public class LLBRuleContext {
                 ),
                 inputs: inputs,
                 outputs: outputs.map { $0.asActionOutput() },
+                inconditionalOutputs: [],
                 mnemonic: mnemonic,
                 description: description,
                 dynamicIdentifier: dynamicIdentifier,
@@ -337,6 +343,15 @@ public class LLBRuleContext {
                         actionsOwner: artifactOwnerID,
                         actionIndex: Int32(actionIndex),
                         outputIndex: Int32(index)
+                    )
+                )
+            }
+            for (index, inconditionalOutput) in inconditionalOutputs.enumerated() {
+                inconditionalOutput.updateOwner(
+                    owner: LLBArtifactOwner(
+                        actionsOwner: artifactOwnerID,
+                        actionIndex: Int32(actionIndex),
+                        inconditionalOutputIndex: Int32(index)
                     )
                 )
             }

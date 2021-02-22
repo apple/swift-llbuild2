@@ -220,6 +220,10 @@ public struct LLBActionExecutionRequest {
   /// The expected outputs from the action execution.
   public var outputs: [LLBActionOutput] = []
 
+  /// List of outputs to return even if the action failed (i.e. exitCode != 0). This is mostly used to return artifacts
+  /// that can be used for debugging why an action failed.
+  public var inconditionalOutputs: [LLBActionOutput] = []
+
   /// Any container for moving around unspecified data.
   public var additionalData: [SwiftProtobuf.Google_Protobuf_Any] = []
 
@@ -240,6 +244,10 @@ public struct LLBActionExecutionResponse {
   /// output requested, in the same order as they appear in the action execution request. This value is expected to be
   /// populated only if the action completed successfully.
   public var outputs: [TSFCAS.LLBDataID] = []
+
+  /// List of dataIDs for the requested inconditional outputs. This list will only be populated if the action was able
+  /// to run, either successfully (i.e. exitCode == 0) or not (exitCode != 0).
+  public var inconditionalOutputs: [TSFCAS.LLBDataID] = []
 
   /// The exit code for the action execution.
   public var exitCode: Int32 = 0
@@ -493,6 +501,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     1: .same(proto: "actionSpec"),
     2: .same(proto: "inputs"),
     3: .same(proto: "outputs"),
+    4: .same(proto: "inconditionalOutputs"),
     5: .same(proto: "additionalData"),
   ]
 
@@ -505,6 +514,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 1: try { try decoder.decodeSingularMessageField(value: &self._actionSpec) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.inputs) }()
       case 3: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
+      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.inconditionalOutputs) }()
       case 5: try { try decoder.decodeRepeatedMessageField(value: &self.additionalData) }()
       default: break
       }
@@ -521,6 +531,9 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if !self.outputs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.outputs, fieldNumber: 3)
     }
+    if !self.inconditionalOutputs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.inconditionalOutputs, fieldNumber: 4)
+    }
     if !self.additionalData.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 5)
     }
@@ -531,6 +544,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs._actionSpec != rhs._actionSpec {return false}
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
+    if lhs.inconditionalOutputs != rhs.inconditionalOutputs {return false}
     if lhs.additionalData != rhs.additionalData {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -541,6 +555,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
   public static let protoMessageName: String = "LLBActionExecutionResponse"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "outputs"),
+    5: .same(proto: "inconditionalOutputs"),
     2: .same(proto: "exitCode"),
     3: .same(proto: "stdoutID"),
     4: .same(proto: "additionalData"),
@@ -556,6 +571,7 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
       case 2: try { try decoder.decodeSingularInt32Field(value: &self.exitCode) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._stdoutID) }()
       case 4: try { try decoder.decodeRepeatedMessageField(value: &self.additionalData) }()
+      case 5: try { try decoder.decodeRepeatedMessageField(value: &self.inconditionalOutputs) }()
       default: break
       }
     }
@@ -574,11 +590,15 @@ extension LLBActionExecutionResponse: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if !self.additionalData.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 4)
     }
+    if !self.inconditionalOutputs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.inconditionalOutputs, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBActionExecutionResponse, rhs: LLBActionExecutionResponse) -> Bool {
     if lhs.outputs != rhs.outputs {return false}
+    if lhs.inconditionalOutputs != rhs.inconditionalOutputs {return false}
     if lhs.exitCode != rhs.exitCode {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
     if lhs.additionalData != rhs.additionalData {return false}

@@ -51,10 +51,53 @@ public struct LLBArtifactOwner {
   /// The index of the action in the action list.
   public var actionIndex: Int32 = 0
 
+  public var outputType: LLBArtifactOwner.OneOf_OutputType? = nil
+
   /// The index of the artifact in the list of outputs.
-  public var outputIndex: Int32 = 0
+  public var outputIndex: Int32 {
+    get {
+      if case .outputIndex(let v)? = outputType {return v}
+      return 0
+    }
+    set {outputType = .outputIndex(newValue)}
+  }
+
+  /// The index of the artifact in the list of inconditional outputs.
+  public var inconditionalOutputIndex: Int32 {
+    get {
+      if case .inconditionalOutputIndex(let v)? = outputType {return v}
+      return 0
+    }
+    set {outputType = .inconditionalOutputIndex(newValue)}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum OneOf_OutputType: Equatable {
+    /// The index of the artifact in the list of outputs.
+    case outputIndex(Int32)
+    /// The index of the artifact in the list of inconditional outputs.
+    case inconditionalOutputIndex(Int32)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: LLBArtifactOwner.OneOf_OutputType, rhs: LLBArtifactOwner.OneOf_OutputType) -> Bool {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch (lhs, rhs) {
+      case (.outputIndex, .outputIndex): return {
+        guard case .outputIndex(let l) = lhs, case .outputIndex(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.inconditionalOutputIndex, .inconditionalOutputIndex): return {
+        guard case .inconditionalOutputIndex(let l) = lhs, case .inconditionalOutputIndex(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      default: return false
+      }
+    }
+  #endif
+  }
 
   public init() {}
 
@@ -69,6 +112,7 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     1: .same(proto: "actionsOwner"),
     2: .same(proto: "actionIndex"),
     3: .same(proto: "outputIndex"),
+    4: .same(proto: "inconditionalOutputIndex"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -79,7 +123,18 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._actionsOwner) }()
       case 2: try { try decoder.decodeSingularInt32Field(value: &self.actionIndex) }()
-      case 3: try { try decoder.decodeSingularInt32Field(value: &self.outputIndex) }()
+      case 3: try {
+        if self.outputType != nil {try decoder.handleConflictingOneOf()}
+        var v: Int32?
+        try decoder.decodeSingularInt32Field(value: &v)
+        if let v = v {self.outputType = .outputIndex(v)}
+      }()
+      case 4: try {
+        if self.outputType != nil {try decoder.handleConflictingOneOf()}
+        var v: Int32?
+        try decoder.decodeSingularInt32Field(value: &v)
+        if let v = v {self.outputType = .inconditionalOutputIndex(v)}
+      }()
       default: break
       }
     }
@@ -92,8 +147,19 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     if self.actionIndex != 0 {
       try visitor.visitSingularInt32Field(value: self.actionIndex, fieldNumber: 2)
     }
-    if self.outputIndex != 0 {
-      try visitor.visitSingularInt32Field(value: self.outputIndex, fieldNumber: 3)
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every case branch when no optimizations are
+    // enabled. https://github.com/apple/swift-protobuf/issues/1034
+    switch self.outputType {
+    case .outputIndex?: try {
+      guard case .outputIndex(let v)? = self.outputType else { preconditionFailure() }
+      try visitor.visitSingularInt32Field(value: v, fieldNumber: 3)
+    }()
+    case .inconditionalOutputIndex?: try {
+      guard case .inconditionalOutputIndex(let v)? = self.outputType else { preconditionFailure() }
+      try visitor.visitSingularInt32Field(value: v, fieldNumber: 4)
+    }()
+    case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -101,7 +167,7 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
   public static func ==(lhs: LLBArtifactOwner, rhs: LLBArtifactOwner) -> Bool {
     if lhs._actionsOwner != rhs._actionsOwner {return false}
     if lhs.actionIndex != rhs.actionIndex {return false}
-    if lhs.outputIndex != rhs.outputIndex {return false}
+    if lhs.outputType != rhs.outputType {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

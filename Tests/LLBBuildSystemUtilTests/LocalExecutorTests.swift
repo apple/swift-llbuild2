@@ -105,6 +105,30 @@ class LocalExecutorTests: XCTestCase {
         }
     }
 
+    func testMissingInconditionalOutputFile() throws {
+        try withTemporaryDirectory { tempDirectory in
+            let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)
+            let ctx = LLBMakeTestContext()
+
+            let request = LLBActionExecutionRequest.with {
+                $0.actionSpec = .with {
+                    $0.arguments = ["/bin/bash", "-c", "false"]
+                }
+                $0.inconditionalOutputs = [
+                    .with {
+                        $0.path = "some/path"
+                        $0.type = .file
+                    }
+                ]
+            }
+
+            let response = try localExecutor.execute(request: request, ctx).wait()
+            XCTAssertEqual(response.exitCode, 1)
+            let contents = try LLBCASFSClient(ctx.db).fileContents(for: response.inconditionalOutputs[0], ctx)
+            XCTAssertEqual(contents, "")
+        }
+    }
+
     func testMissingOutputDirectory() throws {
         try withTemporaryDirectory { tempDirectory in
             let localExecutor = LLBLocalExecutor(outputBase: tempDirectory)

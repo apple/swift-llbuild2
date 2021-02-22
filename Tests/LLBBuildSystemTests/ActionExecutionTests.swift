@@ -37,6 +37,7 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
             return stdoutFuture.map { stdoutID in
                 return LLBActionExecutionResponse.with {
                     $0.exitCode = 1
+                    $0.inconditionalOutputs = request.inputs.map { $0.dataID }
                     $0.stdoutID = stdoutID
                 }
             }
@@ -110,13 +111,57 @@ class ActionExecutionTests: XCTestCase {
             do {
                 let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 
-                guard case let .actionExecutionError(stdoutID) = actionExecutionError else {
+                guard case let .actionExecutionError(stdoutID, _) = actionExecutionError else {
                     XCTFail("Expected an actionExecutionError")
                     return
                 }
 
                 let stdout = try XCTUnwrap(testCtx.db.get(stdoutID, ctx).wait()?.data.asString())
                 XCTAssertEqual(stdout, "Failure")
+            } catch {
+                XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
+
+    func testInconditionalOutputs() throws {
+        let ctx = Context()
+        let bytes = LLBByteBuffer.withString("Hello, world!")
+        let dataID = try testCtx.db.put(data: bytes, ctx).wait()
+
+        let actionExecutionKey = LLBActionExecutionKey.with {
+            $0.actionExecutionType = .command(.with {
+                $0.actionSpec = .with {
+                    $0.arguments = ["failure"]
+                }
+                $0.inputs = [
+                    .with {
+                        $0.dataID = dataID
+                        $0.path = "some/path"
+                        $0.type = .file
+                    },
+                ]
+                $0.inconditionalOutputs = [
+                    .with {
+                        $0.path = "some/other/path"
+                        $0.type = .file
+                    },
+                ]
+            })
+        }
+
+        XCTAssertThrowsError(try testEngine.build(actionExecutionKey, ctx).wait()) { error in
+            do {
+                let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
+
+                guard case let .actionExecutionError(stdoutID, inconditionalOutputs) = actionExecutionError else {
+                    XCTFail("Expected an actionExecutionError")
+                    return
+                }
+
+                let stdout = try XCTUnwrap(testCtx.db.get(stdoutID, ctx).wait()?.data.asString())
+                XCTAssertEqual(stdout, "Failure")
+                XCTAssertEqual(inconditionalOutputs.count, 1)
             } catch {
                 XCTFail("Unexpected error: \(error)")
             }

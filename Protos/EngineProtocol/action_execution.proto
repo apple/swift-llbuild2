@@ -107,6 +107,10 @@ message LLBActionExecutionRequest {
     // The expected outputs from the action execution.
     repeated LLBActionOutput outputs = 3;
 
+    // List of outputs to return even if the action failed (i.e. exitCode != 0). This is mostly used to return artifacts
+    // that can be used for debugging why an action failed.
+    repeated LLBActionOutput inconditionalOutputs = 4;
+
     // Any container for moving around unspecified data.
     repeated google.protobuf.Any additionalData = 5;
 }
@@ -117,6 +121,10 @@ message LLBActionExecutionResponse {
     // output requested, in the same order as they appear in the action execution request. This value is expected to be
     // populated only if the action completed successfully.
     repeated LLBDataID outputs = 1;
+
+    // List of dataIDs for the requested inconditional outputs. This list will only be populated if the action was able
+    // to run, either successfully (i.e. exitCode == 0) or not (exitCode != 0).
+    repeated LLBDataID inconditionalOutputs = 5;
 
     // The exit code for the action execution.
     int32 exitCode = 2;

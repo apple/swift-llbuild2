@@ -21,6 +21,7 @@ public extension LLBActionExecutionKey {
         workingDirectory: String? = nil,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
+        inconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String = "",
         description: String = "",
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
@@ -36,6 +37,7 @@ public extension LLBActionExecutionKey {
                 )
                 $0.inputs = inputs
                 $0.outputs = outputs
+                $0.inconditionalOutputs = inconditionalOutputs
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
@@ -50,6 +52,7 @@ public extension LLBActionExecutionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
+        inconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String,
         description: String,
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
@@ -61,6 +64,7 @@ public extension LLBActionExecutionKey {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
+                $0.inconditionalOutputs = inconditionalOutputs
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
@@ -125,13 +129,15 @@ fileprivate extension LLBActionExecutionValue {
 
     init(from executionResponse: LLBActionExecutionResponse) {
         self.outputs = executionResponse.outputs
+        self.inconditionalOutputs = executionResponse.inconditionalOutputs
         self.stdoutID = executionResponse.stdoutID
     }
 
-    static func cachedFailure(stdoutID: LLBDataID) -> LLBActionExecutionValue {
+    static func cachedFailure(stdoutID: LLBDataID, inconditionalOutputs: [LLBDataID]) -> LLBActionExecutionValue {
         return LLBActionExecutionValue.with {
             $0.cachedFailure = true
             $0.stdoutID = stdoutID
+            $0.inconditionalOutputs = inconditionalOutputs
         }
     }
 }
@@ -144,7 +150,7 @@ public enum LLBActionExecutionError: Error {
     case executorError(Error)
 
     /// Error related to an actual action (i.e. action completed but did not finish successfully).
-    case actionExecutionError(LLBDataID)
+    case actionExecutionError(stdoutID: LLBDataID, inconditionalOutputs: [LLBDataID])
 }
 
 final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
@@ -196,6 +202,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             actionSpec: commandKey.actionSpec,
             inputs: commandKey.inputs,
             outputs: commandKey.outputs,
+            inconditionalOutputs: commandKey.inconditionalOutputs,
             additionalData: additionalRequestData
         )
 
@@ -216,9 +223,15 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             // If the action failed, convert it into an actual error with the dataIDs of the output logs.
             if executionResponse.exitCode != 0 {
                 if commandKey.cacheableFailure {
-                    return LLBActionExecutionValue.cachedFailure(stdoutID: executionResponse.stdoutID)
+                    return LLBActionExecutionValue.cachedFailure(
+                        stdoutID: executionResponse.stdoutID,
+                        inconditionalOutputs: executionResponse.inconditionalOutputs
+                    )
                 } else {
-                    throw LLBActionExecutionError.actionExecutionError(executionResponse.stdoutID)
+                    throw LLBActionExecutionError.actionExecutionError(
+                        stdoutID: executionResponse.stdoutID,
+                        inconditionalOutputs: executionResponse.inconditionalOutputs
+                    )
                 }
             }
 

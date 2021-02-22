@@ -155,32 +155,26 @@ final public class LLBLocalExecutor: LLBExecutor {
             // Upload the stdout and stderr of the action into the CAS.
             let stdoutFuture = ctx.db.put(data: .withBytes(stdout[...]), ctx)
 
-            let uploadFutures: [LLBFuture<LLBDataID>]
+            let outputFutures: [LLBFuture<LLBDataID>]
 
             // Only upload outputs if the action exited successfully.
             if exitCode == 0 {
-                uploadFutures = request.outputs.map { output in
-                    let outputPath = self.outputBase.appending(RelativePath(output.path))
-                    return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapError { error in
-                        if output.type == .directory,
-                           let fsError = error as? FileSystemError,
-                           fsError.kind == .noEntry {
-                            // If we didn't find an output artifact that was a directory, create an empty CASTree to
-                            // represent it.
-                            return LLBCASFileTree.create(files: [], in: ctx.db, ctx).map { $0.id }
-                        }
-                        return ctx.group.next().makeFailedFuture(error)
-                    }
-                }
+                outputFutures = request.outputs.map { self.importOutput(output: $0, ctx) }
             } else {
-                uploadFutures = []
+                outputFutures = []
             }
 
-            let uploadsFuture = LLBFuture.whenAllSucceed(uploadFutures, on: ctx.group.next())
+            let outputsFuture = LLBFuture.whenAllSucceed(outputFutures, on: ctx.group.next())
 
-            return stdoutFuture.and(uploadsFuture).map { stdoutID, outputUploads in
+            let inconditionalOutputFutures = request.inconditionalOutputs.map {
+                self.importOutput(output: $0, allowNonExistentFiles: true, ctx)
+            }
+            let inconditionalOutputsFuture = LLBFuture.whenAllSucceed(inconditionalOutputFutures, on: ctx.group.next())
+
+            return outputsFuture.and(inconditionalOutputsFuture).and(stdoutFuture).map { outputs, stdoutID in
                 return LLBActionExecutionResponse(
-                    outputs: outputUploads,
+                    outputs: outputs.0,
+                    inconditionalOutputs: outputs.1,
                     exitCode: exitCode,
                     stdoutID: stdoutID
                 )
@@ -191,6 +185,23 @@ final public class LLBLocalExecutor: LLBExecutor {
                 throw error
             }
             throw LLBLocalExecutorError.unexpected(error)
+        }
+    }
+
+    func importOutput(output: LLBActionOutput, allowNonExistentFiles: Bool = false, _ ctx: Context) -> LLBFuture<LLBDataID> {
+        let outputPath = self.outputBase.appending(RelativePath(output.path))
+        return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapError { error in
+            if let fsError = error as? FileSystemError, fsError.kind == .noEntry {
+                if output.type == .directory {
+                    // If we didn't find an output artifact that was a directory, create an empty CASTree to
+                    // represent it.
+                    return LLBCASFileTree.create(files: [], in: ctx.db, ctx).map { $0.id }
+                } else if output.type == .file, allowNonExistentFiles {
+                    return ctx.db.put(data: .init(bytes: []), ctx)
+                }
+            }
+
+            return ctx.group.next().makeFailedFuture(error)
         }
     }
 }
