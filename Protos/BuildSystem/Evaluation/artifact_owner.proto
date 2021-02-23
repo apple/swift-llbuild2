@@ -27,7 +27,7 @@ message LLBArtifactOwner {
         // The index of the artifact in the list of outputs.
         int32 outputIndex = 3;
 
-        // The index of the artifact in the list of inconditional outputs.
-        int32 inconditionalOutputIndex = 4;
+        // The index of the artifact in the list of unconditional outputs.
+        int32 unconditionalOutputIndex = 4;
     }
 }

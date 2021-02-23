@@ -101,9 +101,9 @@ public struct LLBActionExecutionValue {
   /// actionExecutionType.
   public var outputs: [TSFCAS.LLBDataID] = []
 
-  /// The list of inconditional outputs that this action produced. This will be in the same order as rquested in
+  /// The list of unconditional outputs that this action produced. This will be in the same order as rquested in
   /// actionExecutionType.
-  public var inconditionalOutputs: [TSFCAS.LLBDataID] = []
+  public var unconditionalOutputs: [TSFCAS.LLBDataID] = []
 
   /// The data ID for the stdout and stderr of the action.
   public var stdoutID: TSFCAS.LLBDataID {
@@ -147,10 +147,10 @@ public struct LLBCommandActionExecution {
   /// The list of outputs expected from this action execution.
   public var outputs: [llbuild2.LLBActionOutput] = []
 
-  /// List of inconditional outputs, these are outputs that are returned even if the action failed (i.e. exitCode != 0)
+  /// List of unconditional outputs, these are outputs that are returned even if the action failed (i.e. exitCode != 0)
   /// but it might still be empty if there was an executor error and the action didn't run at all. This is an advanced
   /// so use with care.
-  public var inconditionalOutputs: [llbuild2.LLBActionOutput] = []
+  public var unconditionalOutputs: [llbuild2.LLBActionOutput] = []
 
   /// Identifier for the dynamic action executor for this action. If this is empty (which should be the majority of the
   /// cases) actions will be scheduled on the executor specified for the build. If set, action execution will find the
@@ -302,7 +302,7 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
   public static let protoMessageName: String = "LLBActionExecutionValue"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "outputs"),
-    4: .same(proto: "inconditionalOutputs"),
+    4: .same(proto: "unconditionalOutputs"),
     2: .same(proto: "stdoutID"),
     3: .same(proto: "cachedFailure"),
   ]
@@ -316,7 +316,7 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._stdoutID) }()
       case 3: try { try decoder.decodeSingularBoolField(value: &self.cachedFailure) }()
-      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.inconditionalOutputs) }()
+      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.unconditionalOutputs) }()
       default: break
       }
     }
@@ -332,15 +332,15 @@ extension LLBActionExecutionValue: SwiftProtobuf.Message, SwiftProtobuf._Message
     if self.cachedFailure != false {
       try visitor.visitSingularBoolField(value: self.cachedFailure, fieldNumber: 3)
     }
-    if !self.inconditionalOutputs.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.inconditionalOutputs, fieldNumber: 4)
+    if !self.unconditionalOutputs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.unconditionalOutputs, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBActionExecutionValue, rhs: LLBActionExecutionValue) -> Bool {
     if lhs.outputs != rhs.outputs {return false}
-    if lhs.inconditionalOutputs != rhs.inconditionalOutputs {return false}
+    if lhs.unconditionalOutputs != rhs.unconditionalOutputs {return false}
     if lhs._stdoutID != rhs._stdoutID {return false}
     if lhs.cachedFailure != rhs.cachedFailure {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -354,7 +354,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     1: .same(proto: "actionSpec"),
     2: .same(proto: "inputs"),
     3: .same(proto: "outputs"),
-    9: .same(proto: "inconditionalOutputs"),
+    9: .same(proto: "unconditionalOutputs"),
     4: .same(proto: "dynamicIdentifier"),
     5: .same(proto: "mnemonic"),
     6: .same(proto: "description"),
@@ -376,7 +376,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 6: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
       case 7: try { try decoder.decodeSingularBoolField(value: &self.cacheableFailure) }()
       case 8: try { try decoder.decodeSingularMessageField(value: &self._label) }()
-      case 9: try { try decoder.decodeRepeatedMessageField(value: &self.inconditionalOutputs) }()
+      case 9: try { try decoder.decodeRepeatedMessageField(value: &self.unconditionalOutputs) }()
       default: break
       }
     }
@@ -407,8 +407,8 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if let v = self._label {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
     }
-    if !self.inconditionalOutputs.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.inconditionalOutputs, fieldNumber: 9)
+    if !self.unconditionalOutputs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.unconditionalOutputs, fieldNumber: 9)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -417,7 +417,7 @@ extension LLBCommandActionExecution: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs._actionSpec != rhs._actionSpec {return false}
     if lhs.inputs != rhs.inputs {return false}
     if lhs.outputs != rhs.outputs {return false}
-    if lhs.inconditionalOutputs != rhs.inconditionalOutputs {return false}
+    if lhs.unconditionalOutputs != rhs.unconditionalOutputs {return false}
     if lhs.dynamicIdentifier != rhs.dynamicIdentifier {return false}
     if lhs.mnemonic != rhs.mnemonic {return false}
     if lhs.description_p != rhs.description_p {return false}

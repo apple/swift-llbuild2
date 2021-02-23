@@ -21,7 +21,7 @@ public extension LLBActionExecutionKey {
         workingDirectory: String? = nil,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
-        inconditionalOutputs: [LLBActionOutput] = [],
+        unconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String = "",
         description: String = "",
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
@@ -37,7 +37,7 @@ public extension LLBActionExecutionKey {
                 )
                 $0.inputs = inputs
                 $0.outputs = outputs
-                $0.inconditionalOutputs = inconditionalOutputs
+                $0.unconditionalOutputs = unconditionalOutputs
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
@@ -52,7 +52,7 @@ public extension LLBActionExecutionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
-        inconditionalOutputs: [LLBActionOutput] = [],
+        unconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String,
         description: String,
         dynamicIdentifier: LLBDynamicActionIdentifier? = nil,
@@ -64,7 +64,7 @@ public extension LLBActionExecutionKey {
                 $0.actionSpec = actionSpec
                 $0.inputs = inputs
                 $0.outputs = outputs
-                $0.inconditionalOutputs = inconditionalOutputs
+                $0.unconditionalOutputs = unconditionalOutputs
                 if let dynamicIdentifier = dynamicIdentifier {
                     $0.dynamicIdentifier = dynamicIdentifier
                 }
@@ -129,15 +129,15 @@ fileprivate extension LLBActionExecutionValue {
 
     init(from executionResponse: LLBActionExecutionResponse) {
         self.outputs = executionResponse.outputs
-        self.inconditionalOutputs = executionResponse.inconditionalOutputs
+        self.unconditionalOutputs = executionResponse.unconditionalOutputs
         self.stdoutID = executionResponse.stdoutID
     }
 
-    static func cachedFailure(stdoutID: LLBDataID, inconditionalOutputs: [LLBDataID]) -> LLBActionExecutionValue {
+    static func cachedFailure(stdoutID: LLBDataID, unconditionalOutputs: [LLBDataID]) -> LLBActionExecutionValue {
         return LLBActionExecutionValue.with {
             $0.cachedFailure = true
             $0.stdoutID = stdoutID
-            $0.inconditionalOutputs = inconditionalOutputs
+            $0.unconditionalOutputs = unconditionalOutputs
         }
     }
 }
@@ -150,7 +150,7 @@ public enum LLBActionExecutionError: Error {
     case executorError(Error)
 
     /// Error related to an actual action (i.e. action completed but did not finish successfully).
-    case actionExecutionError(stdoutID: LLBDataID, inconditionalOutputs: [LLBDataID])
+    case actionExecutionError(stdoutID: LLBDataID, unconditionalOutputs: [LLBDataID])
 }
 
 final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
@@ -202,7 +202,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             actionSpec: commandKey.actionSpec,
             inputs: commandKey.inputs,
             outputs: commandKey.outputs,
-            inconditionalOutputs: commandKey.inconditionalOutputs,
+            unconditionalOutputs: commandKey.unconditionalOutputs,
             additionalData: additionalRequestData
         )
 
@@ -225,12 +225,12 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
                 if commandKey.cacheableFailure {
                     return LLBActionExecutionValue.cachedFailure(
                         stdoutID: executionResponse.stdoutID,
-                        inconditionalOutputs: executionResponse.inconditionalOutputs
+                        unconditionalOutputs: executionResponse.unconditionalOutputs
                     )
                 } else {
                     throw LLBActionExecutionError.actionExecutionError(
                         stdoutID: executionResponse.stdoutID,
-                        inconditionalOutputs: executionResponse.inconditionalOutputs
+                        unconditionalOutputs: executionResponse.unconditionalOutputs
                     )
                 }
             }

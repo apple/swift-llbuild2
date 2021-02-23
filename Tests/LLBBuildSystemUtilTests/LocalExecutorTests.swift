@@ -114,7 +114,7 @@ class LocalExecutorTests: XCTestCase {
                 $0.actionSpec = .with {
                     $0.arguments = ["/bin/bash", "-c", "false"]
                 }
-                $0.inconditionalOutputs = [
+                $0.unconditionalOutputs = [
                     .with {
                         $0.path = "some/path"
                         $0.type = .file
@@ -124,7 +124,7 @@ class LocalExecutorTests: XCTestCase {
 
             let response = try localExecutor.execute(request: request, ctx).wait()
             XCTAssertEqual(response.exitCode, 1)
-            let contents = try LLBCASFSClient(ctx.db).fileContents(for: response.inconditionalOutputs[0], ctx)
+            let contents = try LLBCASFSClient(ctx.db).fileContents(for: response.unconditionalOutputs[0], ctx)
             XCTAssertEqual(contents, "")
         }
     }

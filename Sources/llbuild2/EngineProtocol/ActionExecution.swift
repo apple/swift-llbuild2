@@ -41,13 +41,13 @@ public extension LLBActionExecutionRequest {
         actionSpec: LLBActionSpec,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
-        inconditionalOutputs: [LLBActionOutput] = [],
+        unconditionalOutputs: [LLBActionOutput] = [],
         additionalData: [Google_Protobuf_Any] = []
     ) {
         self.actionSpec = actionSpec
         self.inputs = inputs
         self.outputs = outputs
-        self.inconditionalOutputs = inconditionalOutputs
+        self.unconditionalOutputs = unconditionalOutputs
         self.additionalData = additionalData
     }
 }
@@ -55,13 +55,13 @@ public extension LLBActionExecutionRequest {
 public extension LLBActionExecutionResponse {
     init(
         outputs: [LLBDataID],
-        inconditionalOutputs: [LLBDataID] = [],
+        unconditionalOutputs: [LLBDataID] = [],
         exitCode: Int = 0,
         stdoutID: LLBDataID,
         additionalData: [Google_Protobuf_Any] = []
     ) {
         self.outputs = outputs
-        self.inconditionalOutputs = inconditionalOutputs
+        self.unconditionalOutputs = unconditionalOutputs
         self.exitCode = Int32(exitCode)
         self.stdoutID = stdoutID
         self.additionalData = additionalData

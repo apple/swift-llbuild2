@@ -90,11 +90,11 @@ public extension LLBArtifactOwner {
         }
     }
 
-    init(actionsOwner: LLBDataID, actionIndex: Int32, inconditionalOutputIndex: Int32) {
+    init(actionsOwner: LLBDataID, actionIndex: Int32, unconditionalOutputIndex: Int32) {
         self = Self.with {
             $0.actionsOwner = actionsOwner
             $0.actionIndex = actionIndex
-            $0.inconditionalOutputIndex = inconditionalOutputIndex
+            $0.unconditionalOutputIndex = unconditionalOutputIndex
         }
     }
 }
@@ -116,7 +116,7 @@ public enum LLBArtifactError: Error {
     case invalidOriginType
     case invalidOutputType
     case actionWithTooFewOutputs
-    case inconditionalOutput(LLBDataID)
+    case unconditionalOutput(LLBDataID)
 }
 
 final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
@@ -152,8 +152,8 @@ final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
             case .outputIndex(let index):
                 outputList = actionValue.outputs
                 artifactIndex = index
-            case .inconditionalOutputIndex(let index):
-                outputList = actionValue.inconditionalOutputs
+            case .unconditionalOutputIndex(let index):
+                outputList = actionValue.unconditionalOutputs
                 artifactIndex = index
             default:
                 throw LLBArtifactError.invalidOutputType
@@ -168,13 +168,13 @@ final class ArtifactFunction: LLBBuildFunction<LLBArtifact, LLBArtifactValue> {
             )
         }.flatMapErrorThrowing { error in
             if
-                case let .actionExecutionError(_, inconditionalOutputs) = error as? LLBActionExecutionError,
-                case let .inconditionalOutputIndex(index) = artifactOwner.outputType,
-                inconditionalOutputs.count >= index + 1
+                case let .actionExecutionError(_, unconditionalOutputs) = error as? LLBActionExecutionError,
+                case let .unconditionalOutputIndex(index) = artifactOwner.outputType,
+                unconditionalOutputs.count >= index + 1
             {
                 // We throw here instead of returning a valid ArtifactValue to avoid any kind of caching mechanism
                 // the build system might be configured with.
-                throw LLBArtifactError.inconditionalOutput(inconditionalOutputs[Int(index)])
+                throw LLBArtifactError.unconditionalOutput(unconditionalOutputs[Int(index)])
             }
             throw error
         }

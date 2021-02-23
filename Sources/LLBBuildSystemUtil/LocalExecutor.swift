@@ -166,15 +166,15 @@ final public class LLBLocalExecutor: LLBExecutor {
 
             let outputsFuture = LLBFuture.whenAllSucceed(outputFutures, on: ctx.group.next())
 
-            let inconditionalOutputFutures = request.inconditionalOutputs.map {
+            let unconditionalOutputFutures = request.unconditionalOutputs.map {
                 self.importOutput(output: $0, allowNonExistentFiles: true, ctx)
             }
-            let inconditionalOutputsFuture = LLBFuture.whenAllSucceed(inconditionalOutputFutures, on: ctx.group.next())
+            let unconditionalOutputsFuture = LLBFuture.whenAllSucceed(unconditionalOutputFutures, on: ctx.group.next())
 
-            return outputsFuture.and(inconditionalOutputsFuture).and(stdoutFuture).map { outputs, stdoutID in
+            return outputsFuture.and(unconditionalOutputsFuture).and(stdoutFuture).map { outputs, stdoutID in
                 return LLBActionExecutionResponse(
                     outputs: outputs.0,
-                    inconditionalOutputs: outputs.1,
+                    unconditionalOutputs: outputs.1,
                     exitCode: exitCode,
                     stdoutID: stdoutID
                 )

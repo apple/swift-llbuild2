@@ -37,7 +37,7 @@ private class ActionExecutionDummyExecutor: LLBExecutor {
             return stdoutFuture.map { stdoutID in
                 return LLBActionExecutionResponse.with {
                     $0.exitCode = 1
-                    $0.inconditionalOutputs = request.inputs.map { $0.dataID }
+                    $0.unconditionalOutputs = request.inputs.map { $0.dataID }
                     $0.stdoutID = stdoutID
                 }
             }
@@ -141,7 +141,7 @@ class ActionExecutionTests: XCTestCase {
                         $0.type = .file
                     },
                 ]
-                $0.inconditionalOutputs = [
+                $0.unconditionalOutputs = [
                     .with {
                         $0.path = "some/other/path"
                         $0.type = .file
@@ -154,14 +154,14 @@ class ActionExecutionTests: XCTestCase {
             do {
                 let actionExecutionError = try XCTUnwrap(error as? LLBActionExecutionError)
 
-                guard case let .actionExecutionError(stdoutID, inconditionalOutputs) = actionExecutionError else {
+                guard case let .actionExecutionError(stdoutID, unconditionalOutputs) = actionExecutionError else {
                     XCTFail("Expected an actionExecutionError")
                     return
                 }
 
                 let stdout = try XCTUnwrap(testCtx.db.get(stdoutID, ctx).wait()?.data.asString())
                 XCTAssertEqual(stdout, "Failure")
-                XCTAssertEqual(inconditionalOutputs.count, 1)
+                XCTAssertEqual(unconditionalOutputs.count, 1)
             } catch {
                 XCTFail("Unexpected error: \(error)")
             }
