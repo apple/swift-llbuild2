@@ -236,7 +236,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
-        inconditionalOutputs: [LLBArtifact] = [],
+        unconditionalOutputs: [LLBArtifact] = [],
         mnemonic: String = "",
         description: String = "",
         workingDirectory: String? = nil,
@@ -248,7 +248,7 @@ public class LLBRuleContext {
             environment: environment,
             inputs: inputs,
             outputs: outputs,
-            inconditionalOutputs: inconditionalOutputs,
+            unconditionalOutputs: unconditionalOutputs,
             mnemonic: mnemonic,
             description: description,
             workingDirectory: workingDirectory,
@@ -268,7 +268,7 @@ public class LLBRuleContext {
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
-        inconditionalOutputs: [LLBArtifact] = [],
+        unconditionalOutputs: [LLBArtifact] = [],
         mnemonic: String = "",
         description: String = "",
         workingDirectory: String? = nil,
@@ -280,7 +280,7 @@ public class LLBRuleContext {
             environment: environment,
             inputs: inputs,
             outputs: outputs,
-            inconditionalOutputs: inconditionalOutputs,
+            unconditionalOutputs: unconditionalOutputs,
             mnemonic: mnemonic,
             description: description,
             workingDirectory: workingDirectory,
@@ -295,7 +295,7 @@ public class LLBRuleContext {
         environment: [String: String],
         inputs: [LLBArtifact],
         outputs: [LLBArtifact],
-        inconditionalOutputs: [LLBArtifact],
+        unconditionalOutputs: [LLBArtifact],
         mnemonic: String,
         description: String,
         workingDirectory: String?,
@@ -307,7 +307,7 @@ public class LLBRuleContext {
             // Check that all outputs for the action are uninitialized, have already been declared (and correspond to
             // the declared one) and that they have not been associated to another action. If this turns out to be too
             // slow, we can store more runtime info and validate after rule evaluation is done.
-            for output in outputs + inconditionalOutputs {
+            for output in outputs + unconditionalOutputs {
                 guard output.originType == nil,
                       declaredArtifacts[output.shortPath] == output else {
                     throw LLBRuleContextError.outputAlreadyRegistered
@@ -325,7 +325,7 @@ public class LLBRuleContext {
                 ),
                 inputs: inputs,
                 outputs: outputs.map { $0.asActionOutput() },
-                inconditionalOutputs: inconditionalOutputs.map { $0.asActionOutput() },
+                unconditionalOutputs: unconditionalOutputs.map { $0.asActionOutput() },
                 mnemonic: mnemonic,
                 description: description,
                 dynamicIdentifier: dynamicIdentifier,
@@ -346,12 +346,12 @@ public class LLBRuleContext {
                     )
                 )
             }
-            for (index, inconditionalOutput) in inconditionalOutputs.enumerated() {
-                inconditionalOutput.updateOwner(
+            for (index, unconditionalOutput) in unconditionalOutputs.enumerated() {
+                unconditionalOutput.updateOwner(
                     owner: LLBArtifactOwner(
                         actionsOwner: artifactOwnerID,
                         actionIndex: Int32(actionIndex),
-                        inconditionalOutputIndex: Int32(index)
+                        unconditionalOutputIndex: Int32(index)
                     )
                 )
             }

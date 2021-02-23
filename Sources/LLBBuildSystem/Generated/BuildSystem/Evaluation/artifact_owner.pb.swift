@@ -62,13 +62,13 @@ public struct LLBArtifactOwner {
     set {outputType = .outputIndex(newValue)}
   }
 
-  /// The index of the artifact in the list of inconditional outputs.
-  public var inconditionalOutputIndex: Int32 {
+  /// The index of the artifact in the list of unconditional outputs.
+  public var unconditionalOutputIndex: Int32 {
     get {
-      if case .inconditionalOutputIndex(let v)? = outputType {return v}
+      if case .unconditionalOutputIndex(let v)? = outputType {return v}
       return 0
     }
-    set {outputType = .inconditionalOutputIndex(newValue)}
+    set {outputType = .unconditionalOutputIndex(newValue)}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -76,8 +76,8 @@ public struct LLBArtifactOwner {
   public enum OneOf_OutputType: Equatable {
     /// The index of the artifact in the list of outputs.
     case outputIndex(Int32)
-    /// The index of the artifact in the list of inconditional outputs.
-    case inconditionalOutputIndex(Int32)
+    /// The index of the artifact in the list of unconditional outputs.
+    case unconditionalOutputIndex(Int32)
 
   #if !swift(>=4.1)
     public static func ==(lhs: LLBArtifactOwner.OneOf_OutputType, rhs: LLBArtifactOwner.OneOf_OutputType) -> Bool {
@@ -89,8 +89,8 @@ public struct LLBArtifactOwner {
         guard case .outputIndex(let l) = lhs, case .outputIndex(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
-      case (.inconditionalOutputIndex, .inconditionalOutputIndex): return {
-        guard case .inconditionalOutputIndex(let l) = lhs, case .inconditionalOutputIndex(let r) = rhs else { preconditionFailure() }
+      case (.unconditionalOutputIndex, .unconditionalOutputIndex): return {
+        guard case .unconditionalOutputIndex(let l) = lhs, case .unconditionalOutputIndex(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -112,7 +112,7 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     1: .same(proto: "actionsOwner"),
     2: .same(proto: "actionIndex"),
     3: .same(proto: "outputIndex"),
-    4: .same(proto: "inconditionalOutputIndex"),
+    4: .same(proto: "unconditionalOutputIndex"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -133,7 +133,7 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
         if self.outputType != nil {try decoder.handleConflictingOneOf()}
         var v: Int32?
         try decoder.decodeSingularInt32Field(value: &v)
-        if let v = v {self.outputType = .inconditionalOutputIndex(v)}
+        if let v = v {self.outputType = .unconditionalOutputIndex(v)}
       }()
       default: break
       }
@@ -155,8 +155,8 @@ extension LLBArtifactOwner: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
       guard case .outputIndex(let v)? = self.outputType else { preconditionFailure() }
       try visitor.visitSingularInt32Field(value: v, fieldNumber: 3)
     }()
-    case .inconditionalOutputIndex?: try {
-      guard case .inconditionalOutputIndex(let v)? = self.outputType else { preconditionFailure() }
+    case .unconditionalOutputIndex?: try {
+      guard case .unconditionalOutputIndex(let v)? = self.outputType else { preconditionFailure() }
       try visitor.visitSingularInt32Field(value: v, fieldNumber: 4)
     }()
     case nil: break
