@@ -61,6 +61,8 @@ fileprivate class LLBBuildEngineDelegate: LLBEngineDelegate {
     }
 
     func registerTypes(registry: LLBSerializableRegistry) {
+        registry.register(type: LLBActionConfigurationFragmentKey.self)
+        registry.register(type: LLBActionConfigurationFragment.self)
         registrationDelegate?.registerTypes(registry: registry)
     }
 }

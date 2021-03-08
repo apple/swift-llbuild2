@@ -1,0 +1,26 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+option java_package = "com.apple.llbuild2.buildsystem.evaluation";
+
+import "EngineProtocol/action_execution.proto";
+
+// A base configuration fragment key for propagating configurations that apply to all actions registered under this
+// configuration.
+message LLBActionConfigurationFragmentKey {
+
+    // List of environment variables to add to all actions registered under this configuration fragment key.
+    repeated LLBEnvironmentVariable additionalEnvironment  = 1;
+}
+
+message LLBActionConfigurationFragment {
+    // List of environment variables to add to all actions registered under this configuration fragment key.
+    repeated LLBEnvironmentVariable additionalEnvironment  = 1;
+}
