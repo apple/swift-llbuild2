@@ -303,6 +303,11 @@ public class LLBRuleContext {
         dynamicIdentifier: LLBDynamicActionIdentifier?,
         cacheableFailure: Bool
     ) throws {
+        let baseEnvironment = (
+            getOptionalFragment(LLBActionConfigurationFragment.self)?.additionalEnvironment ?? []
+        ).reduce(into: [:]) { $0[$1.name] = $1.value }
+
+        let completeEnvironment = baseEnvironment.merging(environment) { _, new in new }
         try queue.sync {
             // Check that all outputs for the action are uninitialized, have already been declared (and correspond to
             // the declared one) and that they have not been associated to another action. If this turns out to be too
@@ -317,10 +322,15 @@ public class LLBRuleContext {
             let actionKey = LLBActionKey.command(
                 actionSpec: LLBActionSpec(
                     arguments: arguments,
-                    environment: environment,
+                    environment: completeEnvironment,
                     workingDirectory: workingDirectory,
                     preActions: preActions.map {
-                        LLBPreActionSpec(arguments: $0.arguments, environment: $0.environment, background: $0.background)
+                        let environment = baseEnvironment.merging($0.environment) { _, new in new }
+                        return LLBPreActionSpec(
+                            arguments: $0.arguments,
+                            environment: environment,
+                            background: $0.background
+                        )
                     }
                 ),
                 inputs: inputs,

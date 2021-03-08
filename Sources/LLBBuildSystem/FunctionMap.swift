@@ -30,6 +30,7 @@ class LLBBuildFunctionMap {
                 ruleLookupDelegate: ruleLookupDelegate
             ),
             LLBConfigurationKey.identifier: ConfigurationFunction(),
+            LLBActionConfigurationFragmentKey.identifier: LLBActionConfigurationFragmentFunction(),
 
             // Execution
             ActionIDKey.identifier: ActionIDFunction(),
