@@ -14,6 +14,10 @@ extension LLBActionConfigurationFragmentKey: LLBConfigurationFragmentKey {
             LLBEnvironmentVariable(name: $0.key, value: $0.value)
         }.sorted { $0.name < $1.name }
     }
+
+    public init(additionalEnvironment: [LLBEnvironmentVariable]) {
+        self.additionalEnvironment = additionalEnvironment.sorted { $0.name < $1.name }
+    }
 }
 
 extension LLBActionConfigurationFragment: LLBConfigurationFragment {
