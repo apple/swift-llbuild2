@@ -277,7 +277,9 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         let inputs = mergeTreesKey.inputs
         // Skip merging if there's a single tree as input, with no path to prepend.
         if inputs.count == 1, inputs[0].type == .directory, inputs[0].path.isEmpty {
-            return ctx.group.next().makeSucceededFuture(LLBActionExecutionValue(outputs: [inputs[0].dataID], stdoutID: nil, stderrID: nil))
+            return ctx.group.next().makeSucceededFuture(
+                LLBActionExecutionValue(outputs: [inputs[0].dataID], stdoutID: chainedLogsID, stderrID: chainedLogsID)
+            )
         }
 
         let client = LLBCASFSClient(ctx.db)
@@ -298,7 +300,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         return LLBFuture.whenAllSucceed(prependedTrees, on: ctx.group.next()).flatMap { trees in
             return LLBCASFileTree.merge(trees: trees, in: ctx.db, ctx)
         }.map {
-            return LLBActionExecutionValue(outputs: [$0.id])
+            return LLBActionExecutionValue(outputs: [$0.id], stdoutID: chainedLogsID, stderrID: chainedLogsID)
         }
     }
 }

@@ -73,8 +73,11 @@ fileprivate extension LLBMergeTreesActionInput {
 
 /// Convenience initializer.
 fileprivate extension LLBActionValue {
-    init(outputs: [LLBDataID]) {
+    init(outputs: [LLBDataID], stdoutID: LLBDataID?) {
         self.outputs = outputs
+        if let stdoutID = stdoutID {
+            self.stdoutID = stdoutID
+        }
     }
 
     init(actionExecutionValue: LLBActionExecutionValue) {
@@ -246,7 +249,8 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
 
             return fi.request(actionExecutionKey, ctx)
         }.map { actionExecutionValue in
-            return LLBActionValue(outputs: actionExecutionValue.outputs)
+            let stdoutID = actionExecutionValue.hasStdoutID ? actionExecutionValue.stdoutID : nil
+            return LLBActionValue(outputs: actionExecutionValue.outputs, stdoutID: stdoutID)
         }
     }
 }
