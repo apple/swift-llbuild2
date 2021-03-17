@@ -6,6 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Foundation
 import llbuild2
 import TSCBasic
 import Dispatch
@@ -153,7 +154,22 @@ final public class LLBLocalExecutor: LLBExecutor {
             return (resultExitCode, try result.output.get())
         }.flatMap { (exitCode, stdout) in
             // Upload the stdout and stderr of the action into the CAS.
-            let stdoutFuture = ctx.db.put(data: .withBytes(stdout[...]), ctx)
+            let baseLogContents: LLBFuture<ArraySlice<UInt8>>
+            if request.hasBaseLogsID {
+                baseLogContents = ctx.db.get(request.baseLogsID, ctx).flatMapThrowing { object -> ArraySlice<UInt8> in
+                    if let object = object {
+                        return ArraySlice(object.data.readableBytesView)
+                    } else {
+                        throw StringError("No logs available for base")
+                    }
+                }
+            } else {
+                baseLogContents = ctx.group.next().makeSucceededFuture([])
+            }
+
+            let stdoutFuture = baseLogContents.flatMap { baseLogs in
+                ctx.db.put(data: .withBytes(baseLogs + stdout[...]), ctx)
+            }
 
             let outputFutures: [LLBFuture<LLBDataID>]
 

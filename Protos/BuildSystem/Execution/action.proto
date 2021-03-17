@@ -28,6 +28,17 @@ message LLBActionKey {
         // A merge trees based action key.
         LLBMergeTreesAction mergeTrees = 2;
     }
+
+    // A chained input is an input into the action (which may be repeated in each of the inputs for the action types)
+    // as a way to propagate information downstream for an artifact that goes through stages of processing, so that the
+    // logs for that artifact are considered a concatenation of the logs of the chain. This also groups the actions
+    // in a way where if any of the nodes in the action chain fail, then all of the downstream actions are considered
+    // as a failure, and not a dependency failure. In effect is a way to have split actions for better caching but still
+    // be considered as a single entity. There might be multiple chains sharing upstream actions, but since it's a DAG
+    // they won't be affected by the other chains, only by the upstream nodes in the chain.
+    // This field is mostly expected to be empty unless this functionality is requires, so it should be checked before
+    // being read.
+    LLBArtifact chainedInput = 3;
 }
 
 // The value for an ActionKey.

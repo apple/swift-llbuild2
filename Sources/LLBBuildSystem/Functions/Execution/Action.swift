@@ -16,6 +16,7 @@ public extension LLBActionKey {
     static func command(
         actionSpec: LLBActionSpec,
         inputs: [LLBArtifact],
+        chainedInput: LLBArtifact? = nil,
         outputs: [LLBActionOutput],
         unconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String,
@@ -40,14 +41,23 @@ public extension LLBActionKey {
                     $0.label = label
                 }
             })
+            if let chainedInput = chainedInput {
+                $0.chainedInput = chainedInput
+            }
         }
     }
 
-    static func mergeTrees(inputs: [(artifact: LLBArtifact, path: String?)]) -> Self {
+    static func mergeTrees(
+        inputs: [(artifact: LLBArtifact, path: String?)],
+        chainedInput: LLBArtifact? = nil
+    ) -> Self {
         return LLBActionKey.with {
             $0.actionType = .mergeTrees(LLBMergeTreesAction.with {
                 $0.inputs = inputs.map { LLBMergeTreesActionInput(artifact: $0.artifact, path: $0.path) }
             })
+            if let chainedInput = chainedInput {
+                $0.chainedInput = chainedInput
+            }
         }
     }
 }
@@ -116,16 +126,32 @@ extension LLBActionKey: LLBBuildEventActionDescription {
     }
 }
 
+enum LLBChainedInputResult {
+    case none
+    case error(Error)
+    case success(LLBDataID)
+}
+
 final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
     override func evaluate(
         key actionKey: LLBActionKey,
         _ fi: LLBBuildFunctionInterface,
         _ ctx: Context
     ) -> LLBFuture<LLBActionValue> {
+        let chainedLogsID: LLBFuture<LLBDataID?>
+        if actionKey.hasChainedInput {
+            // Not using requestInputs since we specifically don't want the dependencyFailure processing.
+            chainedLogsID = fi.requestArtifact(actionKey.chainedInput, ctx).map { value in
+                return value.hasLogsID ? value.logsID : .none
+            }
+        } else {
+            chainedLogsID = ctx.group.next().makeSucceededFuture(.none)
+        }
+
         switch actionKey.actionType {
         case let .command(commandKey):
             ctx.buildEventDelegate?.actionScheduled(action: actionKey)
-            let resultFuture = evaluate(commandKey: commandKey, fi, ctx)
+            let resultFuture = evaluate(commandKey: commandKey, chainedLogsID: chainedLogsID, fi, ctx)
             return LLBFuture.whenAllComplete([resultFuture], on: ctx.group.next()).flatMapThrowing { results in
                 switch results[0] {
                 case .success(let value):
@@ -142,7 +168,7 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 return try results[0].get()
             }
         case let .mergeTrees(mergeTreesKey):
-            return evaluate(mergeTreesKey: mergeTreesKey, fi, ctx)
+            return evaluate(mergeTreesKey: mergeTreesKey, chainedLogsID: chainedLogsID, fi, ctx)
         case .none:
             return ctx.group.next().makeFailedFuture(LLBActionError.invalid)
         }
@@ -150,17 +176,19 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
 
     private func evaluate(
         commandKey: LLBCommandAction,
+        chainedLogsID: LLBFuture<LLBDataID?>,
         _ fi: LLBBuildFunctionInterface,
         _ ctx: Context
     ) -> LLBFuture<LLBActionValue> {
-        return fi.requestInputs(commandKey.inputs, ctx)
-            .flatMap { (inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionValue> in
+        return chainedLogsID.and(fi.requestInputs(commandKey.inputs, ctx))
+            .flatMap { (chainedLogsID: LLBDataID?, inputs: [(LLBArtifact, LLBArtifactValue)]) -> LLBFuture<LLBActionValue> in
                 let actionExecutionKey = LLBActionExecutionKey.command(
                     actionSpec: commandKey.actionSpec,
                     inputs: inputs.map { (artifact, artifactValue) in
                         LLBActionInput(path: artifact.path, dataID: artifactValue.dataID, type: artifact.type)
                     },
                     outputs: commandKey.outputs,
+                    chainedLogsID: chainedLogsID,
                     unconditionalOutputs: commandKey.unconditionalOutputs,
                     mnemonic: commandKey.mnemonic,
                     description: commandKey.description_p,
@@ -187,13 +215,13 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
 
     private func evaluate(
         mergeTreesKey: LLBMergeTreesAction,
+        chainedLogsID: LLBFuture<LLBDataID?>,
         _ fi: LLBBuildFunctionInterface,
         _ ctx: Context
     ) -> LLBFuture<LLBActionValue> {
-        return fi.requestInputs(
-            mergeTreesKey.inputs.map(\.artifact),
-            ctx
-        ).flatMap { (inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
+        return chainedLogsID.and(
+            fi.requestInputs(mergeTreesKey.inputs.map(\.artifact), ctx)
+        ).flatMap { (chainedLogsID: LLBDataID?, inputs: [(artifact: LLBArtifact, artifactValue: LLBArtifactValue)]) -> LLBFuture<LLBActionExecutionValue> in
             var actionInputs = [LLBActionInput]()
             for (index, input) in mergeTreesKey.inputs.enumerated() {
                 guard inputs[index].artifact.type == .directory || !input.path.isEmpty else {
@@ -211,7 +239,10 @@ final class ActionFunction: LLBBuildFunction<LLBActionKey, LLBActionValue> {
                 )
             }
 
-            let actionExecutionKey = LLBActionExecutionKey.mergeTrees(inputs: actionInputs)
+            let actionExecutionKey = LLBActionExecutionKey.mergeTrees(
+                inputs: actionInputs,
+                chainedLogsID: chainedLogsID
+            )
 
             return fi.request(actionExecutionKey, ctx)
         }.map { actionExecutionValue in

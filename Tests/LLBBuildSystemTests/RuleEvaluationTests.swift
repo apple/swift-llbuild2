@@ -170,7 +170,61 @@ private final class DummyBuildRule: LLBBuildRule<RuleEvaluationConfiguredTarget>
             )
 
             return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
-}
+        }
+
+        else if configuredTarget.name == "chained_success" {
+            let intermediate1 = try ruleContext.declareDirectoryArtifact("directory1")
+            let intermediate2 = try ruleContext.declareDirectoryArtifact("directory2")
+            let output = try ruleContext.declareDirectoryArtifact("output")
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo intermediate1; mkdir -p \(intermediate1.path)"],
+                inputs: [],
+                outputs: [intermediate1]
+            )
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo intermediate2; mkdir -p \(intermediate2.path)"],
+                inputs: [intermediate1],
+                chainedInput: intermediate1,
+                outputs: [intermediate2]
+            )
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo output; mkdir -p \(output.path)"],
+                inputs: [intermediate2],
+                chainedInput: intermediate2,
+                outputs: [output]
+            )
+
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+        } else if configuredTarget.name == "chained_failure" {
+            let intermediate1 = try ruleContext.declareDirectoryArtifact("directory1")
+            let intermediate2 = try ruleContext.declareDirectoryArtifact("directory2")
+            let output = try ruleContext.declareDirectoryArtifact("output")
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo intermediate1; mkdir -p \(intermediate1.path)"],
+                inputs: [],
+                outputs: [intermediate1]
+            )
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo intermediate2; mkdir -p \(intermediate2.path); exit 1"],
+                inputs: [intermediate1],
+                chainedInput: intermediate1,
+                outputs: [intermediate2]
+            )
+
+            try ruleContext.registerAction(
+                arguments: ["/bin/bash", "-c", "echo output; mkdir -p \(output.path)"],
+                inputs: [intermediate2],
+                chainedInput: intermediate2,
+                outputs: [output]
+            )
+
+            return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [output])])
+        }
 
         return ruleContext.group.next().makeSucceededFuture([RuleEvaluationProvider(artifacts: [])])
     }
@@ -571,6 +625,94 @@ class RuleEvaluationTests: XCTestCase {
                     XCTFail("unexpected error type \(error)")
                     return
                 }
+            }
+        }
+    }
+
+    func testChainedActionLogs() throws {
+        try withTemporaryDirectory { tempDir in
+            let localExecutor = LLBLocalExecutor(outputBase: tempDir)
+            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate,
+                executor: localExecutor
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
+
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
+
+            let label = try LLBLabel("//some:chained_success")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
+
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
+
+            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
+
+            let artifactValue: LLBArtifactValue = try testEngine.build(outputArtifact, ctx).wait()
+
+            let client = LLBCASFSClient(ctx.db)
+
+            let logs = try client.load(artifactValue.logsID, ctx).flatMap { node in
+                return node.blob!.read(ctx).map { String(data: Data($0), encoding: .utf8)! }
+            }.wait()
+
+            XCTAssertEqual(logs, "intermediate1\nintermediate2\noutput\n")
+        }
+    }
+
+    func testChainedActionLogsFailure() throws {
+        try withTemporaryDirectory { tempDir in
+            let localExecutor = LLBLocalExecutor(outputBase: tempDir)
+            let configuredTargetDelegate = DummyConfiguredTargetDelegate()
+            let ruleLookupDelegate = DummyRuleLookupDelegate()
+            let ctx = LLBMakeTestContext()
+            let testEngine = LLBTestBuildEngine(
+                group: ctx.group,
+                db: ctx.db,
+                configuredTargetDelegate: configuredTargetDelegate,
+                ruleLookupDelegate: ruleLookupDelegate,
+                executor: localExecutor
+            ) { registry in
+                registry.register(type: RuleEvaluationConfiguredTarget.self)
+            }
+
+            let dataID = try LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).wait()
+
+            let label = try LLBLabel("//some:chained_failure")
+            let configuredTargetKey = LLBConfiguredTargetKey(rootID: dataID, label: label)
+
+            let evaluatedTargetKey = LLBEvaluatedTargetKey(configuredTargetKey: configuredTargetKey)
+
+            let evaluatedTargetValue: LLBEvaluatedTargetValue = try testEngine.build(evaluatedTargetKey, ctx).wait()
+
+            let outputArtifact = try evaluatedTargetValue.providerMap.get(RuleEvaluationProvider.self).artifacts[0]
+
+            let client = LLBCASFSClient(ctx.db)
+
+            XCTAssertThrowsError(try testEngine.build(outputArtifact, ctx).wait()) { error in
+                guard let actionError = error as? LLBActionExecutionError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+
+                guard case .actionExecutionError(let stdoutID, _) = actionError else {
+                    XCTFail("unexpected error type \(error)")
+                    return
+                }
+
+                let logs = try! client.load(stdoutID, ctx).flatMap { node in
+                    return node.blob!.read(ctx).map { String(data: Data($0), encoding: .utf8)! }
+                }.wait()
+
+                XCTAssertEqual(logs, "intermediate1\nintermediate2\n")
             }
         }
     }

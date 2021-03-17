@@ -19,6 +19,7 @@ public enum LLBRuleContextError: Error {
     case missingDependencyName
     case dependencyTypeMismatch
     case mergeDirectoriesIntoFileError
+    case chainedInputNotInInputs
 }
 
 /// Helper storage for the provider maps that preserves the original type of dependency.
@@ -235,6 +236,7 @@ public class LLBRuleContext {
         arguments: [String],
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
+        chainedInput: LLBArtifact? = nil,
         outputs: [LLBArtifact],
         unconditionalOutputs: [LLBArtifact] = [],
         mnemonic: String = "",
@@ -247,6 +249,7 @@ public class LLBRuleContext {
             arguments: arguments,
             environment: environment,
             inputs: inputs,
+            chainedInput: chainedInput,
             outputs: outputs,
             unconditionalOutputs: unconditionalOutputs,
             mnemonic: mnemonic,
@@ -267,6 +270,7 @@ public class LLBRuleContext {
         arguments: [String],
         environment: [String: String] = [:],
         inputs: [LLBArtifact],
+        chainedInput: LLBArtifact? = nil,
         outputs: [LLBArtifact],
         unconditionalOutputs: [LLBArtifact] = [],
         mnemonic: String = "",
@@ -279,6 +283,7 @@ public class LLBRuleContext {
             arguments: arguments,
             environment: environment,
             inputs: inputs,
+            chainedInput: chainedInput,
             outputs: outputs,
             unconditionalOutputs: unconditionalOutputs,
             mnemonic: mnemonic,
@@ -294,6 +299,7 @@ public class LLBRuleContext {
         arguments: [String],
         environment: [String: String],
         inputs: [LLBArtifact],
+        chainedInput: LLBArtifact? = nil,
         outputs: [LLBArtifact],
         unconditionalOutputs: [LLBArtifact],
         mnemonic: String,
@@ -303,6 +309,10 @@ public class LLBRuleContext {
         dynamicIdentifier: LLBDynamicActionIdentifier?,
         cacheableFailure: Bool
     ) throws {
+        if let chainedInput = chainedInput, !inputs.contains(chainedInput) {
+            throw LLBRuleContextError.chainedInputNotInInputs
+        }
+
         let baseEnvironment = (
             getOptionalFragment(LLBActionConfigurationFragment.self)?.additionalEnvironment ?? []
         ).reduce(into: [:]) { $0[$1.name] = $1.value }
@@ -334,6 +344,7 @@ public class LLBRuleContext {
                     }
                 ),
                 inputs: inputs,
+                chainedInput: chainedInput,
                 outputs: outputs.map { $0.asActionOutput() },
                 unconditionalOutputs: unconditionalOutputs.map { $0.asActionOutput() },
                 mnemonic: mnemonic,
@@ -369,7 +380,11 @@ public class LLBRuleContext {
     }
 
     /// Registers an action that merges the given artifacts into a single directory artifact.
-    public func registerMergeDirectories(_ inputs: [(artifact: LLBArtifact, path: String?)], output: LLBArtifact) throws {
+    public func registerMergeDirectories(
+        _ inputs: [(artifact: LLBArtifact, path: String?)],
+        chainedInput: LLBArtifact? = nil,
+        output: LLBArtifact
+    ) throws {
         guard output.type == .directory else {
             // Expected only to merge into a directory, merging into a file is an error.
             throw LLBRuleContextError.mergeDirectoriesIntoFileError
@@ -380,7 +395,7 @@ public class LLBRuleContext {
                 throw LLBRuleContextError.outputAlreadyRegistered
             }
 
-            let actionKey = LLBActionKey.mergeTrees(inputs: inputs)
+            let actionKey = LLBActionKey.mergeTrees(inputs: inputs, chainedInput: chainedInput)
 
             registeredActions.append(actionKey)
             let actionIndex = registeredActions.count - 1

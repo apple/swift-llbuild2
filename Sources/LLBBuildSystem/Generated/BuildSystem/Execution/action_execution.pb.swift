@@ -59,6 +59,18 @@ public struct LLBActionExecutionKey {
     set {actionExecutionType = .mergeTrees(newValue)}
   }
 
+  /// This pairs up with the chainedInput in ActionKey. This should be used to prepopulate the logs of the action,
+  /// since it contains the accumulated logs of the previous actions in the chain. This field is only present if the
+  /// chainedInput field was set in the corresponding ActionKey.
+  public var chainedLogsID: TSFCAS.LLBDataID {
+    get {return _chainedLogsID ?? TSFCAS.LLBDataID()}
+    set {_chainedLogsID = newValue}
+  }
+  /// Returns true if `chainedLogsID` has been explicitly set.
+  public var hasChainedLogsID: Bool {return self._chainedLogsID != nil}
+  /// Clears the value of `chainedLogsID`. Subsequent reads from it will return its default value.
+  public mutating func clearChainedLogsID() {self._chainedLogsID = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Represents what type of action execution this key represents.
@@ -89,6 +101,8 @@ public struct LLBActionExecutionKey {
   }
 
   public init() {}
+
+  fileprivate var _chainedLogsID: TSFCAS.LLBDataID? = nil
 }
 
 /// The value for an ActionExecutionKey.
@@ -242,6 +256,7 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     16: .same(proto: "command"),
     17: .same(proto: "mergeTrees"),
+    18: .same(proto: "chainedLogsID"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -268,6 +283,7 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {self.actionExecutionType = .mergeTrees(v)}
       }()
+      case 18: try { try decoder.decodeSingularMessageField(value: &self._chainedLogsID) }()
       default: break
       }
     }
@@ -288,11 +304,15 @@ extension LLBActionExecutionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     }()
     case nil: break
     }
+    if let v = self._chainedLogsID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 18)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBActionExecutionKey, rhs: LLBActionExecutionKey) -> Bool {
     if lhs.actionExecutionType != rhs.actionExecutionType {return false}
+    if lhs._chainedLogsID != rhs._chainedLogsID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
