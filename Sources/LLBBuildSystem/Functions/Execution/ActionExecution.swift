@@ -21,6 +21,7 @@ public extension LLBActionExecutionKey {
         workingDirectory: String? = nil,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
+        chainedLogsID: LLBDataID? = nil,
         unconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String = "",
         description: String = "",
@@ -45,6 +46,9 @@ public extension LLBActionExecutionKey {
                 $0.description_p = description
                 $0.cacheableFailure = cacheableFailure
             })
+            if let chainedLogsID = chainedLogsID {
+                $0.chainedLogsID = chainedLogsID
+            }
         }
     }
 
@@ -52,6 +56,7 @@ public extension LLBActionExecutionKey {
         actionSpec: LLBActionSpec,
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
+        chainedLogsID: LLBDataID? = nil,
         unconditionalOutputs: [LLBActionOutput] = [],
         mnemonic: String,
         description: String,
@@ -75,14 +80,20 @@ public extension LLBActionExecutionKey {
                     $0.label = label
                 }
             })
+            if let chainedLogsID = chainedLogsID {
+                $0.chainedLogsID = chainedLogsID
+            }
         }
     }
 
-    static func mergeTrees(inputs: [LLBActionInput]) -> Self {
+    static func mergeTrees(inputs: [LLBActionInput], chainedLogsID: LLBDataID? = nil) -> Self {
         return LLBActionExecutionKey.with {
             $0.actionExecutionType = .mergeTrees(LLBMergeTreesActionExecution.with {
                 $0.inputs = inputs
             })
+            if let chainedLogsID = chainedLogsID {
+                $0.chainedLogsID = chainedLogsID
+            }
         }
     }
 }
@@ -160,7 +171,17 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         self.dynamicActionExecutorDelegate = dynamicActionExecutorDelegate
     }
 
-    override func evaluate(key actionExecutionKey: LLBActionExecutionKey, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
+    override func evaluate(
+        key actionExecutionKey: LLBActionExecutionKey,
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
+    ) -> LLBFuture<LLBActionExecutionValue> {
+        let chainedLogsID: LLBDataID?
+        if actionExecutionKey.hasChainedLogsID {
+            chainedLogsID = actionExecutionKey.chainedLogsID
+        } else {
+            chainedLogsID = nil
+        }
 
         switch actionExecutionKey.actionExecutionType {
         case let .command(commandKey):
@@ -170,7 +191,13 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
                 description: actionExecutionKey.description,
                 owner: actionExecutionKey.owner
             )
-            return evaluateCommand(commandKey: commandKey, requestExtras: requestExtras, fi, ctx).map {
+            return evaluateCommand(
+                commandKey: commandKey,
+                chainedLogsID: chainedLogsID,
+                requestExtras: requestExtras,
+                fi,
+                ctx
+            ).map {
                 ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
                 return $0
             }.flatMapErrorThrowing { error in
@@ -178,7 +205,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
                 throw error
             }
         case let .mergeTrees(mergeTreesKey):
-            return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, fi, ctx)
+            return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, chainedLogsID: chainedLogsID, fi, ctx)
         case .none:
             return ctx.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
         }
@@ -186,6 +213,7 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
 
     private func evaluateCommand(
         commandKey: LLBCommandActionExecution,
+        chainedLogsID: LLBDataID?,
         requestExtras: LLBActionExecutionRequestExtras,
         _ fi: LLBBuildFunctionInterface,
         _ ctx: Context
@@ -203,7 +231,8 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
             inputs: commandKey.inputs,
             outputs: commandKey.outputs,
             unconditionalOutputs: commandKey.unconditionalOutputs,
-            additionalData: additionalRequestData
+            additionalData: additionalRequestData,
+            baseLogsID: chainedLogsID
         )
 
         let resultFuture: LLBFuture<LLBActionExecutionResponse>
@@ -239,7 +268,12 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         }
     }
 
-    private func evaluateMergeTrees(mergeTreesKey: LLBMergeTreesActionExecution, _ fi: LLBBuildFunctionInterface, _ ctx: Context) -> LLBFuture<LLBActionExecutionValue> {
+    private func evaluateMergeTrees(
+        mergeTreesKey: LLBMergeTreesActionExecution,
+        chainedLogsID: LLBDataID?,
+        _ fi: LLBBuildFunctionInterface,
+        _ ctx: Context
+    ) -> LLBFuture<LLBActionExecutionValue> {
         let inputs = mergeTreesKey.inputs
         // Skip merging if there's a single tree as input, with no path to prepend.
         if inputs.count == 1, inputs[0].type == .directory, inputs[0].path.isEmpty {
@@ -256,7 +290,9 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
 
         // Skip merging if there is a single prepended tree.
         if prependedTrees.count == 1 {
-            return prependedTrees[0].map { LLBActionExecutionValue(outputs: [$0.id], stdoutID: nil, stderrID: nil) }
+            return prependedTrees[0].map {
+                LLBActionExecutionValue(outputs: [$0.id], stdoutID: chainedLogsID, stderrID: chainedLogsID)
+            }
         }
 
         return LLBFuture.whenAllSucceed(prependedTrees, on: ctx.group.next()).flatMap { trees in

@@ -227,11 +227,22 @@ public struct LLBActionExecutionRequest {
   /// Any container for moving around unspecified data.
   public var additionalData: [SwiftProtobuf.Google_Protobuf_Any] = []
 
+  /// May contain a data ID to use as base logs to provide as part of this action.
+  public var baseLogsID: TSFCAS.LLBDataID {
+    get {return _baseLogsID ?? TSFCAS.LLBDataID()}
+    set {_baseLogsID = newValue}
+  }
+  /// Returns true if `baseLogsID` has been explicitly set.
+  public var hasBaseLogsID: Bool {return self._baseLogsID != nil}
+  /// Clears the value of `baseLogsID`. Subsequent reads from it will return its default value.
+  public mutating func clearBaseLogsID() {self._baseLogsID = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _actionSpec: LLBActionSpec? = nil
+  fileprivate var _baseLogsID: TSFCAS.LLBDataID? = nil
 }
 
 /// The response for a remote action execution request.
@@ -503,6 +514,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     3: .same(proto: "outputs"),
     4: .same(proto: "unconditionalOutputs"),
     5: .same(proto: "additionalData"),
+    6: .same(proto: "baseLogsID"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -516,6 +528,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 3: try { try decoder.decodeRepeatedMessageField(value: &self.outputs) }()
       case 4: try { try decoder.decodeRepeatedMessageField(value: &self.unconditionalOutputs) }()
       case 5: try { try decoder.decodeRepeatedMessageField(value: &self.additionalData) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._baseLogsID) }()
       default: break
       }
     }
@@ -537,6 +550,9 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if !self.additionalData.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.additionalData, fieldNumber: 5)
     }
+    if let v = self._baseLogsID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -546,6 +562,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs.outputs != rhs.outputs {return false}
     if lhs.unconditionalOutputs != rhs.unconditionalOutputs {return false}
     if lhs.additionalData != rhs.additionalData {return false}
+    if lhs._baseLogsID != rhs._baseLogsID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

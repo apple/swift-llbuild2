@@ -39,25 +39,46 @@ public struct LLBActionKey {
   // methods supported on all messages.
 
   /// Represents what type of action this key represents.
-  public var actionType: LLBActionKey.OneOf_ActionType? = nil
+  public var actionType: OneOf_ActionType? {
+    get {return _storage._actionType}
+    set {_uniqueStorage()._actionType = newValue}
+  }
 
   /// A command line based action key.
   public var command: LLBCommandAction {
     get {
-      if case .command(let v)? = actionType {return v}
+      if case .command(let v)? = _storage._actionType {return v}
       return LLBCommandAction()
     }
-    set {actionType = .command(newValue)}
+    set {_uniqueStorage()._actionType = .command(newValue)}
   }
 
   /// A merge trees based action key.
   public var mergeTrees: LLBMergeTreesAction {
     get {
-      if case .mergeTrees(let v)? = actionType {return v}
+      if case .mergeTrees(let v)? = _storage._actionType {return v}
       return LLBMergeTreesAction()
     }
-    set {actionType = .mergeTrees(newValue)}
+    set {_uniqueStorage()._actionType = .mergeTrees(newValue)}
   }
+
+  /// A chained input is an input into the action (which may be repeated in each of the inputs for the action types)
+  /// as a way to propagate information downstream for an artifact that goes through stages of processing, so that the
+  /// logs for that artifact are considered a concatenation of the logs of the chain. This also groups the actions
+  /// in a way where if any of the nodes in the action chain fail, then all of the downstream actions are considered
+  /// as a failure, and not a dependency failure. In effect is a way to have split actions for better caching but still
+  /// be considered as a single entity. There might be multiple chains sharing upstream actions, but since it's a DAG
+  /// they won't be affected by the other chains, only by the upstream nodes in the chain.
+  /// This field is mostly expected to be empty unless this functionality is requires, so it should be checked before
+  /// being read.
+  public var chainedInput: LLBArtifact {
+    get {return _storage._chainedInput ?? LLBArtifact()}
+    set {_uniqueStorage()._chainedInput = newValue}
+  }
+  /// Returns true if `chainedInput` has been explicitly set.
+  public var hasChainedInput: Bool {return _storage._chainedInput != nil}
+  /// Clears the value of `chainedInput`. Subsequent reads from it will return its default value.
+  public mutating func clearChainedInput() {_uniqueStorage()._chainedInput = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -89,6 +110,8 @@ public struct LLBActionKey {
   }
 
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// The value for an ActionKey.
@@ -239,57 +262,97 @@ extension LLBActionKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementat
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "command"),
     2: .same(proto: "mergeTrees"),
+    3: .same(proto: "chainedInput"),
   ]
 
+  fileprivate class _StorageClass {
+    var _actionType: LLBActionKey.OneOf_ActionType?
+    var _chainedInput: LLBArtifact? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _actionType = source._actionType
+      _chainedInput = source._chainedInput
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try {
-        var v: LLBCommandAction?
-        if let current = self.actionType {
-          try decoder.handleConflictingOneOf()
-          if case .command(let m) = current {v = m}
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try {
+          var v: LLBCommandAction?
+          if let current = _storage._actionType {
+            try decoder.handleConflictingOneOf()
+            if case .command(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._actionType = .command(v)}
+        }()
+        case 2: try {
+          var v: LLBMergeTreesAction?
+          if let current = _storage._actionType {
+            try decoder.handleConflictingOneOf()
+            if case .mergeTrees(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._actionType = .mergeTrees(v)}
+        }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._chainedInput) }()
+        default: break
         }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.actionType = .command(v)}
-      }()
-      case 2: try {
-        var v: LLBMergeTreesAction?
-        if let current = self.actionType {
-          try decoder.handleConflictingOneOf()
-          if case .mergeTrees(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.actionType = .mergeTrees(v)}
-      }()
-      default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every case branch when no optimizations are
-    // enabled. https://github.com/apple/swift-protobuf/issues/1034
-    switch self.actionType {
-    case .command?: try {
-      guard case .command(let v)? = self.actionType else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }()
-    case .mergeTrees?: try {
-      guard case .mergeTrees(let v)? = self.actionType else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }()
-    case nil: break
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch _storage._actionType {
+      case .command?: try {
+        guard case .command(let v)? = _storage._actionType else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      }()
+      case .mergeTrees?: try {
+        guard case .mergeTrees(let v)? = _storage._actionType else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      }()
+      case nil: break
+      }
+      if let v = _storage._chainedInput {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: LLBActionKey, rhs: LLBActionKey) -> Bool {
-    if lhs.actionType != rhs.actionType {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._actionType != rhs_storage._actionType {return false}
+        if _storage._chainedInput != rhs_storage._chainedInput {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

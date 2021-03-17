@@ -42,13 +42,17 @@ public extension LLBActionExecutionRequest {
         inputs: [LLBActionInput],
         outputs: [LLBActionOutput],
         unconditionalOutputs: [LLBActionOutput] = [],
-        additionalData: [Google_Protobuf_Any] = []
+        additionalData: [Google_Protobuf_Any] = [],
+        baseLogsID: LLBDataID? = nil
     ) {
         self.actionSpec = actionSpec
         self.inputs = inputs
         self.outputs = outputs
         self.unconditionalOutputs = unconditionalOutputs
         self.additionalData = additionalData
+        if let baseLogsID = baseLogsID {
+            self.baseLogsID = baseLogsID
+        }
     }
 }
 

@@ -27,6 +27,11 @@ message LLBActionExecutionKey {
         // A merge trees based action execution key.
         LLBMergeTreesActionExecution mergeTrees = 17;
     }
+
+    // This pairs up with the chainedInput in ActionKey. This should be used to prepopulate the logs of the action,
+    // since it contains the accumulated logs of the previous actions in the chain. This field is only present if the
+    // chainedInput field was set in the corresponding ActionKey.
+    LLBDataID chainedLogsID = 18;
 }
 
 // The value for an ActionExecutionKey.

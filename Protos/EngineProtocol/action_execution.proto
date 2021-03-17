@@ -113,6 +113,9 @@ message LLBActionExecutionRequest {
 
     // Any container for moving around unspecified data.
     repeated google.protobuf.Any additionalData = 5;
+
+    // May contain a data ID to use as base logs to provide as part of this action.
+    LLBDataID baseLogsID = 6;
 }
 
 // The response for a remote action execution request.
