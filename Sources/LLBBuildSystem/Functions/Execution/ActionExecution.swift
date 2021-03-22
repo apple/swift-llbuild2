@@ -245,6 +245,13 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
                 case .UNRECOGNIZED(let value):
                     throw LLBActionExecutionError.invalidInput("Unrecognized input type: \(value)")
                 }
+            }.flatMapErrorThrowing { error in
+                if case .noEntry = error as? LLBCASFSClient.Error {
+                    throw LLBActionExecutionError.invalidInput(
+                        "Missing input \(input.path) \(input.dataID.debugDescription)"
+                    )
+                }
+                throw error
             }
         }
 
