@@ -8,6 +8,7 @@
 
 import llbuild2
 import SwiftProtobuf
+import TSFCASFileTree
 
 extension LLBActionExecutionKey: LLBBuildKey {}
 extension LLBActionExecutionValue: LLBBuildValue {}
@@ -96,6 +97,17 @@ public extension LLBActionExecutionKey {
             }
         }
     }
+
+    var inputs: [LLBActionInput] {
+        switch actionExecutionType {
+        case .command(let commandKey):
+            return commandKey.inputs
+        case .mergeTrees(let mergeKey):
+            return mergeKey.inputs
+        default:
+            return []
+        }
+    }
 }
 
 extension LLBPreActionSpec: LLBBuildEventPreAction {}
@@ -162,6 +174,9 @@ public enum LLBActionExecutionError: Error {
 
     /// Error related to an actual action (i.e. action completed but did not finish successfully).
     case actionExecutionError(stdoutID: LLBDataID, unconditionalOutputs: [LLBDataID])
+
+    /// Error thrown when given input types are not of the declared type.
+    case invalidInput(String)
 }
 
 final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLBActionExecutionValue> {
@@ -176,39 +191,64 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         _ fi: LLBBuildFunctionInterface,
         _ ctx: Context
     ) -> LLBFuture<LLBActionExecutionValue> {
-        let chainedLogsID: LLBDataID?
-        if actionExecutionKey.hasChainedLogsID {
-            chainedLogsID = actionExecutionKey.chainedLogsID
-        } else {
-            chainedLogsID = nil
+        return validateInputs(actionExecutionKey.inputs, ctx).flatMap {
+            let chainedLogsID: LLBDataID?
+            if actionExecutionKey.hasChainedLogsID {
+                chainedLogsID = actionExecutionKey.chainedLogsID
+            } else {
+                chainedLogsID = nil
+            }
+
+            switch actionExecutionKey.actionExecutionType {
+            case let .command(commandKey):
+                ctx.buildEventDelegate?.actionExecutionStarted(action: actionExecutionKey)
+                let requestExtras = LLBActionExecutionRequestExtras(
+                    mnemonic: actionExecutionKey.mnemonic,
+                    description: actionExecutionKey.description,
+                    owner: actionExecutionKey.owner
+                )
+                return self.evaluateCommand(
+                    commandKey: commandKey,
+                    chainedLogsID: chainedLogsID,
+                    requestExtras: requestExtras,
+                    fi,
+                    ctx
+                ).map {
+                    ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
+                    return $0
+                }.flatMapErrorThrowing { error in
+                    ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
+                    throw error
+                }
+            case let .mergeTrees(mergeTreesKey):
+                return self.evaluateMergeTrees(mergeTreesKey: mergeTreesKey, chainedLogsID: chainedLogsID, fi, ctx)
+            case .none:
+                return ctx.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
+            }
+        }
+    }
+
+    private func validateInputs(_ inputs: [LLBActionInput], _ ctx: Context) -> LLBFuture<Void> {
+        let client = LLBCASFSClient(ctx.db)
+
+        let validationFutures = inputs.map { input in
+            client.load(input.dataID, ctx).flatMapThrowing { node in
+                switch input.type {
+                case .directory:
+                    if node.type() != .directory {
+                        throw LLBActionExecutionError.invalidInput("Expected a tree but got a non tree data ID")
+                    }
+                case .file:
+                    if node.type() == .directory {
+                        throw LLBActionExecutionError.invalidInput("Expected a file but got a tree data ID")
+                    }
+                case .UNRECOGNIZED(let value):
+                    throw LLBActionExecutionError.invalidInput("Unrecognized input type: \(value)")
+                }
+            }
         }
 
-        switch actionExecutionKey.actionExecutionType {
-        case let .command(commandKey):
-            ctx.buildEventDelegate?.actionExecutionStarted(action: actionExecutionKey)
-            let requestExtras = LLBActionExecutionRequestExtras(
-                mnemonic: actionExecutionKey.mnemonic,
-                description: actionExecutionKey.description,
-                owner: actionExecutionKey.owner
-            )
-            return evaluateCommand(
-                commandKey: commandKey,
-                chainedLogsID: chainedLogsID,
-                requestExtras: requestExtras,
-                fi,
-                ctx
-            ).map {
-                ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
-                return $0
-            }.flatMapErrorThrowing { error in
-                ctx.buildEventDelegate?.actionExecutionCompleted(action: actionExecutionKey)
-                throw error
-            }
-        case let .mergeTrees(mergeTreesKey):
-            return evaluateMergeTrees(mergeTreesKey: mergeTreesKey, chainedLogsID: chainedLogsID, fi, ctx)
-        case .none:
-            return ctx.group.next().makeFailedFuture(LLBActionExecutionError.invalid)
-        }
+        return LLBFuture.whenAllSucceed(validationFutures, on: ctx.group.next()).map { _ in }
     }
 
     private func evaluateCommand(
@@ -218,7 +258,6 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
         _ fi: LLBBuildFunctionInterface,
         _ ctx: Context
     ) -> LLBFuture<LLBActionExecutionValue> {
-
         let additionalRequestData: [Google_Protobuf_Any]
         if let requestExtrasAny = try? Google_Protobuf_Any(message: requestExtras) {
             additionalRequestData = [requestExtrasAny]
