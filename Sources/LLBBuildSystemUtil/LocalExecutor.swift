@@ -23,15 +23,29 @@ public protocol LLBLocalExecutorDelegate {
     func finishedProcess(with result: ProcessResult)
 }
 
+public protocol LLBLocalExecutorStatsObserver: AnyObject {
+    func startObserving(_ stats: LLBCASFileTree.ImportProgressStats)
+    func stopObserving(_ stats: LLBCASFileTree.ImportProgressStats)
+
+    func startObserving(_ stats: LLBCASFileTree.ExportProgressStats)
+    func stopObserving(_ stats: LLBCASFileTree.ExportProgressStats)
+}
+
 /// Simple local executor that uses the host machine's resources to execute actions.
 final public class LLBLocalExecutor: LLBExecutor {
     let outputBase: AbsolutePath
     let delegateCallbackQueue: DispatchQueue = DispatchQueue(label: "org.swift.llbuild2-\(LLBLocalExecutor.self)-delegate")
     let delegate: LLBLocalExecutorDelegate?
+    weak var statsObserver: LLBLocalExecutorStatsObserver?
 
-    public init(outputBase: AbsolutePath, delegate: LLBLocalExecutorDelegate? = nil) {
+    public init(
+        outputBase: AbsolutePath,
+        delegate: LLBLocalExecutorDelegate? = nil,
+        statsObserver: LLBLocalExecutorStatsObserver? = nil
+    ) {
         self.outputBase = outputBase
         self.delegate = delegate
+        self.statsObserver = statsObserver
     }
 
     public func execute(request: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
@@ -53,13 +67,17 @@ final public class LLBLocalExecutor: LLBExecutor {
             // in a build are unique, i.e. there are no 2 artifacts that share the same path.
             if !localFileSystem.exists(fullInputPath) {
                 if input.type == .directory {
+                    let stats = LLBCASFileTree.ExportProgressStats()
+                    statsObserver?.startObserving(stats)
                     inputFutures.append(
                         LLBCASFileTree.export(
                             input.dataID,
                             from: ctx.db,
                             to: .init(fullInputPath.pathString),
                             ctx
-                        )
+                        ).always { _ in
+                            self.statsObserver?.stopObserving(stats)
+                        }
                     )
                 } else {
                     inputFutures.append(
@@ -206,7 +224,9 @@ final public class LLBLocalExecutor: LLBExecutor {
 
     func importOutput(output: LLBActionOutput, allowNonExistentFiles: Bool = false, _ ctx: Context) -> LLBFuture<LLBDataID> {
         let outputPath = self.outputBase.appending(RelativePath(output.path))
-        return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapError { error in
+        let stats = LLBCASFileTree.ImportProgressStats()
+        statsObserver?.startObserving(stats)
+        return LLBCASFileTree.import(path: outputPath, to: ctx.db, stats: stats, ctx).flatMapError { error in
             if let fsError = error as? FileSystemError, fsError.kind == .noEntry {
                 if output.type == .directory {
                     // If we didn't find an output artifact that was a directory, create an empty CASTree to
@@ -218,6 +238,8 @@ final public class LLBLocalExecutor: LLBExecutor {
             }
 
             return ctx.group.next().makeFailedFuture(error)
+        }.always { _ in
+            self.statsObserver?.stopObserving(stats)
         }
     }
 }
