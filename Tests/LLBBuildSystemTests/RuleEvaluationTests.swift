@@ -373,7 +373,7 @@ class RuleEvaluationTests: XCTestCase {
                     XCTFail("unexpected error type \(error)")
                     return
                 }
-                guard case let .ruleEvaluationError(innerError) = evaluationError,
+                guard case let .ruleEvaluationError(label, innerError) = evaluationError,
                       let ruleContextError = innerError as? LLBRuleContextError else {
                     XCTFail("unexpected error type")
                     return
@@ -382,6 +382,8 @@ class RuleEvaluationTests: XCTestCase {
                     XCTFail("unexpected error type")
                     return
                 }
+
+                XCTAssertEqual(label.canonical, "//some:2_actions_1_output")
             }
         }
     }
@@ -616,7 +618,7 @@ class RuleEvaluationTests: XCTestCase {
                     return
                 }
 
-                guard case let .ruleEvaluationError(innerError) = evaluationError,
+                guard case let .ruleEvaluationError(label, innerError) = evaluationError,
                       let ruleContextError = innerError as? LLBRuleContextError else {
                     XCTFail("unexpected error type \(error)")
                     return
@@ -625,6 +627,8 @@ class RuleEvaluationTests: XCTestCase {
                     XCTFail("unexpected error type \(error)")
                     return
                 }
+
+                XCTAssertEqual(label.canonical, "//some:tree_merge_file_output_error")
             }
         }
     }
