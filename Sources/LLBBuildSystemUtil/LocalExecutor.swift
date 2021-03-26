@@ -105,7 +105,7 @@ final public class LLBLocalExecutor: LLBExecutor {
                     recursive: true
                 )
             }
-        }.flatMapThrowing { _ -> (Int, [UInt8]) in
+        }.flatMapThrowing { _ -> TSCBasic.Process in
             let environment = request.actionSpec.environment.reduce(into: [String: String]()) { (dict, pair) in
                 dict[pair.name] = pair.value
             }
@@ -155,8 +155,10 @@ final public class LLBLocalExecutor: LLBExecutor {
             }
 
             try process.launch()
-            let result = try process.waitUntilExit()
-
+            return process
+        }.flatMapBlocking(onto: DispatchQueue.global()) { process in
+            try process.waitUntilExit()
+        }.flatMapThrowing { result -> (Int, [UInt8]) in
             self.delegateCallbackQueue.async {
                 self.delegate?.finishedProcess(with: result)
             }
