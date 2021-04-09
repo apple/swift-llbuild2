@@ -55,6 +55,25 @@ public enum LLBRuleEvaluationError: Error {
     case ruleEvaluationError(LLBLabel, Error)
 }
 
+extension LLBRuleEvaluationError: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .artifactAlreadyInitialized:
+            return "artifactAlreadyInitialized"
+        case .noRuleLookupDelegate:
+            return "noRuleLookupDelegate"
+        case .ruleEvaluationError(let label, let error):
+            return "ruleEvaluationError(\(label.canonical), \(error))"
+        case .ruleEvaluationKeyDeserializationError:
+            return "ruleEvaluationKeyDeserializationError"
+        case .ruleNotFound:
+            return "ruleNotFound"
+        case .unassignedOutput(let artifact):
+            return "unassignedOutput(\(artifact.path)"
+        }
+    }
+}
+
 public final class RuleEvaluationFunction: LLBBuildFunction<LLBRuleEvaluationKeyID, LLBRuleEvaluationValue> {
     let ruleLookupDelegate: LLBRuleLookupDelegate?
 
