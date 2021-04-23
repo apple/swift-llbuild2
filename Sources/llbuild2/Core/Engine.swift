@@ -60,7 +60,11 @@ public class LLBFunctionInterface {
         } catch {
             return ctx.group.next().makeFailedFuture(error)
         }
-        return engine.build(key: key, ctx)
+        let future = engine.build(key: key, ctx)
+        future.whenComplete { _ in
+            self.engine.keyDependencyGraph.removeEdge(from: self.key, to: key)
+        }
+        return future
     }
 
     public func request<V: LLBValue>(_ key: LLBKey, as type: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
@@ -69,7 +73,11 @@ public class LLBFunctionInterface {
         } catch {
             return ctx.group.next().makeFailedFuture(error)
         }
-        return engine.build(key: key, as: type, ctx)
+        let future = engine.build(key: key, as: type, ctx)
+        future.whenComplete { _ in
+            self.engine.keyDependencyGraph.removeEdge(from: self.key, to: key)
+        }
+        return future
     }
 
     public func spawn(_ action: LLBActionExecutionRequest, _ ctx: Context) -> LLBFuture<LLBActionExecutionResponse> {
