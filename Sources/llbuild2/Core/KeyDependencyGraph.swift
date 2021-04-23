@@ -23,6 +23,15 @@ public class LLBKeyDependencyGraph {
     // they can be useful when debugging.
     private var knownKeys: [Int: LLBKey]
 
+    private struct ActiveEdge: Hashable {
+        let originID: Int
+        let destinationID: Int
+    }
+
+    /// Keeps track of the active edges. The value is the count of how many times the edge has been recorded.
+    /// An active edge is one where its future is not completed yet.
+    private var activeEdges: [ActiveEdge: Int] = [:]
+
     private let lock = Lock()
 
     public init() {
@@ -40,6 +49,7 @@ public class LLBKeyDependencyGraph {
         // Check if the direct dependency is already known, in which case, skip the check since the edge is already
         // been proven to not have a cycle.
         lock.lock()
+        activeEdges[ActiveEdge(originID: originID, destinationID: destinationID), default: 0] += 1
         if self.edges[originID]?.contains(destinationID) == true {
             defer { lock.unlock() }
             return
@@ -70,6 +80,30 @@ public class LLBKeyDependencyGraph {
         var destinations = self.edges[originID, default: Set()]
         destinations.insert(destinationID)
         self.edges[originID] = destinations
+        lock.unlock()
+    }
+
+    public func removeEdge(from origin: LLBKey, to destination: LLBKey) {
+        let originID = origin.hashValue
+        let destinationID = destination.hashValue
+        let actEdge = ActiveEdge(originID: originID, destinationID: destinationID)
+
+        lock.lock()
+        var num = activeEdges[actEdge]!
+        precondition(num > 0)
+        num -= 1
+        if num == 0 {
+            activeEdges.removeValue(forKey: actEdge)
+            var destinations = self.edges[originID]!
+            destinations.remove(destinationID)
+            if destinations.isEmpty {
+                self.edges.removeValue(forKey: originID)
+            } else {
+                self.edges[originID] = destinations
+            }
+        } else {
+            activeEdges[actEdge] = num
+        }
         lock.unlock()
     }
 
