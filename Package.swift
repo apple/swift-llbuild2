@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-llbuild.git", from: "0.4.0"),
+        .package(url: "https://github.com/apple/swift-llbuild.git", from: "0.5.0"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.8.0"),
@@ -43,7 +43,7 @@ let package = Package(
         // Ninja Build support
         .target(
             name: "LLBNinja",
-            dependencies: ["llbuild2", "LLBUtil", "Ninja"]
+            dependencies: ["llbuild2", "LLBUtil", "llbuildSwift"]
         ),
         .testTarget(
             name: "LLBNinjaTests",
