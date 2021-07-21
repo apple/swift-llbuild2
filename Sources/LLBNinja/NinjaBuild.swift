@@ -9,10 +9,9 @@
 import llbuild2
 import LLBUtil
 
-import Ninja
+import llbuildSwift
 
-
-public typealias Command = Ninja.Command
+public typealias Command = llbuildSwift.NinjaBuildStatement
 
 public protocol NinjaValue: LLBValue {}
 
@@ -24,8 +23,13 @@ public class NinjaBuild {
         case internalTypeError
     }
 
-    public init(manifest: String, delegate: NinjaBuildDelegate) throws {
-        self.manifest = try NinjaManifest(path: manifest)
+    @available(*, deprecated, renamed: "init(manifest:workingDirectory:delegate:)")
+    public convenience init(manifest: String, delegate: NinjaBuildDelegate) throws {
+        try self.init(manifest: manifest, workingDirectory: "/", delegate: delegate)
+    }
+
+    public init(manifest: String, workingDirectory: String, delegate: NinjaBuildDelegate) throws {
+        self.manifest = try NinjaManifest(path: manifest, workingDirectory: workingDirectory)
         self.delegate = delegate
     }
 
@@ -79,7 +83,7 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
 
         // Populate the command map.
         var commandMap = [String: Int]()
-        for (i,command) in self.manifest.commands.enumerated() {
+        for (i,command) in self.manifest.statements.enumerated() {
             for output in command.outputs {
                 commandMap[output] = i
             }
@@ -144,10 +148,10 @@ private class NinjaEngineDelegate: LLBEngineDelegate {
             return ctx.group.next().makeSucceededFuture(
                 LLBSimpleFunction { (fi, key, ctx) in
                     // Get the command.
-                    let command = self.manifest.commands[i]
+                    let command = self.manifest.statements[i]
                     // FIXME: For now, we just merge all the inputs. This isn't
                     // really in keeping with the Ninja semantics, but is strong.
-                    var inputs = command.inputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
+                    var inputs = command.explicitInputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
                     inputs += command.implicitInputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
                     inputs += command.orderOnlyInputs.map{ fi.request("N" + $0, ctx).asNinjaValue() }
                     return LLBFuture.whenAllSucceed(inputs, on: ctx.group.next()).flatMap { inputs in
