@@ -95,6 +95,14 @@ public struct Build_Bazel_Remote_Execution_V2_Action {
   /// timeout that is longer than the server's maximum timeout, the server MUST
   /// reject the request.
   ///
+  /// The timeout is only intended to cover the "execution" of the specified
+  /// action and not time in queue nor any overheads before or after execution
+  /// such as marshalling inputs/outputs. The server SHOULD avoid including time
+  /// spent the client doesn't have control over, and MAY extend or reduce the
+  /// timeout to account for delays or speedups that occur during execution
+  /// itself (e.g., lazily loading data from the Content Addressable Storage,
+  /// live migration of virtual machines, emulation overhead).
+  ///
   /// The timeout is a part of the
   /// [Action][build.bazel.remote.execution.v2.Action] message, and
   /// therefore two `Actions` with different timeouts are different, even if they
@@ -788,6 +796,32 @@ public struct Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata {
   /// Clears the value of `executionCompletedTimestamp`. Subsequent reads from it will return its default value.
   public mutating func clearExecutionCompletedTimestamp() {_uniqueStorage()._executionCompletedTimestamp = nil}
 
+  /// New in v2.3: the amount of time the worker spent executing the action
+  /// command, potentially computed using a worker-specific virtual clock.
+  ///
+  /// The virtual execution duration is only intended to cover the "execution" of
+  /// the specified action and not time in queue nor any overheads before or
+  /// after execution such as marshalling inputs/outputs. The server SHOULD avoid
+  /// including time spent the client doesn't have control over, and MAY extend
+  /// or reduce the execution duration to account for delays or speedups that
+  /// occur during execution itself (e.g., lazily loading data from the Content
+  /// Addressable Storage, live migration of virtual machines, emulation
+  /// overhead).
+  ///
+  /// The method of timekeeping used to compute the virtual execution duration
+  /// MUST be consistent with what is used to enforce the
+  /// [Action][[build.bazel.remote.execution.v2.Action]'s `timeout`. There is no
+  /// relationship between the virtual execution duration and the values of
+  /// `execution_start_timestamp` and `execution_completed_timestamp`.
+  public var virtualExecutionDuration: SwiftProtobuf.Google_Protobuf_Duration {
+    get {return _storage._virtualExecutionDuration ?? SwiftProtobuf.Google_Protobuf_Duration()}
+    set {_uniqueStorage()._virtualExecutionDuration = newValue}
+  }
+  /// Returns true if `virtualExecutionDuration` has been explicitly set.
+  public var hasVirtualExecutionDuration: Bool {return _storage._virtualExecutionDuration != nil}
+  /// Clears the value of `virtualExecutionDuration`. Subsequent reads from it will return its default value.
+  public mutating func clearVirtualExecutionDuration() {_uniqueStorage()._virtualExecutionDuration = nil}
+
   /// When the worker started uploading action outputs.
   public var outputUploadStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {return _storage._outputUploadStartTimestamp ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
@@ -976,6 +1010,7 @@ public struct Build_Bazel_Remote_Execution_V2_ActionResult {
   /// [GetActionResultRequest][build.bazel.remote.execution.v2.GetActionResultRequest]
   /// message. The server MAY omit inlining, even if requested, and MUST do so if inlining
   /// would cause the response to exceed message size limits.
+  /// Clients SHOULD NOT populate this field when uploading to the cache.
   public var stdoutRaw: Data = Data()
 
   /// The digest for a blob containing the standard output of the action, which
@@ -995,6 +1030,7 @@ public struct Build_Bazel_Remote_Execution_V2_ActionResult {
   /// [GetActionResultRequest][build.bazel.remote.execution.v2.GetActionResultRequest]
   /// message. The server MAY omit inlining, even if requested, and MUST do so if inlining
   /// would cause the response to exceed message size limits.
+  /// Clients SHOULD NOT populate this field when uploading to the cache.
   public var stderrRaw: Data = Data()
 
   /// The digest for a blob containing the standard error of the action, which
@@ -1060,6 +1096,7 @@ public struct Build_Bazel_Remote_Execution_V2_OutputFile {
   /// [GetActionResultRequest][build.bazel.remote.execution.v2.GetActionResultRequest]
   /// message. The server MAY omit inlining, even if requested, and MUST do so if inlining
   /// would cause the response to exceed message size limits.
+  /// Clients SHOULD NOT populate this field when uploading to the cache.
   public var contents: Data = Data()
 
   public var nodeProperties: Build_Bazel_Remote_Execution_V2_NodeProperties {
@@ -1398,6 +1435,17 @@ public struct Build_Bazel_Remote_Execution_V2_ExecuteResponse {
 }
 
 /// The current stage of action execution.
+///
+/// Even though these stages are numbered according to the order in which
+/// they generally occur, there is no requirement that the remote
+/// execution system reports events along this order. For example, an
+/// operation MAY transition from the EXECUTING stage back to QUEUED
+/// in case the hardware on which the operation executes fails.
+///
+/// If and only if the remote execution system reports that an operation
+/// has reached the COMPLETED stage, it MUST set the [done
+/// field][google.longrunning.Operation.done] of the
+/// [Operation][google.longrunning.Operation] and terminate the stream.
 public struct Build_Bazel_Remote_Execution_V2_ExecutionStage {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -2197,6 +2245,73 @@ extension Build_Bazel_Remote_Execution_V2_SymlinkAbsolutePathStrategy.Value: Cas
 
 #endif  // swift(>=4.2)
 
+/// Compression formats which may be supported.
+public struct Build_Bazel_Remote_Execution_V2_Compressor {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum Value: SwiftProtobuf.Enum {
+    public typealias RawValue = Int
+
+    /// No compression. Servers and clients MUST always support this, and do
+    /// not need to advertise it.
+    case identity // = 0
+
+    /// Zstandard compression.
+    case zstd // = 1
+
+    /// RFC 1951 Deflate. This format is identical to what is used by ZIP
+    /// files. Headers such as the one generated by gzip are not
+    /// included.
+    ///
+    /// It is advised to use algorithms such as Zstandard instead, as
+    /// those are faster and/or provide a better compression ratio.
+    case deflate // = 2
+    case UNRECOGNIZED(Int)
+
+    public init() {
+      self = .identity
+    }
+
+    public init?(rawValue: Int) {
+      switch rawValue {
+      case 0: self = .identity
+      case 1: self = .zstd
+      case 2: self = .deflate
+      default: self = .UNRECOGNIZED(rawValue)
+      }
+    }
+
+    public var rawValue: Int {
+      switch self {
+      case .identity: return 0
+      case .zstd: return 1
+      case .deflate: return 2
+      case .UNRECOGNIZED(let i): return i
+      }
+    }
+
+  }
+
+  public init() {}
+}
+
+#if swift(>=4.2)
+
+extension Build_Bazel_Remote_Execution_V2_Compressor.Value: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Build_Bazel_Remote_Execution_V2_Compressor.Value] = [
+    .identity,
+    .zstd,
+    .deflate,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
 /// Capabilities of the remote cache system.
 public struct Build_Bazel_Remote_Execution_V2_CacheCapabilities {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -2205,7 +2320,7 @@ public struct Build_Bazel_Remote_Execution_V2_CacheCapabilities {
 
   /// All the digest functions supported by the remote cache.
   /// Remote cache may support multiple digest functions simultaneously.
-  public var digestFunction: [Build_Bazel_Remote_Execution_V2_DigestFunction.Value] = []
+  public var digestFunctions: [Build_Bazel_Remote_Execution_V2_DigestFunction.Value] = []
 
   /// Capabilities for updating the action cache.
   public var actionCacheUpdateCapabilities: Build_Bazel_Remote_Execution_V2_ActionCacheUpdateCapabilities {
@@ -2235,6 +2350,14 @@ public struct Build_Bazel_Remote_Execution_V2_CacheCapabilities {
 
   /// Whether absolute symlink targets are supported.
   public var symlinkAbsolutePathStrategy: Build_Bazel_Remote_Execution_V2_SymlinkAbsolutePathStrategy.Value = .unknown
+
+  /// Compressors supported by the "compressed-blobs" bytestream resources.
+  /// Servers MUST support identity/no-compression, even if it is not listed
+  /// here.
+  ///
+  /// Note that this does not imply which if any compressors are supported by
+  /// the server at the gRPC level.
+  public var supportedCompressors: [Build_Bazel_Remote_Execution_V2_Compressor.Value] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -2332,6 +2455,20 @@ public struct Build_Bazel_Remote_Execution_V2_RequestMetadata {
   /// An identifier to tie multiple tool invocations together. For example,
   /// runs of foo_test, bar_test and baz_test on a post-submit of a given patch.
   public var correlatedInvocationsID: String = String()
+
+  /// A brief description of the kind of action, for example, CppCompile or GoLink.
+  /// There is no standard agreed set of values for this, and they are expected to vary between different client tools.
+  public var actionMnemonic: String = String()
+
+  /// An identifier for the target which produced this action.
+  /// No guarantees are made around how many actions may relate to a single target.
+  public var targetID: String = String()
+
+  /// An identifier for the configuration in which the target was built,
+  /// e.g. for differentiating building host tools or different target platforms.
+  /// There is no expectation that this value will have any particular structure,
+  /// or equality across invocations, though some client tools may offer these guarantees.
+  public var configurationID: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -2901,6 +3038,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
     6: .standard(proto: "input_fetch_completed_timestamp"),
     7: .standard(proto: "execution_start_timestamp"),
     8: .standard(proto: "execution_completed_timestamp"),
+    12: .standard(proto: "virtual_execution_duration"),
     9: .standard(proto: "output_upload_start_timestamp"),
     10: .standard(proto: "output_upload_completed_timestamp"),
     11: .standard(proto: "auxiliary_metadata"),
@@ -2915,6 +3053,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
     var _inputFetchCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _executionStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _executionCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _virtualExecutionDuration: SwiftProtobuf.Google_Protobuf_Duration? = nil
     var _outputUploadStartTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _outputUploadCompletedTimestamp: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _auxiliaryMetadata: [SwiftProtobuf.Google_Protobuf_Any] = []
@@ -2932,6 +3071,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
       _inputFetchCompletedTimestamp = source._inputFetchCompletedTimestamp
       _executionStartTimestamp = source._executionStartTimestamp
       _executionCompletedTimestamp = source._executionCompletedTimestamp
+      _virtualExecutionDuration = source._virtualExecutionDuration
       _outputUploadStartTimestamp = source._outputUploadStartTimestamp
       _outputUploadCompletedTimestamp = source._outputUploadCompletedTimestamp
       _auxiliaryMetadata = source._auxiliaryMetadata
@@ -2964,6 +3104,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
         case 9: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadStartTimestamp) }()
         case 10: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadCompletedTimestamp) }()
         case 11: try { try decoder.decodeRepeatedMessageField(value: &_storage._auxiliaryMetadata) }()
+        case 12: try { try decoder.decodeSingularMessageField(value: &_storage._virtualExecutionDuration) }()
         default: break
         }
       }
@@ -3005,6 +3146,9 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
       if !_storage._auxiliaryMetadata.isEmpty {
         try visitor.visitRepeatedMessageField(value: _storage._auxiliaryMetadata, fieldNumber: 11)
       }
+      if let v = _storage._virtualExecutionDuration {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 12)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -3022,6 +3166,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
         if _storage._inputFetchCompletedTimestamp != rhs_storage._inputFetchCompletedTimestamp {return false}
         if _storage._executionStartTimestamp != rhs_storage._executionStartTimestamp {return false}
         if _storage._executionCompletedTimestamp != rhs_storage._executionCompletedTimestamp {return false}
+        if _storage._virtualExecutionDuration != rhs_storage._virtualExecutionDuration {return false}
         if _storage._outputUploadStartTimestamp != rhs_storage._outputUploadStartTimestamp {return false}
         if _storage._outputUploadCompletedTimestamp != rhs_storage._outputUploadCompletedTimestamp {return false}
         if _storage._auxiliaryMetadata != rhs_storage._auxiliaryMetadata {return false}
@@ -4518,14 +4663,42 @@ extension Build_Bazel_Remote_Execution_V2_SymlinkAbsolutePathStrategy.Value: Swi
   ]
 }
 
+extension Build_Bazel_Remote_Execution_V2_Compressor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Compressor"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let _ = try decoder.nextFieldNumber() {
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Build_Bazel_Remote_Execution_V2_Compressor, rhs: Build_Bazel_Remote_Execution_V2_Compressor) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Build_Bazel_Remote_Execution_V2_Compressor.Value: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "IDENTITY"),
+    1: .same(proto: "ZSTD"),
+    2: .same(proto: "DEFLATE"),
+  ]
+}
+
 extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CacheCapabilities"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "digest_function"),
+    1: .standard(proto: "digest_functions"),
     2: .standard(proto: "action_cache_update_capabilities"),
     3: .standard(proto: "cache_priority_capabilities"),
     4: .standard(proto: "max_batch_total_size_bytes"),
     5: .standard(proto: "symlink_absolute_path_strategy"),
+    6: .standard(proto: "supported_compressors"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4534,19 +4707,20 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeRepeatedEnumField(value: &self.digestFunction) }()
+      case 1: try { try decoder.decodeRepeatedEnumField(value: &self.digestFunctions) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._actionCacheUpdateCapabilities) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._cachePriorityCapabilities) }()
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.maxBatchTotalSizeBytes) }()
       case 5: try { try decoder.decodeSingularEnumField(value: &self.symlinkAbsolutePathStrategy) }()
+      case 6: try { try decoder.decodeRepeatedEnumField(value: &self.supportedCompressors) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.digestFunction.isEmpty {
-      try visitor.visitPackedEnumField(value: self.digestFunction, fieldNumber: 1)
+    if !self.digestFunctions.isEmpty {
+      try visitor.visitPackedEnumField(value: self.digestFunctions, fieldNumber: 1)
     }
     if let v = self._actionCacheUpdateCapabilities {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -4560,15 +4734,19 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
     if self.symlinkAbsolutePathStrategy != .unknown {
       try visitor.visitSingularEnumField(value: self.symlinkAbsolutePathStrategy, fieldNumber: 5)
     }
+    if !self.supportedCompressors.isEmpty {
+      try visitor.visitPackedEnumField(value: self.supportedCompressors, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_CacheCapabilities, rhs: Build_Bazel_Remote_Execution_V2_CacheCapabilities) -> Bool {
-    if lhs.digestFunction != rhs.digestFunction {return false}
+    if lhs.digestFunctions != rhs.digestFunctions {return false}
     if lhs._actionCacheUpdateCapabilities != rhs._actionCacheUpdateCapabilities {return false}
     if lhs._cachePriorityCapabilities != rhs._cachePriorityCapabilities {return false}
     if lhs.maxBatchTotalSizeBytes != rhs.maxBatchTotalSizeBytes {return false}
     if lhs.symlinkAbsolutePathStrategy != rhs.symlinkAbsolutePathStrategy {return false}
+    if lhs.supportedCompressors != rhs.supportedCompressors {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4669,6 +4847,9 @@ extension Build_Bazel_Remote_Execution_V2_RequestMetadata: SwiftProtobuf.Message
     2: .standard(proto: "action_id"),
     3: .standard(proto: "tool_invocation_id"),
     4: .standard(proto: "correlated_invocations_id"),
+    5: .standard(proto: "action_mnemonic"),
+    6: .standard(proto: "target_id"),
+    7: .standard(proto: "configuration_id"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4681,6 +4862,9 @@ extension Build_Bazel_Remote_Execution_V2_RequestMetadata: SwiftProtobuf.Message
       case 2: try { try decoder.decodeSingularStringField(value: &self.actionID) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.toolInvocationID) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.correlatedInvocationsID) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.actionMnemonic) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.targetID) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.configurationID) }()
       default: break
       }
     }
@@ -4699,6 +4883,15 @@ extension Build_Bazel_Remote_Execution_V2_RequestMetadata: SwiftProtobuf.Message
     if !self.correlatedInvocationsID.isEmpty {
       try visitor.visitSingularStringField(value: self.correlatedInvocationsID, fieldNumber: 4)
     }
+    if !self.actionMnemonic.isEmpty {
+      try visitor.visitSingularStringField(value: self.actionMnemonic, fieldNumber: 5)
+    }
+    if !self.targetID.isEmpty {
+      try visitor.visitSingularStringField(value: self.targetID, fieldNumber: 6)
+    }
+    if !self.configurationID.isEmpty {
+      try visitor.visitSingularStringField(value: self.configurationID, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -4707,6 +4900,9 @@ extension Build_Bazel_Remote_Execution_V2_RequestMetadata: SwiftProtobuf.Message
     if lhs.actionID != rhs.actionID {return false}
     if lhs.toolInvocationID != rhs.toolInvocationID {return false}
     if lhs.correlatedInvocationsID != rhs.correlatedInvocationsID {return false}
+    if lhs.actionMnemonic != rhs.actionMnemonic {return false}
+    if lhs.targetID != rhs.targetID {return false}
+    if lhs.configurationID != rhs.configurationID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

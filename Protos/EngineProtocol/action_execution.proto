@@ -20,6 +20,9 @@ enum LLBArtifactType {
 
     // Artifact represents a directory containing files and/or other directories.
     DIRECTORY = 1;
+
+    // Arbitrary data blob with no file system representation
+    BLOB = 2;
 }
 
 // Represents a remote action execution input artifact.
@@ -116,6 +119,9 @@ message LLBActionExecutionRequest {
 
     // May contain a data ID to use as base logs to provide as part of this action.
     LLBDataID baseLogsID = 6;
+
+    // Optional function binary to execute for this action
+    LLBDataID functionID = 7;
 }
 
 // The response for a remote action execution request.

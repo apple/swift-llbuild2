@@ -242,6 +242,8 @@ final class ActionExecutionFunction: LLBBuildFunction<LLBActionExecutionKey, LLB
                     if node.type() == .directory {
                         throw LLBActionExecutionError.invalidInput("Expected a file but got a tree data ID")
                     }
+                case .blob:
+                    break
                 case .UNRECOGNIZED(let value):
                     throw LLBActionExecutionError.invalidInput("Unrecognized input type: \(value)")
                 }

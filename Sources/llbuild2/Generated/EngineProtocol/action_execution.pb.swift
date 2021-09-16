@@ -39,6 +39,9 @@ public enum LLBArtifactType: SwiftProtobuf.Enum {
 
   /// Artifact represents a directory containing files and/or other directories.
   case directory // = 1
+
+  /// Arbitrary data blob with no file system representation
+  case blob // = 2
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -49,6 +52,7 @@ public enum LLBArtifactType: SwiftProtobuf.Enum {
     switch rawValue {
     case 0: self = .file
     case 1: self = .directory
+    case 2: self = .blob
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -57,6 +61,7 @@ public enum LLBArtifactType: SwiftProtobuf.Enum {
     switch self {
     case .file: return 0
     case .directory: return 1
+    case .blob: return 2
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -70,6 +75,7 @@ extension LLBArtifactType: CaseIterable {
   public static var allCases: [LLBArtifactType] = [
     .file,
     .directory,
+    .blob,
   ]
 }
 
@@ -237,12 +243,23 @@ public struct LLBActionExecutionRequest {
   /// Clears the value of `baseLogsID`. Subsequent reads from it will return its default value.
   public mutating func clearBaseLogsID() {self._baseLogsID = nil}
 
+  /// Optional function binary to execute for this action
+  public var functionID: TSFCAS.LLBDataID {
+    get {return _functionID ?? TSFCAS.LLBDataID()}
+    set {_functionID = newValue}
+  }
+  /// Returns true if `functionID` has been explicitly set.
+  public var hasFunctionID: Bool {return self._functionID != nil}
+  /// Clears the value of `functionID`. Subsequent reads from it will return its default value.
+  public mutating func clearFunctionID() {self._functionID = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _actionSpec: LLBActionSpec? = nil
   fileprivate var _baseLogsID: TSFCAS.LLBDataID? = nil
+  fileprivate var _functionID: TSFCAS.LLBDataID? = nil
 }
 
 /// The response for a remote action execution request.
@@ -289,6 +306,7 @@ extension LLBArtifactType: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "FILE"),
     1: .same(proto: "DIRECTORY"),
+    2: .same(proto: "BLOB"),
   ]
 }
 
@@ -515,6 +533,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     4: .same(proto: "unconditionalOutputs"),
     5: .same(proto: "additionalData"),
     6: .same(proto: "baseLogsID"),
+    7: .same(proto: "functionID"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -529,6 +548,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 4: try { try decoder.decodeRepeatedMessageField(value: &self.unconditionalOutputs) }()
       case 5: try { try decoder.decodeRepeatedMessageField(value: &self.additionalData) }()
       case 6: try { try decoder.decodeSingularMessageField(value: &self._baseLogsID) }()
+      case 7: try { try decoder.decodeSingularMessageField(value: &self._functionID) }()
       default: break
       }
     }
@@ -553,6 +573,9 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if let v = self._baseLogsID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
     }
+    if let v = self._functionID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -563,6 +586,7 @@ extension LLBActionExecutionRequest: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs.unconditionalOutputs != rhs.unconditionalOutputs {return false}
     if lhs.additionalData != rhs.additionalData {return false}
     if lhs._baseLogsID != rhs._baseLogsID {return false}
+    if lhs._functionID != rhs._functionID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
