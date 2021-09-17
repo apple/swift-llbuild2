@@ -43,7 +43,8 @@ public extension LLBActionExecutionRequest {
         outputs: [LLBActionOutput],
         unconditionalOutputs: [LLBActionOutput] = [],
         additionalData: [Google_Protobuf_Any] = [],
-        baseLogsID: LLBDataID? = nil
+        baseLogsID: LLBDataID? = nil,
+        functionID: LLBDataID? = nil
     ) {
         self.actionSpec = actionSpec
         self.inputs = inputs
@@ -52,6 +53,9 @@ public extension LLBActionExecutionRequest {
         self.additionalData = additionalData
         if let baseLogsID = baseLogsID {
             self.baseLogsID = baseLogsID
+        }
+        if let functionID = functionID {
+            self.functionID = functionID
         }
     }
 }
