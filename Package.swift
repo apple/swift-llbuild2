@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
+        .library(name: "llbuild2fx", targets: ["llbuild2fx"]),
         .library(name: "llbuild2Ninja", targets: ["LLBNinja"]),
         .library(name: "llbuild2BuildSystem", targets: ["LLBBuildSystem"]),
         .library(name: "llbuild2Util", targets: ["LLBUtil", "LLBBuildSystemUtil"]),
@@ -88,6 +89,17 @@ let package = Package(
             name: "LLBBuildSystemUtilTests",
             dependencies: ["LLBBuildSystemUtil", "LLBBuildSystemTestHelpers", "LLBUtil"]
         ),
+
+        // FX build engine
+        .target(
+            name: "llbuild2fx",
+            dependencies: ["llbuild2"]
+        ),
+        .testTarget(
+            name: "llbuild2fxTests",
+            dependencies: ["llbuild2fx"]
+        ),
+
 
         // Command line tools
         .target(
