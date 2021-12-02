@@ -15,7 +15,7 @@ let package = Package(
         .library(name: "llbuild2Util", targets: ["LLBUtil", "LLBBuildSystemUtil"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-llbuild.git", from: "0.5.0"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.1.0"),
