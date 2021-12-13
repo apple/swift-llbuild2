@@ -39,7 +39,7 @@ extension FXSingleDataIDValue {
     }
 }
 
-private enum Error: Swift.Error {
+enum WrappedDataIDError: Swift.Error {
     case noRefs
     case wrongNodeType(id: LLBDataID, expected: LLBFileType, actual: LLBFileType)
 }
@@ -48,7 +48,7 @@ extension FXSingleDataIDValue {
     public init(from casObject: LLBCASObject) throws {
         let refs = casObject.refs
         guard !refs.isEmpty else {
-            throw Error.noRefs
+            throw WrappedDataIDError.noRefs
         }
 
         let dataID = refs[0]
@@ -85,7 +85,7 @@ extension FXTreeID {
         return client.load(dataID, type: .directory, ctx).flatMapThrowing { node in
             let type = node.type()
             guard type == .directory else {
-                throw Error.wrongNodeType(id: dataID, expected: .directory, actual: type)
+                throw WrappedDataIDError.wrongNodeType(id: dataID, expected: .directory, actual: type)
             }
 
             return node.tree!
@@ -104,7 +104,7 @@ extension FXFileID {
         return client.load(dataID, type: .plainFile, ctx).flatMapThrowing { node in
             let type = node.type()
             guard type == .plainFile else {
-                throw Error.wrongNodeType(id: dataID, expected: .plainFile, actual: type)
+                throw WrappedDataIDError.wrongNodeType(id: dataID, expected: .plainFile, actual: type)
             }
 
             return node.blob!

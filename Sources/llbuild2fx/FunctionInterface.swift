@@ -9,13 +9,12 @@
 import NIOConcurrencyHelpers
 import llbuild2
 
-private enum Error: Swift.Error {
-    case missingRequiredCacheEntry(String)
-    case unexpressedKeyDependency(from: String, to: String)
-    case unexpressedKeyDependent(from: String, to: String)
-}
-
 public final class FXFunctionInterface<K: FXKey> {
+    enum Error: Swift.Error {
+        case missingRequiredCacheEntry(String)
+        case unexpressedKeyDependency(from: String, to: String)
+    }
+
     private let key: K
     private let fi: LLBFunctionInterface
     private var requestedKeyCachePaths = [String]()

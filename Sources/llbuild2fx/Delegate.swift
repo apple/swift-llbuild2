@@ -12,11 +12,11 @@ protocol FXFunctionProvider {
     func function() -> LLBFunction
 }
 
-private enum Error: Swift.Error {
-    case noFXFunctionProvider(LLBKey)
-}
-
 struct FXEngineDelegate: LLBEngineDelegate {
+    enum Error: Swift.Error {
+        case noFXFunctionProvider(LLBKey)
+    }
+
     func lookupFunction(forKey key: LLBKey, _ ctx: Context) -> LLBFuture<LLBFunction> {
         guard let functionProvider = key as? FXFunctionProvider else {
             return ctx.group.next().makeFailedFuture(Error.noFXFunctionProvider(key))

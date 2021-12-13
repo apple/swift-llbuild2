@@ -10,11 +10,6 @@ import Logging
 import TSCUtility
 import llbuild2
 
-private enum Error: Swift.Error {
-    case notFound
-    case notCachePathProvider(LLBKey)
-}
-
 public protocol FXKeyProperties {
     var volatile: Bool { get }
 
@@ -27,6 +22,10 @@ public protocol FXFunctionCache {
 }
 
 class FXFunctionCacheAdaptor: LLBFunctionCache {
+    enum Error: Swift.Error {
+        case notCachePathProvider(LLBKey)
+    }
+
     private let group: LLBFuturesDispatchGroup
     private let cache: FXFunctionCache
 
