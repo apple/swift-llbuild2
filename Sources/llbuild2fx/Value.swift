@@ -107,7 +107,7 @@ extension Array: FXValue where Element: FXValue {
 
 extension FXValue /* LLBCASObjectRepresentable */ {
     public func asCASObject() throws -> LLBCASObject {
-        let data = try FXEncoder.encode(codableValue)
+        let data = try FXEncoder().encode(codableValue)
         let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
         return LLBCASObject(refs: refs, data: buffer)
     }
@@ -116,7 +116,7 @@ extension FXValue /* LLBCASObjectRepresentable */ {
 extension FXValue /* LLBCASObjectConstructable */ {
     public init(from casObject: LLBCASObject) throws {
         let data = Data(casObject.data.readableBytesView)
-        let codable = try FXDecoder.decode(CodableValueType.self, from: data)
+        let codable = try FXDecoder().decode(CodableValueType.self, from: data)
 
         self = try Self(refs: casObject.refs, codableValue: codable)
     }
@@ -142,7 +142,7 @@ private final class CodableInternalValue<V: FXValue>: Codable {
 extension InternalValue: LLBCASObjectRepresentable {
     func asCASObject() throws -> LLBCASObject {
         let codable = CodableInternalValue(value)
-        let data = try FXEncoder.encode(codable)
+        let data = try FXEncoder().encode(codable)
         let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
         return LLBCASObject(refs: value.refs, data: buffer)
     }
@@ -151,7 +151,7 @@ extension InternalValue: LLBCASObjectRepresentable {
 extension InternalValue: LLBCASObjectConstructable {
     convenience init(from casObject: LLBCASObject) throws {
         let data = Data(casObject.data.readableBytesView)
-        let codable = try FXDecoder.decode(CodableInternalValue<V>.self, from: data)
+        let codable = try FXDecoder().decode(CodableInternalValue<V>.self, from: data)
         let value = try V(refs: casObject.refs, codableValue: codable.value)
         self.init(value)
     }
