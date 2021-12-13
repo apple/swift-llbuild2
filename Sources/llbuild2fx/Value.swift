@@ -26,10 +26,6 @@ extension FXValue where Self: Codable {
     }
 }
 
-private enum Error: Swift.Error {
-    case unexpectedRefsCount(Int)
-}
-
 public final class CASCodableOptional<T: Codable>: Codable {
     let codableValue: T?
     init(codableValue: T?) {
