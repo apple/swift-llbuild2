@@ -35,12 +35,7 @@ extension FXSingleDataIDValue {
 
 extension FXSingleDataIDValue {
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-
-        let hash = LLBDataID(blake3hash: ArraySlice<UInt8>(dataID.bytes))
-        // We don't need the whole ID to avoid key collisions.
-        let str = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
-        try container.encode(str)
+        try encoder.encodeHash(of: ArraySlice<UInt8>(dataID.bytes))
     }
 }
 

@@ -43,13 +43,6 @@ final class InternalKey<K: FXKey> {
     }
 }
 
-private let LongKeyEncoder: JSONEncoder = {
-    let encoder = JSONEncoder()
-    encoder.dateEncodingStrategy = .iso8601
-    encoder.outputFormatting = [.sortedKeys]
-    return encoder
-}()
-
 extension InternalKey: FXKeyProperties {
     var volatile: Bool {
         K.volatile
@@ -67,7 +60,7 @@ extension InternalKey: FXKeyProperties {
             return [basePath, argsKey].joined(separator: "/")
         }
 
-        let json = try! LongKeyEncoder.encode(key)
+        let json = try! FXEncoder().encode(key)
         guard json.count > keyLengthLimit else {
             return [basePath, String(data: json, encoding: .utf8)!].joined(separator: "/")
         }

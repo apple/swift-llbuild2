@@ -8,19 +8,39 @@
 
 import Foundation
 
-public let FXEncoder: JSONEncoder = {
-    let encoder = JSONEncoder()
+struct FXEncoder {
+    func encode<T: Encodable>(_ value: T) throws -> Data {
+        let encoder = JSONEncoder()
 
-    encoder.dateEncodingStrategy = .iso8601
-    encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
 
-    return encoder
-}()
+        return try encoder.encode(value)
+    }
+}
 
-public let FXDecoder: JSONDecoder = {
-    let decoder = JSONDecoder()
+struct FXDecoder {
+    func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        let decoder = JSONDecoder()
 
-    decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .iso8601
 
-    return decoder
-}()
+        return try decoder.decode(type, from: data)
+    }
+}
+
+extension Encoder {
+    public func fxEncodeHash<V: Encodable>(of value: V) throws {
+        let data = try FXEncoder().encode(value)
+        try encodeHash(of: ArraySlice<UInt8>(data))
+    }
+
+    func encodeHash(of data: ArraySlice<UInt8>) throws {
+        var container = singleValueContainer()
+
+        let hash = LLBDataID(blake3hash: data)
+        // We don't need the whole ID to avoid key collisions.
+        let str = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
+        try container.encode(str)
+    }
+}
