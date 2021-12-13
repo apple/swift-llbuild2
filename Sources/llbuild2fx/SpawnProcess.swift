@@ -32,7 +32,7 @@ extension Foundation.Process {
         }
     }
 
-    fileprivate func runLater(_ ctx: Context) -> LLBCancellableFuture<Void> {
+    fileprivate func runCancellable(_ ctx: Context) -> LLBCancellableFuture<Void> {
         let completionPromise: LLBPromise<Void> = ctx.group.next().makePromise()
 
         self.terminationHandler = { process in
@@ -308,7 +308,7 @@ public struct SpawnProcess {
         inputTree.materialize(ctx) { inputPath in
             withTemporaryDirectory(ctx) { outputPath in
                 let process = spec.process(inputPath: inputPath, outputPath: outputPath)
-                let cancellable = process.runLater(ctx)
+                let cancellable = process.runCancellable(ctx)
 
                 ctx.fxApplyDeadline(cancellable)
 
