@@ -118,26 +118,44 @@ extension FXValue /* LLBCASObjectConstructable */ {
     }
 }
 
+struct FXValueMetadata: Codable {
+    let requestedCacheKeyPaths: [String]!
+
+    var creationDate: String? = ISO8601DateFormatter().string(from: Date())
+
+    init(requestedCacheKeyPaths: [String]) {
+        self.requestedCacheKeyPaths = requestedCacheKeyPaths.sorted()
+    }
+}
 
 final class InternalValue<V: FXValue>: LLBValue {
     let value: V
+    let metadata: FXValueMetadata
 
-    init(_ value: V) {
+    convenience init(_ value: V, requestedCacheKeyPaths: [String]) {
+        let m = FXValueMetadata(requestedCacheKeyPaths: requestedCacheKeyPaths)
+        self.init(value, metadata: m)
+    }
+
+    private init(_ value: V, metadata: FXValueMetadata) {
         self.value = value
+        self.metadata = metadata
     }
 }
 
 private final class CodableInternalValue<V: FXValue>: Codable {
     let value: V.CodableValueType
+    let metadata: FXValueMetadata
 
-    init(_ value: V) {
+    init(_ value: V, metadata: FXValueMetadata) {
         self.value = value.codableValue
+        self.metadata = metadata
     }
 }
 
 extension InternalValue: LLBCASObjectRepresentable {
     func asCASObject() throws -> LLBCASObject {
-        let codable = CodableInternalValue(value)
+        let codable = CodableInternalValue(value, metadata: metadata)
         let data = try FXEncoder().encode(codable)
         let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
         return LLBCASObject(refs: value.refs, data: buffer)
@@ -149,6 +167,6 @@ extension InternalValue: LLBCASObjectConstructable {
         let data = Data(casObject.data.readableBytesView)
         let codable = try FXDecoder().decode(CodableInternalValue<V>.self, from: data)
         let value = try V(refs: casObject.refs, codableValue: codable.value)
-        self.init(value)
+        self.init(value, metadata: codable.metadata)
     }
 }
