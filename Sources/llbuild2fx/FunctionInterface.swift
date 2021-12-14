@@ -31,16 +31,6 @@ public final class FXFunctionInterface<K: FXKey> {
     }
 
     public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) -> LLBFuture<X.ValueType> {
-        let keyName = String(describing: X.self)
-
-        ctx.fxBuildEngineStats.add(key: keyName)
-
-        return reallyRequest(x, requireCacheHit: requireCacheHit, ctx).always { _ in
-            ctx.fxBuildEngineStats.remove(key: keyName)
-        }
-    }
-
-    private func reallyRequest<X: FXKey>(_ x: X, requireCacheHit: Bool, _ ctx: Context) -> LLBFuture<X.ValueType> {
         do {
             let kDesc = key.internalKey.logDescription()
             let realX = x.internalKey
