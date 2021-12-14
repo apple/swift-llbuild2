@@ -16,22 +16,23 @@ public final class FXBuildEngine {
     private let db: LLBCASDatabase
     private let cache: FXFunctionCache?
     private let executor: FXExecutor
+    private let stats: FXBuildEngineStats
     private let logger: Logger?
-
 
     public init(
         group: LLBFuturesDispatchGroup,
         db: LLBCASDatabase,
         functionCache: FXFunctionCache?,
         executor: FXExecutor,
+        stats: FXBuildEngineStats? = nil,
         logger: Logger? = nil
     ) {
         self.group = group
         self.db = db
         self.cache = functionCache
         self.executor = executor
+        self.stats = stats ?? .init()
         self.logger = logger
-
     }
 
     private var engine: LLBEngine {
@@ -54,7 +55,10 @@ public final class FXBuildEngine {
 
     private func engineContext(_ ctx: Context) -> Context {
         var ctx = ctx
+
         ctx.fxExecutor = executor
+        ctx.fxBuildEngineStats = stats
+
         if let logger = self.logger {
             ctx.logger = logger
         }
