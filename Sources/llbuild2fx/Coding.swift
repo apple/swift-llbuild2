@@ -9,23 +9,29 @@
 import Foundation
 
 public struct FXEncoder {
-    public func encode<T: Encodable>(_ value: T) throws -> Data {
-        let encoder = JSONEncoder()
+    private let encoder: JSONEncoder
 
+    public init() {
+        encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
+    }
 
-        return try encoder.encode(value)
+    public func encode<T: Encodable>(_ value: T) throws -> Data {
+        try encoder.encode(value)
     }
 }
 
 public struct FXDecoder {
-    public func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
-        let decoder = JSONDecoder()
+    private let decoder: JSONDecoder
 
+    public init() {
+        decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
+    }
 
-        return try decoder.decode(type, from: data)
+    public func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        try decoder.decode(type, from: data)
     }
 }
 
