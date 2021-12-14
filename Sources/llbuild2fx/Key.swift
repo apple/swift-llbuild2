@@ -108,7 +108,8 @@ extension InternalKey: FXFunctionProvider {
 
 private final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
     enum Error: Swift.Error {
-        case FXValueComputationError(key: K, error: Swift.Error)
+        case FXValueComputationError(keyPrefix: String, key: String, error: Swift.Error)
+        case FXKeyEncodingError(keyPrefix: String, encodingError: Swift.Error, underlyingError: Swift.Error)
     }
 
     override func compute(key: InternalKey<K>, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<
@@ -116,8 +117,25 @@ private final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>
     > {
         let actualKey = key.key
         let fxfi = FXFunctionInterface(actualKey, fi)
-        return actualKey.computeValue(fxfi, ctx).flatMapError { error in
-            let augmentedError = Error.FXValueComputationError(key: actualKey, error: error)
+        return actualKey.computeValue(fxfi, ctx).flatMapError { underlyingError in
+            let augmentedError: Swift.Error
+
+            do {
+                let keyData = try FXEncoder().encode(actualKey)
+                let encodedKey = String(bytes: keyData, encoding: .utf8)!
+                augmentedError = Error.FXValueComputationError(
+                    keyPrefix: K.cacheKeyPrefix,
+                    key: encodedKey,
+                    error: underlyingError
+                )
+            } catch {
+                augmentedError = Error.FXKeyEncodingError(
+                    keyPrefix: K.cacheKeyPrefix,
+                    encodingError: error,
+                    underlyingError: underlyingError
+                )
+            }
+
             return ctx.group.next().makeFailedFuture(augmentedError)
         }.map { value in
             return InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
