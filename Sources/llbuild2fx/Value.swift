@@ -62,45 +62,6 @@ extension Optional: FXValue where Wrapped: FXValue {
     }
 }
 
-public class CASCodableElement<T: Codable>: Codable {
-    let refsCount: Int
-    let codable: T
-
-    init(refsCount: Int, codable: T) {
-        self.refsCount = refsCount
-        self.codable = codable
-    }
-}
-
-extension Array: FXValue where Element: FXValue {
-    public var refs: [LLBDataID] {
-        self.map { $0.refs }.flatMap { $0 }
-    }
-
-    public var codableValue: [CASCodableElement<Element.CodableValueType>] {
-        self.map { CASCodableElement(refsCount: $0.refs.count, codable: $0.codableValue) }
-    }
-
-    public init(refs: [LLBDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
-        let refsCountSum = codableValue.map { $0.refsCount }.reduce(0, +)
-        assert(refs.count == refsCountSum)
-
-        var refRanges = [Range<Int>]()
-        for element in codableValue {
-            let base = refRanges.last?.endIndex ?? 0
-            let range = base..<(base + element.refsCount)
-            refRanges.append(range)
-        }
-
-        self = try codableValue.enumerated().map { (idx, element) in
-            let range: Range<Int> = refRanges[idx]
-            let slice: ArraySlice<LLBDataID> = refs[range]
-            let objRefs: [LLBDataID] = [LLBDataID](slice)
-            return try Element(refs: objRefs, codableValue: element.codable)
-        }
-    }
-}
-
 extension FXValue /* LLBCASObjectRepresentable */ {
     public func asCASObject() throws -> LLBCASObject {
         let data = try FXEncoder().encode(codableValue)

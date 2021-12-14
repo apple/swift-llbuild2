@@ -33,6 +33,12 @@ extension FXSingleDataIDValue {
     }
 }
 
+extension FXSingleDataIDValue: Comparable {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.dataID < rhs.dataID
+    }
+}
+
 extension FXSingleDataIDValue {
     public func encode(to encoder: Encoder) throws {
         try encoder.encodeHash(of: ArraySlice<UInt8>(dataID.bytes))
