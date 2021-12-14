@@ -31,6 +31,16 @@ public final class FXFunctionInterface<K: FXKey> {
     }
 
     public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) -> LLBFuture<X.ValueType> {
+        let keyName = String(describing: X.self)
+
+        ctx.fxBuildEngineStats.add(key: keyName)
+
+        return reallyRequest(x, requireCacheHit: requireCacheHit, ctx).always { _ in
+            ctx.fxBuildEngineStats.remove(key: keyName)
+        }
+    }
+
+    private func reallyRequest<X: FXKey>(_ x: X, requireCacheHit: Bool, _ ctx: Context) -> LLBFuture<X.ValueType> {
         do {
             let kDesc = key.internalKey.logDescription()
             let realX = x.internalKey
@@ -63,10 +73,22 @@ public final class FXFunctionInterface<K: FXKey> {
             return cacheCheck.flatMap {
                 self.fi.request(realX, as: InternalValue<X.ValueType>.self, ctx)
             }.map { internalValue in
-                return internalValue.value
+                internalValue.value
             }
         } catch {
             return ctx.group.next().makeFailedFuture(error)
+        }
+    }
+
+    public func execute<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
+        -> LLBFuture<ActionType.ValueType>
+    {
+        let actionName = String(describing: ActionType.self)
+
+        ctx.fxBuildEngineStats.add(action: actionName)
+
+        return ctx.fxExecutor.perform(action: action, with: executable, ctx).always { _ in
+            ctx.fxBuildEngineStats.remove(action: actionName)
         }
     }
 }

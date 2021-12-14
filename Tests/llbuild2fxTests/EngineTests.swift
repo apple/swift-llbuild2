@@ -88,7 +88,7 @@ public struct Sum: FXKey {
     public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<SumAction.ValueType> {
         let action = SumAction(SumInput(values: self.values))
         let exe = fi.request(FakeExecutable(name: "sum-task"), ctx)
-        return ctx.fxExecutor.perform(action: action, with: exe, ctx)
+        return fi.execute(action: action, with: exe, ctx)
     }
 }
 

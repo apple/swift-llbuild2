@@ -20,7 +20,7 @@ public protocol FXExecutor {
 private class ContextFXExecutor {}
 
 extension Context {
-    public var fxExecutor: FXExecutor! {
+    var fxExecutor: FXExecutor! {
         get {
             guard let value = self[ObjectIdentifier(ContextFXExecutor.self)] as? FXExecutor else {
                 return nil
