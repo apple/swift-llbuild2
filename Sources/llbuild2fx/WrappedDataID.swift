@@ -13,7 +13,7 @@ public protocol FXWrappedDataID {
     var dataID: LLBDataID { get }
 }
 
-public protocol FXSingleDataIDValue: FXValue, FXWrappedDataID, Encodable, Equatable {
+public protocol FXSingleDataIDValue: FXValue, FXWrappedDataID, Encodable, Hashable, Comparable {
     init(dataID: LLBDataID)
 }
 
@@ -33,7 +33,7 @@ extension FXSingleDataIDValue {
     }
 }
 
-extension FXSingleDataIDValue: Comparable {
+extension FXSingleDataIDValue {
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.dataID < rhs.dataID
     }
