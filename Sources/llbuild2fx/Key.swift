@@ -116,6 +116,9 @@ private final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>
         InternalValue<K.ValueType>
     > {
         let actualKey = key.key
+
+        ctx.fxBuildEngineStats.add(key: key.name)
+
         let fxfi = FXFunctionInterface(actualKey, fi)
         return actualKey.computeValue(fxfi, ctx).flatMapError { underlyingError in
             let augmentedError: Swift.Error
@@ -138,7 +141,9 @@ private final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>
 
             return ctx.group.next().makeFailedFuture(augmentedError)
         }.map { value in
-            return InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
+            InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
+        }.always { _ in
+            ctx.fxBuildEngineStats.remove(key: key.name)
         }
     }
 }
