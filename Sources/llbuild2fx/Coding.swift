@@ -8,8 +8,8 @@
 
 import Foundation
 
-struct FXEncoder {
-    func encode<T: Encodable>(_ value: T) throws -> Data {
+public struct FXEncoder {
+    public func encode<T: Encodable>(_ value: T) throws -> Data {
         let encoder = JSONEncoder()
 
         encoder.dateEncodingStrategy = .iso8601
@@ -19,8 +19,8 @@ struct FXEncoder {
     }
 }
 
-struct FXDecoder {
-    func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+public struct FXDecoder {
+    public func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         let decoder = JSONDecoder()
 
         decoder.dateDecodingStrategy = .iso8601

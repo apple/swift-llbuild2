@@ -58,7 +58,7 @@ extension FXVersioning {
         return aggregatedVersionDependencies.map { $0.version }.reduce(0, +)
     }
 
-    static var cacheKeyPrefix: String {
+    public static var cacheKeyPrefix: String {
         [
             "\(name)",
             "\(aggregatedVersion)",
