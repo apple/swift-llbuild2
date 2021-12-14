@@ -79,13 +79,34 @@ extension FXValue /* LLBCASObjectConstructable */ {
     }
 }
 
+private struct IgnoredCodable: Codable {}
+
+private struct IgnoredValue: FXValue {
+    let refs: [LLBDataID]
+    let codableValue: IgnoredCodable
+
+    init(refs: [LLBDataID], codableValue: CodableValueType) {
+        self.refs = refs
+        self.codableValue = codableValue
+    }
+}
+
+public func FXRequestedCacheKeyPaths(for cachedValue: LLBCASObject) throws -> FXSortedSet<String> {
+    let internalValue = try InternalValue<IgnoredValue>(from: cachedValue)
+    guard let keyPaths = internalValue.metadata.requestedCacheKeyPaths else {
+        return []
+    }
+
+    return keyPaths
+}
+
 struct FXValueMetadata: Codable {
-    let requestedCacheKeyPaths: [String]!
+    let requestedCacheKeyPaths: FXSortedSet<String>?
 
     var creationDate: String? = ISO8601DateFormatter().string(from: Date())
 
-    init(requestedCacheKeyPaths: [String]) {
-        self.requestedCacheKeyPaths = requestedCacheKeyPaths.sorted()
+    init(requestedCacheKeyPaths: FXSortedSet<String>) {
+        self.requestedCacheKeyPaths = requestedCacheKeyPaths
     }
 }
 
@@ -93,7 +114,7 @@ final class InternalValue<V: FXValue>: LLBValue {
     let value: V
     let metadata: FXValueMetadata
 
-    convenience init(_ value: V, requestedCacheKeyPaths: [String]) {
+    convenience init(_ value: V, requestedCacheKeyPaths: FXSortedSet<String>) {
         let m = FXValueMetadata(requestedCacheKeyPaths: requestedCacheKeyPaths)
         self.init(value, metadata: m)
     }

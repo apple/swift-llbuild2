@@ -17,9 +17,9 @@ public final class FXFunctionInterface<K: FXKey> {
 
     private let key: K
     private let fi: LLBFunctionInterface
-    private var requestedKeyCachePaths = [String]()
+    private var requestedKeyCachePaths = FXSortedSet<String>()
     private let lock = Lock()
-    var requestedCacheKeyPathsSnapshot: [String] {
+    var requestedCacheKeyPathsSnapshot: FXSortedSet<String> {
         lock.withLock {
             requestedKeyCachePaths
         }
@@ -44,7 +44,7 @@ public final class FXFunctionInterface<K: FXKey> {
             }
 
             lock.withLock {
-                requestedKeyCachePaths += [realX.cachePath]
+                _ = requestedKeyCachePaths.insert(realX.cachePath)
             }
 
             let cacheCheck: LLBFuture<Void>
