@@ -18,6 +18,7 @@ public final class FXBuildEngine {
     private let executor: FXExecutor
     private let stats: FXBuildEngineStats
     private let logger: Logger?
+    private let delegate = FXEngineDelegate()
 
     public init(
         group: LLBFuturesDispatchGroup,
@@ -36,8 +37,6 @@ public final class FXBuildEngine {
     }
 
     private var engine: LLBEngine {
-        let delegate = FXEngineDelegate()
-
         let functionCache: LLBFunctionCache?
         if let cache = self.cache {
             functionCache = FXFunctionCacheAdaptor(group: group, cache: cache)

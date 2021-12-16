@@ -12,7 +12,7 @@ protocol FXFunctionProvider {
     func function() -> LLBFunction
 }
 
-struct FXEngineDelegate: LLBEngineDelegate {
+class FXEngineDelegate: LLBEngineDelegate {
     enum Error: Swift.Error {
         case noFXFunctionProvider(LLBKey)
     }

@@ -163,7 +163,7 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
     }
 }
 
-public protocol LLBEngineDelegate {
+public protocol LLBEngineDelegate: AnyObject {
     func registerTypes(registry: LLBSerializableRegistry)
     func lookupFunction(forKey: LLBKey, _ ctx: Context) -> LLBFuture<LLBFunction>
 }
@@ -196,7 +196,7 @@ extension Key: Hashable {
 
 public class LLBEngine {
     private let group: LLBFuturesDispatchGroup
-    private let delegate: LLBEngineDelegate
+    private weak var delegate: LLBEngineDelegate!
     private let db: LLBCASDatabase
     fileprivate let executor: LLBExecutor
     fileprivate let pendingResults: LLBEventualResultsCache<Key, LLBValue>
