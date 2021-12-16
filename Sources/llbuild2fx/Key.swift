@@ -106,7 +106,7 @@ extension InternalKey: FXFunctionProvider {
     }
 }
 
-private final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
+final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
     enum Error: Swift.Error {
         case FXValueComputationError(keyPrefix: String, key: String, error: Swift.Error)
         case FXKeyEncodingError(keyPrefix: String, encodingError: Swift.Error, underlyingError: Swift.Error)
