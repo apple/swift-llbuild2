@@ -8,6 +8,7 @@
 
 import TSCBasic
 import TSCUtility
+import Foundation
 
 public protocol FXTreeMaterializer {
     func materialize(tree: FXTreeID) -> AbsolutePath?
@@ -32,7 +33,11 @@ extension Context {
 
 func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
     do {
-        return try withTemporaryDirectory(removeTreeOnDeinit: true, body)
+        return try withTemporaryDirectory(removeTreeOnDeinit: false) { path in
+            body(path).always { _ in
+                _ = try? FileManager.default.removeItem(atPath: path.pathString)
+            }
+        }
     } catch {
         return ctx.group.next().makeFailedFuture(error)
     }
