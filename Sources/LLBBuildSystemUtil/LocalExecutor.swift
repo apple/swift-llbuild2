@@ -217,7 +217,7 @@ final public class LLBLocalExecutor: LLBExecutor {
             }
         }.flatMapErrorThrowing { error in
             // If we found any errors that were not LLBExecutorError, convert them into an LLBExecutorError.
-            if error is LLBLocalExecutor {
+            if error is LLBLocalExecutorError {
                 throw error
             }
             throw LLBLocalExecutorError.unexpected(error)
