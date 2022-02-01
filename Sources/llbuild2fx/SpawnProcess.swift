@@ -209,7 +209,12 @@ public struct ProcessSpec: Codable {
         self.stderrDestination = stderrDestination
     }
 
-    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath) -> Foundation.Process {
+    enum ProcessSpecError: Error {
+        case unableToCreateFile(RelativePath)
+        case unableToCreateFileHandle(RelativePath)
+    }
+
+    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath) throws -> Foundation.Process {
         let runtimeValueMapper: (RuntimeValue) -> String = { value in
             switch value {
             case .literal(let v):
@@ -238,19 +243,47 @@ public struct ProcessSpec: Codable {
         let devNull = "/dev/null"
 
         if let stdin = stdinSource {
-            process.standardInput = FileHandle(forReadingAtPath: inputPath.appending(stdin).pathString)
+            let path = inputPath.appending(stdin).pathString
+
+            guard let standardInput = FileHandle(forReadingAtPath: path) else {
+                throw ProcessSpecError.unableToCreateFileHandle(stdin)
+            }
+
+            process.standardInput = standardInput
         } else {
             process.standardInput = FileHandle(forReadingAtPath: devNull)
         }
 
+        let fileManager = FileManager()
+
         if let stdout = stdoutDestination {
-            process.standardOutput = FileHandle(forWritingAtPath: outputPath.appending(stdout).pathString)
+            let path = outputPath.appending(stdout).pathString
+
+            guard fileManager.createFile(atPath: path, contents: nil) else {
+                throw ProcessSpecError.unableToCreateFile(stdout)
+            }
+
+            guard let standardOutput = FileHandle(forWritingAtPath: path) else {
+                throw ProcessSpecError.unableToCreateFileHandle(stdout)
+            }
+
+            process.standardOutput = standardOutput
         } else {
             process.standardOutput = FileHandle(forWritingAtPath: devNull)
         }
 
         if let stderr = stderrDestination {
-            process.standardError = FileHandle(forWritingAtPath: outputPath.appending(stderr).pathString)
+            let path = outputPath.appending(stderr).pathString
+
+            guard fileManager.createFile(atPath: path, contents: nil) else {
+                throw ProcessSpecError.unableToCreateFile(stderr)
+            }
+
+            guard let standardError = FileHandle(forWritingAtPath: path) else {
+                throw ProcessSpecError.unableToCreateFileHandle(stderr)
+            }
+
+            process.standardError = standardError
         } else {
             process.standardError = FileHandle(forWritingAtPath: devNull)
         }
@@ -307,21 +340,25 @@ public struct SpawnProcess {
     public func run(_ ctx: Context) -> LLBFuture<ProcessOutputTreeID> {
         inputTree.materialize(ctx) { inputPath in
             withTemporaryDirectory(ctx) { outputPath in
-                let process = spec.process(inputPath: inputPath, outputPath: outputPath)
-                let cancellable = process.runCancellable(ctx)
+                do {
+                    let process = try spec.process(inputPath: inputPath, outputPath: outputPath)
+                    let cancellable = process.runCancellable(ctx)
 
-                ctx.fxApplyDeadline(cancellable)
+                    ctx.fxApplyDeadline(cancellable)
 
-                return cancellable.future.flatMap { _ in
-                    LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
-                        ProcessOutputTreeID(dataID: treeID)
+                    return cancellable.future.flatMap { _ in
+                        LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
+                            ProcessOutputTreeID(dataID: treeID)
+                        }
+                    }.flatMapError { error in
+                        return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
+                            throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
+                        }.flatMapThrowing { treeID in
+                            throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
+                        }
                     }
-                }.flatMapError { error in
-                    return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
-                        throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
-                    }.flatMapThrowing { treeID in
-                        throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
-                    }
+                } catch {
+                    return ctx.group.next().makeFailedFuture(error)
                 }
             }
         }
