@@ -299,7 +299,7 @@ public struct SpawnProcess {
         self.spec = spec
     }
 
-    private enum FXSpawnError: Error {
+    enum FXSpawnError: Error {
         case failure(outputTree: LLBDataID, underlyingError: Error)
         case recoveryUploadFailure(uploadError: Error, originalError: Error)
     }
@@ -317,10 +317,10 @@ public struct SpawnProcess {
                         ProcessOutputTreeID(dataID: treeID)
                     }
                 }.flatMapError { error in
-                    return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapThrowing { treeID in
-                        throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
-                    }.flatMapErrorThrowing { uploadError in
+                    return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
                         throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
+                    }.flatMapThrowing { treeID in
+                        throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
                     }
                 }
             }
