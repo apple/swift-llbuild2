@@ -36,7 +36,9 @@ public final class FXFunctionInterface<K: FXKey> {
             let realX = x.internalKey
             let xDesc = realX.logDescription()
 
-            guard K.versionDependencies.contains(where: { $0 == X.self }) else {
+            // Check that the key dependency is either explicity declared or
+            // recursive/self-referential.
+            guard K.versionDependencies.contains(where: { $0 == X.self }) || X.self == K.self else {
                 throw Error.unexpressedKeyDependency(
                     from: kDesc,
                     to: xDesc
