@@ -15,11 +15,16 @@ public protocol FXKey: Encodable, FXVersioning {
 
     static var volatile: Bool { get }
 
+    // A concise, human readable contents summary that may be used in otherwise
+    // hashed contexts (i.e. when stored in caches, etc.)
+    var hint: String? { get }
+
     func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType>
 }
 
 extension FXKey {
     public static var volatile: Bool { false }
+    public var hint: String? { nil }
 }
 
 
@@ -66,7 +71,13 @@ extension InternalKey: FXKeyProperties {
         }
 
         let hash = LLBDataID(blake3hash: ArraySlice<UInt8>(json))
-        let str = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
+        let hashStr = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
+        let str: String
+        if let hint = key.hint {
+            str = "\(hint) \(hashStr)"
+        } else {
+            str = hashStr
+        }
         return [basePath, str].joined(separator: "/")
     }
 }
