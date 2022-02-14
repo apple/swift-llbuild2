@@ -118,7 +118,7 @@ extension InternalKey: FXFunctionProvider {
 }
 
 public enum FXError: Swift.Error {
-    case FXValueComputationError(keyPrefix: String, key: String, error: Swift.Error)
+    case FXValueComputationError(keyPrefix: String, key: String, error: Swift.Error, requestedCacheKeyPaths: FXSortedSet<String>)
     case FXKeyEncodingError(keyPrefix: String, encodingError: Swift.Error, underlyingError: Swift.Error)
 }
 
@@ -141,7 +141,8 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
                 augmentedError = FXError.FXValueComputationError(
                     keyPrefix: K.cacheKeyPrefix,
                     key: encodedKey,
-                    error: underlyingError
+                    error: underlyingError,
+                    requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
                 )
             } catch {
                 augmentedError = FXError.FXKeyEncodingError(
