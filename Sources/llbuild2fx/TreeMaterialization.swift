@@ -31,7 +31,7 @@ extension Context {
     }
 }
 
-func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
+public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
     do {
         return try withTemporaryDirectory(removeTreeOnDeinit: false) { path in
             body(path).always { _ in
