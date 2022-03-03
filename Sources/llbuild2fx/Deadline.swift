@@ -28,6 +28,10 @@ extension Context {
             return nil
         }
 
+        guard foundationDeadline != .distantFuture else {
+            return nil
+        }
+
         let then = NIODeadline.now()
         let now = Date()
         let timeLeft: TimeInterval = foundationDeadline.timeIntervalSince(now)
