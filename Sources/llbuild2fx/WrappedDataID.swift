@@ -17,6 +17,10 @@ public protocol FXSingleDataIDValue: FXValue, FXWrappedDataID, Encodable, Hashab
     init(dataID: LLBDataID)
 }
 
+public protocol FXThinEncodedSingleDataIDValue: FXSingleDataIDValue {
+
+}
+
 extension FXSingleDataIDValue {
     public init(_ dataID: LLBDataID) {
         self = Self(dataID: dataID)
@@ -40,6 +44,12 @@ extension FXSingleDataIDValue {
 }
 
 extension FXSingleDataIDValue {
+    public func encode(to encoder: Encoder) throws {
+        try encoder.encodeHash(of: ArraySlice<UInt8>(dataID.bytes))
+    }
+}
+
+extension FXThinEncodedSingleDataIDValue {
     public func encode(to encoder: Encoder) throws {
         // Since we already have a hash value, directly encode a short prefix of it
         var container = encoder.singleValueContainer()
