@@ -41,7 +41,13 @@ private struct FXCacheKeyPrefixMemoizer {
 
     static func get<K: FXVersioning>(for key: K) -> String {
         return lock.withLock {
-            prefixes[ObjectIdentifier(K.self), default: K.cacheKeyPrefix]
+            let objID = ObjectIdentifier(K.self)
+            if let prefix = prefixes[objID] {
+                return prefix
+            }
+            let prefix = K.cacheKeyPrefix
+            prefixes[objID] = prefix
+            return prefix
         }
     }
 
@@ -68,14 +74,16 @@ extension InternalKey: FXKeyProperties {
 
     var cachePath: String {
         let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
-
-        let asArgs = try! CommandLineArgsEncoder().encode(key)
-        let argsKey = asArgs.joined(separator: " ")
-
         let keyLengthLimit = 250
 
-        guard argsKey.count > keyLengthLimit else {
-            return [basePath, argsKey].joined(separator: "/")
+        if key.hint == nil {
+            // Without a hint, take a stab at a more friendly encoding
+            let asArgs = try! CommandLineArgsEncoder().encode(key)
+            let argsKey = asArgs.joined(separator: " ")
+
+            guard argsKey.count > keyLengthLimit else {
+                return [basePath, argsKey].joined(separator: "/")
+            }
         }
 
         let json = try! FXEncoder().encode(key)
