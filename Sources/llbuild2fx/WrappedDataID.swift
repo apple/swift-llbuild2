@@ -41,7 +41,10 @@ extension FXSingleDataIDValue {
 
 extension FXSingleDataIDValue {
     public func encode(to encoder: Encoder) throws {
-        try encoder.encodeHash(of: ArraySlice<UInt8>(dataID.bytes))
+        // Since we already have a hash value, directly encode a short prefix of it
+        var container = encoder.singleValueContainer()
+        let str = ArraySlice(dataID.bytes.dropFirst().prefix(9)).base64URL()
+        try container.encode(str)
     }
 }
 
