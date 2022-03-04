@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Foundation
+import NIOConcurrencyHelpers
 import TSCUtility
 import llbuild2
 
@@ -34,6 +35,18 @@ extension FXKey {
     }
 }
 
+private struct FXCacheKeyPrefixMemoizer {
+    private static let lock = Lock()
+    private static var prefixes: [ObjectIdentifier: String] = [:]
+
+    static func get<K: FXVersioning>(for key: K) -> String {
+        return lock.withLock {
+            prefixes[ObjectIdentifier(K.self), default: K.cacheKeyPrefix]
+        }
+    }
+
+}
+
 final class InternalKey<K: FXKey> {
     let name: String
     let key: K
@@ -54,7 +67,7 @@ extension InternalKey: FXKeyProperties {
     }
 
     var cachePath: String {
-        let basePath = K.cacheKeyPrefix
+        let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
 
         let asArgs = try! CommandLineArgsEncoder().encode(key)
         let argsKey = asArgs.joined(separator: " ")
@@ -139,14 +152,14 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
                 let keyData = try FXEncoder().encode(actualKey)
                 let encodedKey = String(bytes: keyData, encoding: .utf8)!
                 augmentedError = FXError.FXValueComputationError(
-                    keyPrefix: K.cacheKeyPrefix,
+                    keyPrefix: FXCacheKeyPrefixMemoizer.get(for: actualKey),
                     key: encodedKey,
                     error: underlyingError,
                     requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
                 )
             } catch {
                 augmentedError = FXError.FXKeyEncodingError(
-                    keyPrefix: K.cacheKeyPrefix,
+                    keyPrefix: FXCacheKeyPrefixMemoizer.get(for: actualKey),
                     encodingError: error,
                     underlyingError: underlyingError
                 )
