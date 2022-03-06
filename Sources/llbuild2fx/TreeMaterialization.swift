@@ -6,9 +6,10 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Foundation
 import TSCBasic
 import TSCUtility
-import Foundation
+import TSFCASFileTree
 
 public protocol FXTreeMaterializer {
     func materialize(tree: FXTreeID) -> AbsolutePath?
@@ -43,8 +44,30 @@ public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> 
     }
 }
 
+struct UntypedTreeID: FXSingleDataIDValue, FXTreeID {
+    let dataID: LLBDataID
+}
+
+extension FXFileID {
+    public func materialize<R>(filename: String, _ ctx: Context, _ body: @escaping (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
+        load(ctx).flatMap { blob in
+            let files: [LLBDirectoryEntryID] = [
+                blob.asDirectoryEntry(filename: filename)
+            ]
+
+            return LLBCASFileTree.create(files: files, in: ctx.db, ctx)
+        }.map { (tree: LLBCASFileTree) in
+            UntypedTreeID(dataID: tree.id)
+        }.flatMap { treeID in
+            treeID.materialize(ctx) { treePath in
+                body(treePath.appending(component: filename))
+            }
+        }
+    }
+}
+
 extension FXTreeID {
-    func materialize<R>(_ ctx: Context, _ body: @escaping (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
+    public func materialize<R>(_ ctx: Context, _ body: @escaping (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
         if let path = ctx.fxTreeMaterializer?.materialize(tree: self) {
             return body(path)
         }
