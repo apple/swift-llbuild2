@@ -95,6 +95,8 @@ public protocol LLBFunctionCache {
 }
 
 open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
+    open var recomputeOnCacheFailure: Bool { false }
+
     public init() {}
 
     private func computeAndUpdate(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue> {
@@ -149,7 +151,10 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
                         ctx.logger?.trace("    cached \(key.logDescription())")
                         return ctx.group.next().makeSucceededFuture(value)
                     } catch {
-                        return ctx.group.next().makeFailedFuture(error)
+                        guard self.recomputeOnCacheFailure else {
+                            return ctx.group.next().makeFailedFuture(error)
+                        }
+                        return self.computeAndUpdate(key: typedKey, fi, ctx)
                     }
                 }
             }
