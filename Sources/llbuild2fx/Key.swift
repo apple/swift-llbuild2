@@ -145,6 +145,9 @@ public enum FXError: Swift.Error {
 
 
 final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
+
+    override var recomputeOnCacheFailure: Bool { true }
+
     override func compute(key: InternalKey<K>, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<
         InternalValue<K.ValueType>
     > {
