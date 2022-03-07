@@ -16,6 +16,8 @@ public protocol FXKey: Encodable, FXVersioning {
 
     static var volatile: Bool { get }
 
+    static var recomputeOnCacheFailure: Bool { get }
+
     // A concise, human readable contents summary that may be used in otherwise
     // hashed contexts (i.e. when stored in caches, etc.)
     var hint: String? { get }
@@ -25,6 +27,9 @@ public protocol FXKey: Encodable, FXVersioning {
 
 extension FXKey {
     public static var volatile: Bool { false }
+
+    public static var recomputeOnCacheFailure: Bool { true }
+
     public var hint: String? { nil }
 }
 
@@ -146,7 +151,7 @@ public enum FXError: Swift.Error {
 
 final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
 
-    override var recomputeOnCacheFailure: Bool { true }
+    override var recomputeOnCacheFailure: Bool { K.recomputeOnCacheFailure }
 
     override func compute(key: InternalKey<K>, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<
         InternalValue<K.ValueType>
