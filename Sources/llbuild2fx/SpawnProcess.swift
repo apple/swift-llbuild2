@@ -324,12 +324,16 @@ public struct SpawnProcess {
 
     let spec: ProcessSpec
 
+    let initialOutputTree: ProcessOutputTreeID?
+
     public init(
         inputTree: ProcessInputTreeID,
-        spec: ProcessSpec
+        spec: ProcessSpec,
+        initialOutputTree: ProcessOutputTreeID? = nil
     ) {
         self.inputTree = inputTree
         self.spec = spec
+        self.initialOutputTree = initialOutputTree
     }
 
     enum FXSpawnError: Error {
@@ -340,25 +344,34 @@ public struct SpawnProcess {
     public func run(_ ctx: Context) -> LLBFuture<ProcessOutputTreeID> {
         inputTree.materialize(ctx) { inputPath in
             withTemporaryDirectory(ctx) { outputPath in
-                do {
-                    let process = try spec.process(inputPath: inputPath, outputPath: outputPath)
-                    let cancellable = process.runCancellable(ctx)
+                let export: LLBFuture<Void>
+                if let initialOutputTree = initialOutputTree {
+                    export = LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, ctx)
+                } else {
+                    export = ctx.group.next().makeSucceededFuture(())
+                }
 
-                    ctx.fxApplyDeadline(cancellable)
+                return export.flatMap { _ in
+                    do {
+                        let process = try spec.process(inputPath: inputPath, outputPath: outputPath)
+                        let cancellable = process.runCancellable(ctx)
 
-                    return cancellable.future.flatMap { _ in
-                        LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
-                            ProcessOutputTreeID(dataID: treeID)
+                        ctx.fxApplyDeadline(cancellable)
+
+                        return cancellable.future.flatMap { _ in
+                            LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
+                                ProcessOutputTreeID(dataID: treeID)
+                            }
+                        }.flatMapError { error in
+                            return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
+                                throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
+                            }.flatMapThrowing { treeID in
+                                throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
+                            }
                         }
-                    }.flatMapError { error in
-                        return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
-                            throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
-                        }.flatMapThrowing { treeID in
-                            throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
-                        }
+                    } catch {
+                        return ctx.group.next().makeFailedFuture(error)
                     }
-                } catch {
-                    return ctx.group.next().makeFailedFuture(error)
                 }
             }
         }
