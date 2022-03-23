@@ -320,11 +320,11 @@ extension SpawnProcess: FXAction {
 }
 
 public struct SpawnProcess {
-    let inputTree: ProcessInputTreeID
+    private let inputTree: ProcessInputTreeID
 
-    let spec: ProcessSpec
+    private let spec: ProcessSpec
 
-    let initialOutputTree: ProcessOutputTreeID?
+    private let initialOutputTree: ProcessOutputTreeID?
 
     public init(
         inputTree: ProcessInputTreeID,

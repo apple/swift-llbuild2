@@ -6,15 +6,27 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Foundation
 import TSCUtility
 import TSFCAS
 import TSFFutures
 import llbuild2
 
-
 public protocol FXExecutor {
-    func perform<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
-        -> LLBFuture<ActionType.ValueType>
+    func canSatisfy(requirements: NSPredicate) -> Bool
+
+    func perform<ActionType: FXAction>(
+        action: ActionType,
+        with executable: LLBFuture<FXExecutableID>,
+        requirements: NSPredicate,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType>
+}
+
+extension FXExecutor {
+    func canSatisfy(requirements: NSPredicate) -> Bool {
+        true
+    }
 }
 
 private class ContextFXExecutor {}
@@ -37,15 +49,5 @@ public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {
         self.dataID = dataID
-    }
-}
-
-public final class FXLocalExecutor: FXExecutor {
-    public init() { }
-    
-    public func perform<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
-        -> LLBFuture<ActionType.ValueType>
-    {
-        action.run(ctx)
     }
 }

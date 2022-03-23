@@ -6,6 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Foundation
 import NIOConcurrencyHelpers
 import llbuild2
 
@@ -13,6 +14,9 @@ public final class FXFunctionInterface<K: FXKey> {
     enum Error: Swift.Error {
         case missingRequiredCacheEntry(String)
         case unexpressedKeyDependency(from: String, to: String)
+        case executorCannotSatisfyRequirements
+        case noExecutable
+        case noExecutableForAction
     }
 
     private let key: K
@@ -70,14 +74,27 @@ public final class FXFunctionInterface<K: FXKey> {
         }
     }
 
-    public func execute<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
-        -> LLBFuture<ActionType.ValueType>
-    {
+    public func execute<ActionType: FXAction>(
+        action: ActionType,
+        with executable: LLBFuture<FXExecutableID>? = nil,
+        requirements: NSPredicate = .init(value: true),
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
         let actionName = String(describing: ActionType.self)
 
         ctx.fxBuildEngineStats.add(action: actionName)
 
-        return ctx.fxExecutor.perform(action: action, with: executable, ctx).always { _ in
+        let executor = ctx.fxExecutor!
+        let result: LLBFuture<ActionType.ValueType>
+
+        if executor.canSatisfy(requirements: requirements) {
+            let exe = executable ?? ctx.group.next().makeFailedFuture(Error.noExecutable)
+            result = executor.perform(action: action, with: exe, requirements: requirements, ctx)
+        } else {
+            result = ctx.group.next().makeFailedFuture(Error.executorCannotSatisfyRequirements)
+        }
+
+        return result.always { _ in
             ctx.fxBuildEngineStats.remove(action: actionName)
         }
     }
