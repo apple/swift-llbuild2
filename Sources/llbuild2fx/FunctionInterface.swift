@@ -16,7 +16,6 @@ public final class FXFunctionInterface<K: FXKey> {
         case unexpressedKeyDependency(from: String, to: String)
         case executorCannotSatisfyRequirements
         case noExecutable
-        case noExecutableForAction
     }
 
     private let key: K
