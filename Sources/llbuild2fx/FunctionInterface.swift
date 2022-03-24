@@ -73,12 +73,12 @@ public final class FXFunctionInterface<K: FXKey> {
         }
     }
 
-    public func execute<ActionType: FXAction>(
+    public func execute<ActionType: FXAction, P: Predicate>(
         action: ActionType,
         with executable: LLBFuture<FXExecutableID>? = nil,
-        requirements: NSPredicate = .init(value: true),
+        requirements: P,
         _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> {
+    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
         let actionName = String(describing: ActionType.self)
 
         ctx.fxBuildEngineStats.add(action: actionName)
@@ -96,5 +96,18 @@ public final class FXFunctionInterface<K: FXKey> {
         return result.always { _ in
             ctx.fxBuildEngineStats.remove(action: actionName)
         }
+    }
+
+    public func execute<ActionType: FXAction>(
+        action: ActionType,
+        with executable: LLBFuture<FXExecutableID>? = nil,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
+        execute(
+            action: action,
+            with: executable,
+            requirements: ConstantPredicate(value: true),
+            ctx
+        )
     }
 }

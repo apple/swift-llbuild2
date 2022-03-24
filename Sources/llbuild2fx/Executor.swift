@@ -13,18 +13,18 @@ import TSFFutures
 import llbuild2
 
 public protocol FXExecutor {
-    func canSatisfy(requirements: NSPredicate) -> Bool
+    func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment
 
-    func perform<ActionType: FXAction>(
+    func perform<ActionType: FXAction, P: Predicate>(
         action: ActionType,
         with executable: LLBFuture<FXExecutableID>,
-        requirements: NSPredicate,
+        requirements: P,
         _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType>
+    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment
 }
 
 extension FXExecutor {
-    func canSatisfy(requirements: NSPredicate) -> Bool {
+    func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
         true
     }
 }
