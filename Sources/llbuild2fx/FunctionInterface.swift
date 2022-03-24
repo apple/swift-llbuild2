@@ -13,6 +13,8 @@ public final class FXFunctionInterface<K: FXKey> {
     enum Error: Swift.Error {
         case missingRequiredCacheEntry(String)
         case unexpressedKeyDependency(from: String, to: String)
+        case executorCannotSatisfyRequirements
+        case noExecutable
     }
 
     private let key: K
@@ -70,15 +72,41 @@ public final class FXFunctionInterface<K: FXKey> {
         }
     }
 
-    public func execute<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
-        -> LLBFuture<ActionType.ValueType>
-    {
+    public func execute<ActionType: FXAction, P: Predicate>(
+        action: ActionType,
+        with executable: LLBFuture<FXExecutableID>? = nil,
+        requirements: P,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
         let actionName = String(describing: ActionType.self)
 
         ctx.fxBuildEngineStats.add(action: actionName)
 
-        return ctx.fxExecutor.perform(action: action, with: executable, ctx).always { _ in
+        let executor = ctx.fxExecutor!
+        let result: LLBFuture<ActionType.ValueType>
+
+        if executor.canSatisfy(requirements: requirements) {
+            let exe = executable ?? ctx.group.next().makeFailedFuture(Error.noExecutable)
+            result = executor.perform(action: action, with: exe, requirements: requirements, ctx)
+        } else {
+            result = ctx.group.next().makeFailedFuture(Error.executorCannotSatisfyRequirements)
+        }
+
+        return result.always { _ in
             ctx.fxBuildEngineStats.remove(action: actionName)
         }
+    }
+
+    public func execute<ActionType: FXAction>(
+        action: ActionType,
+        with executable: LLBFuture<FXExecutableID>? = nil,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
+        execute(
+            action: action,
+            with: executable,
+            requirements: ConstantPredicate(value: true),
+            ctx
+        )
     }
 }

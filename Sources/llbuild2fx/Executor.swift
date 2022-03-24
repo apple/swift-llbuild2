@@ -11,10 +11,21 @@ import TSFCAS
 import TSFFutures
 import llbuild2
 
-
 public protocol FXExecutor {
-    func perform<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
-        -> LLBFuture<ActionType.ValueType>
+    func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment
+
+    func perform<ActionType: FXAction, P: Predicate>(
+        action: ActionType,
+        with executable: LLBFuture<FXExecutableID>,
+        requirements: P,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment
+}
+
+extension FXExecutor {
+    func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
+        true
+    }
 }
 
 private class ContextFXExecutor {}
@@ -37,15 +48,5 @@ public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {
         self.dataID = dataID
-    }
-}
-
-public final class FXLocalExecutor: FXExecutor {
-    public init() { }
-    
-    public func perform<ActionType: FXAction>(action: ActionType, with executable: LLBFuture<FXExecutableID>, _ ctx: Context)
-        -> LLBFuture<ActionType.ValueType>
-    {
-        action.run(ctx)
     }
 }
