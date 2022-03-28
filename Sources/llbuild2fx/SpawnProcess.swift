@@ -15,7 +15,6 @@ import TSFFutures
 
 extension Foundation.Process {
     private enum ProcessTerminationError: Error {
-        case nonZeroExit(Int32)
         case signaled(Int32)
         case unknown(Int32)
     }
@@ -32,20 +31,15 @@ extension Foundation.Process {
         }
     }
 
-    fileprivate func runCancellable(_ ctx: Context) -> LLBCancellableFuture<Void> {
-        let completionPromise: LLBPromise<Void> = ctx.group.next().makePromise()
+    fileprivate func runCancellable(_ ctx: Context) -> LLBCancellableFuture<Int32> {
+        let completionPromise: LLBPromise<Int32> = ctx.group.next().makePromise()
 
         self.terminationHandler = { process in
             let status = process.terminationStatus
 
             switch process.terminationReason {
             case .exit:
-                switch status {
-                case 0:
-                    completionPromise.succeed(())
-                default:
-                    completionPromise.fail(ProcessTerminationError.nonZeroExit(status))
-                }
+                completionPromise.succeed(status)
             case .uncaughtSignal:
                 completionPromise.fail(ProcessTerminationError.signaled(status))
             @unknown default:
@@ -341,7 +335,7 @@ public struct SpawnProcess {
         case recoveryUploadFailure(uploadError: Error, originalError: Error)
     }
 
-    public func run(_ ctx: Context) -> LLBFuture<ProcessOutputTreeID> {
+    public func run(_ ctx: Context) -> LLBFuture<SpawnProcessResult> {
         inputTree.materialize(ctx) { inputPath in
             withTemporaryDirectory(ctx) { outputPath in
                 let export: LLBFuture<Void>
@@ -358,9 +352,9 @@ public struct SpawnProcess {
 
                         ctx.fxApplyDeadline(cancellable)
 
-                        return cancellable.future.flatMap { _ in
+                        return cancellable.future.flatMap { exitCode in
                             LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
-                                ProcessOutputTreeID(dataID: treeID)
+                                SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: exitCode)
                             }
                         }.flatMapError { error in
                             return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
@@ -391,5 +385,47 @@ public struct ProcessOutputTreeID: FXSingleDataIDValue, FXTreeID {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {
         self.dataID = dataID
+    }
+}
+
+public struct SpawnProcessResult: FXValue, FXTreeID {
+    public let treeID: ProcessOutputTreeID
+    public let exitCode: Int32
+
+    public init(treeID: ProcessOutputTreeID, exitCode: Int32) {
+        self.treeID = treeID
+        self.exitCode = exitCode
+    }
+
+    public var dataID: LLBDataID {
+        treeID.dataID
+    }
+
+    public var refs: [LLBDataID] {
+        [
+            dataID
+        ]
+    }
+
+    public var codableValue: Int32 {
+        exitCode
+    }
+
+    enum Error: Swift.Error {
+        case notEnoughRefs
+        case tooManyRefs
+    }
+
+    public init(refs: [LLBDataID], codableValue: Int32) throws {
+        guard !refs.isEmpty else {
+            throw Error.notEnoughRefs
+        }
+
+        guard refs.count == 1 else {
+            throw Error.tooManyRefs
+        }
+
+        treeID = ProcessOutputTreeID(dataID: refs[0])
+        exitCode = codableValue
     }
 }
