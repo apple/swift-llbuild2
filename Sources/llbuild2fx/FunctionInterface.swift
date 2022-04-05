@@ -86,6 +86,7 @@ public final class FXFunctionInterface<K: FXKey> {
         let result: LLBFuture<ActionType.ValueType>
 
         if executor.canSatisfy(requirements: requirements) {
+            ctx.logger?.debug("Will perform action: \(action)")
             let exe = executable ?? ctx.group.next().makeFailedFuture(Error.noExecutable)
             result = executor.perform(action: action, with: exe, requirements: requirements, ctx)
         } else {

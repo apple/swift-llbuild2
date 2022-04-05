@@ -17,6 +17,8 @@ extension Foundation.Process {
     private enum ProcessTerminationError: Error {
         case signaled(Int32)
         case unknown(Int32)
+        case notStarted
+        case notFinished
     }
 
     private struct ProcessKiller: LLBCancelProtocol {
@@ -35,6 +37,18 @@ extension Foundation.Process {
         let completionPromise: LLBPromise<Int32> = ctx.group.next().makePromise()
 
         self.terminationHandler = { process in
+            ctx.logger?.debug("Process terminated: \(process)")
+
+            guard process.processIdentifier > 0 else {
+                completionPromise.fail(ProcessTerminationError.notStarted)
+                return
+            }
+
+            guard !process.isRunning else {
+                completionPromise.fail(ProcessTerminationError.notFinished)
+                return
+            }
+
             let status = process.terminationStatus
 
             switch process.terminationReason {
@@ -48,7 +62,9 @@ extension Foundation.Process {
         }
 
         do {
+            ctx.logger?.debug("Will start running process: \(self)")
             try run()
+            ctx.logger?.trace("Did start running process: \(self)")
         } catch {
             completionPromise.fail(error)
         }
