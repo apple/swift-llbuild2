@@ -266,36 +266,31 @@ public struct ProcessSpec: Codable {
 
         let fileManager = FileManager()
 
-        if let stdout = stdoutDestination {
-            let path = outputPath.appending(stdout).pathString
+        func outputFileHandle(for destination: RelativePath?) throws -> FileHandle? {
+            guard let destination = destination else {
+                return FileHandle(forWritingAtPath: devNull)
+            }
+
+            let path = outputPath.appending(destination).pathString
 
             guard fileManager.createFile(atPath: path, contents: nil) else {
-                throw ProcessSpecError.unableToCreateFile(stdout)
+                throw ProcessSpecError.unableToCreateFile(destination)
             }
 
-            guard let standardOutput = FileHandle(forWritingAtPath: path) else {
-                throw ProcessSpecError.unableToCreateFileHandle(stdout)
+            guard let handle = FileHandle(forWritingAtPath: path) else {
+                throw ProcessSpecError.unableToCreateFileHandle(destination)
             }
 
-            process.standardOutput = standardOutput
-        } else {
-            process.standardOutput = FileHandle(forWritingAtPath: devNull)
+            return handle
         }
 
-        if let stderr = stderrDestination {
-            let path = outputPath.appending(stderr).pathString
-
-            guard fileManager.createFile(atPath: path, contents: nil) else {
-                throw ProcessSpecError.unableToCreateFile(stderr)
-            }
-
-            guard let standardError = FileHandle(forWritingAtPath: path) else {
-                throw ProcessSpecError.unableToCreateFileHandle(stderr)
-            }
-
-            process.standardError = standardError
+        if stdoutDestination == stderrDestination {
+            let handle = try outputFileHandle(for: stdoutDestination)
+            process.standardOutput = handle
+            process.standardError = handle
         } else {
-            process.standardError = FileHandle(forWritingAtPath: devNull)
+            process.standardOutput = try outputFileHandle(for: stdoutDestination)
+            process.standardError = try outputFileHandle(for: stderrDestination)
         }
 
         return process
