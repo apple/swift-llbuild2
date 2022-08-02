@@ -81,10 +81,11 @@ public struct ProcessSpec: Codable {
         case inputPath(RelativePath)
     }
 
-    public enum RuntimeValue: Codable {
+    public enum RuntimeValue: Codable, Equatable {
         case literal(String)
         case inputPath(RelativePath)
         case outputPath(RelativePath)
+        case sequence(values: [RuntimeValue], separator: String)
     }
 
     let executable: Executable
@@ -117,7 +118,7 @@ public struct ProcessSpec: Codable {
     }
 
     fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath) throws -> Foundation.Process {
-        let runtimeValueMapper: (RuntimeValue) -> String = { value in
+        func runtimeValueMapper(_ value: RuntimeValue) -> String {
             switch value {
             case .literal(let v):
                 return v
@@ -125,6 +126,10 @@ public struct ProcessSpec: Codable {
                 return inputPath.appending(path).pathString
             case .outputPath(let path):
                 return outputPath.appending(path).pathString
+            case .sequence(values: let values, separator: let separator):
+                return String(values.map {
+                    runtimeValueMapper($0)
+                }.joined(separator: separator))
             }
         }
 
