@@ -79,120 +79,12 @@ public struct ProcessSpec: Codable {
     public enum Executable: Codable {
         case absolutePath(AbsolutePath)
         case inputPath(RelativePath)
-
-        #if swift(<5.5)
-        enum CodingKeys: CodingKey {
-            case absolutePath
-            case inputPath
-        }
-
-        enum AbsolutePathCodingKeys: CodingKey {
-            case _0
-        }
-
-        enum InputPathCodingKeys: CodingKey {
-            case _0
-        }
-
-        public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            switch self {
-            case let .absolutePath(value):
-                var nestedContainer = container.nestedContainer(
-                    keyedBy: AbsolutePathCodingKeys.self, forKey: .absolutePath)
-                try nestedContainer.encode(value, forKey: ._0)
-            case let .inputPath(value):
-                var nestedContainer = container.nestedContainer(keyedBy: InputPathCodingKeys.self, forKey: .inputPath)
-                try nestedContainer.encode(value, forKey: ._0)
-            }
-        }
-
-        public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            if container.allKeys.count != 1 {
-                let context = DecodingError.Context(
-                    codingPath: container.codingPath,
-                    debugDescription: "Invalid number of keys found, expected one.")
-                throw DecodingError.typeMismatch(Executable.self, context)
-            }
-
-            switch container.allKeys.first.unsafelyUnwrapped {
-            case .absolutePath:
-                let nestedContainer = try container.nestedContainer(
-                    keyedBy: AbsolutePathCodingKeys.self, forKey: .absolutePath)
-                self = .absolutePath(try nestedContainer.decode(AbsolutePath.self, forKey: ._0))
-            case .inputPath:
-                let nestedContainer = try container.nestedContainer(
-                    keyedBy: InputPathCodingKeys.self, forKey: .inputPath)
-                self = .inputPath(try nestedContainer.decode(RelativePath.self, forKey: ._0))
-            }
-        }
-        #endif
     }
 
     public enum RuntimeValue: Codable {
         case literal(String)
         case inputPath(RelativePath)
         case outputPath(RelativePath)
-
-        #if swift(<5.5)
-        enum CodingKeys: CodingKey {
-            case literal
-            case inputPath
-            case outputPath
-        }
-
-        enum LiteralCodingKeys: CodingKey {
-            case _0
-        }
-
-        enum InputPathCodingKeys: CodingKey {
-            case _0
-        }
-
-        enum OutputPathCodingKeys: CodingKey {
-            case _0
-        }
-
-        public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            switch self {
-            case let .literal(value):
-                var nestedContainer = container.nestedContainer(keyedBy: LiteralCodingKeys.self, forKey: .literal)
-                try nestedContainer.encode(value, forKey: ._0)
-            case let .inputPath(value):
-                var nestedContainer = container.nestedContainer(keyedBy: InputPathCodingKeys.self, forKey: .inputPath)
-                try nestedContainer.encode(value, forKey: ._0)
-            case let .outputPath(value):
-                var nestedContainer = container.nestedContainer(keyedBy: OutputPathCodingKeys.self, forKey: .outputPath)
-                try nestedContainer.encode(value, forKey: ._0)
-            }
-        }
-
-        public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            if container.allKeys.count != 1 {
-                let context = DecodingError.Context(
-                    codingPath: container.codingPath,
-                    debugDescription: "Invalid number of keys found, expected one.")
-                throw DecodingError.typeMismatch(RuntimeValue.self, context)
-            }
-
-            switch container.allKeys.first.unsafelyUnwrapped {
-            case .literal:
-                let nestedContainer = try container.nestedContainer(keyedBy: LiteralCodingKeys.self, forKey: .literal)
-                self = .literal(try nestedContainer.decode(String.self, forKey: ._0))
-            case .inputPath:
-                let nestedContainer = try container.nestedContainer(
-                    keyedBy: InputPathCodingKeys.self, forKey: .inputPath)
-                self = .inputPath(try nestedContainer.decode(RelativePath.self, forKey: ._0))
-            case .outputPath:
-                let nestedContainer = try container.nestedContainer(
-                    keyedBy: OutputPathCodingKeys.self, forKey: .outputPath)
-                self = .outputPath(try nestedContainer.decode(RelativePath.self, forKey: ._0))
-            }
-        }
-        #endif
     }
 
     let executable: Executable
