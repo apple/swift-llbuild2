@@ -41,6 +41,20 @@ extension Context {
         return then + TimeAmount.nanoseconds(nanoseconds)
     }
 
+    public func fxReducingDeadline(to atLeast: Date) -> Self {
+        var ctx = self
+
+        if let existing = fxDeadline {
+            if existing > atLeast {
+                ctx.fxDeadline = atLeast
+            }
+        } else {
+            ctx.fxDeadline = atLeast
+        }
+
+        return ctx
+    }
+
     public func fxApplyDeadline<T>(_ cancellable: LLBCancellableFuture<T>) {
         if let actualDeadline = nioDeadline {
             let timer = cancellable.future.eventLoop.scheduleTask(deadline: actualDeadline) {
