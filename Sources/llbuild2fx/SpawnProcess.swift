@@ -19,22 +19,42 @@ extension Foundation.Process {
         case unknown(Int32)
         case notStarted
         case notFinished
+        case cancelled(reason: String?, diagnostics: Result<FXDiagnostics, Error>?)
     }
 
-    private struct ProcessKiller: LLBCancelProtocol {
+    private class ProcessKiller: LLBCancelProtocol {
         private let runningProcess: Foundation.Process
-        init(runningProcess: Foundation.Process) {
+        private let context: Context
+        init(runningProcess: Foundation.Process, _ ctx: Context) {
             self.runningProcess = runningProcess
+            self.context = ctx
         }
 
+        var cancelled = false
+        var cancellationReason: String? = nil
+        var diagnostics: Result<FXDiagnostics, Error>? = nil
+
         func cancel(reason: String?) {
+            cancelled = true
+            cancellationReason = reason
+
             let pid = runningProcess.processIdentifier
-            kill(pid, SIGKILL)
+
+            if let gatherer = context.fxDiagnosticsGatherer {
+                _ = gatherer.gatherDiagnostics(pid: pid, context).always { result in
+                    self.diagnostics = result
+                    kill(pid, SIGKILL)
+                }
+            } else {
+                kill(pid, SIGKILL)
+            }
         }
     }
 
     fileprivate func runCancellable(_ ctx: Context) -> LLBCancellableFuture<Int32> {
         let completionPromise: LLBPromise<Int32> = ctx.group.next().makePromise()
+
+        let killer = ProcessKiller(runningProcess: self, ctx)
 
         self.terminationHandler = { process in
             ctx.logger?.debug("Process terminated: \(process)")
@@ -55,7 +75,14 @@ extension Foundation.Process {
             case .exit:
                 completionPromise.succeed(status)
             case .uncaughtSignal:
-                completionPromise.fail(ProcessTerminationError.signaled(status))
+                if status == SIGKILL && killer.cancelled {
+                    completionPromise.fail(ProcessTerminationError.cancelled(
+                        reason: killer.cancellationReason,
+                        diagnostics: killer.diagnostics
+                    ))
+                } else {
+                    completionPromise.fail(ProcessTerminationError.signaled(status))
+                }
             @unknown default:
                 completionPromise.fail(ProcessTerminationError.unknown(status))
             }
@@ -69,7 +96,7 @@ extension Foundation.Process {
             completionPromise.fail(error)
         }
 
-        let canceller = LLBCanceller(ProcessKiller(runningProcess: self))
+        let canceller = LLBCanceller(killer)
 
         return LLBCancellableFuture(completionPromise.futureResult, canceller: canceller)
     }
