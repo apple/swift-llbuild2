@@ -130,3 +130,22 @@ extension FXFileID {
         }
     }
 }
+
+public protocol FXExecutableFileID: FXNodeID {
+    func load(_ ctx: Context) -> LLBFuture<LLBCASBlob>
+}
+
+extension FXExecutableFileID {
+    public func load(_ ctx: Context) -> LLBFuture<LLBCASBlob> {
+        let client = LLBCASFSClient(ctx.db)
+        let dataID = self.dataID
+        return client.load(dataID, type: .executable, ctx).flatMapThrowing { node in
+            let type = node.type()
+            guard type == .executable else {
+                throw WrappedDataIDError.wrongNodeType(id: dataID, expected: .executable, actual: type)
+            }
+
+            return node.blob!
+        }
+    }
+}
