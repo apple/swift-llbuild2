@@ -121,7 +121,6 @@ final public class LLBLocalExecutor: LLBExecutor {
                     environment: preActionEnvironment,
                     workingDirectory: self.outputBase.appending(RelativePath(request.actionSpec.workingDirectory)),
                     outputRedirection: .collect,
-                    verbose: false,
                     startNewProcessGroup: false
                 )
 
@@ -146,7 +145,6 @@ final public class LLBLocalExecutor: LLBExecutor {
                 environment: environment,
                 workingDirectory: workingDir,
                 outputRedirection: .collect(redirectStderr: true),
-                verbose: false,
                 startNewProcessGroup: false
             )
 
