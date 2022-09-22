@@ -170,6 +170,12 @@ public func FXRequestedCacheKeyPaths(for cachedValue: LLBCASObject) throws -> FX
     return keyPaths
 }
 
+// Get the JSON-encoded key associated with a cached value
+public func FXEncodedKeyID(for cachedValue: LLBCASObject) throws -> LLBDataID {
+    let internalValue = try InternalValue<IgnoredValue>(from: cachedValue)
+    return internalValue.keyID
+}
+
 struct FXValueMetadata: Codable {
     let requestedCacheKeyPaths: FXSortedSet<String>?
 
