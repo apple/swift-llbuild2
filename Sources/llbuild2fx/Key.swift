@@ -195,3 +195,23 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
         }
     }
 }
+
+public protocol AsyncFXKey: FXKey {
+    func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) async throws -> ValueType
+}
+
+extension AsyncFXKey {
+    public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType> {
+        let f = ctx.group.any().makePromise(of: ValueType.self)
+        f.completeWithTask {
+            try await computeValue(fi, ctx)
+        }
+        return f.futureResult
+    }
+}
+
+extension FXFunctionInterface {
+    public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) async throws -> X.ValueType {
+        try await request(x, requireCacheHit: requireCacheHit, ctx).get()
+    }
+}
