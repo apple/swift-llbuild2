@@ -161,7 +161,7 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
         ctx.fxBuildEngineStats.add(key: key.name)
 
         let fxfi = FXFunctionInterface(actualKey, fi)
-        let value: LLBFuture<K.ValueType> = actualKey.computeValue(fxfi, ctx).flatMapError { underlyingError in
+        return actualKey.computeValue(fxfi, ctx).flatMapError { underlyingError in
             let augmentedError: Swift.Error
 
             do {
@@ -182,14 +182,8 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
             }
 
             return ctx.group.next().makeFailedFuture(augmentedError)
-        }
-
-        let encodedKey = (try? FXEncoder().encode(actualKey)) ?? Data()
-        let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(encodedKey))
-        let keyID = ctx.db.put(LLBCASObject(refs: [], data: buffer), ctx)
-
-        return value.and(keyID).map { value, keyID in
-            InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot, keyID: keyID)
+        }.map { value in
+            InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
         }.always { _ in
             ctx.fxBuildEngineStats.remove(key: key.name)
         }
