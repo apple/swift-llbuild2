@@ -170,12 +170,6 @@ public func FXRequestedCacheKeyPaths(for cachedValue: LLBCASObject) throws -> FX
     return keyPaths
 }
 
-// Get the JSON-encoded key associated with a cached value
-public func FXEncodedKeyID(for cachedValue: LLBCASObject) throws -> LLBDataID {
-    let internalValue = try InternalValue<IgnoredValue>(from: cachedValue)
-    return internalValue.keyID
-}
-
 struct FXValueMetadata: Codable {
     let requestedCacheKeyPaths: FXSortedSet<String>?
 
@@ -189,17 +183,15 @@ struct FXValueMetadata: Codable {
 final class InternalValue<V: FXValue>: LLBValue {
     let value: V
     let metadata: FXValueMetadata
-    let keyID: LLBDataID
 
-    convenience init(_ value: V, requestedCacheKeyPaths: FXSortedSet<String>, keyID: LLBDataID) {
+    convenience init(_ value: V, requestedCacheKeyPaths: FXSortedSet<String>) {
         let m = FXValueMetadata(requestedCacheKeyPaths: requestedCacheKeyPaths)
-        self.init(value, metadata: m, keyID: keyID)
+        self.init(value, metadata: m)
     }
 
-    private init(_ value: V, metadata: FXValueMetadata, keyID: LLBDataID) {
+    private init(_ value: V, metadata: FXValueMetadata) {
         self.value = value
         self.metadata = metadata
-        self.keyID = keyID
     }
 }
 
@@ -218,7 +210,7 @@ extension InternalValue: LLBCASObjectRepresentable {
         let codable = CodableInternalValue(value, metadata: metadata)
         let data = try FXEncoder().encode(codable)
         let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
-        return LLBCASObject(refs: [keyID] + value.refs, data: buffer)
+        return LLBCASObject(refs: value.refs, data: buffer)
     }
 }
 
@@ -226,7 +218,7 @@ extension InternalValue: LLBCASObjectConstructable {
     convenience init(from casObject: LLBCASObject) throws {
         let data = Data(casObject.data.readableBytesView)
         let codable = try FXDecoder().decode(CodableInternalValue<V>.self, from: data)
-        let value = try V(refs: Array(casObject.refs.dropFirst()), codableValue: codable.value)
-        self.init(value, metadata: codable.metadata, keyID: casObject.refs[0])
+        let value = try V(refs: casObject.refs, codableValue: codable.value)
+        self.init(value, metadata: codable.metadata)
     }
 }
