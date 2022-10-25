@@ -10,6 +10,7 @@ public protocol FXVersioning {
     static var name: String { get }
     static var version: Int { get }
     static var versionDependencies: [FXVersioning.Type] { get }
+    static var configurationKeys: [String] { get }
 }
 
 extension FXKey {
@@ -17,6 +18,15 @@ extension FXKey {
     public static var version: Int { 0 }
     public static var versionDependencies: [FXVersioning.Type] {
         [FXVersioning.Type]()
+    }
+    public static var configurationKeys: [String] {
+        [String]()
+    }
+}
+
+extension FXVersioning {
+    public static var configurationKeys: [String] {
+        [String]()
     }
 }
 
@@ -48,7 +58,7 @@ extension FXVersioning {
         return Array(settled.values)
     }
 
-    private static var aggregatedVersionDependencies: [FXVersioning.Type] {
+    static var aggregatedVersionDependencies: [FXVersioning.Type] {
         aggregateGraph {
             $0.versionDependencies
         }
@@ -56,6 +66,10 @@ extension FXVersioning {
 
     static var aggregatedVersion: Int {
         return aggregatedVersionDependencies.map { $0.version }.reduce(0, +)
+    }
+
+    public static var aggregatedConfigurationKeys: FXSortedSet<String> {
+        return FXSortedSet<String>(aggregatedVersionDependencies.map { $0.configurationKeys }.reduce([], +))
     }
 
     public static var cacheKeyPrefix: String {

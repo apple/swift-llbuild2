@@ -34,13 +34,13 @@ public final class FXFunctionInterface<K: FXKey> {
 
     public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) -> LLBFuture<X.ValueType> {
         do {
-            let realX = x.internalKey
+            let realX = x.internalKey(ctx)
 
             // Check that the key dependency is either explicity declared or
             // recursive/self-referential.
             guard K.versionDependencies.contains(where: { $0 == X.self }) || X.self == K.self else {
                 throw Error.unexpressedKeyDependency(
-                    from: key.internalKey.logDescription(),
+                    from: key.internalKey(ctx).logDescription(),
                     to: realX.logDescription()
                 )
             }

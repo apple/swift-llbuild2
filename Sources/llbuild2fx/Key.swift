@@ -35,8 +35,8 @@ extension FXKey {
 
 
 extension FXKey {
-    var internalKey: InternalKey<Self> {
-        InternalKey(self)
+    func internalKey(_ ctx: Context) -> InternalKey<Self> {
+        InternalKey(self, ctx)
     }
 }
 
@@ -61,10 +61,12 @@ private struct FXCacheKeyPrefixMemoizer {
 final class InternalKey<K: FXKey> {
     let name: String
     let key: K
+    private var ctx: Context
 
-    init(_ key: K) {
+    init(_ key: K, _ ctx: Context) {
         name = String(describing: K.self)
         self.key = key
+        self.ctx = ctx
     }
 
     private var hashData: Data {
@@ -78,33 +80,41 @@ extension InternalKey: FXKeyProperties {
     }
 
     var cachePath: String {
-        let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
-        let keyLengthLimit = 250
+        func cachePathWithoutConfig() -> String {
+            let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
+            let keyLengthLimit = 250
 
-        if key.hint == nil {
-            // Without a hint, take a stab at a more friendly encoding
-            let asArgs = try! CommandLineArgsEncoder().encode(key)
-            let argsKey = asArgs.joined(separator: " ")
+            if key.hint == nil {
+                // Without a hint, take a stab at a more friendly encoding
+                let asArgs = try! CommandLineArgsEncoder().encode(key)
+                let argsKey = asArgs.joined(separator: " ")
 
-            guard argsKey.count > keyLengthLimit else {
-                return [basePath, argsKey].joined(separator: "/")
+                guard argsKey.count > keyLengthLimit else {
+                    return [basePath, argsKey].joined(separator: "/")
+                }
             }
+
+            let json = try! FXEncoder().encode(key)
+            guard json.count > keyLengthLimit else {
+                return [basePath, String(data: json, encoding: .utf8)!].joined(separator: "/")
+            }
+
+            let hash = LLBDataID(blake3hash: ArraySlice<UInt8>(json))
+            let hashStr = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
+            let str: String
+            if let hint = key.hint {
+                str = "\(hint) \(hashStr)"
+            } else {
+                str = hashStr
+            }
+            return [basePath, str].joined(separator: "/")
         }
 
-        let json = try! FXEncoder().encode(key)
-        guard json.count > keyLengthLimit else {
-            return [basePath, String(data: json, encoding: .utf8)!].joined(separator: "/")
+        let config = KeyConfiguration<K>(inputs: ctx.fxConfigurationInputs)
+        guard !config.isNoop() else {
+            return cachePathWithoutConfig()
         }
-
-        let hash = LLBDataID(blake3hash: ArraySlice<UInt8>(json))
-        let hashStr = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
-        let str: String
-        if let hint = key.hint {
-            str = "\(hint) \(hashStr)"
-        } else {
-            str = hashStr
-        }
-        return [basePath, str].joined(separator: "/")
+        return [cachePathWithoutConfig(), try! StringsEncoder().encode(config)[""]!].joined(separator: "/")
     }
 }
 
