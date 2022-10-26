@@ -41,7 +41,7 @@ extension FXKey {
 }
 
 private struct FXCacheKeyPrefixMemoizer {
-    private static let lock = Lock()
+    private static let lock = NIOLock()
     private static var prefixes: [ObjectIdentifier: String] = [:]
 
     static func get<K: FXVersioning>(for key: K) -> String {

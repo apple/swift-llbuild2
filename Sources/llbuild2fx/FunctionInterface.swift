@@ -20,7 +20,7 @@ public final class FXFunctionInterface<K: FXKey> {
     private let key: K
     private let fi: LLBFunctionInterface
     private var requestedKeyCachePaths = FXSortedSet<String>()
-    private let lock = Lock()
+    private let lock = NIOLock()
     var requestedCacheKeyPathsSnapshot: FXSortedSet<String> {
         lock.withLock {
             requestedKeyCachePaths

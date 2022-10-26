@@ -17,7 +17,7 @@ public struct FXBuildEngineStatsSnapshot {
 }
 
 public final class FXBuildEngineStats {
-    private let lock = Lock()
+    private let lock = NIOLock()
 
     private var currentKeyCounts: [String: Int] = [:]
     private var totalKeyCounts: [String: Int] = [:]
