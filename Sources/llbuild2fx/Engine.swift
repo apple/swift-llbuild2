@@ -70,7 +70,7 @@ public final class FXBuildEngine {
         _ ctx: Context
     ) -> LLBFuture<K.ValueType> {
         let ctx = engineContext(ctx)
-        return engine.build(key: key.internalKey, as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
+        return engine.build(key: key.internalKey(ctx), as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
             internalValue.value
         }
     }

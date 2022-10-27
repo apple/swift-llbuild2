@@ -18,7 +18,7 @@ public final class LLBInMemoryFunctionCache: LLBFunctionCache {
     public let group: LLBFuturesDispatchGroup
 
     /// The lock protecting content.
-    let lock = NIOConcurrencyHelpers.Lock()
+    let lock = NIOConcurrencyHelpers.NIOLock()
 
     /// Create an in-memory database.
     public init(group: LLBFuturesDispatchGroup) {
@@ -30,6 +30,6 @@ public final class LLBInMemoryFunctionCache: LLBFunctionCache {
     }
 
     public func update(key: LLBKey, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
-        return group.next().makeSucceededFuture(lock.withLockVoid { cache[Key(key)] = value })
+        return group.next().makeSucceededFuture(lock.withLock { cache[Key(key)] = value })
     }
 }

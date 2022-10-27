@@ -32,7 +32,7 @@ public class LLBKeyDependencyGraph {
     /// An active edge is one where its future is not completed yet.
     private var activeEdges: [ActiveEdge: Int] = [:]
 
-    private let lock = Lock()
+    private let lock = NIOLock()
 
     public init() {
         self.edges = [:]

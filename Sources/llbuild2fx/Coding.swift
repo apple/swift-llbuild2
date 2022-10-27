@@ -50,3 +50,10 @@ extension Encoder {
         try container.encode(str)
     }
 }
+
+extension Encodable {
+    public func fxEncodeJSON() throws -> String {
+        let encoder = FXEncoder()
+        return try String(decoding: encoder.encode(self), as: UTF8.self)
+    }
+}
