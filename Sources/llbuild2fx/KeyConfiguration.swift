@@ -39,7 +39,18 @@ public final class KeyConfiguration<K: FXVersioning>: Encodable {
 
     init(inputs: FXConfigurationInputs) {
         self.inputs = inputs
-        self.allowedInputs = FXSortedSet<String>(K.configurationKeys)
+        self.allowedInputs = Self.resolveKeys(K.configurationKeys, universe: Array(inputs.keys))
+    }
+
+    static func resolveKeys(_ keys: [ConfigurationKey], universe: [String]) -> FXSortedSet<String> {
+        return FXSortedSet(keys.flatMap { key in
+            switch key {
+                case let .literal(val):
+                    return [val]
+                case let .prefix(prefix):
+                    return universe.filter({ $0.hasPrefix(prefix) })
+            }
+        })
     }
 
     public func get<T>(_ key: String) -> T? {
@@ -50,11 +61,19 @@ public final class KeyConfiguration<K: FXVersioning>: Encodable {
     }
 
     public func encode(to encoder: Encoder) throws {
-        let allPossibleAllowed = K.aggregatedConfigurationKeys
+        let allPossibleAllowed = Self.resolveKeys(Array(K.aggregatedConfigurationKeys), universe: Array(self.inputs.keys))
+
         try encoder.fxEncodeHash(of: try inputs.filter{ (k, _) in allPossibleAllowed.contains(k) }.mapValues { (val: Encodable) -> String in try val.fxEncodeJSON() })
     }
 
     func isNoop() -> Bool {
-        return self.allowedInputs.isEmpty && K.aggregatedConfigurationKeys.isEmpty
+        return self.allowedInputs.isEmpty && K.aggregatedConfigurationKeys.allSatisfy({ key in
+            switch key {
+                case .literal(_):
+                    return false
+                case let .prefix(prefix):
+                    return self.inputs.keys.filter { $0.hasPrefix(prefix) }.isEmpty
+            }
+        })
     }
 }
