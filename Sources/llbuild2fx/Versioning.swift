@@ -6,11 +6,16 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+public enum ConfigurationKey: Hashable, Comparable, Codable {
+    case literal(String)
+    case prefix(String)
+}
+
 public protocol FXVersioning {
     static var name: String { get }
     static var version: Int { get }
     static var versionDependencies: [FXVersioning.Type] { get }
-    static var configurationKeys: [String] { get }
+    static var configurationKeys: [ConfigurationKey] { get }
 }
 
 extension FXKey {
@@ -19,14 +24,14 @@ extension FXKey {
     public static var versionDependencies: [FXVersioning.Type] {
         [FXVersioning.Type]()
     }
-    public static var configurationKeys: [String] {
-        [String]()
+    public static var configurationKeys: [ConfigurationKey] {
+        [ConfigurationKey]()
     }
 }
 
 extension FXVersioning {
-    public static var configurationKeys: [String] {
-        [String]()
+    public static var configurationKeys: [ConfigurationKey] {
+        [ConfigurationKey]()
     }
 }
 
@@ -68,8 +73,8 @@ extension FXVersioning {
         return aggregatedVersionDependencies.map { $0.version }.reduce(0, +)
     }
 
-    public static var aggregatedConfigurationKeys: FXSortedSet<String> {
-        return FXSortedSet<String>(aggregatedVersionDependencies.map { $0.configurationKeys }.reduce([], +))
+    public static var aggregatedConfigurationKeys: FXSortedSet<ConfigurationKey> {
+        return FXSortedSet<ConfigurationKey>(aggregatedVersionDependencies.map { $0.configurationKeys }.reduce([], +))
     }
 
     public static var cacheKeyPrefix: String {
