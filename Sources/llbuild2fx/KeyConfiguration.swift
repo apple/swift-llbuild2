@@ -43,12 +43,12 @@ public final class KeyConfiguration<K: FXVersioning>: Encodable {
     }
 
     static func resolveKeys(_ keys: [ConfigurationKey], universe: [String]) -> FXSortedSet<String> {
-        return FXSortedSet(keys.reduce([String](), { (result, key) in
+        return FXSortedSet(keys.reduce(into: [String](), { (result, key) in
             switch key {
                 case let .literal(val):
-                    return result + [val]
+                    result.append(val)
                 case let .prefix(prefix):
-                    return result + universe.filter({ $0.hasPrefix(prefix) })
+                    result.append(contentsOf: universe.filter { $0.hasPrefix(prefix)} )
             }
         }))
     }
