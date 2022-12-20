@@ -206,11 +206,9 @@ public protocol AsyncFXKey: FXKey {
 
 extension AsyncFXKey {
     public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType> {
-        let f = ctx.group.any().makePromise(of: ValueType.self)
-        f.completeWithTask {
+        ctx.group.any().makeFutureWithTask {
             try await computeValue(fi, ctx)
         }
-        return f.futureResult
     }
 }
 

@@ -23,3 +23,15 @@ public protocol FXAction: FXValue {
 extension FXAction {
     public static var version: Int { 0 }
 }
+
+public protocol AsyncFXAction: FXAction {
+    func run(_ ctx: Context) async throws -> ValueType
+}
+
+extension AsyncFXAction {
+    public func run(_ ctx: Context) -> LLBFuture<ValueType> {
+        ctx.group.any().makeFutureWithTask {
+            try await run(ctx)
+        }
+    }
+}

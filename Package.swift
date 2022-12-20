@@ -23,6 +23,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.46.0"),
     ],
     targets: [
         // Core build functionality
