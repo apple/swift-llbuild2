@@ -6,6 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import NIOCore
+
 public struct FXDiagnostics: FXThinEncodedSingleDataIDValue, FXTreeID {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {

@@ -9,6 +9,7 @@
 import LLBBuildSystem
 import Foundation
 import llbuild2
+import NIOCore
 import SwiftProtobuf
 
 // This file is a collection of extensions that make Codable adoption easier for

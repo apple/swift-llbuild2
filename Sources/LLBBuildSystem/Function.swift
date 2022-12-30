@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import NIOCore
 
 /// An "abstract" class that represents a build function, which includes a way to
 /// statically specify the types of the build keys and values.

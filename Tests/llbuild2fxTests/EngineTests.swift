@@ -8,6 +8,7 @@
 
 import XCTest
 
+import NIOCore
 import TSFCAS
 import TSFFutures
 import llbuild2fx

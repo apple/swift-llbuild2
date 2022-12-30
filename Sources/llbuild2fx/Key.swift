@@ -8,6 +8,7 @@
 
 import Foundation
 import NIOConcurrencyHelpers
+import NIOCore
 import TSCUtility
 import llbuild2
 

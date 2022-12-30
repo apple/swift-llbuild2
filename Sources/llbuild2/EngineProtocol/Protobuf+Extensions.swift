@@ -8,7 +8,7 @@
 
 import SwiftProtobuf
 import Foundation
-
+import NIOCore
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message.
 extension LLBSerializableOut where Self: SwiftProtobuf.Message {

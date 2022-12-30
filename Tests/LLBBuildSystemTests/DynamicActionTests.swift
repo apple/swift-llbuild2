@@ -11,6 +11,7 @@ import Foundation
 import LLBBuildSystem
 import LLBBuildSystemTestHelpers
 import LLBBuildSystemUtil
+import LLBUtil
 import TSCBasic
 import XCTest
 
