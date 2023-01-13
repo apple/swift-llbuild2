@@ -64,7 +64,7 @@ public final class LLBBazelCASDatabase {
         }
 
         // Create the GRPC connection
-        let configuration = ClientConnection.Configuration(
+        let configuration = ClientConnection.Configuration.default(
             target: try frontend.toConnectionTarget(),
             eventLoopGroup: group
         )
