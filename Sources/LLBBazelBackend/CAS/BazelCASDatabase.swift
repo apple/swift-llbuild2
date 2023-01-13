@@ -12,6 +12,7 @@ import llbuild2
 
 import BazelRemoteAPI
 import GRPC
+import NIOCore
 import SwiftProtobuf
 import TSCBasic
 

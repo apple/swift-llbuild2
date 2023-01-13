@@ -8,6 +8,7 @@
 
 import llbuild2
 import Foundation
+import NIOCore
 
 /// Helper extension for creating LLBByteBuffers from Data.
 public extension LLBByteBuffer {

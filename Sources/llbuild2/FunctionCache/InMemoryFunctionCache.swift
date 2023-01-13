@@ -7,7 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOConcurrencyHelpers
-
+import NIOCore
 
 /// A simple in-memory implementation of the `LLBFunctionCache` protocol.
 public final class LLBInMemoryFunctionCache: LLBFunctionCache {

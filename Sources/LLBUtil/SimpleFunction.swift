@@ -7,7 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
-
+import NIOCore
 
 public class LLBSimpleFunction: LLBFunction {
     let action: (_ fi: LLBFunctionInterface, _ key: LLBKey, _ ctx: Context) -> LLBFuture<LLBValue>

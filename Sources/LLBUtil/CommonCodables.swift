@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import NIOCore
 
 // LLBCodable support for common types used in llbuild2. Should be expanded as more types are needed. This is not
 // meant ot be a full featured serialization library support, so there's no need to be eager and add support for most of

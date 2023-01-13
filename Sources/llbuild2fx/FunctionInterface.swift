@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOConcurrencyHelpers
+import NIOCore
 import llbuild2
 
 public final class FXFunctionInterface<K: FXKey> {

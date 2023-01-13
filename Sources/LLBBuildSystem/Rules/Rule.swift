@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import NIOCore
 
 /// Protocol definition for a rule lookup delegate, which looks up the rule definition for a given configured target
 /// type.

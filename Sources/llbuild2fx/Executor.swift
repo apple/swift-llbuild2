@@ -10,6 +10,7 @@ import TSCUtility
 import TSFCAS
 import TSFFutures
 import llbuild2
+import NIOCore
 
 public protocol FXExecutor {
     func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment

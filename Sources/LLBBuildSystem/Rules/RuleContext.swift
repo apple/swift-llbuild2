@@ -9,6 +9,7 @@
 import llbuild2
 import Dispatch
 import Foundation
+import NIOCore
 
 public typealias LLBPreAction = (arguments: [String], environment: [String: String], background: Bool)
 

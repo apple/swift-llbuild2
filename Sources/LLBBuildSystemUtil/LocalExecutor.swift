@@ -10,6 +10,7 @@ import Foundation
 import llbuild2
 import TSCBasic
 import Dispatch
+import NIOCore
 
 public enum LLBLocalExecutorError: Error {
     case unimplemented(String)

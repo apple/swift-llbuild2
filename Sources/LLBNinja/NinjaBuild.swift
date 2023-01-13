@@ -8,6 +8,7 @@
 
 import llbuild2
 import LLBUtil
+import NIOCore
 
 import llbuildSwift
 

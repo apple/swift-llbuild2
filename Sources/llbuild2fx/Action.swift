@@ -7,10 +7,10 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Foundation
+import NIOCore
 import TSCUtility
 import TSFCAS
 import TSFFutures
-
 
 public protocol FXAction: FXValue {
     associatedtype ValueType: FXValue

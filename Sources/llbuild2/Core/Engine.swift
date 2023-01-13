@@ -9,6 +9,7 @@
 import Foundation
 
 import NIOConcurrencyHelpers
+import NIOCore
 import TSCUtility
 
 // Explicitly re-export all of Futures/Utility/CAS/CASFileTree for easy of use
