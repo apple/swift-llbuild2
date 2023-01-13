@@ -55,7 +55,7 @@ final class NinjaBuildTests: XCTestCase {
 
 private class LoggingNinjaDelegate: NinjaBuildDelegate {
     var log: [String] = []
-    let lock = NIOConcurrencyHelpers.Lock()
+    let lock = NIOConcurrencyHelpers.NIOLock()
     
     func build(group: LLBFuturesDispatchGroup, path: String) -> LLBFuture<NinjaValue> {
         lock.withLockVoid { log.append("build input '\(path)'") }
