@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-crypto.git", "1.1.4" ..< "3.0.0"),
         .package(url: "https://github.com/apple/swift-llbuild.git", from: "0.5.0"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.8.3"),
-        .package(url: "https://github.com/apple/swift-tools-support-core.git", .upToNextMinor(from: "0.2.7")),
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
