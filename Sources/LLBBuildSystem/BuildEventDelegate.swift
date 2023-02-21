@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import llbuild2
+import Crypto
 import TSCUtility
 
 public enum LLBActionResult {
@@ -34,15 +35,30 @@ public protocol LLBBuildEventActionDescription {
 public extension LLBBuildEventActionDescription {
     var identifier: String {
         get {
-            var hasher = Hasher()
-            arguments.hash(into: &hasher)
-            environment.hash(into: &hasher)
-            preActions.forEach {
-                $0.arguments.hash(into: &hasher)
+            var hashFunction = Crypto.SHA256()
+            arguments.forEach { hashFunction.update(data: $0.data(using: .utf8)!) }
+            environment.sorted(by: <).forEach { (key, value) in
+                hashFunction.update(data: key.data(using: .utf8)!)
+                hashFunction.update(data: value.data(using: .utf8)!)
             }
-            mnemonic.hash(into: &hasher)
-            let value = hasher.finalize()
-            return "\(value * value.signum())"
+            preActions.forEach { preAction in
+                preAction.arguments.forEach {
+                    hashFunction.update(data: $0.data(using: .utf8)!)
+                }
+            }
+            hashFunction.update(data: mnemonic.data(using: .utf8)!)
+            hashFunction.update(data: description.data(using: .utf8)!)
+
+            if let owner = owner {
+                owner.logicalPathComponents.forEach {
+                    hashFunction.update(data: $0.data(using: .utf8)!)
+                }
+                hashFunction.update(data: owner.targetName.data(using: .utf8)!)
+            }
+
+            let digest = hashFunction.finalize()
+
+            return ArraySlice(digest).base64URL()
         }
     }
 }
