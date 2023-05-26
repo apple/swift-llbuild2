@@ -116,8 +116,8 @@ public struct ProcessSpec: Codable {
         case sequence(values: [RuntimeValue], separator: String)
     }
 
-    let executable: Executable
-    let arguments: [RuntimeValue]
+    public let executable: Executable
+    public let arguments: [RuntimeValue]
     let environment: [String: RuntimeValue]
 
     let stdinSource: RelativePath?
@@ -317,7 +317,7 @@ public struct ProcessInputTreeID: FXSingleDataIDValue, FXTreeID {
     }
 }
 
-public struct ProcessOutputTreeID: FXSingleDataIDValue, FXTreeID {
+public struct ProcessOutputTreeID: FXSingleDataIDValue, FXTreeID, Codable {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {
         self.dataID = dataID
@@ -363,5 +363,12 @@ public struct SpawnProcessResult: FXValue, FXTreeID {
 
         treeID = ProcessOutputTreeID(dataID: refs[0])
         exitCode = codableValue
+    }
+}
+
+extension SpawnProcessResult: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case treeID
+        case exitCode
     }
 }
