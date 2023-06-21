@@ -16,7 +16,7 @@ final class FunctionCacheTests: XCTestCase {
 
     /// ${TMPDIR} or just "/tmp", expressed as AbsolutePath
     private var temporaryPath: AbsolutePath {
-        return AbsolutePath(ProcessInfo.processInfo.environment["TMPDIR", default: "/tmp"])
+        return try! AbsolutePath(validating: ProcessInfo.processInfo.environment["TMPDIR", default: "/tmp"])
     }
 
     func doFunctionCacheTests(cache: LLBFunctionCache) throws {
