@@ -74,7 +74,7 @@ final public class LLBLocalExecutor: LLBExecutor {
                         LLBCASFileTree.export(
                             input.dataID,
                             from: ctx.db,
-                            to: .init(fullInputPath.pathString),
+                            to: fullInputPath,
                             ctx
                         ).always { _ in
                             self.statsObserver?.stopObserving(stats)
