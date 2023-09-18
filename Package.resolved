@@ -132,8 +132,8 @@
         "repositoryURL": "https://github.com/apple/swift-tools-support-async.git",
         "state": {
           "branch": null,
-          "revision": "02afc6d0fddac59f253796dc50405c3c617acbb5",
-          "version": "0.8.7"
+          "revision": "beff38cee53e4bb75da2a9951c8f43a5970905fc",
+          "version": "0.10.0"
         }
       },
       {
