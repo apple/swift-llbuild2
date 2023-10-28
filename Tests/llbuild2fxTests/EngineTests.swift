@@ -11,7 +11,8 @@ import XCTest
 import NIOCore
 import TSFCAS
 import TSFFutures
-import llbuild2fx
+import llbuild2
+@testable import llbuild2fx
 
 
 public struct SumInput: Codable {
@@ -94,6 +95,62 @@ public struct Sum: FXKey {
 }
 
 
+public struct AbsoluteSum: AsyncFXKey {
+    public typealias ValueType = SumAction.ValueType
+
+    public static let version = SumAction.version
+
+    public static let versionDependencies: [FXVersioning.Type] = [Sum.self]
+
+    public let values: [Int]
+
+    public init(values: [Int]) {
+        self.values = values
+    }
+
+    public func computeValue(_ fi: FXFunctionInterface<AbsoluteSum>, _ ctx: Context) async throws -> SumAction.ValueType {
+        let sum = try await fi.request(Sum(values: self.values), ctx).total
+        return SumOutput(total: sum < 0 ? sum * -1 : sum)
+    }
+
+    public func validateCache(cached: SumAction.ValueType) -> Bool {
+        return cached.total >= 0
+    }
+
+    public func fixCached(value: SumAction.ValueType, _ fi: FXFunctionInterface<AbsoluteSum>, _ ctx: Context) async throws -> SumAction.ValueType? {
+        if value.total < 0 {
+            return SumAction.ValueType(total: value.total * -1)
+        }
+
+        return nil
+    }
+}
+
+actor TestFunctionCache {
+    private var cache: [String: LLBDataID] = [:]
+
+    func get(key: LLBKey, props: FXKeyProperties, _ ctx: Context) async -> LLBDataID? {
+        return cache[props.cachePath]
+    }
+
+    func update(key: LLBKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) async {
+        cache[props.cachePath] = value
+    }
+}
+
+extension TestFunctionCache: FXFunctionCache {
+    nonisolated func get(key: LLBKey, props: FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?> {
+        return ctx.group.any().makeFutureWithTask {
+            return await self.get(key: key, props: props, ctx)
+        }
+    }
+
+    nonisolated func update(key: LLBKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
+        return ctx.group.any().makeFutureWithTask {
+            _ = await self.update(key: key, props: props, value: value, ctx)
+        }
+    }
+}
 
 final class EngineTests: XCTestCase {
     func testBasicMath() throws {
@@ -105,6 +162,26 @@ final class EngineTests: XCTestCase {
         let engine = FXBuildEngine(group: group, db: db, functionCache: nil, executor: executor)
 
         let result = try engine.build(key: Sum(values: [2, 3, 4]), ctx).wait()
+        XCTAssertEqual(result.total, 9)
+    }
+
+    func testWeirdMath() async throws {
+        var ctx = Context()
+        let group = LLBMakeDefaultDispatchGroup()
+        let db = LLBInMemoryCASDatabase(group: group)
+        let executor = FXLocalExecutor()
+        let functionCache = TestFunctionCache()
+        ctx.db = db
+        ctx.group = group
+
+        let internalKey = AbsoluteSum(values: [-2, -3, -4]).internalKey(ctx)
+        let cachedOutput = SumOutput(total: -9)
+        let cacheID = try await ctx.db.put(try cachedOutput.asCASObject(), ctx).get()
+        try await functionCache.update(key: internalKey, props: internalKey, value: cacheID, ctx).get()
+
+        let engine = FXBuildEngine(group: group, db: db, functionCache: functionCache, executor: executor)
+
+        let result = try await engine.build(key: AbsoluteSum(values: [-2, -3, -4]), ctx).get()
         XCTAssertEqual(result.total, 9)
     }
 }

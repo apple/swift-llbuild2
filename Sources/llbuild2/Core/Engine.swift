@@ -101,20 +101,22 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
     public init() {}
 
     private func computeAndUpdate(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue> {
-        return self.compute(key: key, fi, ctx).flatMap { (value: LLBValue) in
-            do {
-                return ctx.db.put(try value.asCASObject(), ctx).flatMap { resultID in
-                    return fi.functionCache.update(key: key, value: resultID, ctx).map {
-                        return value
-                    }
-                }
-            } catch {
-                return ctx.group.next().makeFailedFuture(error)
-            }
-        }.map { (value: LLBValue) in
-            ctx.logger?.trace("    evaluated \(key.logDescription())")
-            return value
+        return ctx.group.any().makeFutureWithTask {
+            return try await self.computeAndUpdate(key: key, fi, ctx)
         }
+    }
+
+    private func computeAndUpdate(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) async throws -> LLBValue {
+        defer { ctx.logger?.trace("    evaluated \(key.logDescription())") }
+
+        let value = try await self.compute(key: key, fi, ctx).get()
+        guard self.validateCache(key: key, cached: value) else {
+            throw LLBError.inconsistentValue("\(String(describing: type(of: key))) evaluated to a value that does not pass its own validateCache() check!")
+        }
+
+        let resultID = try await ctx.db.put(try value.asCASObject(), ctx).get()
+        _ = try await fi.functionCache.update(key: key, value: resultID, ctx).get()
+        return value
     }
 
     private func unpack(_ object: LLBCASObject, _ fi: LLBFunctionInterface) throws -> V {
@@ -135,37 +137,59 @@ open class LLBTypedCachingFunction<K: LLBKey, V: LLBValue>: LLBFunction {
 
     @_disfavoredOverload
     public func compute(key: LLBKey, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<LLBValue> {
+        return ctx.group.any().makeFutureWithTask {
+            return try await self.compute(key: key, fi, ctx)
+        }
+    }
+
+    @_disfavoredOverload
+    public func compute(key: LLBKey, _ fi: LLBFunctionInterface, _ ctx: Context) async throws -> LLBValue {
         guard let typedKey = key as? K else {
-            return ctx.group.next().makeFailedFuture(LLBError.unexpectedKeyType(String(describing: type(of: key))))
+            throw LLBError.unexpectedKeyType(String(describing: type(of: key)))
         }
 
         ctx.logger?.trace("evaluating \(key.logDescription())")
 
-        return fi.functionCache.get(key: key, ctx).flatMap { result -> LLBFuture<LLBValue> in
-            if let resultID = result {
-                return ctx.db.get(resultID, ctx).flatMap { objectOpt in
-                    guard let object = objectOpt else {
-                        return self.computeAndUpdate(key: typedKey, fi, ctx)
-                    }
-                    do {
-                        let value: V = try self.unpack(object, fi)
-                        ctx.logger?.trace("    cached \(key.logDescription())")
-                        return ctx.group.next().makeSucceededFuture(value)
-                    } catch {
-                        guard self.recomputeOnCacheFailure else {
-                            return ctx.group.next().makeFailedFuture(error)
-                        }
-                        return self.computeAndUpdate(key: typedKey, fi, ctx)
-                    }
+        guard let resultID = try await fi.functionCache.get(key: key, ctx).get(), let object = try await ctx.db.get(resultID, ctx).get() else {
+            return try await self.computeAndUpdate(key: typedKey, fi, ctx).get()
+        }
+
+        do {
+            let value: V = try self.unpack(object, fi)
+            ctx.logger?.trace("    cached \(key.logDescription())")
+
+            guard validateCache(key: typedKey, cached: value) else {
+                guard let newValue = try await self.fixCached(key: typedKey, value: value, fi, ctx).get() else {
+                    // Throw here to engage recomputeOnCacheFailure logic below.
+                    throw LLBError.invalidValueType("failed to validate cache for \(String(describing: type(of: typedKey))), and fixCached() was not able to solve the problem")
                 }
+
+                let newResultID = try await ctx.db.put(try newValue.asCASObject(), ctx).get()
+                _ = try await fi.functionCache.update(key: typedKey, value: newResultID, ctx).get()
+                return newValue
             }
-            return self.computeAndUpdate(key: typedKey, fi, ctx)
+
+            return value
+        } catch {
+            guard self.recomputeOnCacheFailure else {
+                throw error
+            }
+
+            return try await self.computeAndUpdate(key: typedKey, fi, ctx).get()
         }
     }
 
     open func compute(key: K, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<V> {
         // This is a developer error and not a runtime error, which is why fatalError is used.
         fatalError("unimplemented: this method is expected to be overridden by subclasses.")
+    }
+
+    open func validateCache(key: K, cached: V) -> Bool {
+        return true
+    }
+
+    open func fixCached(key: K, value: V, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<V?> {
+        return ctx.group.next().makeSucceededFuture(nil)
     }
 }
 
@@ -181,6 +205,7 @@ public extension LLBEngineDelegate {
 public enum LLBError: Error {
     case invalidValueType(String)
     case unexpectedKeyType(String)
+    case inconsistentValue(String)
 }
 
 internal struct Key {
