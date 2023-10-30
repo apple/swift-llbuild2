@@ -24,6 +24,9 @@ public protocol FXKey: Encodable, FXVersioning {
     var hint: String? { get }
 
     func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType>
+
+    func validateCache(cached: ValueType) -> Bool
+    func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?>
 }
 
 extension FXKey {
@@ -32,6 +35,14 @@ extension FXKey {
     public static var recomputeOnCacheFailure: Bool { true }
 
     public var hint: String? { nil }
+
+    public func validateCache(cached: ValueType) -> Bool {
+        return true
+    }
+
+    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?> {
+        return ctx.group.next().makeSucceededFuture(nil)
+    }
 }
 
 
@@ -199,16 +210,34 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
             ctx.fxBuildEngineStats.remove(key: key.name)
         }
     }
+
+    override func validateCache(key: InternalKey<K>, cached: InternalValue<K.ValueType>) -> Bool {
+        return key.key.validateCache(cached: cached.value)
+    }
+
+    override func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<InternalValue<K.ValueType>?> {
+        let actualKey = key.key
+
+        let fxfi = FXFunctionInterface(actualKey, fi)
+        return actualKey.fixCached(value: value.value, fxfi, ctx).map { maybeFixed in maybeFixed.map { InternalValue($0, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot) }}
+    }
 }
 
 public protocol AsyncFXKey: FXKey {
     func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) async throws -> ValueType
+    func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) async throws -> ValueType?
 }
 
 extension AsyncFXKey {
     public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType> {
         ctx.group.any().makeFutureWithTask {
             try await computeValue(fi, ctx)
+        }
+    }
+
+    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?> {
+        ctx.group.any().makeFutureWithTask {
+            try await fixCached(value: value, fi, ctx)
         }
     }
 }
