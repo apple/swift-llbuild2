@@ -240,6 +240,10 @@ extension AsyncFXKey {
             try await fixCached(value: value, fi, ctx)
         }
     }
+
+    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) async throws -> ValueType? {
+        return nil
+    }
 }
 
 extension FXFunctionInterface {
