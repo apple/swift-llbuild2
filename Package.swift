@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "llbuild2Ninja", targets: ["LLBNinja"]),
         .library(name: "llbuild2BuildSystem", targets: ["LLBBuildSystem"]),
         .library(name: "llbuild2Util", targets: ["LLBUtil", "LLBBuildSystemUtil"]),
+        .library(name: "BashExpr", targets: ["BashExpr", "MemoizedBashExpr"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
@@ -23,6 +24,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-bash", .branch("master")),
+        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.8.0"),
     ],
     targets: [
         // Core build functionality
@@ -33,6 +36,26 @@ let package = Package(
         .testTarget(
             name: "llbuild2Tests",
             dependencies: ["llbuild2", "LLBUtil"]
+        ),
+
+        .target(
+            name: "BashExpr",
+            dependencies: [
+                "llbuild2",
+                .product(name: "TreeSitterBash", package: "tree-sitter-bash"),
+                .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
+            ]
+        ),
+        .target(
+            name: "MemoizedBashExpr",
+            dependencies: [
+                "BashExpr",
+                "llbuild2fx"
+            ]
+        ),
+        .testTarget(
+            name: "BashExprTests",
+            dependencies: ["llbuild2", "BashExpr", "MemoizedBashExpr"]
         ),
 
         // Bazel RemoteAPI Protocol
