@@ -168,6 +168,7 @@ extension InternalKey: FXFunctionProvider {
 public enum FXError: Swift.Error {
     case FXValueComputationError(keyPrefix: String, key: String, error: Swift.Error, requestedCacheKeyPaths: FXSortedSet<String>)
     case FXKeyEncodingError(keyPrefix: String, encodingError: Swift.Error, underlyingError: Swift.Error)
+    case FXMissingRequiredCacheEntry(cachePath: String)
 }
 
 
@@ -248,6 +249,15 @@ extension AsyncFXKey {
 
 extension FXFunctionInterface {
     public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) async throws -> X.ValueType {
-        try await request(x, requireCacheHit: requireCacheHit, ctx).get()
+        do {
+            return try await request(x, requireCacheHit: requireCacheHit, ctx).get()
+        } catch let error as Error {
+            switch error {
+            case .missingRequiredCacheEntry(let cachePath):
+                throw FXError.FXMissingRequiredCacheEntry(cachePath: cachePath)
+            case .unexpressedKeyDependency, .executorCannotSatisfyRequirements, .noExecutable:
+                throw error
+            }
+        }
     }
 }
