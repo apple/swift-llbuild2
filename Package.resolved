@@ -144,6 +144,24 @@
           "revision": "284a41800b7c5565512ec6ae21ee818aac1f84ac",
           "version": "0.4.0"
         }
+      },
+      {
+        "package": "SwiftTreeSitter",
+        "repositoryURL": "https://github.com/ChimeHQ/SwiftTreeSitter",
+        "state": {
+          "branch": null,
+          "revision": "2599e95310b3159641469d8a21baf2d3d200e61f",
+          "version": "0.8.0"
+        }
+      },
+      {
+        "package": "TreeSitterBash",
+        "repositoryURL": "https://github.com/tree-sitter/tree-sitter-bash",
+        "state": {
+          "branch": "master",
+          "revision": "f8fb3274f72a30896075585b32b0c54cad65c086",
+          "version": null
+        }
       }
     ]
   },
