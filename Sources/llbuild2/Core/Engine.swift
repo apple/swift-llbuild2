@@ -11,6 +11,9 @@ import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
 import TSCUtility
+import Tracing
+import Instrumentation
+import llbuild2
 
 // Explicitly re-export all of Futures/Utility/CAS/CASFileTree for easy of use
 @_exported import TSFCASFileTree

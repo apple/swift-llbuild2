@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/apple/swift-atomics.git",
         "state": {
           "branch": null,
-          "revision": "ff3d2212b6b093db7f177d0855adbc4ef9c5f036",
-          "version": "1.0.3"
+          "revision": "cd142fd2f64be2100422d658e7411e39489da985",
+          "version": "1.2.0"
         }
       },
       {
@@ -44,6 +44,15 @@
           "branch": null,
           "revision": "9cc89f0170308b813af05dadcd26f9a2dee47713",
           "version": "2.2.3"
+        }
+      },
+      {
+        "package": "swift-distributed-tracing",
+        "repositoryURL": "https://github.com/apple/swift-distributed-tracing",
+        "state": {
+          "branch": null,
+          "revision": "6483d340853a944c96dbcc28b27dd10b6c581703",
+          "version": "1.1.2"
         }
       },
       {
@@ -69,8 +78,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "4ad2c3733845abd9ee8892a323b0fa0d80f37e34",
-          "version": "2.47.0"
+          "revision": "702cd7c56d5d44eeba73fdf83918339b26dc855c",
+          "version": "2.62.0"
         }
       },
       {
@@ -96,8 +105,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
         "state": {
           "branch": null,
-          "revision": "4fb7ead803e38949eb1d6fabb849206a72c580f3",
-          "version": "2.23.0"
+          "revision": "c7e95421334b1068490b5d41314a50e70bab23d1",
+          "version": "2.29.0"
         }
       },
       {
@@ -105,8 +114,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio-transport-services.git",
         "state": {
           "branch": null,
-          "revision": "c0d9a144cfaec8d3d596aadde3039286a266c15c",
-          "version": "1.15.0"
+          "revision": "bbd5e63cf949b7db0c9edaf7a21e141c52afe214",
+          "version": "1.23.0"
         }
       },
       {
@@ -116,6 +125,15 @@
           "branch": null,
           "revision": "ab3a58b7209a17d781c0d1dbb3e1ff3da306bae8",
           "version": "1.20.3"
+        }
+      },
+      {
+        "package": "swift-service-context",
+        "repositoryURL": "https://github.com/apple/swift-service-context.git",
+        "state": {
+          "branch": null,
+          "revision": "0c62c5b4601d6c125050b5c3a97f20cce881d32b",
+          "version": "1.1.0"
         }
       },
       {

@@ -11,6 +11,7 @@ import NIOConcurrencyHelpers
 import NIOCore
 import TSCUtility
 import llbuild2
+import Tracing
 
 public protocol FXKey: Encodable, FXVersioning {
     associatedtype ValueType: FXValue
@@ -182,6 +183,15 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
         let actualKey = key.key
 
         ctx.fxBuildEngineStats.add(key: key.name)
+        let span = ctx.tracer?.startSpan(
+            key.logDescription(),
+            context: .TODO(),
+            ofKind: .internal,
+            at: DefaultTracerClock.now,
+            function: #function,
+            file: #file,
+            line: #line
+        )
 
         let fxfi = FXFunctionInterface(actualKey, fi)
         return actualKey.computeValue(fxfi, ctx).flatMapError { underlyingError in
@@ -209,6 +219,7 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
             InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
         }.always { _ in
             ctx.fxBuildEngineStats.remove(key: key.name)
+            span?.end()
         }
     }
 
