@@ -23,12 +23,18 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
+        .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.1.2"),
     ],
     targets: [
         // Core build functionality
         .target(
             name: "llbuild2",
-            dependencies: ["SwiftToolsSupportCAS", "Logging"]
+            dependencies: [
+                "SwiftToolsSupportCAS",
+                "Logging",
+                .product(name: "Tracing", package: "swift-distributed-tracing"),
+                .product(name: "Instrumentation", package: "swift-distributed-tracing")
+            ]
         ),
         .testTarget(
             name: "llbuild2Tests",
