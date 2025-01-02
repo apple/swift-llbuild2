@@ -12,6 +12,7 @@ import NIOCore
 import TSCUtility
 import llbuild2
 import Tracing
+import Logging
 
 public protocol FXKey: Encodable, FXVersioning {
     associatedtype ValueType: FXValue
@@ -173,6 +174,51 @@ public enum FXError: Swift.Error {
 }
 
 
+public enum ParentUUIDKey { }
+
+public enum SelfUUIDKey { }
+
+private enum TraceIDKey { }
+
+/// Support storing and retrieving a tracer instance from a Context.
+public extension Context {
+    public var parentUUID: String? {
+        get {
+            guard let parentUUID = self[ObjectIdentifier(ParentUUIDKey.self)] as? String else {
+                return nil
+            }
+            return parentUUID
+        }
+        set {
+            self[ObjectIdentifier(ParentUUIDKey.self)] = newValue
+        }
+    }
+
+    public var selfUUID: String? {
+        get {
+            guard let selfUUID = self[ObjectIdentifier(SelfUUIDKey.self)] as? String else {
+                return nil
+            }
+            return selfUUID
+        }
+        set {
+            self[ObjectIdentifier(SelfUUIDKey.self)] = newValue
+        }
+    }
+
+    public var traceID: String? {
+        get {
+            guard let traceID = self[ObjectIdentifier(TraceIDKey.self)] as? String else {
+                return nil
+            }
+            return traceID
+        }
+        set {
+            self[ObjectIdentifier(TraceIDKey.self)] = newValue
+        }
+    }
+}
+
 final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
 
     override var recomputeOnCacheFailure: Bool { K.recomputeOnCacheFailure }
@@ -182,30 +228,36 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
     > {
         let actualKey = key.key
 
-        ctx.fxBuildEngineStats.add(key: key.name)
-        let span = ctx.tracer?.startSpan(
-            key.logDescription(),
-            context: .TODO(),
-            ofKind: .internal,
-            at: DefaultTracerClock.now,
-            function: #function,
-            file: #file,
-            line: #line
-        )
-
         let fxfi = FXFunctionInterface(actualKey, fi)
-        return actualKey.computeValue(fxfi, ctx).flatMapError { underlyingError in
+
+        let keyData = try! FXEncoder().encode(actualKey)
+        let encodedKey = String(bytes: keyData, encoding: .utf8)!
+        let keyPrefix = FXCacheKeyPrefixMemoizer.get(for: actualKey)
+
+        ctx.fxBuildEngineStats.add(key: key.name)
+
+        var childContext = ctx
+
+        childContext.parentUUID = ctx.selfUUID
+        childContext.selfUUID = UUID().uuidString
+
+        let span = startSpan(keyPrefix, ofKind: .client)
+
+        span.attributes["trace.span_id"] = childContext.selfUUID
+        span.attributes["trace.parent_id"] = childContext.parentUUID
+        span.attributes["trace.trace_id"] = ctx.traceID
+
+        return actualKey.computeValue(fxfi, childContext).flatMapError { underlyingError in
             let augmentedError: Swift.Error
 
             do {
-                let keyData = try FXEncoder().encode(actualKey)
-                let encodedKey = String(bytes: keyData, encoding: .utf8)!
                 augmentedError = FXError.FXValueComputationError(
-                    keyPrefix: FXCacheKeyPrefixMemoizer.get(for: actualKey),
+                    keyPrefix: keyPrefix,
                     key: encodedKey,
                     error: underlyingError,
                     requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
                 )
+                span.recordError(underlyingError)
             } catch {
                 augmentedError = FXError.FXKeyEncodingError(
                     keyPrefix: FXCacheKeyPrefixMemoizer.get(for: actualKey),
@@ -216,10 +268,15 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
 
             return ctx.group.next().makeFailedFuture(augmentedError)
         }.map { value in
-            InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
+            span.attributes["value"] = "\(value)"
+
+            return InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
         }.always { _ in
+            span.attributes["keyPrefix"] = keyPrefix.description
+            span.attributes["key"] = encodedKey.description
+
             ctx.fxBuildEngineStats.remove(key: key.name)
-            span?.end()
+            span.end()
         }
     }
 
