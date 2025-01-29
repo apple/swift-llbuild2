@@ -6,6 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Dispatch
 import Logging
 import NIOCore
 import TSFCAS
@@ -19,6 +20,7 @@ public final class FXBuildEngine {
     private let executor: FXExecutor
     private let stats: FXBuildEngineStats
     private let logger: Logger?
+    private let partialResultExpiration: DispatchTimeInterval
 
     public init(
         group: LLBFuturesDispatchGroup,
@@ -26,7 +28,8 @@ public final class FXBuildEngine {
         functionCache: FXFunctionCache?,
         executor: FXExecutor,
         stats: FXBuildEngineStats? = nil,
-        logger: Logger? = nil
+        logger: Logger? = nil,
+        partialResultExpiration: DispatchTimeInterval = .seconds(300)
     ) {
         self.group = group
         self.db = db
@@ -34,6 +37,7 @@ public final class FXBuildEngine {
         self.executor = executor
         self.stats = stats ?? .init()
         self.logger = logger
+        self.partialResultExpiration = partialResultExpiration
     }
 
     private var engine: LLBEngine {
@@ -50,7 +54,8 @@ public final class FXBuildEngine {
             group: group,
             delegate: delegate,
             db: db,
-            functionCache: functionCache
+            functionCache: functionCache,
+            partialResultExpiration: partialResultExpiration
         )
     }
 

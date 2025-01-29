@@ -250,13 +250,14 @@ public class LLBEngine {
         delegate: LLBEngineDelegate,
         db: LLBCASDatabase? = nil,
         executor: LLBExecutor = LLBNullExecutor(),
-        functionCache: LLBFunctionCache? = nil
+        functionCache: LLBFunctionCache? = nil,
+        partialResultExpiration: DispatchTimeInterval = .seconds(300)
     ) {
         self.group = group
         self.delegate = delegate
         self.db = db ?? LLBInMemoryCASDatabase(group: group)
         self.executor = executor
-        self.pendingResults = LLBEventualResultsCache<Key, LLBValue>(group: group)
+        self.pendingResults = LLBEventualResultsCache<Key, LLBValue>(group: group, partialResultExpiration: partialResultExpiration)
         self.functionCache = functionCache ?? LLBInMemoryFunctionCache(group: group)
 
         delegate.registerTypes(registry: registry)
