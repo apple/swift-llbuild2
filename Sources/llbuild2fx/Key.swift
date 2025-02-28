@@ -75,16 +75,18 @@ private struct FXCacheKeyPrefixMemoizer {
 final class InternalKey<K: FXKey> {
     let name: String
     let key: K
-    private var ctx: Context
+    private let ctx: Context
+    let stableHashValue: LLBDataID
+    let cachePath: String
 
     init(_ key: K, _ ctx: Context) {
-        name = String(describing: K.self)
+        self.name = String(describing: K.self)
         self.key = key
         self.ctx = ctx
-    }
-
-    private var hashData: Data {
-        cachePath.data(using: .utf8)!
+        let cachePath = Self.calculateCachePath(key: key, ctx: ctx)
+        let hashData = Array(cachePath.utf8)
+        self.stableHashValue = LLBDataID(blake3hash: hashData[...])
+        self.cachePath = cachePath
     }
 }
 
@@ -93,7 +95,7 @@ extension InternalKey: FXKeyProperties {
         K.volatile
     }
 
-    var cachePath: String {
+    static func calculateCachePath(key: K, ctx: Context) -> String {
         func cachePathWithoutConfig() -> String {
             let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
             let keyLengthLimit = 250
@@ -110,7 +112,7 @@ extension InternalKey: FXKeyProperties {
 
             let json = try! FXEncoder().encode(key)
             guard json.count > keyLengthLimit else {
-                return [basePath, String(data: json, encoding: .utf8)!].joined(separator: "/")
+                return [basePath, String(decoding: json, as: UTF8.self)].joined(separator: "/")
             }
 
             let hash = LLBDataID(blake3hash: ArraySlice<UInt8>(json))
@@ -134,7 +136,7 @@ extension InternalKey: FXKeyProperties {
 
 extension InternalKey: LLBKey {
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stableHashValue)
+        hasher.combine(self.stableHashValue)
     }
 
     var hashValue: Int {
@@ -144,20 +146,13 @@ extension InternalKey: LLBKey {
     }
 
     func logDescription() -> String {
-        debugDescription
-    }
-}
-
-extension InternalKey: LLBStablyHashable {
-    var stableHashValue: LLBDataID {
-        let hashData = cachePath.data(using: .utf8)!
-        return LLBDataID(blake3hash: ArraySlice(hashData))
+        self.debugDescription
     }
 }
 
 extension InternalKey: CustomDebugStringConvertible {
     var debugDescription: String {
-        "KEY: //\(cachePath) [HASH: \(hashValue)]"
+        "KEY: //\(self.cachePath) [HASH: \(self.hashValue)]"
     }
 }
 
