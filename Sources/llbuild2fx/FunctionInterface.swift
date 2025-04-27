@@ -8,18 +8,10 @@
 
 import NIOConcurrencyHelpers
 import NIOCore
-import llbuild2
 
 public final class FXFunctionInterface<K: FXKey> {
-    enum Error: Swift.Error {
-        case missingRequiredCacheEntry(String)
-        case unexpressedKeyDependency(from: String, to: String)
-        case executorCannotSatisfyRequirements
-        case noExecutable
-    }
-
     private let key: K
-    private let fi: LLBFunctionInterface
+    private let fi: FunctionInterface
     private var requestedKeyCachePaths = FXSortedSet<String>()
     private let lock = NIOLock()
     var requestedCacheKeyPathsSnapshot: FXSortedSet<String> {
@@ -28,7 +20,7 @@ public final class FXFunctionInterface<K: FXKey> {
         }
     }
 
-    init(_ key: K, _ fi: LLBFunctionInterface) {
+    init(_ key: K, _ fi: FunctionInterface) {
         self.key = key
         self.fi = fi
     }
@@ -40,7 +32,7 @@ public final class FXFunctionInterface<K: FXKey> {
             // Check that the key dependency is either explicity declared or
             // recursive/self-referential.
             guard K.versionDependencies.contains(where: { $0 == X.self }) || X.self == K.self else {
-                throw Error.unexpressedKeyDependency(
+                throw FXError.unexpressedKeyDependency(
                     from: key.internalKey(ctx).logDescription(),
                     to: realX.logDescription()
                 )
@@ -52,9 +44,9 @@ public final class FXFunctionInterface<K: FXKey> {
 
             let cacheCheck: LLBFuture<Void>
             if requireCacheHit {
-                cacheCheck = self.fi.functionCache.get(key: realX, ctx).flatMapThrowing { maybeValue in
+                cacheCheck = self.fi.functionCache.get(key: realX, props: realX, ctx).flatMapThrowing { maybeValue in
                     guard maybeValue != nil else {
-                        throw Error.missingRequiredCacheEntry(realX.cachePath)
+                        throw FXError.missingRequiredCacheEntry(cachePath: realX.cachePath)
                     }
 
                     return
@@ -88,10 +80,10 @@ public final class FXFunctionInterface<K: FXKey> {
 
         if executor.canSatisfy(requirements: requirements) {
             ctx.logger?.debug("Will perform action: \(action)")
-            let exe = executable ?? ctx.group.next().makeFailedFuture(Error.noExecutable)
+            let exe = executable ?? ctx.group.next().makeFailedFuture(FXError.noExecutable)
             result = executor.perform(action: action, with: exe, requirements: requirements, ctx)
         } else {
-            result = ctx.group.next().makeFailedFuture(Error.executorCannotSatisfyRequirements)
+            result = ctx.group.next().makeFailedFuture(FXError.executorCannotSatisfyRequirements)
         }
 
         return result.always { _ in

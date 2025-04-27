@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Foundation
-import llbuild2
 
 public protocol FXValue {
     associatedtype CodableValueType: Codable
@@ -180,7 +179,7 @@ struct FXValueMetadata: Codable {
     }
 }
 
-final class InternalValue<V: FXValue>: LLBValue {
+final class InternalValue<V: FXValue>: FXResult {
     let value: V
     let metadata: FXValueMetadata
 

@@ -10,8 +10,9 @@ import Foundation
 
 import ArgumentParser
 import TSCBasic
+import TSFCAS
+import TSCUtility
 
-import llbuild2
 import LLBCASTool
 
 

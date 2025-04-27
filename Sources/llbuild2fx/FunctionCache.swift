@@ -9,7 +9,6 @@
 import Logging
 import NIOCore
 import TSCUtility
-import llbuild2
 
 public protocol FXKeyProperties {
     var volatile: Bool { get }
@@ -18,38 +17,6 @@ public protocol FXKeyProperties {
 }
 
 public protocol FXFunctionCache {
-    func get(key: LLBKey, props: FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?>
-    func update(key: LLBKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void>
-}
-
-class FXFunctionCacheAdaptor: LLBFunctionCache {
-    enum Error: Swift.Error {
-        case notCachePathProvider(LLBKey)
-    }
-
-    private let group: LLBFuturesDispatchGroup
-    private let cache: FXFunctionCache
-
-    init(
-        group: LLBFuturesDispatchGroup,
-        cache: FXFunctionCache
-    ) {
-        self.group = group
-        self.cache = cache
-    }
-
-    func get(key: LLBKey, _ ctx: Context) -> LLBFuture<LLBDataID?> {
-        guard let props = key as? FXKeyProperties else {
-            return group.next().makeFailedFuture(Error.notCachePathProvider(key))
-        }
-        return cache.get(key: key, props: props, ctx)
-    }
-
-    func update(key: LLBKey, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
-        guard let props = key as? FXKeyProperties else {
-            ctx.logger?.trace("function cache: \(key) not cache path provider")
-            return group.next().makeFailedFuture(Error.notCachePathProvider(key))
-        }
-        return cache.update(key: key, props: props, value: value, ctx)
-    }
+    func get(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?>
+    func update(key: FXRequestKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void>
 }

@@ -10,7 +10,6 @@ import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
 import TSCUtility
-import llbuild2
 import Tracing
 import Logging
 
@@ -48,7 +47,7 @@ extension FXKey {
 }
 
 
-extension FXKey {
+internal extension FXKey {
     func internalKey(_ ctx: Context) -> InternalKey<Self> {
         InternalKey(self, ctx)
     }
@@ -72,7 +71,7 @@ private struct FXCacheKeyPrefixMemoizer {
 
 }
 
-final class InternalKey<K: FXKey> {
+internal final class InternalKey<K: FXKey> {
     let name: String
     let key: K
     private let ctx: Context
@@ -134,7 +133,7 @@ extension InternalKey: FXKeyProperties {
     }
 }
 
-extension InternalKey: LLBKey {
+extension InternalKey: FXRequestKey {
     func hash(into hasher: inout Hasher) {
         hasher.combine(self.stableHashValue)
     }
@@ -150,34 +149,25 @@ extension InternalKey: LLBKey {
     }
 }
 
+extension InternalKey: CallableKey {
+    func function() -> GenericFunction {
+        TypedFunction<K>()
+    }
+}
+
 extension InternalKey: CustomDebugStringConvertible {
     var debugDescription: String {
         "KEY: //\(self.cachePath) [HASH: \(self.hashValue)]"
     }
 }
 
-extension InternalKey: FXFunctionProvider {
-    func function() -> LLBFunction {
-        FXFunction<K>()
-    }
-}
-
-public enum FXError: Swift.Error {
-    case FXValueComputationError(keyPrefix: String, key: String, error: Swift.Error, requestedCacheKeyPaths: FXSortedSet<String>)
-    case FXKeyEncodingError(keyPrefix: String, encodingError: Swift.Error, underlyingError: Swift.Error)
-    case FXMissingRequiredCacheEntry(cachePath: String)
-}
-
-
-public enum ParentUUIDKey { }
-
-public enum SelfUUIDKey { }
-
+private enum ParentUUIDKey { }
+private enum SelfUUIDKey { }
 private enum TraceIDKey { }
 
 /// Support storing and retrieving a tracer instance from a Context.
 public extension Context {
-    public var parentUUID: String? {
+    var parentUUID: String? {
         get {
             guard let parentUUID = self[ObjectIdentifier(ParentUUIDKey.self)] as? String else {
                 return nil
@@ -189,7 +179,7 @@ public extension Context {
         }
     }
 
-    public var selfUUID: String? {
+    var selfUUID: String? {
         get {
             guard let selfUUID = self[ObjectIdentifier(SelfUUIDKey.self)] as? String else {
                 return nil
@@ -201,7 +191,7 @@ public extension Context {
         }
     }
 
-    public var traceID: String? {
+    var traceID: String? {
         get {
             guard let traceID = self[ObjectIdentifier(TraceIDKey.self)] as? String else {
                 return nil
@@ -214,11 +204,82 @@ public extension Context {
     }
 }
 
-final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, InternalValue<K.ValueType>> {
+final class TypedFunction<K: FXKey>: GenericFunction {
+    var recomputeOnCacheFailure: Bool { K.recomputeOnCacheFailure }
 
-    override var recomputeOnCacheFailure: Bool { K.recomputeOnCacheFailure }
+    enum Error: Swift.Error {
+        case notCachePathProvider(FXRequestKey)
+    }
 
-    override func compute(key: InternalKey<K>, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<
+    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<FXResult> {
+        return ctx.group.any().makeFutureWithTask {
+            return try await self.computeAndUpdate(key: key, fi, ctx)
+        }
+    }
+
+    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) async throws -> FXResult {
+        defer { ctx.logger?.trace("    evaluated \(key.logDescription())") }
+
+        let value = try await self.compute(key: key, fi, ctx).get()
+        guard self.validateCache(key: key, cached: value) else {
+            throw FXError.inconsistentValue("\(String(describing: type(of: key))) evaluated to a value that does not pass its own validateCache() check!")
+        }
+
+        let resultID = try await ctx.db.put(try value.asCASObject(), ctx).get()
+        _ = try await fi.functionCache.update(key: key, props: key, value: resultID, ctx).get()
+        return value
+    }
+
+    private func unpack(_ object: LLBCASObject, _ fi: FunctionInterface) throws -> InternalValue<K.ValueType> {
+        return try InternalValue<K.ValueType>.init(from: object)
+    }
+
+    @_disfavoredOverload
+    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<FXResult> {
+        return ctx.group.any().makeFutureWithTask {
+            return try await self.compute(key: key, fi, ctx)
+        }
+    }
+
+    @_disfavoredOverload
+    func compute(key untypedKey: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) async throws -> FXResult {
+        guard let key = untypedKey as? InternalKey<K> else {
+            throw FXError.unexpectedKeyType(String(describing: type(of: untypedKey)))
+        }
+
+        ctx.logger?.trace("evaluating \(key.logDescription())")
+
+        guard let resultID = try await fi.functionCache.get(key: key, props: key, ctx).get(), let object = try await ctx.db.get(resultID, ctx).get() else {
+            return try await self.computeAndUpdate(key: key, fi, ctx).get()
+        }
+
+        do {
+            let value: InternalValue<K.ValueType> = try self.unpack(object, fi)
+            ctx.logger?.trace("    cached \(key.logDescription())")
+
+            guard validateCache(key: key, cached: value) else {
+                guard let newValue = try await self.fixCached(key: key, value: value, fi, ctx).get() else {
+                    // Throw here to engage recomputeOnCacheFailure logic below.
+                    throw FXError.invalidValueType("failed to validate cache for \(String(describing: type(of: key))), and fixCached() was not able to solve the problem")
+                }
+
+                let newResultID = try await ctx.db.put(try newValue.asCASObject(), ctx).get()
+                _ = try await fi.functionCache.update(key: key, props: key, value: newResultID, ctx).get()
+                return newValue
+            }
+
+            return value
+        } catch {
+            guard self.recomputeOnCacheFailure else {
+                throw error
+            }
+
+            return try await self.computeAndUpdate(key: key, fi, ctx).get()
+        }
+    }
+
+
+    func compute(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<
         InternalValue<K.ValueType>
     > {
         let actualKey = key.key
@@ -246,7 +307,7 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
             let augmentedError: Swift.Error
 
             do {
-                augmentedError = FXError.FXValueComputationError(
+                augmentedError = FXError.valueComputationError(
                     keyPrefix: keyPrefix,
                     key: encodedKey,
                     error: underlyingError,
@@ -254,7 +315,7 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
                 )
                 span.recordError(underlyingError)
             } catch {
-                augmentedError = FXError.FXKeyEncodingError(
+                augmentedError = FXError.keyEncodingError(
                     keyPrefix: FXCacheKeyPrefixMemoizer.get(for: actualKey),
                     encodingError: error,
                     underlyingError: underlyingError
@@ -275,11 +336,11 @@ final class FXFunction<K: FXKey>: LLBTypedCachingFunction<InternalKey<K>, Intern
         }
     }
 
-    override func validateCache(key: InternalKey<K>, cached: InternalValue<K.ValueType>) -> Bool {
+    func validateCache(key: InternalKey<K>, cached: InternalValue<K.ValueType>) -> Bool {
         return key.key.validateCache(cached: cached.value)
     }
 
-    override func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: LLBFunctionInterface, _ ctx: Context) -> LLBFuture<InternalValue<K.ValueType>?> {
+    func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<InternalValue<K.ValueType>?> {
         let actualKey = key.key
 
         let fxfi = FXFunctionInterface(actualKey, fi)
@@ -312,15 +373,6 @@ extension AsyncFXKey {
 
 extension FXFunctionInterface {
     public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) async throws -> X.ValueType {
-        do {
-            return try await request(x, requireCacheHit: requireCacheHit, ctx).get()
-        } catch let error as Error {
-            switch error {
-            case .missingRequiredCacheEntry(let cachePath):
-                throw FXError.FXMissingRequiredCacheEntry(cachePath: cachePath)
-            case .unexpressedKeyDependency, .executorCannotSatisfyRequirements, .noExecutable:
-                throw error
-            }
-        }
+        return try await request(x, requireCacheHit: requireCacheHit, ctx).get()
     }
 }
