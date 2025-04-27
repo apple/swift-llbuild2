@@ -22,6 +22,7 @@
 //
 import GRPC
 import NIO
+import NIOConcurrencyHelpers
 import SwiftProtobuf
 
 
@@ -30,7 +31,7 @@ import SwiftProtobuf
 /// The Log Stream API manages LogStream resources which are used to stream
 /// writes and reads of an ordered sequence of bytes of unknown eventual length.
 ///
-/// Note that this is an API Interface and not an API Service, per the definitons
+/// Note that this is an API Interface and not an API Service, per the definitions
 /// at: https://cloud.google.com/apis/design/glossary
 ///
 /// Log Stream API supports the reading of unfinalized LogStreams either by
@@ -120,7 +121,7 @@ extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
     callOptions: CallOptions? = nil
   ) -> UnaryCall<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream> {
     return self.makeUnaryCall(
-      path: "/build.bazel.remote.logstream.v1.LogStreamService/CreateLogStream",
+      path: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientMetadata.Methods.createLogStream.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
       interceptors: self.interceptors?.makeCreateLogStreamInterceptors() ?? []
@@ -128,14 +129,45 @@ extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
   }
 }
 
-public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol {
+#if compiler(>=5.6)
+@available(*, deprecated)
+extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: @unchecked Sendable {}
+#endif // compiler(>=5.6)
 
-  /// - Returns: Interceptors to use when invoking 'createLogStream'.
-  func makeCreateLogStreamInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>]
+@available(*, deprecated, renamed: "Build_Bazel_Remote_Logstream_V1_LogStreamServiceNIOClient")
+public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
+  private let lock = Lock()
+  private var _defaultCallOptions: CallOptions
+  private var _interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol?
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions {
+    get { self.lock.withLock { return self._defaultCallOptions } }
+    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+  }
+  public var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? {
+    get { self.lock.withLock { return self._interceptors } }
+    set { self.lock.withLockVoid { self._interceptors = newValue } }
+  }
+
+  /// Creates a client for the build.bazel.remote.logstream.v1.LogStreamService service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self._defaultCallOptions = defaultCallOptions
+    self._interceptors = interceptors
+  }
 }
 
-public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
-  public let channel: GRPCChannel
+public struct Build_Bazel_Remote_Logstream_V1_LogStreamServiceNIOClient: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientProtocol {
+  public var channel: GRPCChannel
   public var defaultCallOptions: CallOptions
   public var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol?
 
@@ -156,12 +188,167 @@ public final class Build_Bazel_Remote_Logstream_V1_LogStreamServiceClient: Build
   }
 }
 
+#if compiler(>=5.6)
 /// #### Introduction
 ///
 /// The Log Stream API manages LogStream resources which are used to stream
 /// writes and reads of an ordered sequence of bytes of unknown eventual length.
 ///
-/// Note that this is an API Interface and not an API Service, per the definitons
+/// Note that this is an API Interface and not an API Service, per the definitions
+/// at: https://cloud.google.com/apis/design/glossary
+///
+/// Log Stream API supports the reading of unfinalized LogStreams either by
+/// seeking or in "tail" mode, for example by end-users browsing to a build
+/// result UI interested in seeing logs from a build action as soon as they are
+/// (or as they become) available.
+///
+/// Reads and Writes of LogStreams are done via the Byte Stream API:
+/// https://cloud.google.com/dataproc/docs/reference/rpc/google.bytestream
+/// https://github.com/googleapis/googleapis/blob/master/google/bytestream/bytestream.proto
+///
+/// #### Writing LogStreams
+///
+/// LogStreams are written to via the Byte Stream API's `Write` RPC. Bytes
+/// written to LogStreams are expected to be committed and available for reading
+/// within a reasonable period of time (implementation-defined). Committed bytes
+/// to a LogStream cannot be overwritten, and finalized LogStreams - indicated by
+/// setting `finish_write` field in the final WriteRequest - also cannot be
+/// appended to.
+///
+/// When calling the Byte Stream API's `Write` RPC to write LogStreams, writers
+/// must pass the `write_resource_name` of a LogStream as
+/// `ByteStream.WriteRequest.resource_name` rather than the LogStream's `name`.
+/// Separate resource names for reading and writing allows for broadcasting the
+/// read resource name widely while simultaneously ensuring that only writer(s)
+/// with knowledge of the write resource name may have written bytes to the
+/// LogStream.
+///
+/// #### Reading LogStreams
+///
+/// Use the Byte Stream API's `Read` RPC to read LogStreams. When reading
+/// finalized LogStreams the server will stream all contents of the LogStream
+/// starting at `ByteStream.ReadRequest.read_offset`.
+///
+/// When reading unfinalized LogStreams the server must keep the streaming
+/// `ByteStream.Read` RPC open and send `ByteStream.ReadResponse` messages as
+/// more bytes become available or the LogStream is finalized.
+///
+/// #### Example Multi-Party Read/Write Flow
+///
+/// 1. LogStream Writer calls `CreateLogStream`
+/// 2. LogStream Writer publishes `LogStream.name`
+/// 3. LogStream Writer calls `ByteStream.Write` with
+///    `LogStream.write_resource_name` as
+///    `ByteStream.WriteRequest.resource_name`,
+///    `ByteStream.WriteRequest.finish_write`=false.
+/// 4. LogStream Reader(s) call `ByteStream.Read` with the published
+///    `LogStream.name` as `ByteStream.ReadRequest.resource_name`.
+/// 5. LogStream Service streams all committed bytes to LogStream Reader(s),
+///    leave the stream open.
+/// 6. LogStream Writer calls `ByteStream.Write` with
+///    `LogStream.write_resource_name` as
+///    `ByteStream.WriteRequest.resource_name`,
+///    `ByteStream.WriteRequest.finish_write`=true.
+/// 7. LogStream Service streams all remaining bytes to LogStream Reader(s),
+///    terminates the stream.
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncClientProtocol: GRPCClient {
+  static var serviceDescriptor: GRPCServiceDescriptor { get }
+  var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? { get }
+
+  func makeCreateLogStreamCall(
+    _ request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest,
+    callOptions: CallOptions?
+  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncClientProtocol {
+  public static var serviceDescriptor: GRPCServiceDescriptor {
+    return Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientMetadata.serviceDescriptor
+  }
+
+  public var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? {
+    return nil
+  }
+
+  public func makeCreateLogStreamCall(
+    _ request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest,
+    callOptions: CallOptions? = nil
+  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream> {
+    return self.makeAsyncUnaryCall(
+      path: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientMetadata.Methods.createLogStream.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeCreateLogStreamInterceptors() ?? []
+    )
+  }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncClientProtocol {
+  public func createLogStream(
+    _ request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest,
+    callOptions: CallOptions? = nil
+  ) async throws -> Build_Bazel_Remote_Logstream_V1_LogStream {
+    return try await self.performAsyncUnaryCall(
+      path: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientMetadata.Methods.createLogStream.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeCreateLogStreamInterceptors() ?? []
+    )
+  }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+public struct Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncClient: Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncClientProtocol {
+  public var channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol?
+
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
+  }
+}
+
+#endif // compiler(>=5.6)
+
+public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientInterceptorFactoryProtocol: GRPCSendable {
+
+  /// - Returns: Interceptors to use when invoking 'createLogStream'.
+  func makeCreateLogStreamInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>]
+}
+
+public enum Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientMetadata {
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "LogStreamService",
+    fullName: "build.bazel.remote.logstream.v1.LogStreamService",
+    methods: [
+      Build_Bazel_Remote_Logstream_V1_LogStreamServiceClientMetadata.Methods.createLogStream,
+    ]
+  )
+
+  public enum Methods {
+    public static let createLogStream = GRPCMethodDescriptor(
+      name: "CreateLogStream",
+      path: "/build.bazel.remote.logstream.v1.LogStreamService/CreateLogStream",
+      type: GRPCCallType.unary
+    )
+  }
+}
+
+/// #### Introduction
+///
+/// The Log Stream API manages LogStream resources which are used to stream
+/// writes and reads of an ordered sequence of bytes of unknown eventual length.
+///
+/// Note that this is an API Interface and not an API Service, per the definitions
 /// at: https://cloud.google.com/apis/design/glossary
 ///
 /// Log Stream API supports the reading of unfinalized LogStreams either by
@@ -233,7 +420,9 @@ public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceProvider: CallHa
 }
 
 extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceProvider {
-  public var serviceName: Substring { return "build.bazel.remote.logstream.v1.LogStreamService" }
+  public var serviceName: Substring {
+    return Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerMetadata.serviceDescriptor.fullName[...]
+  }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
@@ -257,9 +446,146 @@ extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceProvider {
   }
 }
 
+#if compiler(>=5.6)
+
+/// #### Introduction
+///
+/// The Log Stream API manages LogStream resources which are used to stream
+/// writes and reads of an ordered sequence of bytes of unknown eventual length.
+///
+/// Note that this is an API Interface and not an API Service, per the definitions
+/// at: https://cloud.google.com/apis/design/glossary
+///
+/// Log Stream API supports the reading of unfinalized LogStreams either by
+/// seeking or in "tail" mode, for example by end-users browsing to a build
+/// result UI interested in seeing logs from a build action as soon as they are
+/// (or as they become) available.
+///
+/// Reads and Writes of LogStreams are done via the Byte Stream API:
+/// https://cloud.google.com/dataproc/docs/reference/rpc/google.bytestream
+/// https://github.com/googleapis/googleapis/blob/master/google/bytestream/bytestream.proto
+///
+/// #### Writing LogStreams
+///
+/// LogStreams are written to via the Byte Stream API's `Write` RPC. Bytes
+/// written to LogStreams are expected to be committed and available for reading
+/// within a reasonable period of time (implementation-defined). Committed bytes
+/// to a LogStream cannot be overwritten, and finalized LogStreams - indicated by
+/// setting `finish_write` field in the final WriteRequest - also cannot be
+/// appended to.
+///
+/// When calling the Byte Stream API's `Write` RPC to write LogStreams, writers
+/// must pass the `write_resource_name` of a LogStream as
+/// `ByteStream.WriteRequest.resource_name` rather than the LogStream's `name`.
+/// Separate resource names for reading and writing allows for broadcasting the
+/// read resource name widely while simultaneously ensuring that only writer(s)
+/// with knowledge of the write resource name may have written bytes to the
+/// LogStream.
+///
+/// #### Reading LogStreams
+///
+/// Use the Byte Stream API's `Read` RPC to read LogStreams. When reading
+/// finalized LogStreams the server will stream all contents of the LogStream
+/// starting at `ByteStream.ReadRequest.read_offset`.
+///
+/// When reading unfinalized LogStreams the server must keep the streaming
+/// `ByteStream.Read` RPC open and send `ByteStream.ReadResponse` messages as
+/// more bytes become available or the LogStream is finalized.
+///
+/// #### Example Multi-Party Read/Write Flow
+///
+/// 1. LogStream Writer calls `CreateLogStream`
+/// 2. LogStream Writer publishes `LogStream.name`
+/// 3. LogStream Writer calls `ByteStream.Write` with
+///    `LogStream.write_resource_name` as
+///    `ByteStream.WriteRequest.resource_name`,
+///    `ByteStream.WriteRequest.finish_write`=false.
+/// 4. LogStream Reader(s) call `ByteStream.Read` with the published
+///    `LogStream.name` as `ByteStream.ReadRequest.resource_name`.
+/// 5. LogStream Service streams all committed bytes to LogStream Reader(s),
+///    leave the stream open.
+/// 6. LogStream Writer calls `ByteStream.Write` with
+///    `LogStream.write_resource_name` as
+///    `ByteStream.WriteRequest.resource_name`,
+///    `ByteStream.WriteRequest.finish_write`=true.
+/// 7. LogStream Service streams all remaining bytes to LogStream Reader(s),
+///    terminates the stream.
+///
+/// To implement a server, implement an object which conforms to this protocol.
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncProvider: CallHandlerProvider {
+  static var serviceDescriptor: GRPCServiceDescriptor { get }
+  var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerInterceptorFactoryProtocol? { get }
+
+  /// Create a LogStream which may be written to.
+  ///
+  /// The returned LogStream resource name will include a `write_resource_name`
+  /// which is the resource to use when writing to the LogStream.
+  /// Callers of CreateLogStream are expected to NOT publish the
+  /// `write_resource_name`.
+  @Sendable func createLogStream(
+    request: Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest,
+    context: GRPCAsyncServerCallContext
+  ) async throws -> Build_Bazel_Remote_Logstream_V1_LogStream
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension Build_Bazel_Remote_Logstream_V1_LogStreamServiceAsyncProvider {
+  public static var serviceDescriptor: GRPCServiceDescriptor {
+    return Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerMetadata.serviceDescriptor
+  }
+
+  public var serviceName: Substring {
+    return Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerMetadata.serviceDescriptor.fullName[...]
+  }
+
+  public var interceptors: Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerInterceptorFactoryProtocol? {
+    return nil
+  }
+
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
+    case "CreateLogStream":
+      return GRPCAsyncServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest>(),
+        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Logstream_V1_LogStream>(),
+        interceptors: self.interceptors?.makeCreateLogStreamInterceptors() ?? [],
+        wrapping: self.createLogStream(request:context:)
+      )
+
+    default:
+      return nil
+    }
+  }
+}
+
+#endif // compiler(>=5.6)
+
 public protocol Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerInterceptorFactoryProtocol {
 
   /// - Returns: Interceptors to use when handling 'createLogStream'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeCreateLogStreamInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest, Build_Bazel_Remote_Logstream_V1_LogStream>]
+}
+
+public enum Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerMetadata {
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "LogStreamService",
+    fullName: "build.bazel.remote.logstream.v1.LogStreamService",
+    methods: [
+      Build_Bazel_Remote_Logstream_V1_LogStreamServiceServerMetadata.Methods.createLogStream,
+    ]
+  )
+
+  public enum Methods {
+    public static let createLogStream = GRPCMethodDescriptor(
+      name: "CreateLogStream",
+      path: "/build.bazel.remote.logstream.v1.LogStreamService/CreateLogStream",
+      type: GRPCCallType.unary
+    )
+  }
 }

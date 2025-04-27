@@ -172,9 +172,21 @@ public struct Build_Bazel_Remote_Execution_V2_Command {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// The arguments to the command. The first argument must be the path to the
-  /// executable, which must be either a relative path, in which case it is
-  /// evaluated with respect to the input root, or an absolute path.
+  /// The arguments to the command.
+  ///
+  /// The first argument specifies the command to run, which may be either an
+  /// absolute path, a path relative to the working directory, or an unqualified
+  /// path (without path separators) which will be resolved using the operating
+  /// system's equivalent of the PATH environment variable. Path separators
+  /// native to the operating system running on the worker SHOULD be used. If the
+  /// `environment_variables` list contains an entry for the PATH environment
+  /// variable, it SHOULD be respected. If not, the resolution process is
+  /// implementation-defined.
+  ///
+  /// Changed in v2.3. v2.2 and older require that no PATH lookups are performed,
+  /// and that relative paths are resolved relative to the input root. This
+  /// behavior can, however, not be relied upon, as most implementations already
+  /// followed the rules described above.
   public var arguments: [String] = []
 
   /// The environment variables to set when running the program. The worker may
@@ -248,10 +260,10 @@ public struct Build_Bazel_Remote_Execution_V2_Command {
   /// The type of the output (file or directory) is not specified, and will be
   /// determined by the server after action execution. If the resulting path is
   /// a file, it will be returned in an
-  /// [OutputFile][build.bazel.remote.execution.v2.OutputFile]) typed field.
+  /// [OutputFile][build.bazel.remote.execution.v2.OutputFile] typed field.
   /// If the path is a directory, the entire directory structure will be returned
   /// as a [Tree][build.bazel.remote.execution.v2.Tree] message digest, see
-  /// [OutputDirectory][build.bazel.remote.execution.v2.OutputDirectory])
+  /// [OutputDirectory][build.bazel.remote.execution.v2.OutputDirectory]
   /// Other files or directories that may be created during command execution
   /// are discarded.
   ///
@@ -308,7 +320,60 @@ public struct Build_Bazel_Remote_Execution_V2_Command {
   /// `INVALID_ARGUMENT`.
   public var outputNodeProperties: [String] = []
 
+  /// The format that the worker should use to store the contents of
+  /// output directories.
+  ///
+  /// In case this field is set to a value that is not supported by the
+  /// worker, the worker SHOULD interpret this field as TREE_ONLY. The
+  /// worker MAY store output directories in formats that are a superset
+  /// of what was requested (e.g., interpreting DIRECTORY_ONLY as
+  /// TREE_AND_DIRECTORY).
+  public var outputDirectoryFormat: Build_Bazel_Remote_Execution_V2_Command.OutputDirectoryFormat = .treeOnly
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public enum OutputDirectoryFormat: SwiftProtobuf.Enum {
+    public typealias RawValue = Int
+
+    /// The client is only interested in receiving output directories in
+    /// the form of a single Tree object, using the `tree_digest` field.
+    case treeOnly // = 0
+
+    /// The client is only interested in receiving output directories in
+    /// the form of a hierarchy of separately stored Directory objects,
+    /// using the `root_directory_digest` field.
+    case directoryOnly // = 1
+
+    /// The client is interested in receiving output directories both in
+    /// the form of a single Tree object and a hierarchy of separately
+    /// stored Directory objects, using both the `tree_digest` and
+    /// `root_directory_digest` fields.
+    case treeAndDirectory // = 2
+    case UNRECOGNIZED(Int)
+
+    public init() {
+      self = .treeOnly
+    }
+
+    public init?(rawValue: Int) {
+      switch rawValue {
+      case 0: self = .treeOnly
+      case 1: self = .directoryOnly
+      case 2: self = .treeAndDirectory
+      default: self = .UNRECOGNIZED(rawValue)
+      }
+    }
+
+    public var rawValue: Int {
+      switch self {
+      case .treeOnly: return 0
+      case .directoryOnly: return 1
+      case .treeAndDirectory: return 2
+      case .UNRECOGNIZED(let i): return i
+      }
+    }
+
+  }
 
   /// An `EnvironmentVariable` is one variable to set in the running program's
   /// environment.
@@ -332,6 +397,19 @@ public struct Build_Bazel_Remote_Execution_V2_Command {
 
   fileprivate var _platform: Build_Bazel_Remote_Execution_V2_Platform? = nil
 }
+
+#if swift(>=4.2)
+
+extension Build_Bazel_Remote_Execution_V2_Command.OutputDirectoryFormat: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Build_Bazel_Remote_Execution_V2_Command.OutputDirectoryFormat] = [
+    .treeOnly,
+    .directoryOnly,
+    .treeAndDirectory,
+  ]
+}
+
+#endif  // swift(>=4.2)
 
 /// A `Platform` is a set of requirements, such as hardware, operating system, or
 /// compiler toolchain, for an
@@ -702,8 +780,8 @@ public struct Build_Bazel_Remote_Execution_V2_Digest {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// The hash. In the case of SHA-256, it will always be a lowercase hex string
-  /// exactly 64 characters long.
+  /// The hash, represented as a lowercase hexadecimal string, padded with
+  /// leading zeroes up to the hash function length.
   public var hash: String = String()
 
   /// The size of the blob, in bytes.
@@ -1138,6 +1216,9 @@ public struct Build_Bazel_Remote_Execution_V2_Tree {
   /// recursively, all its children. In order to reconstruct the directory tree,
   /// the client must take the digests of each of the child directories and then
   /// build up a tree starting from the `root`.
+  /// Servers SHOULD ensure that these are ordered consistently such that two
+  /// actions producing equivalent output directories on the same server
+  /// implementation also produce Tree messages with matching digests.
   public var children: [Build_Bazel_Remote_Execution_V2_Directory] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -1172,11 +1253,65 @@ public struct Build_Bazel_Remote_Execution_V2_OutputDirectory {
   /// Clears the value of `treeDigest`. Subsequent reads from it will return its default value.
   public mutating func clearTreeDigest() {self._treeDigest = nil}
 
+  /// If set, consumers MAY make the following assumptions about the
+  /// directories contained in the the Tree, so that it may be
+  /// instantiated on a local file system by scanning through it
+  /// sequentially:
+  ///
+  /// - All directories with the same binary representation are stored
+  ///   exactly once.
+  /// - All directories, apart from the root directory, are referenced by
+  ///   at least one parent directory.
+  /// - Directories are stored in topological order, with parents being
+  ///   stored before the child. The root directory is thus the first to
+  ///   be stored.
+  ///
+  /// Additionally, the Tree MUST be encoded as a stream of records,
+  /// where each record has the following format:
+  ///
+  /// - A tag byte, having one of the following two values:
+  ///   - (1 << 3) | 2 == 0x0a: First record (the root directory).
+  ///   - (2 << 3) | 2 == 0x12: Any subsequent records (child directories).
+  /// - The size of the directory, encoded as a base 128 varint.
+  /// - The contents of the directory, encoded as a binary serialized
+  ///   Protobuf message.
+  ///
+  /// This encoding is a subset of the Protobuf wire format of the Tree
+  /// message. As it is only permitted to store data associated with
+  /// field numbers 1 and 2, the tag MUST be encoded as a single byte.
+  /// More details on the Protobuf wire format can be found here:
+  /// https://developers.google.com/protocol-buffers/docs/encoding
+  ///
+  /// It is recommended that implementations using this feature construct
+  /// Tree objects manually using the specification given above, as
+  /// opposed to using a Protobuf library to marshal a full Tree message.
+  /// As individual Directory messages already need to be marshaled to
+  /// compute their digests, constructing the Tree object manually avoids
+  /// redundant marshaling.
+  public var isTopologicallySorted: Bool = false
+
+  /// The digest of the encoded
+  /// [Directory][build.bazel.remote.execution.v2.Directory] proto
+  /// containing the contents the directory's root.
+  ///
+  /// If both `tree_digest` and `root_directory_digest` are set, this
+  /// field MUST match the digest of the root directory contained in the
+  /// Tree message.
+  public var rootDirectoryDigest: Build_Bazel_Remote_Execution_V2_Digest {
+    get {return _rootDirectoryDigest ?? Build_Bazel_Remote_Execution_V2_Digest()}
+    set {_rootDirectoryDigest = newValue}
+  }
+  /// Returns true if `rootDirectoryDigest` has been explicitly set.
+  public var hasRootDirectoryDigest: Bool {return self._rootDirectoryDigest != nil}
+  /// Clears the value of `rootDirectoryDigest`. Subsequent reads from it will return its default value.
+  public mutating func clearRootDirectoryDigest() {self._rootDirectoryDigest = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _treeDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
+  fileprivate var _rootDirectoryDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
 }
 
 /// An `OutputSymlink` is similar to a
@@ -1323,6 +1458,29 @@ public struct Build_Bazel_Remote_Execution_V2_ExecuteRequest {
   public var hasResultsCachePolicy: Bool {return self._resultsCachePolicy != nil}
   /// Clears the value of `resultsCachePolicy`. Subsequent reads from it will return its default value.
   public mutating func clearResultsCachePolicy() {self._resultsCachePolicy = nil}
+
+  /// The digest function that was used to compute the action digest.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the action digest hash and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
+
+  /// A hint to the server to request inlining stdout in the
+  /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] message.
+  public var inlineStdout: Bool = false
+
+  /// A hint to the server to request inlining stderr in the
+  /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] message.
+  public var inlineStderr: Bool = false
+
+  /// A hint to the server to inline the contents of the listed output files.
+  /// Each path needs to exactly match one file path in either `output_paths` or
+  /// `output_files` (DEPRECATED since v2.1) in the
+  /// [Command][build.bazel.remote.execution.v2.Command] message.
+  public var inlineOutputFiles: [String] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1521,7 +1679,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutionStage.Value: CaseIterable {
 /// Metadata about an ongoing
 /// [execution][build.bazel.remote.execution.v2.Execution.Execute], which
 /// will be contained in the [metadata
-/// field][google.longrunning.Operation.response] of the
+/// field][google.longrunning.Operation.metadata] of the
 /// [Operation][google.longrunning.Operation].
 public struct Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -1552,11 +1710,32 @@ public struct Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata {
   /// standard error from the endpoint hosting streamed responses.
   public var stderrStreamName: String = String()
 
+  /// The client can read this field to view details about the ongoing
+  /// execution.
+  public var partialExecutionMetadata: Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata {
+    get {return _partialExecutionMetadata ?? Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata()}
+    set {_partialExecutionMetadata = newValue}
+  }
+  /// Returns true if `partialExecutionMetadata` has been explicitly set.
+  public var hasPartialExecutionMetadata: Bool {return self._partialExecutionMetadata != nil}
+  /// Clears the value of `partialExecutionMetadata`. Subsequent reads from it will return its default value.
+  public mutating func clearPartialExecutionMetadata() {self._partialExecutionMetadata = nil}
+
+  /// The digest function that was used to compute the action digest.
+  ///
+  /// If the digest function used is one of BLAKE3, MD5, MURMUR3, SHA1,
+  /// SHA256, SHA256TREE, SHA384, SHA512, or VSO, the server MAY leave
+  /// this field unset. In that case the client SHOULD infer the digest
+  /// function using the length of the action digest hash and the digest
+  /// functions announced in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _actionDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
+  fileprivate var _partialExecutionMetadata: Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata? = nil
 }
 
 /// A request message for
@@ -1613,6 +1792,15 @@ public struct Build_Bazel_Remote_Execution_V2_GetActionResultRequest {
   /// `output_files` (DEPRECATED since v2.1) in the
   /// [Command][build.bazel.remote.execution.v2.Command] message.
   public var inlineOutputFiles: [String] = []
+
+  /// The digest function that was used to compute the action digest.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the action digest hash and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1672,6 +1860,18 @@ public struct Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest {
   /// Clears the value of `resultsCachePolicy`. Subsequent reads from it will return its default value.
   public mutating func clearResultsCachePolicy() {_uniqueStorage()._resultsCachePolicy = nil}
 
+  /// The digest function that was used to compute the action digest.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the action digest hash and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value {
+    get {return _storage._digestFunction}
+    set {_uniqueStorage()._digestFunction = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -1693,8 +1893,18 @@ public struct Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest {
   /// omitted.
   public var instanceName: String = String()
 
-  /// A list of the blobs to check.
+  /// A list of the blobs to check. All digests MUST use the same digest
+  /// function.
   public var blobDigests: [Build_Bazel_Remote_Execution_V2_Digest] = []
+
+  /// The digest function of the blobs whose existence is checked.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the blob digest hashes and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1733,6 +1943,16 @@ public struct Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest {
   /// The individual upload requests.
   public var requests: [Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request] = []
 
+  /// The digest function that was used to compute the digests of the
+  /// blobs being uploaded.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the blob digest hashes and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// A request corresponding to a single blob that the client wants to upload.
@@ -1741,7 +1961,8 @@ public struct Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest {
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
-    /// The digest of the blob. This MUST be the digest of `data`.
+    /// The digest of the blob. This MUST be the digest of `data`. All
+    /// digests MUST use the same digest function.
     public var digest: Build_Bazel_Remote_Execution_V2_Digest {
       get {return _digest ?? Build_Bazel_Remote_Execution_V2_Digest()}
       set {_digest = newValue}
@@ -1753,6 +1974,12 @@ public struct Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest {
 
     /// The raw binary data.
     public var data: Data = Data()
+
+    /// The format of `data`. Must be `IDENTITY`/unspecified, or one of the
+    /// compressors advertised by the 
+    /// [CacheCapabilities.supported_batch_compressors][build.bazel.remote.execution.v2.CacheCapabilities.supported_batch_compressors]
+    /// field.
+    public var compressor: Build_Bazel_Remote_Execution_V2_Compressor.Value = .identity
 
     public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1827,8 +2054,22 @@ public struct Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest {
   /// omitted.
   public var instanceName: String = String()
 
-  /// The individual blob digests.
+  /// The individual blob digests. All digests MUST use the same digest
+  /// function.
   public var digests: [Build_Bazel_Remote_Execution_V2_Digest] = []
+
+  /// A list of acceptable encodings for the returned inlined data, in no
+  /// particular order. `IDENTITY` is always allowed even if not specified here.
+  public var acceptableCompressors: [Build_Bazel_Remote_Execution_V2_Compressor.Value] = []
+
+  /// The digest function of the blobs being requested.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the blob digest hashes and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -1865,6 +2106,10 @@ public struct Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse {
 
     /// The raw binary data.
     public var data: Data = Data()
+
+    /// The format the data is encoded in. MUST be `IDENTITY`/unspecified,
+    /// or one of the acceptable compressors specified in the `BatchReadBlobsRequest`.
+    public var compressor: Build_Bazel_Remote_Execution_V2_Compressor.Value = .identity
 
     /// The result of attempting to download that blob.
     public var status: Google_Rpc_Status {
@@ -1925,6 +2170,16 @@ public struct Build_Bazel_Remote_Execution_V2_GetTreeRequest {
   /// If present, the server will use that token as an offset, returning only
   /// that page and the ones that succeed it.
   public var pageToken: String = String()
+
+  /// The digest function that was used to compute the digest of the root
+  /// directory.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the root digest hash and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -2075,6 +2330,66 @@ public struct Build_Bazel_Remote_Execution_V2_DigestFunction {
     /// cryptographic hash function and its collision properties are not strongly guaranteed.
     /// See https://github.com/aappleby/smhasher/wiki/MurmurHash3 .
     case murmur3 // = 7
+
+    /// The SHA-256 digest function, modified to use a Merkle tree for
+    /// large objects. This permits implementations to store large blobs
+    /// as a decomposed sequence of 2^j sized chunks, where j >= 10,
+    /// while being able to validate integrity at the chunk level.
+    ///
+    /// Furthermore, on systems that do not offer dedicated instructions
+    /// for computing SHA-256 hashes (e.g., the Intel SHA and ARMv8
+    /// cryptographic extensions), SHA256TREE hashes can be computed more
+    /// efficiently than plain SHA-256 hashes by using generic SIMD
+    /// extensions, such as Intel AVX2 or ARM NEON.
+    ///
+    /// SHA256TREE hashes are computed as follows:
+    ///
+    /// - For blobs that are 1024 bytes or smaller, the hash is computed
+    ///   using the regular SHA-256 digest function.
+    ///
+    /// - For blobs that are more than 1024 bytes in size, the hash is
+    ///   computed as follows:
+    ///
+    ///   1. The blob is partitioned into a left (leading) and right
+    ///      (trailing) blob. These blobs have lengths m and n
+    ///      respectively, where m = 2^k and 0 < n <= m.
+    ///
+    ///   2. Hashes of the left and right blob, Hash(left) and
+    ///      Hash(right) respectively, are computed by recursively
+    ///      applying the SHA256TREE algorithm.
+    ///
+    ///   3. A single invocation is made to the SHA-256 block cipher with
+    ///      the following parameters:
+    ///
+    ///          M = Hash(left) || Hash(right)
+    ///          H = {
+    ///              0xcbbb9d5d, 0x629a292a, 0x9159015a, 0x152fecd8,
+    ///              0x67332667, 0x8eb44a87, 0xdb0c2e0d, 0x47b5481d,
+    ///          }
+    ///
+    ///      The values of H are the leading fractional parts of the
+    ///      square roots of the 9th to the 16th prime number (23 to 53).
+    ///      This differs from plain SHA-256, where the first eight prime
+    ///      numbers (2 to 19) are used, thereby preventing trivial hash
+    ///      collisions between small and large objects.
+    ///
+    ///   4. The hash of the full blob can then be obtained by
+    ///      concatenating the outputs of the block cipher:
+    ///
+    ///          Hash(blob) = a || b || c || d || e || f || g || h
+    ///
+    ///      Addition of the original values of H, as normally done
+    ///      through the use of the Davies-Meyer structure, is not
+    ///      performed. This isn't necessary, as the block cipher is only
+    ///      invoked once.
+    ///
+    /// Test vectors of this digest function can be found in the
+    /// accompanying sha256tree_test_vectors.txt file.
+    case sha256Tree // = 8
+
+    /// The BLAKE3 hash function.
+    /// See https://github.com/BLAKE3-team/BLAKE3.
+    case blake3 // = 9
     case UNRECOGNIZED(Int)
 
     public init() {
@@ -2091,6 +2406,8 @@ public struct Build_Bazel_Remote_Execution_V2_DigestFunction {
       case 5: self = .sha384
       case 6: self = .sha512
       case 7: self = .murmur3
+      case 8: self = .sha256Tree
+      case 9: self = .blake3
       default: self = .UNRECOGNIZED(rawValue)
       }
     }
@@ -2105,6 +2422,8 @@ public struct Build_Bazel_Remote_Execution_V2_DigestFunction {
       case .sha384: return 5
       case .sha512: return 6
       case .murmur3: return 7
+      case .sha256Tree: return 8
+      case .blake3: return 9
       case .UNRECOGNIZED(let i): return i
       }
     }
@@ -2127,6 +2446,8 @@ extension Build_Bazel_Remote_Execution_V2_DigestFunction.Value: CaseIterable {
     .sha384,
     .sha512,
     .murmur3,
+    .sha256Tree,
+    .blake3,
   ]
 }
 
@@ -2147,7 +2468,7 @@ public struct Build_Bazel_Remote_Execution_V2_ActionCacheUpdateCapabilities {
 
 /// Allowed values for priority in
 /// [ResultsCachePolicy][build.bazel.remoteexecution.v2.ResultsCachePolicy] and
-/// [ExecutionPolicy][build.bazel.remoteexecution.v2.ResultsCachePolicy]
+/// [ExecutionPolicy][build.bazel.remoteexecution.v2.ExecutionPolicy]
 /// Used for querying both cache and execution valid priority ranges.
 public struct Build_Bazel_Remote_Execution_V2_PriorityCapabilities {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -2270,6 +2591,9 @@ public struct Build_Bazel_Remote_Execution_V2_Compressor {
     /// It is advised to use algorithms such as Zstandard instead, as
     /// those are faster and/or provide a better compression ratio.
     case deflate // = 2
+
+    /// Brotli compression.
+    case brotli // = 3
     case UNRECOGNIZED(Int)
 
     public init() {
@@ -2281,6 +2605,7 @@ public struct Build_Bazel_Remote_Execution_V2_Compressor {
       case 0: self = .identity
       case 1: self = .zstd
       case 2: self = .deflate
+      case 3: self = .brotli
       default: self = .UNRECOGNIZED(rawValue)
       }
     }
@@ -2290,6 +2615,7 @@ public struct Build_Bazel_Remote_Execution_V2_Compressor {
       case .identity: return 0
       case .zstd: return 1
       case .deflate: return 2
+      case .brotli: return 3
       case .UNRECOGNIZED(let i): return i
       }
     }
@@ -2307,6 +2633,7 @@ extension Build_Bazel_Remote_Execution_V2_Compressor.Value: CaseIterable {
     .identity,
     .zstd,
     .deflate,
+    .brotli,
   ]
 }
 
@@ -2359,6 +2686,22 @@ public struct Build_Bazel_Remote_Execution_V2_CacheCapabilities {
   /// the server at the gRPC level.
   public var supportedCompressors: [Build_Bazel_Remote_Execution_V2_Compressor.Value] = []
 
+  /// Compressors supported for inlined data in
+  /// [BatchUpdateBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchUpdateBlobs]
+  /// requests.
+  public var supportedBatchUpdateCompressors: [Build_Bazel_Remote_Execution_V2_Compressor.Value] = []
+
+  /// The maximum blob size that the server will accept for CAS blob uploads.
+  /// - If it is 0, it means there is no limit set. A client may assume
+  ///   arbitrarily large blobs may be uploaded to and downloaded from the cache.
+  /// - If it is larger than 0, implementations SHOULD NOT attempt to upload
+  ///   blobs with size larger than the limit. Servers SHOULD reject blob
+  ///   uploads over the `max_cas_blob_size_bytes` limit with response code
+  ///   `INVALID_ARGUMENT`
+  /// - If the cache implementation returns a given limit, it MAY still serve
+  ///   blobs larger than this limit.
+  public var maxCasBlobSizeBytes: Int64 = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -2373,7 +2716,10 @@ public struct Build_Bazel_Remote_Execution_V2_ExecutionCapabilities {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Remote execution may only support a single digest function.
+  /// Legacy field for indicating which digest function is supported by the
+  /// remote execution system. It MUST be set to a value other than UNKNOWN.
+  /// Implementations should consider the repeated digest_functions field
+  /// first, falling back to this singular field if digest_functions is unset.
   public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   /// Whether remote execution is enabled for the particular server/instance.
@@ -2391,6 +2737,20 @@ public struct Build_Bazel_Remote_Execution_V2_ExecutionCapabilities {
 
   /// Supported node properties.
   public var supportedNodeProperties: [String] = []
+
+  /// All the digest functions supported by the remote execution system.
+  /// If this field is set, it MUST also contain digest_function.
+  ///
+  /// Even if the remote execution system announces support for multiple
+  /// digest functions, individual execution requests may only reference
+  /// CAS objects using a single digest function. For example, it is not
+  /// permitted to execute actions having both MD5 and SHA-256 hashed
+  /// files in their input root.
+  ///
+  /// The CAS objects referenced by action results generated by the
+  /// remote execution system MUST use the same digest function as the
+  /// one used to construct the action.
+  public var digestFunctions: [Build_Bazel_Remote_Execution_V2_DigestFunction.Value] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -2423,7 +2783,7 @@ public struct Build_Bazel_Remote_Execution_V2_ToolDetails {
 ///
 /// * name: `build.bazel.remote.execution.v2.requestmetadata-bin`
 /// * contents: the base64 encoded binary `RequestMetadata` message.
-/// Note: the gRPC library serializes binary headers encoded in base 64 by
+/// Note: the gRPC library serializes binary headers encoded in base64 by
 /// default (https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests).
 /// Therefore, if the gRPC library is used to pass/retrieve this
 /// metadata, the user may ignore the base64 encoding and assume it is simply
@@ -2477,6 +2837,65 @@ public struct Build_Bazel_Remote_Execution_V2_RequestMetadata {
   fileprivate var _toolDetails: Build_Bazel_Remote_Execution_V2_ToolDetails? = nil
 }
 
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Build_Bazel_Remote_Execution_V2_Action: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Command: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Command.OutputDirectoryFormat: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Command.EnvironmentVariable: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Platform: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Platform.Property: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Directory: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_NodeProperty: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_NodeProperties: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_FileNode: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_DirectoryNode: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_SymlinkNode: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Digest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ActionResult: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_OutputFile: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Tree: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_OutputDirectory: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_OutputSymlink: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecutionPolicy: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ResultsCachePolicy: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecuteRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_LogFile: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecuteResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecutionStage: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecutionStage.Value: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_WaitExecutionRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse.Response: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_GetTreeRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_GetTreeResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ServerCapabilities: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_DigestFunction: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_DigestFunction.Value: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ActionCacheUpdateCapabilities: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_PriorityCapabilities: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_PriorityCapabilities.PriorityRange: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_SymlinkAbsolutePathStrategy: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_SymlinkAbsolutePathStrategy.Value: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Compressor: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_Compressor.Value: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ExecutionCapabilities: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_ToolDetails: @unchecked Sendable {}
+extension Build_Bazel_Remote_Execution_V2_RequestMetadata: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "build.bazel.remote.execution.v2"
@@ -2510,24 +2929,28 @@ extension Build_Bazel_Remote_Execution_V2_Action: SwiftProtobuf.Message, SwiftPr
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._commandDigest {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._commandDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
-    if let v = self._inputRootDigest {
+    } }()
+    try { if let v = self._inputRootDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._timeout {
+    } }()
+    try { if let v = self._timeout {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    }
+    } }()
     if self.doNotCache != false {
       try visitor.visitSingularBoolField(value: self.doNotCache, fieldNumber: 7)
     }
     if !self.salt.isEmpty {
       try visitor.visitSingularBytesField(value: self.salt, fieldNumber: 9)
     }
-    if let v = self._platform {
+    try { if let v = self._platform {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2554,6 +2977,7 @@ extension Build_Bazel_Remote_Execution_V2_Command: SwiftProtobuf.Message, SwiftP
     5: .same(proto: "platform"),
     6: .standard(proto: "working_directory"),
     8: .standard(proto: "output_node_properties"),
+    9: .standard(proto: "output_directory_format"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -2570,12 +2994,17 @@ extension Build_Bazel_Remote_Execution_V2_Command: SwiftProtobuf.Message, SwiftP
       case 6: try { try decoder.decodeSingularStringField(value: &self.workingDirectory) }()
       case 7: try { try decoder.decodeRepeatedStringField(value: &self.outputPaths) }()
       case 8: try { try decoder.decodeRepeatedStringField(value: &self.outputNodeProperties) }()
+      case 9: try { try decoder.decodeSingularEnumField(value: &self.outputDirectoryFormat) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.arguments.isEmpty {
       try visitor.visitRepeatedStringField(value: self.arguments, fieldNumber: 1)
     }
@@ -2588,9 +3017,9 @@ extension Build_Bazel_Remote_Execution_V2_Command: SwiftProtobuf.Message, SwiftP
     if !self.outputDirectories.isEmpty {
       try visitor.visitRepeatedStringField(value: self.outputDirectories, fieldNumber: 4)
     }
-    if let v = self._platform {
+    try { if let v = self._platform {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-    }
+    } }()
     if !self.workingDirectory.isEmpty {
       try visitor.visitSingularStringField(value: self.workingDirectory, fieldNumber: 6)
     }
@@ -2599,6 +3028,9 @@ extension Build_Bazel_Remote_Execution_V2_Command: SwiftProtobuf.Message, SwiftP
     }
     if !self.outputNodeProperties.isEmpty {
       try visitor.visitRepeatedStringField(value: self.outputNodeProperties, fieldNumber: 8)
+    }
+    if self.outputDirectoryFormat != .treeOnly {
+      try visitor.visitSingularEnumField(value: self.outputDirectoryFormat, fieldNumber: 9)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -2612,9 +3044,18 @@ extension Build_Bazel_Remote_Execution_V2_Command: SwiftProtobuf.Message, SwiftP
     if lhs._platform != rhs._platform {return false}
     if lhs.workingDirectory != rhs.workingDirectory {return false}
     if lhs.outputNodeProperties != rhs.outputNodeProperties {return false}
+    if lhs.outputDirectoryFormat != rhs.outputDirectoryFormat {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
+}
+
+extension Build_Bazel_Remote_Execution_V2_Command.OutputDirectoryFormat: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "TREE_ONLY"),
+    1: .same(proto: "DIRECTORY_ONLY"),
+    2: .same(proto: "TREE_AND_DIRECTORY"),
+  ]
 }
 
 extension Build_Bazel_Remote_Execution_V2_Command.EnvironmentVariable: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
@@ -2750,6 +3191,10 @@ extension Build_Bazel_Remote_Execution_V2_Directory: SwiftProtobuf.Message, Swif
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.files.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.files, fieldNumber: 1)
     }
@@ -2759,9 +3204,9 @@ extension Build_Bazel_Remote_Execution_V2_Directory: SwiftProtobuf.Message, Swif
     if !self.symlinks.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.symlinks, fieldNumber: 3)
     }
-    if let v = self._nodeProperties {
+    try { if let v = self._nodeProperties {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2836,15 +3281,19 @@ extension Build_Bazel_Remote_Execution_V2_NodeProperties: SwiftProtobuf.Message,
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.properties.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.properties, fieldNumber: 1)
     }
-    if let v = self._mtime {
+    try { if let v = self._mtime {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._unixMode {
+    } }()
+    try { if let v = self._unixMode {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2882,18 +3331,22 @@ extension Build_Bazel_Remote_Execution_V2_FileNode: SwiftProtobuf.Message, Swift
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
-    if let v = self._digest {
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     if self.isExecutable != false {
       try visitor.visitSingularBoolField(value: self.isExecutable, fieldNumber: 4)
     }
-    if let v = self._nodeProperties {
+    try { if let v = self._nodeProperties {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2928,12 +3381,16 @@ extension Build_Bazel_Remote_Execution_V2_DirectoryNode: SwiftProtobuf.Message, 
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
-    if let v = self._digest {
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2968,15 +3425,19 @@ extension Build_Bazel_Remote_Execution_V2_SymlinkNode: SwiftProtobuf.Message, Sw
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
     if !self.target.isEmpty {
       try visitor.visitSingularStringField(value: self.target, fieldNumber: 2)
     }
-    if let v = self._nodeProperties {
+    try { if let v = self._nodeProperties {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3113,42 +3574,46 @@ extension Build_Bazel_Remote_Execution_V2_ExecutedActionMetadata: SwiftProtobuf.
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
       if !_storage._worker.isEmpty {
         try visitor.visitSingularStringField(value: _storage._worker, fieldNumber: 1)
       }
-      if let v = _storage._queuedTimestamp {
+      try { if let v = _storage._queuedTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      }
-      if let v = _storage._workerStartTimestamp {
+      } }()
+      try { if let v = _storage._workerStartTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-      }
-      if let v = _storage._workerCompletedTimestamp {
+      } }()
+      try { if let v = _storage._workerCompletedTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-      }
-      if let v = _storage._inputFetchStartTimestamp {
+      } }()
+      try { if let v = _storage._inputFetchStartTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-      }
-      if let v = _storage._inputFetchCompletedTimestamp {
+      } }()
+      try { if let v = _storage._inputFetchCompletedTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-      }
-      if let v = _storage._executionStartTimestamp {
+      } }()
+      try { if let v = _storage._executionStartTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
-      }
-      if let v = _storage._executionCompletedTimestamp {
+      } }()
+      try { if let v = _storage._executionCompletedTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
-      }
-      if let v = _storage._outputUploadStartTimestamp {
+      } }()
+      try { if let v = _storage._outputUploadStartTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
-      }
-      if let v = _storage._outputUploadCompletedTimestamp {
+      } }()
+      try { if let v = _storage._outputUploadCompletedTimestamp {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
-      }
+      } }()
       if !_storage._auxiliaryMetadata.isEmpty {
         try visitor.visitRepeatedMessageField(value: _storage._auxiliaryMetadata, fieldNumber: 11)
       }
-      if let v = _storage._virtualExecutionDuration {
+      try { if let v = _storage._virtualExecutionDuration {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 12)
-      }
+      } }()
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -3218,6 +3683,10 @@ extension Build_Bazel_Remote_Execution_V2_ActionResult: SwiftProtobuf.Message, S
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.outputFiles.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.outputFiles, fieldNumber: 2)
     }
@@ -3230,18 +3699,18 @@ extension Build_Bazel_Remote_Execution_V2_ActionResult: SwiftProtobuf.Message, S
     if !self.stdoutRaw.isEmpty {
       try visitor.visitSingularBytesField(value: self.stdoutRaw, fieldNumber: 5)
     }
-    if let v = self._stdoutDigest {
+    try { if let v = self._stdoutDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    }
+    } }()
     if !self.stderrRaw.isEmpty {
       try visitor.visitSingularBytesField(value: self.stderrRaw, fieldNumber: 7)
     }
-    if let v = self._stderrDigest {
+    try { if let v = self._stderrDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
-    }
-    if let v = self._executionMetadata {
+    } }()
+    try { if let v = self._executionMetadata {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
-    }
+    } }()
     if !self.outputFileSymlinks.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.outputFileSymlinks, fieldNumber: 10)
     }
@@ -3298,21 +3767,25 @@ extension Build_Bazel_Remote_Execution_V2_OutputFile: SwiftProtobuf.Message, Swi
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.path.isEmpty {
       try visitor.visitSingularStringField(value: self.path, fieldNumber: 1)
     }
-    if let v = self._digest {
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     if self.isExecutable != false {
       try visitor.visitSingularBoolField(value: self.isExecutable, fieldNumber: 4)
     }
     if !self.contents.isEmpty {
       try visitor.visitSingularBytesField(value: self.contents, fieldNumber: 5)
     }
-    if let v = self._nodeProperties {
+    try { if let v = self._nodeProperties {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3348,9 +3821,13 @@ extension Build_Bazel_Remote_Execution_V2_Tree: SwiftProtobuf.Message, SwiftProt
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._root {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._root {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if !self.children.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.children, fieldNumber: 2)
     }
@@ -3370,6 +3847,8 @@ extension Build_Bazel_Remote_Execution_V2_OutputDirectory: SwiftProtobuf.Message
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "path"),
     3: .standard(proto: "tree_digest"),
+    4: .standard(proto: "is_topologically_sorted"),
+    5: .standard(proto: "root_directory_digest"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3380,24 +3859,38 @@ extension Build_Bazel_Remote_Execution_V2_OutputDirectory: SwiftProtobuf.Message
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._treeDigest) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.isTopologicallySorted) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._rootDirectoryDigest) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.path.isEmpty {
       try visitor.visitSingularStringField(value: self.path, fieldNumber: 1)
     }
-    if let v = self._treeDigest {
+    try { if let v = self._treeDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    if self.isTopologicallySorted != false {
+      try visitor.visitSingularBoolField(value: self.isTopologicallySorted, fieldNumber: 4)
     }
+    try { if let v = self._rootDirectoryDigest {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_OutputDirectory, rhs: Build_Bazel_Remote_Execution_V2_OutputDirectory) -> Bool {
     if lhs.path != rhs.path {return false}
     if lhs._treeDigest != rhs._treeDigest {return false}
+    if lhs.isTopologicallySorted != rhs.isTopologicallySorted {return false}
+    if lhs._rootDirectoryDigest != rhs._rootDirectoryDigest {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3426,15 +3919,19 @@ extension Build_Bazel_Remote_Execution_V2_OutputSymlink: SwiftProtobuf.Message, 
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.path.isEmpty {
       try visitor.visitSingularStringField(value: self.path, fieldNumber: 1)
     }
     if !self.target.isEmpty {
       try visitor.visitSingularStringField(value: self.target, fieldNumber: 2)
     }
-    if let v = self._nodeProperties {
+    try { if let v = self._nodeProperties {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3519,6 +4016,10 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteRequest: SwiftProtobuf.Message,
     6: .standard(proto: "action_digest"),
     7: .standard(proto: "execution_policy"),
     8: .standard(proto: "results_cache_policy"),
+    9: .standard(proto: "digest_function"),
+    10: .standard(proto: "inline_stdout"),
+    11: .standard(proto: "inline_stderr"),
+    12: .standard(proto: "inline_output_files"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3532,26 +4033,46 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteRequest: SwiftProtobuf.Message,
       case 6: try { try decoder.decodeSingularMessageField(value: &self._actionDigest) }()
       case 7: try { try decoder.decodeSingularMessageField(value: &self._executionPolicy) }()
       case 8: try { try decoder.decodeSingularMessageField(value: &self._resultsCachePolicy) }()
+      case 9: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
+      case 10: try { try decoder.decodeSingularBoolField(value: &self.inlineStdout) }()
+      case 11: try { try decoder.decodeSingularBoolField(value: &self.inlineStderr) }()
+      case 12: try { try decoder.decodeRepeatedStringField(value: &self.inlineOutputFiles) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
     if self.skipCacheLookup != false {
       try visitor.visitSingularBoolField(value: self.skipCacheLookup, fieldNumber: 3)
     }
-    if let v = self._actionDigest {
+    try { if let v = self._actionDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    }
-    if let v = self._executionPolicy {
+    } }()
+    try { if let v = self._executionPolicy {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
-    }
-    if let v = self._resultsCachePolicy {
+    } }()
+    try { if let v = self._resultsCachePolicy {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    } }()
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 9)
+    }
+    if self.inlineStdout != false {
+      try visitor.visitSingularBoolField(value: self.inlineStdout, fieldNumber: 10)
+    }
+    if self.inlineStderr != false {
+      try visitor.visitSingularBoolField(value: self.inlineStderr, fieldNumber: 11)
+    }
+    if !self.inlineOutputFiles.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.inlineOutputFiles, fieldNumber: 12)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -3562,6 +4083,10 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteRequest: SwiftProtobuf.Message,
     if lhs._actionDigest != rhs._actionDigest {return false}
     if lhs._executionPolicy != rhs._executionPolicy {return false}
     if lhs._resultsCachePolicy != rhs._resultsCachePolicy {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
+    if lhs.inlineStdout != rhs.inlineStdout {return false}
+    if lhs.inlineStderr != rhs.inlineStderr {return false}
+    if lhs.inlineOutputFiles != rhs.inlineOutputFiles {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3588,9 +4113,13 @@ extension Build_Bazel_Remote_Execution_V2_LogFile: SwiftProtobuf.Message, SwiftP
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._digest {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if self.humanReadable != false {
       try visitor.visitSingularBoolField(value: self.humanReadable, fieldNumber: 2)
     }
@@ -3663,15 +4192,19 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteResponse: SwiftProtobuf.Message
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      if let v = _storage._result {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      try { if let v = _storage._result {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-      }
+      } }()
       if _storage._cachedResult != false {
         try visitor.visitSingularBoolField(value: _storage._cachedResult, fieldNumber: 2)
       }
-      if let v = _storage._status {
+      try { if let v = _storage._status {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-      }
+      } }()
       if !_storage._serverLogs.isEmpty {
         try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.ProtobufString,Build_Bazel_Remote_Execution_V2_LogFile>.self, value: _storage._serverLogs, fieldNumber: 4)
       }
@@ -3737,6 +4270,8 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata: SwiftProtobu
     2: .standard(proto: "action_digest"),
     3: .standard(proto: "stdout_stream_name"),
     4: .standard(proto: "stderr_stream_name"),
+    5: .standard(proto: "partial_execution_metadata"),
+    6: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3749,23 +4284,35 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata: SwiftProtobu
       case 2: try { try decoder.decodeSingularMessageField(value: &self._actionDigest) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.stdoutStreamName) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.stderrStreamName) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._partialExecutionMetadata) }()
+      case 6: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if self.stage != .unknown {
       try visitor.visitSingularEnumField(value: self.stage, fieldNumber: 1)
     }
-    if let v = self._actionDigest {
+    try { if let v = self._actionDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     if !self.stdoutStreamName.isEmpty {
       try visitor.visitSingularStringField(value: self.stdoutStreamName, fieldNumber: 3)
     }
     if !self.stderrStreamName.isEmpty {
       try visitor.visitSingularStringField(value: self.stderrStreamName, fieldNumber: 4)
+    }
+    try { if let v = self._partialExecutionMetadata {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    } }()
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -3775,6 +4322,8 @@ extension Build_Bazel_Remote_Execution_V2_ExecuteOperationMetadata: SwiftProtobu
     if lhs._actionDigest != rhs._actionDigest {return false}
     if lhs.stdoutStreamName != rhs.stdoutStreamName {return false}
     if lhs.stderrStreamName != rhs.stderrStreamName {return false}
+    if lhs._partialExecutionMetadata != rhs._partialExecutionMetadata {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3820,6 +4369,7 @@ extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: SwiftProtobuf.
     3: .standard(proto: "inline_stdout"),
     4: .standard(proto: "inline_stderr"),
     5: .standard(proto: "inline_output_files"),
+    6: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3833,18 +4383,23 @@ extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: SwiftProtobuf.
       case 3: try { try decoder.decodeSingularBoolField(value: &self.inlineStdout) }()
       case 4: try { try decoder.decodeSingularBoolField(value: &self.inlineStderr) }()
       case 5: try { try decoder.decodeRepeatedStringField(value: &self.inlineOutputFiles) }()
+      case 6: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
-    if let v = self._actionDigest {
+    try { if let v = self._actionDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     if self.inlineStdout != false {
       try visitor.visitSingularBoolField(value: self.inlineStdout, fieldNumber: 3)
     }
@@ -3853,6 +4408,9 @@ extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: SwiftProtobuf.
     }
     if !self.inlineOutputFiles.isEmpty {
       try visitor.visitRepeatedStringField(value: self.inlineOutputFiles, fieldNumber: 5)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -3863,6 +4421,7 @@ extension Build_Bazel_Remote_Execution_V2_GetActionResultRequest: SwiftProtobuf.
     if lhs.inlineStdout != rhs.inlineStdout {return false}
     if lhs.inlineStderr != rhs.inlineStderr {return false}
     if lhs.inlineOutputFiles != rhs.inlineOutputFiles {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3875,6 +4434,7 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
     2: .standard(proto: "action_digest"),
     3: .standard(proto: "action_result"),
     4: .standard(proto: "results_cache_policy"),
+    5: .standard(proto: "digest_function"),
   ]
 
   fileprivate class _StorageClass {
@@ -3882,6 +4442,7 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
     var _actionDigest: Build_Bazel_Remote_Execution_V2_Digest? = nil
     var _actionResult: Build_Bazel_Remote_Execution_V2_ActionResult? = nil
     var _resultsCachePolicy: Build_Bazel_Remote_Execution_V2_ResultsCachePolicy? = nil
+    var _digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
     static let defaultInstance = _StorageClass()
 
@@ -3892,6 +4453,7 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
       _actionDigest = source._actionDigest
       _actionResult = source._actionResult
       _resultsCachePolicy = source._resultsCachePolicy
+      _digestFunction = source._digestFunction
     }
   }
 
@@ -3914,6 +4476,7 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
         case 2: try { try decoder.decodeSingularMessageField(value: &_storage._actionDigest) }()
         case 3: try { try decoder.decodeSingularMessageField(value: &_storage._actionResult) }()
         case 4: try { try decoder.decodeSingularMessageField(value: &_storage._resultsCachePolicy) }()
+        case 5: try { try decoder.decodeSingularEnumField(value: &_storage._digestFunction) }()
         default: break
         }
       }
@@ -3922,17 +4485,24 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
       if !_storage._instanceName.isEmpty {
         try visitor.visitSingularStringField(value: _storage._instanceName, fieldNumber: 1)
       }
-      if let v = _storage._actionDigest {
+      try { if let v = _storage._actionDigest {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      }
-      if let v = _storage._actionResult {
+      } }()
+      try { if let v = _storage._actionResult {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-      }
-      if let v = _storage._resultsCachePolicy {
+      } }()
+      try { if let v = _storage._resultsCachePolicy {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+      } }()
+      if _storage._digestFunction != .unknown {
+        try visitor.visitSingularEnumField(value: _storage._digestFunction, fieldNumber: 5)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -3947,6 +4517,7 @@ extension Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest: SwiftProtob
         if _storage._actionDigest != rhs_storage._actionDigest {return false}
         if _storage._actionResult != rhs_storage._actionResult {return false}
         if _storage._resultsCachePolicy != rhs_storage._resultsCachePolicy {return false}
+        if _storage._digestFunction != rhs_storage._digestFunction {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -3961,6 +4532,7 @@ extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest: SwiftProtobuf
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "instance_name"),
     2: .standard(proto: "blob_digests"),
+    3: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -3971,6 +4543,7 @@ extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest: SwiftProtobuf
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.blobDigests) }()
+      case 3: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
@@ -3983,12 +4556,16 @@ extension Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest: SwiftProtobuf
     if !self.blobDigests.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.blobDigests, fieldNumber: 2)
     }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, rhs: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest) -> Bool {
     if lhs.instanceName != rhs.instanceName {return false}
     if lhs.blobDigests != rhs.blobDigests {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4031,6 +4608,7 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest: SwiftProtobuf
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "instance_name"),
     2: .same(proto: "requests"),
+    5: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4041,6 +4619,7 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest: SwiftProtobuf
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.requests) }()
+      case 5: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
@@ -4053,12 +4632,16 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest: SwiftProtobuf
     if !self.requests.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.requests, fieldNumber: 2)
     }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, rhs: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest) -> Bool {
     if lhs.instanceName != rhs.instanceName {return false}
     if lhs.requests != rhs.requests {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4069,6 +4652,7 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request: Swift
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "digest"),
     2: .same(proto: "data"),
+    3: .same(proto: "compressor"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4079,17 +4663,25 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request: Swift
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
       case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
+      case 3: try { try decoder.decodeSingularEnumField(value: &self.compressor) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._digest {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if !self.data.isEmpty {
       try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
+    }
+    if self.compressor != .identity {
+      try visitor.visitSingularEnumField(value: self.compressor, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -4097,6 +4689,7 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request: Swift
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request, rhs: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest.Request) -> Bool {
     if lhs._digest != rhs._digest {return false}
     if lhs.data != rhs.data {return false}
+    if lhs.compressor != rhs.compressor {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4155,12 +4748,16 @@ extension Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse.Response: Swi
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._digest {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
-    if let v = self._status {
+    } }()
+    try { if let v = self._status {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -4177,6 +4774,8 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest: SwiftProtobuf.M
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "instance_name"),
     2: .same(proto: "digests"),
+    3: .standard(proto: "acceptable_compressors"),
+    4: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4187,6 +4786,8 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest: SwiftProtobuf.M
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.instanceName) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.digests) }()
+      case 3: try { try decoder.decodeRepeatedEnumField(value: &self.acceptableCompressors) }()
+      case 4: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
@@ -4199,12 +4800,20 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest: SwiftProtobuf.M
     if !self.digests.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.digests, fieldNumber: 2)
     }
+    if !self.acceptableCompressors.isEmpty {
+      try visitor.visitPackedEnumField(value: self.acceptableCompressors, fieldNumber: 3)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, rhs: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest) -> Bool {
     if lhs.instanceName != rhs.instanceName {return false}
     if lhs.digests != rhs.digests {return false}
+    if lhs.acceptableCompressors != rhs.acceptableCompressors {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4247,6 +4856,7 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response: Swift
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "digest"),
     2: .same(proto: "data"),
+    4: .same(proto: "compressor"),
     3: .same(proto: "status"),
   ]
 
@@ -4259,20 +4869,28 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response: Swift
       case 1: try { try decoder.decodeSingularMessageField(value: &self._digest) }()
       case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._status) }()
+      case 4: try { try decoder.decodeSingularEnumField(value: &self.compressor) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._digest {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._digest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if !self.data.isEmpty {
       try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
     }
-    if let v = self._status {
+    try { if let v = self._status {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    if self.compressor != .identity {
+      try visitor.visitSingularEnumField(value: self.compressor, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -4280,6 +4898,7 @@ extension Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response: Swift
   public static func ==(lhs: Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response, rhs: Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse.Response) -> Bool {
     if lhs._digest != rhs._digest {return false}
     if lhs.data != rhs.data {return false}
+    if lhs.compressor != rhs.compressor {return false}
     if lhs._status != rhs._status {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -4293,6 +4912,7 @@ extension Build_Bazel_Remote_Execution_V2_GetTreeRequest: SwiftProtobuf.Message,
     2: .standard(proto: "root_digest"),
     3: .standard(proto: "page_size"),
     4: .standard(proto: "page_token"),
+    5: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4305,23 +4925,31 @@ extension Build_Bazel_Remote_Execution_V2_GetTreeRequest: SwiftProtobuf.Message,
       case 2: try { try decoder.decodeSingularMessageField(value: &self._rootDigest) }()
       case 3: try { try decoder.decodeSingularInt32Field(value: &self.pageSize) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.pageToken) }()
+      case 5: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
-    if let v = self._rootDigest {
+    try { if let v = self._rootDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     if self.pageSize != 0 {
       try visitor.visitSingularInt32Field(value: self.pageSize, fieldNumber: 3)
     }
     if !self.pageToken.isEmpty {
       try visitor.visitSingularStringField(value: self.pageToken, fieldNumber: 4)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -4331,6 +4959,7 @@ extension Build_Bazel_Remote_Execution_V2_GetTreeRequest: SwiftProtobuf.Message,
     if lhs._rootDigest != rhs._rootDigest {return false}
     if lhs.pageSize != rhs.pageSize {return false}
     if lhs.pageToken != rhs.pageToken {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4464,21 +5093,25 @@ extension Build_Bazel_Remote_Execution_V2_ServerCapabilities: SwiftProtobuf.Mess
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      if let v = _storage._cacheCapabilities {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      try { if let v = _storage._cacheCapabilities {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-      }
-      if let v = _storage._executionCapabilities {
+      } }()
+      try { if let v = _storage._executionCapabilities {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      }
-      if let v = _storage._deprecatedApiVersion {
+      } }()
+      try { if let v = _storage._deprecatedApiVersion {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-      }
-      if let v = _storage._lowApiVersion {
+      } }()
+      try { if let v = _storage._lowApiVersion {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-      }
-      if let v = _storage._highApiVersion {
+      } }()
+      try { if let v = _storage._highApiVersion {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-      }
+      } }()
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -4531,6 +5164,8 @@ extension Build_Bazel_Remote_Execution_V2_DigestFunction.Value: SwiftProtobuf._P
     5: .same(proto: "SHA384"),
     6: .same(proto: "SHA512"),
     7: .same(proto: "MURMUR3"),
+    8: .same(proto: "SHA256TREE"),
+    9: .same(proto: "BLAKE3"),
   ]
 }
 
@@ -4687,6 +5322,7 @@ extension Build_Bazel_Remote_Execution_V2_Compressor.Value: SwiftProtobuf._Proto
     0: .same(proto: "IDENTITY"),
     1: .same(proto: "ZSTD"),
     2: .same(proto: "DEFLATE"),
+    3: .same(proto: "BROTLI"),
   ]
 }
 
@@ -4699,6 +5335,8 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
     4: .standard(proto: "max_batch_total_size_bytes"),
     5: .standard(proto: "symlink_absolute_path_strategy"),
     6: .standard(proto: "supported_compressors"),
+    7: .standard(proto: "supported_batch_update_compressors"),
+    8: .standard(proto: "max_cas_blob_size_bytes"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4713,21 +5351,27 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.maxBatchTotalSizeBytes) }()
       case 5: try { try decoder.decodeSingularEnumField(value: &self.symlinkAbsolutePathStrategy) }()
       case 6: try { try decoder.decodeRepeatedEnumField(value: &self.supportedCompressors) }()
+      case 7: try { try decoder.decodeRepeatedEnumField(value: &self.supportedBatchUpdateCompressors) }()
+      case 8: try { try decoder.decodeSingularInt64Field(value: &self.maxCasBlobSizeBytes) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.digestFunctions.isEmpty {
       try visitor.visitPackedEnumField(value: self.digestFunctions, fieldNumber: 1)
     }
-    if let v = self._actionCacheUpdateCapabilities {
+    try { if let v = self._actionCacheUpdateCapabilities {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._cachePriorityCapabilities {
+    } }()
+    try { if let v = self._cachePriorityCapabilities {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
+    } }()
     if self.maxBatchTotalSizeBytes != 0 {
       try visitor.visitSingularInt64Field(value: self.maxBatchTotalSizeBytes, fieldNumber: 4)
     }
@@ -4736,6 +5380,12 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
     }
     if !self.supportedCompressors.isEmpty {
       try visitor.visitPackedEnumField(value: self.supportedCompressors, fieldNumber: 6)
+    }
+    if !self.supportedBatchUpdateCompressors.isEmpty {
+      try visitor.visitPackedEnumField(value: self.supportedBatchUpdateCompressors, fieldNumber: 7)
+    }
+    if self.maxCasBlobSizeBytes != 0 {
+      try visitor.visitSingularInt64Field(value: self.maxCasBlobSizeBytes, fieldNumber: 8)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -4747,6 +5397,8 @@ extension Build_Bazel_Remote_Execution_V2_CacheCapabilities: SwiftProtobuf.Messa
     if lhs.maxBatchTotalSizeBytes != rhs.maxBatchTotalSizeBytes {return false}
     if lhs.symlinkAbsolutePathStrategy != rhs.symlinkAbsolutePathStrategy {return false}
     if lhs.supportedCompressors != rhs.supportedCompressors {return false}
+    if lhs.supportedBatchUpdateCompressors != rhs.supportedBatchUpdateCompressors {return false}
+    if lhs.maxCasBlobSizeBytes != rhs.maxCasBlobSizeBytes {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4759,6 +5411,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutionCapabilities: SwiftProtobuf.M
     2: .standard(proto: "exec_enabled"),
     3: .standard(proto: "execution_priority_capabilities"),
     4: .standard(proto: "supported_node_properties"),
+    5: .standard(proto: "digest_functions"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -4771,23 +5424,31 @@ extension Build_Bazel_Remote_Execution_V2_ExecutionCapabilities: SwiftProtobuf.M
       case 2: try { try decoder.decodeSingularBoolField(value: &self.execEnabled) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._executionPriorityCapabilities) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.supportedNodeProperties) }()
+      case 5: try { try decoder.decodeRepeatedEnumField(value: &self.digestFunctions) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if self.digestFunction != .unknown {
       try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 1)
     }
     if self.execEnabled != false {
       try visitor.visitSingularBoolField(value: self.execEnabled, fieldNumber: 2)
     }
-    if let v = self._executionPriorityCapabilities {
+    try { if let v = self._executionPriorityCapabilities {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
+    } }()
     if !self.supportedNodeProperties.isEmpty {
       try visitor.visitRepeatedStringField(value: self.supportedNodeProperties, fieldNumber: 4)
+    }
+    if !self.digestFunctions.isEmpty {
+      try visitor.visitPackedEnumField(value: self.digestFunctions, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -4797,6 +5458,7 @@ extension Build_Bazel_Remote_Execution_V2_ExecutionCapabilities: SwiftProtobuf.M
     if lhs.execEnabled != rhs.execEnabled {return false}
     if lhs._executionPriorityCapabilities != rhs._executionPriorityCapabilities {return false}
     if lhs.supportedNodeProperties != rhs.supportedNodeProperties {return false}
+    if lhs.digestFunctions != rhs.digestFunctions {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4871,9 +5533,13 @@ extension Build_Bazel_Remote_Execution_V2_RequestMetadata: SwiftProtobuf.Message
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._toolDetails {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._toolDetails {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if !self.actionID.isEmpty {
       try visitor.visitSingularStringField(value: self.actionID, fieldNumber: 2)
     }

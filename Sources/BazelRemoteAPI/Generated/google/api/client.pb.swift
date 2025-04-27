@@ -7,7 +7,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// Copyright 2018 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,798 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
+
+/// The organization for which the client libraries are being published.
+/// Affects the url where generated docs are published, etc.
+public enum Google_Api_ClientLibraryOrganization: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
+
+  /// Not useful.
+  case unspecified // = 0
+
+  /// Google Cloud Platform Org.
+  case cloud // = 1
+
+  /// Ads (Advertising) Org.
+  case ads // = 2
+
+  /// Photos Org.
+  case photos // = 3
+
+  /// Street View Org.
+  case streetView // = 4
+
+  /// Shopping Org.
+  case shopping // = 5
+
+  /// Geo Org.
+  case geo // = 6
+
+  /// Generative AI - https://developers.generativeai.google
+  case generativeAi // = 7
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .unspecified
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .unspecified
+    case 1: self = .cloud
+    case 2: self = .ads
+    case 3: self = .photos
+    case 4: self = .streetView
+    case 5: self = .shopping
+    case 6: self = .geo
+    case 7: self = .generativeAi
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .unspecified: return 0
+    case .cloud: return 1
+    case .ads: return 2
+    case .photos: return 3
+    case .streetView: return 4
+    case .shopping: return 5
+    case .geo: return 6
+    case .generativeAi: return 7
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+}
+
+#if swift(>=4.2)
+
+extension Google_Api_ClientLibraryOrganization: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Google_Api_ClientLibraryOrganization] = [
+    .unspecified,
+    .cloud,
+    .ads,
+    .photos,
+    .streetView,
+    .shopping,
+    .geo,
+    .generativeAi,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
+/// To where should client libraries be published?
+public enum Google_Api_ClientLibraryDestination: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
+
+  /// Client libraries will neither be generated nor published to package
+  /// managers.
+  case unspecified // = 0
+
+  /// Generate the client library in a repo under github.com/googleapis,
+  /// but don't publish it to package managers.
+  case github // = 10
+
+  /// Publish the library to package managers like nuget.org and npmjs.com.
+  case packageManager // = 20
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .unspecified
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .unspecified
+    case 10: self = .github
+    case 20: self = .packageManager
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .unspecified: return 0
+    case .github: return 10
+    case .packageManager: return 20
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+}
+
+#if swift(>=4.2)
+
+extension Google_Api_ClientLibraryDestination: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Google_Api_ClientLibraryDestination] = [
+    .unspecified,
+    .github,
+    .packageManager,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
+/// Required information for every language.
+public struct Google_Api_CommonLanguageSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Link to automatically generated reference documentation.  Example:
+  /// https://cloud.google.com/nodejs/docs/reference/asset/latest
+  public var referenceDocsUri: String = String()
+
+  /// The destination where API teams want this client library to be published.
+  public var destinations: [Google_Api_ClientLibraryDestination] = []
+
+  /// Configuration for which RPCs should be generated in the GAPIC client.
+  public var selectiveGapicGeneration: Google_Api_SelectiveGapicGeneration {
+    get {return _selectiveGapicGeneration ?? Google_Api_SelectiveGapicGeneration()}
+    set {_selectiveGapicGeneration = newValue}
+  }
+  /// Returns true if `selectiveGapicGeneration` has been explicitly set.
+  public var hasSelectiveGapicGeneration: Bool {return self._selectiveGapicGeneration != nil}
+  /// Clears the value of `selectiveGapicGeneration`. Subsequent reads from it will return its default value.
+  public mutating func clearSelectiveGapicGeneration() {self._selectiveGapicGeneration = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _selectiveGapicGeneration: Google_Api_SelectiveGapicGeneration? = nil
+}
+
+/// Details about how and where to publish client libraries.
+public struct Google_Api_ClientLibrarySettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Version of the API to apply these settings to. This is the full protobuf
+  /// package for the API, ending in the version element.
+  /// Examples: "google.cloud.speech.v1" and "google.spanner.admin.database.v1".
+  public var version: String {
+    get {return _storage._version}
+    set {_uniqueStorage()._version = newValue}
+  }
+
+  /// Launch stage of this version of the API.
+  public var launchStage: Google_Api_LaunchStage {
+    get {return _storage._launchStage}
+    set {_uniqueStorage()._launchStage = newValue}
+  }
+
+  /// When using transport=rest, the client request will encode enums as
+  /// numbers rather than strings.
+  public var restNumericEnums: Bool {
+    get {return _storage._restNumericEnums}
+    set {_uniqueStorage()._restNumericEnums = newValue}
+  }
+
+  /// Settings for legacy Java features, supported in the Service YAML.
+  public var javaSettings: Google_Api_JavaSettings {
+    get {return _storage._javaSettings ?? Google_Api_JavaSettings()}
+    set {_uniqueStorage()._javaSettings = newValue}
+  }
+  /// Returns true if `javaSettings` has been explicitly set.
+  public var hasJavaSettings: Bool {return _storage._javaSettings != nil}
+  /// Clears the value of `javaSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearJavaSettings() {_uniqueStorage()._javaSettings = nil}
+
+  /// Settings for C++ client libraries.
+  public var cppSettings: Google_Api_CppSettings {
+    get {return _storage._cppSettings ?? Google_Api_CppSettings()}
+    set {_uniqueStorage()._cppSettings = newValue}
+  }
+  /// Returns true if `cppSettings` has been explicitly set.
+  public var hasCppSettings: Bool {return _storage._cppSettings != nil}
+  /// Clears the value of `cppSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearCppSettings() {_uniqueStorage()._cppSettings = nil}
+
+  /// Settings for PHP client libraries.
+  public var phpSettings: Google_Api_PhpSettings {
+    get {return _storage._phpSettings ?? Google_Api_PhpSettings()}
+    set {_uniqueStorage()._phpSettings = newValue}
+  }
+  /// Returns true if `phpSettings` has been explicitly set.
+  public var hasPhpSettings: Bool {return _storage._phpSettings != nil}
+  /// Clears the value of `phpSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearPhpSettings() {_uniqueStorage()._phpSettings = nil}
+
+  /// Settings for Python client libraries.
+  public var pythonSettings: Google_Api_PythonSettings {
+    get {return _storage._pythonSettings ?? Google_Api_PythonSettings()}
+    set {_uniqueStorage()._pythonSettings = newValue}
+  }
+  /// Returns true if `pythonSettings` has been explicitly set.
+  public var hasPythonSettings: Bool {return _storage._pythonSettings != nil}
+  /// Clears the value of `pythonSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearPythonSettings() {_uniqueStorage()._pythonSettings = nil}
+
+  /// Settings for Node client libraries.
+  public var nodeSettings: Google_Api_NodeSettings {
+    get {return _storage._nodeSettings ?? Google_Api_NodeSettings()}
+    set {_uniqueStorage()._nodeSettings = newValue}
+  }
+  /// Returns true if `nodeSettings` has been explicitly set.
+  public var hasNodeSettings: Bool {return _storage._nodeSettings != nil}
+  /// Clears the value of `nodeSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearNodeSettings() {_uniqueStorage()._nodeSettings = nil}
+
+  /// Settings for .NET client libraries.
+  public var dotnetSettings: Google_Api_DotnetSettings {
+    get {return _storage._dotnetSettings ?? Google_Api_DotnetSettings()}
+    set {_uniqueStorage()._dotnetSettings = newValue}
+  }
+  /// Returns true if `dotnetSettings` has been explicitly set.
+  public var hasDotnetSettings: Bool {return _storage._dotnetSettings != nil}
+  /// Clears the value of `dotnetSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearDotnetSettings() {_uniqueStorage()._dotnetSettings = nil}
+
+  /// Settings for Ruby client libraries.
+  public var rubySettings: Google_Api_RubySettings {
+    get {return _storage._rubySettings ?? Google_Api_RubySettings()}
+    set {_uniqueStorage()._rubySettings = newValue}
+  }
+  /// Returns true if `rubySettings` has been explicitly set.
+  public var hasRubySettings: Bool {return _storage._rubySettings != nil}
+  /// Clears the value of `rubySettings`. Subsequent reads from it will return its default value.
+  public mutating func clearRubySettings() {_uniqueStorage()._rubySettings = nil}
+
+  /// Settings for Go client libraries.
+  public var goSettings: Google_Api_GoSettings {
+    get {return _storage._goSettings ?? Google_Api_GoSettings()}
+    set {_uniqueStorage()._goSettings = newValue}
+  }
+  /// Returns true if `goSettings` has been explicitly set.
+  public var hasGoSettings: Bool {return _storage._goSettings != nil}
+  /// Clears the value of `goSettings`. Subsequent reads from it will return its default value.
+  public mutating func clearGoSettings() {_uniqueStorage()._goSettings = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+/// This message configures the settings for publishing [Google Cloud Client
+/// libraries](https://cloud.google.com/apis/docs/cloud-client-libraries)
+/// generated from the service config.
+public struct Google_Api_Publishing {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// A list of API method settings, e.g. the behavior for methods that use the
+  /// long-running operation pattern.
+  public var methodSettings: [Google_Api_MethodSettings] = []
+
+  /// Link to a *public* URI where users can report issues.  Example:
+  /// https://issuetracker.google.com/issues/new?component=190865&template=1161103
+  public var newIssueUri: String = String()
+
+  /// Link to product home page.  Example:
+  /// https://cloud.google.com/asset-inventory/docs/overview
+  public var documentationUri: String = String()
+
+  /// Used as a tracking tag when collecting data about the APIs developer
+  /// relations artifacts like docs, packages delivered to package managers,
+  /// etc.  Example: "speech".
+  public var apiShortName: String = String()
+
+  /// GitHub label to apply to issues and pull requests opened for this API.
+  public var githubLabel: String = String()
+
+  /// GitHub teams to be added to CODEOWNERS in the directory in GitHub
+  /// containing source code for the client libraries for this API.
+  public var codeownerGithubTeams: [String] = []
+
+  /// A prefix used in sample code when demarking regions to be included in
+  /// documentation.
+  public var docTagPrefix: String = String()
+
+  /// For whom the client library is being published.
+  public var organization: Google_Api_ClientLibraryOrganization = .unspecified
+
+  /// Client library settings.  If the same version string appears multiple
+  /// times in this list, then the last one wins.  Settings from earlier
+  /// settings with the same version string are discarded.
+  public var librarySettings: [Google_Api_ClientLibrarySettings] = []
+
+  /// Optional link to proto reference documentation.  Example:
+  /// https://cloud.google.com/pubsub/lite/docs/reference/rpc
+  public var protoReferenceDocumentationUri: String = String()
+
+  /// Optional link to REST reference documentation.  Example:
+  /// https://cloud.google.com/pubsub/lite/docs/reference/rest
+  public var restReferenceDocumentationUri: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Settings for Java client libraries.
+public struct Google_Api_JavaSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The package name to use in Java. Clobbers the java_package option
+  /// set in the protobuf. This should be used **only** by APIs
+  /// who have already set the language_settings.java.package_name" field
+  /// in gapic.yaml. API teams should use the protobuf java_package option
+  /// where possible.
+  ///
+  /// Example of a YAML configuration::
+  ///
+  ///  publishing:
+  ///    java_settings:
+  ///      library_package: com.google.cloud.pubsub.v1
+  public var libraryPackage: String = String()
+
+  /// Configure the Java class name to use instead of the service's for its
+  /// corresponding generated GAPIC client. Keys are fully-qualified
+  /// service names as they appear in the protobuf (including the full
+  /// the language_settings.java.interface_names" field in gapic.yaml. API
+  /// teams should otherwise use the service name as it appears in the
+  /// protobuf.
+  ///
+  /// Example of a YAML configuration::
+  ///
+  ///  publishing:
+  ///    java_settings:
+  ///      service_class_names:
+  ///        - google.pubsub.v1.Publisher: TopicAdmin
+  ///        - google.pubsub.v1.Subscriber: SubscriptionAdmin
+  public var serviceClassNames: Dictionary<String,String> = [:]
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Settings for C++ client libraries.
+public struct Google_Api_CppSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Settings for Php client libraries.
+public struct Google_Api_PhpSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Settings for Python client libraries.
+public struct Google_Api_PythonSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  /// Experimental features to be included during client library generation.
+  public var experimentalFeatures: Google_Api_PythonSettings.ExperimentalFeatures {
+    get {return _experimentalFeatures ?? Google_Api_PythonSettings.ExperimentalFeatures()}
+    set {_experimentalFeatures = newValue}
+  }
+  /// Returns true if `experimentalFeatures` has been explicitly set.
+  public var hasExperimentalFeatures: Bool {return self._experimentalFeatures != nil}
+  /// Clears the value of `experimentalFeatures`. Subsequent reads from it will return its default value.
+  public mutating func clearExperimentalFeatures() {self._experimentalFeatures = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  /// Experimental features to be included during client library generation.
+  /// These fields will be deprecated once the feature graduates and is enabled
+  /// by default.
+  public struct ExperimentalFeatures {
+    // SwiftProtobuf.Message conformance is added in an extension below. See the
+    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+    // methods supported on all messages.
+
+    /// Enables generation of asynchronous REST clients if `rest` transport is
+    /// enabled. By default, asynchronous REST clients will not be generated.
+    /// This feature will be enabled by default 1 month after launching the
+    /// feature in preview packages.
+    public var restAsyncIoEnabled: Bool = false
+
+    /// Enables generation of protobuf code using new types that are more
+    /// Pythonic which are included in `protobuf>=5.29.x`. This feature will be
+    /// enabled by default 1 month after launching the feature in preview
+    /// packages.
+    public var protobufPythonicTypesEnabled: Bool = false
+
+    /// Disables generation of an unversioned Python package for this client
+    /// library. This means that the module names will need to be versioned in
+    /// import statements. For example `import google.cloud.library_v2` instead
+    /// of `import google.cloud.library`.
+    public var unversionedPackageDisabled: Bool = false
+
+    public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+    public init() {}
+  }
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+  fileprivate var _experimentalFeatures: Google_Api_PythonSettings.ExperimentalFeatures? = nil
+}
+
+/// Settings for Node client libraries.
+public struct Google_Api_NodeSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Settings for Dotnet client libraries.
+public struct Google_Api_DotnetSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  /// Map from original service names to renamed versions.
+  /// This is used when the default generated types
+  /// would cause a naming conflict. (Neither name is
+  /// fully-qualified.)
+  /// Example: Subscriber to SubscriberServiceApi.
+  public var renamedServices: Dictionary<String,String> = [:]
+
+  /// Map from full resource types to the effective short name
+  /// for the resource. This is used when otherwise resource
+  /// named from different services would cause naming collisions.
+  /// Example entry:
+  /// "datalabeling.googleapis.com/Dataset": "DataLabelingDataset"
+  public var renamedResources: Dictionary<String,String> = [:]
+
+  /// List of full resource types to ignore during generation.
+  /// This is typically used for API-specific Location resources,
+  /// which should be handled by the generator as if they were actually
+  /// the common Location resources.
+  /// Example entry: "documentai.googleapis.com/Location"
+  public var ignoredResources: [String] = []
+
+  /// Namespaces which must be aliased in snippets due to
+  /// a known (but non-generator-predictable) naming collision
+  public var forcedNamespaceAliases: [String] = []
+
+  /// Method signatures (in the form "service.method(signature)")
+  /// which are provided separately, so shouldn't be generated.
+  /// Snippets *calling* these methods are still generated, however.
+  public var handwrittenSignatures: [String] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Settings for Ruby client libraries.
+public struct Google_Api_RubySettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Settings for Go client libraries.
+public struct Google_Api_GoSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// Some settings.
+  public var common: Google_Api_CommonLanguageSettings {
+    get {return _common ?? Google_Api_CommonLanguageSettings()}
+    set {_common = newValue}
+  }
+  /// Returns true if `common` has been explicitly set.
+  public var hasCommon: Bool {return self._common != nil}
+  /// Clears the value of `common`. Subsequent reads from it will return its default value.
+  public mutating func clearCommon() {self._common = nil}
+
+  /// Map of service names to renamed services. Keys are the package relative
+  /// service names and values are the name to be used for the service client
+  /// and call options.
+  ///
+  /// publishing:
+  ///   go_settings:
+  ///     renamed_services:
+  ///       Publisher: TopicAdmin
+  public var renamedServices: Dictionary<String,String> = [:]
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _common: Google_Api_CommonLanguageSettings? = nil
+}
+
+/// Describes the generator configuration for a method.
+public struct Google_Api_MethodSettings {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The fully qualified name of the method, for which the options below apply.
+  /// This is used to find the method to apply the options.
+  ///
+  /// Example:
+  ///
+  ///    publishing:
+  ///      method_settings:
+  ///      - selector: google.storage.control.v2.StorageControl.CreateFolder
+  ///        # method settings for CreateFolder...
+  public var selector: String = String()
+
+  /// Describes settings to use for long-running operations when generating
+  /// API methods for RPCs. Complements RPCs that use the annotations in
+  /// google/longrunning/operations.proto.
+  ///
+  /// Example of a YAML configuration::
+  ///
+  ///    publishing:
+  ///      method_settings:
+  ///      - selector: google.cloud.speech.v2.Speech.BatchRecognize
+  ///        long_running:
+  ///          initial_poll_delay: 60s # 1 minute
+  ///          poll_delay_multiplier: 1.5
+  ///          max_poll_delay: 360s # 6 minutes
+  ///          total_poll_timeout: 54000s # 90 minutes
+  public var longRunning: Google_Api_MethodSettings.LongRunning {
+    get {return _longRunning ?? Google_Api_MethodSettings.LongRunning()}
+    set {_longRunning = newValue}
+  }
+  /// Returns true if `longRunning` has been explicitly set.
+  public var hasLongRunning: Bool {return self._longRunning != nil}
+  /// Clears the value of `longRunning`. Subsequent reads from it will return its default value.
+  public mutating func clearLongRunning() {self._longRunning = nil}
+
+  /// List of top-level fields of the request message, that should be
+  /// automatically populated by the client libraries based on their
+  /// (google.api.field_info).format. Currently supported format: UUID4.
+  ///
+  /// Example of a YAML configuration:
+  ///
+  ///    publishing:
+  ///      method_settings:
+  ///      - selector: google.example.v1.ExampleService.CreateExample
+  ///        auto_populated_fields:
+  ///        - request_id
+  public var autoPopulatedFields: [String] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  /// Describes settings to use when generating API methods that use the
+  /// long-running operation pattern.
+  /// All default values below are from those used in the client library
+  /// generators (e.g.
+  /// [Java](https://github.com/googleapis/gapic-generator-java/blob/04c2faa191a9b5a10b92392fe8482279c4404803/src/main/java/com/google/api/generator/gapic/composer/common/RetrySettingsComposer.java)).
+  public struct LongRunning {
+    // SwiftProtobuf.Message conformance is added in an extension below. See the
+    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+    // methods supported on all messages.
+
+    /// Initial delay after which the first poll request will be made.
+    /// Default value: 5 seconds.
+    public var initialPollDelay: SwiftProtobuf.Google_Protobuf_Duration {
+      get {return _initialPollDelay ?? SwiftProtobuf.Google_Protobuf_Duration()}
+      set {_initialPollDelay = newValue}
+    }
+    /// Returns true if `initialPollDelay` has been explicitly set.
+    public var hasInitialPollDelay: Bool {return self._initialPollDelay != nil}
+    /// Clears the value of `initialPollDelay`. Subsequent reads from it will return its default value.
+    public mutating func clearInitialPollDelay() {self._initialPollDelay = nil}
+
+    /// Multiplier to gradually increase delay between subsequent polls until it
+    /// reaches max_poll_delay.
+    /// Default value: 1.5.
+    public var pollDelayMultiplier: Float = 0
+
+    /// Maximum time between two subsequent poll requests.
+    /// Default value: 45 seconds.
+    public var maxPollDelay: SwiftProtobuf.Google_Protobuf_Duration {
+      get {return _maxPollDelay ?? SwiftProtobuf.Google_Protobuf_Duration()}
+      set {_maxPollDelay = newValue}
+    }
+    /// Returns true if `maxPollDelay` has been explicitly set.
+    public var hasMaxPollDelay: Bool {return self._maxPollDelay != nil}
+    /// Clears the value of `maxPollDelay`. Subsequent reads from it will return its default value.
+    public mutating func clearMaxPollDelay() {self._maxPollDelay = nil}
+
+    /// Total polling timeout.
+    /// Default value: 5 minutes.
+    public var totalPollTimeout: SwiftProtobuf.Google_Protobuf_Duration {
+      get {return _totalPollTimeout ?? SwiftProtobuf.Google_Protobuf_Duration()}
+      set {_totalPollTimeout = newValue}
+    }
+    /// Returns true if `totalPollTimeout` has been explicitly set.
+    public var hasTotalPollTimeout: Bool {return self._totalPollTimeout != nil}
+    /// Clears the value of `totalPollTimeout`. Subsequent reads from it will return its default value.
+    public mutating func clearTotalPollTimeout() {self._totalPollTimeout = nil}
+
+    public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+    public init() {}
+
+    fileprivate var _initialPollDelay: SwiftProtobuf.Google_Protobuf_Duration? = nil
+    fileprivate var _maxPollDelay: SwiftProtobuf.Google_Protobuf_Duration? = nil
+    fileprivate var _totalPollTimeout: SwiftProtobuf.Google_Protobuf_Duration? = nil
+  }
+
+  public init() {}
+
+  fileprivate var _longRunning: Google_Api_MethodSettings.LongRunning? = nil
+}
+
+/// This message is used to configure the generation of a subset of the RPCs in
+/// a service for client libraries.
+public struct Google_Api_SelectiveGapicGeneration {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// An allowlist of the fully qualified names of RPCs that should be included
+  /// on public client surfaces.
+  public var methods: [String] = []
+
+  /// Setting this to true indicates to the client generators that methods
+  /// that would be excluded from the generation should instead be generated
+  /// in a way that indicates these methods should not be consumed by
+  /// end users. How this is expressed is up to individual language
+  /// implementations to decide. Some examples may be: added annotations,
+  /// obfuscated identifiers, or other language idiomatic patterns.
+  public var generateOmittedAsInternal: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Google_Api_ClientLibraryOrganization: @unchecked Sendable {}
+extension Google_Api_ClientLibraryDestination: @unchecked Sendable {}
+extension Google_Api_CommonLanguageSettings: @unchecked Sendable {}
+extension Google_Api_ClientLibrarySettings: @unchecked Sendable {}
+extension Google_Api_Publishing: @unchecked Sendable {}
+extension Google_Api_JavaSettings: @unchecked Sendable {}
+extension Google_Api_CppSettings: @unchecked Sendable {}
+extension Google_Api_PhpSettings: @unchecked Sendable {}
+extension Google_Api_PythonSettings: @unchecked Sendable {}
+extension Google_Api_PythonSettings.ExperimentalFeatures: @unchecked Sendable {}
+extension Google_Api_NodeSettings: @unchecked Sendable {}
+extension Google_Api_DotnetSettings: @unchecked Sendable {}
+extension Google_Api_RubySettings: @unchecked Sendable {}
+extension Google_Api_GoSettings: @unchecked Sendable {}
+extension Google_Api_MethodSettings: @unchecked Sendable {}
+extension Google_Api_MethodSettings.LongRunning: @unchecked Sendable {}
+extension Google_Api_SelectiveGapicGeneration: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Extension support defined in client.proto.
 
@@ -157,6 +949,35 @@ extension SwiftProtobuf.Google_Protobuf_ServiceOptions {
     clearExtensionValue(ext: Google_Api_Extensions_oauth_scopes)
   }
 
+  /// The API version of this service, which should be sent by version-aware
+  /// clients to the service. This allows services to abide by the schema and
+  /// behavior of the service at the time this API version was deployed.
+  /// The format of the API version must be treated as opaque by clients.
+  /// Services may use a format with an apparent structure, but clients must
+  /// not rely on this to determine components within an API version, or attempt
+  /// to construct other valid API versions. Note that this is for upcoming
+  /// functionality and may not be implemented for all services.
+  ///
+  /// Example:
+  ///
+  ///   service Foo {
+  ///     option (google.api.api_version) = "v1_20230821_preview";
+  ///   }
+  public var Google_Api_apiVersion: String {
+    get {return getExtensionValue(ext: Google_Api_Extensions_api_version) ?? String()}
+    set {setExtensionValue(ext: Google_Api_Extensions_api_version, value: newValue)}
+  }
+  /// Returns true if extension `Google_Api_Extensions_api_version`
+  /// has been explicitly set.
+  public var hasGoogle_Api_apiVersion: Bool {
+    return hasExtensionValue(ext: Google_Api_Extensions_api_version)
+  }
+  /// Clears the value of extension `Google_Api_Extensions_api_version`.
+  /// Subsequent reads from it will return its default value.
+  public mutating func clearGoogle_Api_apiVersion() {
+    clearExtensionValue(ext: Google_Api_Extensions_api_version)
+  }
+
 }
 
 // MARK: - File's ExtensionMap: Google_Api_Client_Extensions
@@ -168,7 +989,8 @@ extension SwiftProtobuf.Google_Protobuf_ServiceOptions {
 public let Google_Api_Client_Extensions: SwiftProtobuf.SimpleExtensionMap = [
   Google_Api_Extensions_method_signature,
   Google_Api_Extensions_default_host,
-  Google_Api_Extensions_oauth_scopes
+  Google_Api_Extensions_oauth_scopes,
+  Google_Api_Extensions_api_version
 ]
 
 // Extension Objects - The only reason these might be needed is when manually
@@ -253,3 +1075,861 @@ public let Google_Api_Extensions_oauth_scopes = SwiftProtobuf.MessageExtension<S
   _protobuf_fieldNumber: 1050,
   fieldName: "google.api.oauth_scopes"
 )
+
+/// The API version of this service, which should be sent by version-aware
+/// clients to the service. This allows services to abide by the schema and
+/// behavior of the service at the time this API version was deployed.
+/// The format of the API version must be treated as opaque by clients.
+/// Services may use a format with an apparent structure, but clients must
+/// not rely on this to determine components within an API version, or attempt
+/// to construct other valid API versions. Note that this is for upcoming
+/// functionality and may not be implemented for all services.
+///
+/// Example:
+///
+///   service Foo {
+///     option (google.api.api_version) = "v1_20230821_preview";
+///   }
+public let Google_Api_Extensions_api_version = SwiftProtobuf.MessageExtension<SwiftProtobuf.OptionalExtensionField<SwiftProtobuf.ProtobufString>, SwiftProtobuf.Google_Protobuf_ServiceOptions>(
+  _protobuf_fieldNumber: 525000001,
+  fieldName: "google.api.api_version"
+)
+
+// MARK: - Code below here is support for the SwiftProtobuf runtime.
+
+fileprivate let _protobuf_package = "google.api"
+
+extension Google_Api_ClientLibraryOrganization: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "CLIENT_LIBRARY_ORGANIZATION_UNSPECIFIED"),
+    1: .same(proto: "CLOUD"),
+    2: .same(proto: "ADS"),
+    3: .same(proto: "PHOTOS"),
+    4: .same(proto: "STREET_VIEW"),
+    5: .same(proto: "SHOPPING"),
+    6: .same(proto: "GEO"),
+    7: .same(proto: "GENERATIVE_AI"),
+  ]
+}
+
+extension Google_Api_ClientLibraryDestination: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "CLIENT_LIBRARY_DESTINATION_UNSPECIFIED"),
+    10: .same(proto: "GITHUB"),
+    20: .same(proto: "PACKAGE_MANAGER"),
+  ]
+}
+
+extension Google_Api_CommonLanguageSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CommonLanguageSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "reference_docs_uri"),
+    2: .same(proto: "destinations"),
+    3: .standard(proto: "selective_gapic_generation"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.referenceDocsUri) }()
+      case 2: try { try decoder.decodeRepeatedEnumField(value: &self.destinations) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._selectiveGapicGeneration) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.referenceDocsUri.isEmpty {
+      try visitor.visitSingularStringField(value: self.referenceDocsUri, fieldNumber: 1)
+    }
+    if !self.destinations.isEmpty {
+      try visitor.visitPackedEnumField(value: self.destinations, fieldNumber: 2)
+    }
+    try { if let v = self._selectiveGapicGeneration {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_CommonLanguageSettings, rhs: Google_Api_CommonLanguageSettings) -> Bool {
+    if lhs.referenceDocsUri != rhs.referenceDocsUri {return false}
+    if lhs.destinations != rhs.destinations {return false}
+    if lhs._selectiveGapicGeneration != rhs._selectiveGapicGeneration {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_ClientLibrarySettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ClientLibrarySettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "version"),
+    2: .standard(proto: "launch_stage"),
+    3: .standard(proto: "rest_numeric_enums"),
+    21: .standard(proto: "java_settings"),
+    22: .standard(proto: "cpp_settings"),
+    23: .standard(proto: "php_settings"),
+    24: .standard(proto: "python_settings"),
+    25: .standard(proto: "node_settings"),
+    26: .standard(proto: "dotnet_settings"),
+    27: .standard(proto: "ruby_settings"),
+    28: .standard(proto: "go_settings"),
+  ]
+
+  fileprivate class _StorageClass {
+    var _version: String = String()
+    var _launchStage: Google_Api_LaunchStage = .unspecified
+    var _restNumericEnums: Bool = false
+    var _javaSettings: Google_Api_JavaSettings? = nil
+    var _cppSettings: Google_Api_CppSettings? = nil
+    var _phpSettings: Google_Api_PhpSettings? = nil
+    var _pythonSettings: Google_Api_PythonSettings? = nil
+    var _nodeSettings: Google_Api_NodeSettings? = nil
+    var _dotnetSettings: Google_Api_DotnetSettings? = nil
+    var _rubySettings: Google_Api_RubySettings? = nil
+    var _goSettings: Google_Api_GoSettings? = nil
+
+    static let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _version = source._version
+      _launchStage = source._launchStage
+      _restNumericEnums = source._restNumericEnums
+      _javaSettings = source._javaSettings
+      _cppSettings = source._cppSettings
+      _phpSettings = source._phpSettings
+      _pythonSettings = source._pythonSettings
+      _nodeSettings = source._nodeSettings
+      _dotnetSettings = source._dotnetSettings
+      _rubySettings = source._rubySettings
+      _goSettings = source._goSettings
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularStringField(value: &_storage._version) }()
+        case 2: try { try decoder.decodeSingularEnumField(value: &_storage._launchStage) }()
+        case 3: try { try decoder.decodeSingularBoolField(value: &_storage._restNumericEnums) }()
+        case 21: try { try decoder.decodeSingularMessageField(value: &_storage._javaSettings) }()
+        case 22: try { try decoder.decodeSingularMessageField(value: &_storage._cppSettings) }()
+        case 23: try { try decoder.decodeSingularMessageField(value: &_storage._phpSettings) }()
+        case 24: try { try decoder.decodeSingularMessageField(value: &_storage._pythonSettings) }()
+        case 25: try { try decoder.decodeSingularMessageField(value: &_storage._nodeSettings) }()
+        case 26: try { try decoder.decodeSingularMessageField(value: &_storage._dotnetSettings) }()
+        case 27: try { try decoder.decodeSingularMessageField(value: &_storage._rubySettings) }()
+        case 28: try { try decoder.decodeSingularMessageField(value: &_storage._goSettings) }()
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if !_storage._version.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._version, fieldNumber: 1)
+      }
+      if _storage._launchStage != .unspecified {
+        try visitor.visitSingularEnumField(value: _storage._launchStage, fieldNumber: 2)
+      }
+      if _storage._restNumericEnums != false {
+        try visitor.visitSingularBoolField(value: _storage._restNumericEnums, fieldNumber: 3)
+      }
+      try { if let v = _storage._javaSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 21)
+      } }()
+      try { if let v = _storage._cppSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 22)
+      } }()
+      try { if let v = _storage._phpSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 23)
+      } }()
+      try { if let v = _storage._pythonSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 24)
+      } }()
+      try { if let v = _storage._nodeSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 25)
+      } }()
+      try { if let v = _storage._dotnetSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 26)
+      } }()
+      try { if let v = _storage._rubySettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 27)
+      } }()
+      try { if let v = _storage._goSettings {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 28)
+      } }()
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_ClientLibrarySettings, rhs: Google_Api_ClientLibrarySettings) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._version != rhs_storage._version {return false}
+        if _storage._launchStage != rhs_storage._launchStage {return false}
+        if _storage._restNumericEnums != rhs_storage._restNumericEnums {return false}
+        if _storage._javaSettings != rhs_storage._javaSettings {return false}
+        if _storage._cppSettings != rhs_storage._cppSettings {return false}
+        if _storage._phpSettings != rhs_storage._phpSettings {return false}
+        if _storage._pythonSettings != rhs_storage._pythonSettings {return false}
+        if _storage._nodeSettings != rhs_storage._nodeSettings {return false}
+        if _storage._dotnetSettings != rhs_storage._dotnetSettings {return false}
+        if _storage._rubySettings != rhs_storage._rubySettings {return false}
+        if _storage._goSettings != rhs_storage._goSettings {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_Publishing: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Publishing"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    2: .standard(proto: "method_settings"),
+    101: .standard(proto: "new_issue_uri"),
+    102: .standard(proto: "documentation_uri"),
+    103: .standard(proto: "api_short_name"),
+    104: .standard(proto: "github_label"),
+    105: .standard(proto: "codeowner_github_teams"),
+    106: .standard(proto: "doc_tag_prefix"),
+    107: .same(proto: "organization"),
+    109: .standard(proto: "library_settings"),
+    110: .standard(proto: "proto_reference_documentation_uri"),
+    111: .standard(proto: "rest_reference_documentation_uri"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.methodSettings) }()
+      case 101: try { try decoder.decodeSingularStringField(value: &self.newIssueUri) }()
+      case 102: try { try decoder.decodeSingularStringField(value: &self.documentationUri) }()
+      case 103: try { try decoder.decodeSingularStringField(value: &self.apiShortName) }()
+      case 104: try { try decoder.decodeSingularStringField(value: &self.githubLabel) }()
+      case 105: try { try decoder.decodeRepeatedStringField(value: &self.codeownerGithubTeams) }()
+      case 106: try { try decoder.decodeSingularStringField(value: &self.docTagPrefix) }()
+      case 107: try { try decoder.decodeSingularEnumField(value: &self.organization) }()
+      case 109: try { try decoder.decodeRepeatedMessageField(value: &self.librarySettings) }()
+      case 110: try { try decoder.decodeSingularStringField(value: &self.protoReferenceDocumentationUri) }()
+      case 111: try { try decoder.decodeSingularStringField(value: &self.restReferenceDocumentationUri) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.methodSettings.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.methodSettings, fieldNumber: 2)
+    }
+    if !self.newIssueUri.isEmpty {
+      try visitor.visitSingularStringField(value: self.newIssueUri, fieldNumber: 101)
+    }
+    if !self.documentationUri.isEmpty {
+      try visitor.visitSingularStringField(value: self.documentationUri, fieldNumber: 102)
+    }
+    if !self.apiShortName.isEmpty {
+      try visitor.visitSingularStringField(value: self.apiShortName, fieldNumber: 103)
+    }
+    if !self.githubLabel.isEmpty {
+      try visitor.visitSingularStringField(value: self.githubLabel, fieldNumber: 104)
+    }
+    if !self.codeownerGithubTeams.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.codeownerGithubTeams, fieldNumber: 105)
+    }
+    if !self.docTagPrefix.isEmpty {
+      try visitor.visitSingularStringField(value: self.docTagPrefix, fieldNumber: 106)
+    }
+    if self.organization != .unspecified {
+      try visitor.visitSingularEnumField(value: self.organization, fieldNumber: 107)
+    }
+    if !self.librarySettings.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.librarySettings, fieldNumber: 109)
+    }
+    if !self.protoReferenceDocumentationUri.isEmpty {
+      try visitor.visitSingularStringField(value: self.protoReferenceDocumentationUri, fieldNumber: 110)
+    }
+    if !self.restReferenceDocumentationUri.isEmpty {
+      try visitor.visitSingularStringField(value: self.restReferenceDocumentationUri, fieldNumber: 111)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_Publishing, rhs: Google_Api_Publishing) -> Bool {
+    if lhs.methodSettings != rhs.methodSettings {return false}
+    if lhs.newIssueUri != rhs.newIssueUri {return false}
+    if lhs.documentationUri != rhs.documentationUri {return false}
+    if lhs.apiShortName != rhs.apiShortName {return false}
+    if lhs.githubLabel != rhs.githubLabel {return false}
+    if lhs.codeownerGithubTeams != rhs.codeownerGithubTeams {return false}
+    if lhs.docTagPrefix != rhs.docTagPrefix {return false}
+    if lhs.organization != rhs.organization {return false}
+    if lhs.librarySettings != rhs.librarySettings {return false}
+    if lhs.protoReferenceDocumentationUri != rhs.protoReferenceDocumentationUri {return false}
+    if lhs.restReferenceDocumentationUri != rhs.restReferenceDocumentationUri {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_JavaSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".JavaSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "library_package"),
+    2: .standard(proto: "service_class_names"),
+    3: .same(proto: "common"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.libraryPackage) }()
+      case 2: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.serviceClassNames) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.libraryPackage.isEmpty {
+      try visitor.visitSingularStringField(value: self.libraryPackage, fieldNumber: 1)
+    }
+    if !self.serviceClassNames.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.serviceClassNames, fieldNumber: 2)
+    }
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_JavaSettings, rhs: Google_Api_JavaSettings) -> Bool {
+    if lhs.libraryPackage != rhs.libraryPackage {return false}
+    if lhs.serviceClassNames != rhs.serviceClassNames {return false}
+    if lhs._common != rhs._common {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_CppSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CppSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_CppSettings, rhs: Google_Api_CppSettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_PhpSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PhpSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_PhpSettings, rhs: Google_Api_PhpSettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_PythonSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PythonSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+    2: .standard(proto: "experimental_features"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._experimentalFeatures) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._experimentalFeatures {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_PythonSettings, rhs: Google_Api_PythonSettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs._experimentalFeatures != rhs._experimentalFeatures {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_PythonSettings.ExperimentalFeatures: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = Google_Api_PythonSettings.protoMessageName + ".ExperimentalFeatures"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "rest_async_io_enabled"),
+    2: .standard(proto: "protobuf_pythonic_types_enabled"),
+    3: .standard(proto: "unversioned_package_disabled"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.restAsyncIoEnabled) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.protobufPythonicTypesEnabled) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.unversionedPackageDisabled) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.restAsyncIoEnabled != false {
+      try visitor.visitSingularBoolField(value: self.restAsyncIoEnabled, fieldNumber: 1)
+    }
+    if self.protobufPythonicTypesEnabled != false {
+      try visitor.visitSingularBoolField(value: self.protobufPythonicTypesEnabled, fieldNumber: 2)
+    }
+    if self.unversionedPackageDisabled != false {
+      try visitor.visitSingularBoolField(value: self.unversionedPackageDisabled, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_PythonSettings.ExperimentalFeatures, rhs: Google_Api_PythonSettings.ExperimentalFeatures) -> Bool {
+    if lhs.restAsyncIoEnabled != rhs.restAsyncIoEnabled {return false}
+    if lhs.protobufPythonicTypesEnabled != rhs.protobufPythonicTypesEnabled {return false}
+    if lhs.unversionedPackageDisabled != rhs.unversionedPackageDisabled {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_NodeSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".NodeSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_NodeSettings, rhs: Google_Api_NodeSettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_DotnetSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DotnetSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+    2: .standard(proto: "renamed_services"),
+    3: .standard(proto: "renamed_resources"),
+    4: .standard(proto: "ignored_resources"),
+    5: .standard(proto: "forced_namespace_aliases"),
+    6: .standard(proto: "handwritten_signatures"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      case 2: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.renamedServices) }()
+      case 3: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.renamedResources) }()
+      case 4: try { try decoder.decodeRepeatedStringField(value: &self.ignoredResources) }()
+      case 5: try { try decoder.decodeRepeatedStringField(value: &self.forcedNamespaceAliases) }()
+      case 6: try { try decoder.decodeRepeatedStringField(value: &self.handwrittenSignatures) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if !self.renamedServices.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.renamedServices, fieldNumber: 2)
+    }
+    if !self.renamedResources.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.renamedResources, fieldNumber: 3)
+    }
+    if !self.ignoredResources.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.ignoredResources, fieldNumber: 4)
+    }
+    if !self.forcedNamespaceAliases.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.forcedNamespaceAliases, fieldNumber: 5)
+    }
+    if !self.handwrittenSignatures.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.handwrittenSignatures, fieldNumber: 6)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_DotnetSettings, rhs: Google_Api_DotnetSettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs.renamedServices != rhs.renamedServices {return false}
+    if lhs.renamedResources != rhs.renamedResources {return false}
+    if lhs.ignoredResources != rhs.ignoredResources {return false}
+    if lhs.forcedNamespaceAliases != rhs.forcedNamespaceAliases {return false}
+    if lhs.handwrittenSignatures != rhs.handwrittenSignatures {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_RubySettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".RubySettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_RubySettings, rhs: Google_Api_RubySettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_GoSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GoSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "common"),
+    2: .standard(proto: "renamed_services"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._common) }()
+      case 2: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.renamedServices) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._common {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if !self.renamedServices.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.renamedServices, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_GoSettings, rhs: Google_Api_GoSettings) -> Bool {
+    if lhs._common != rhs._common {return false}
+    if lhs.renamedServices != rhs.renamedServices {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_MethodSettings: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".MethodSettings"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "selector"),
+    2: .standard(proto: "long_running"),
+    3: .standard(proto: "auto_populated_fields"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.selector) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._longRunning) }()
+      case 3: try { try decoder.decodeRepeatedStringField(value: &self.autoPopulatedFields) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.selector.isEmpty {
+      try visitor.visitSingularStringField(value: self.selector, fieldNumber: 1)
+    }
+    try { if let v = self._longRunning {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    if !self.autoPopulatedFields.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.autoPopulatedFields, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_MethodSettings, rhs: Google_Api_MethodSettings) -> Bool {
+    if lhs.selector != rhs.selector {return false}
+    if lhs._longRunning != rhs._longRunning {return false}
+    if lhs.autoPopulatedFields != rhs.autoPopulatedFields {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_MethodSettings.LongRunning: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = Google_Api_MethodSettings.protoMessageName + ".LongRunning"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "initial_poll_delay"),
+    2: .standard(proto: "poll_delay_multiplier"),
+    3: .standard(proto: "max_poll_delay"),
+    4: .standard(proto: "total_poll_timeout"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._initialPollDelay) }()
+      case 2: try { try decoder.decodeSingularFloatField(value: &self.pollDelayMultiplier) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._maxPollDelay) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._totalPollTimeout) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._initialPollDelay {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if self.pollDelayMultiplier != 0 {
+      try visitor.visitSingularFloatField(value: self.pollDelayMultiplier, fieldNumber: 2)
+    }
+    try { if let v = self._maxPollDelay {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try { if let v = self._totalPollTimeout {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_MethodSettings.LongRunning, rhs: Google_Api_MethodSettings.LongRunning) -> Bool {
+    if lhs._initialPollDelay != rhs._initialPollDelay {return false}
+    if lhs.pollDelayMultiplier != rhs.pollDelayMultiplier {return false}
+    if lhs._maxPollDelay != rhs._maxPollDelay {return false}
+    if lhs._totalPollTimeout != rhs._totalPollTimeout {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Google_Api_SelectiveGapicGeneration: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SelectiveGapicGeneration"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "methods"),
+    2: .standard(proto: "generate_omitted_as_internal"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedStringField(value: &self.methods) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.generateOmittedAsInternal) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.methods.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.methods, fieldNumber: 1)
+    }
+    if self.generateOmittedAsInternal != false {
+      try visitor.visitSingularBoolField(value: self.generateOmittedAsInternal, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Google_Api_SelectiveGapicGeneration, rhs: Google_Api_SelectiveGapicGeneration) -> Bool {
+    if lhs.methods != rhs.methods {return false}
+    if lhs.generateOmittedAsInternal != rhs.generateOmittedAsInternal {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}

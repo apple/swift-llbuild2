@@ -7,7 +7,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// Copyright 2020 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 public enum Google_Rpc_Code: SwiftProtobuf.Enum {
   public typealias RawValue = Int
 
-  /// Not an error; returned on success
+  /// Not an error; returned on success.
   ///
   /// HTTP Mapping: 200 OK
   case ok // = 0
@@ -83,7 +83,7 @@ public enum Google_Rpc_Code: SwiftProtobuf.Enum {
   /// Some requested entity (e.g., file or directory) was not found.
   ///
   /// Note to server developers: if a request is denied for an entire class
-  /// of users, such as gradual feature rollout or undocumented whitelist,
+  /// of users, such as gradual feature rollout or undocumented allowlist,
   /// `NOT_FOUND` may be used. If a request is denied for some users within
   /// a class of users, such as user-based access control, `PERMISSION_DENIED`
   /// must be used.
@@ -129,11 +129,11 @@ public enum Google_Rpc_Code: SwiftProtobuf.Enum {
   /// Service implementors can use the following guidelines to decide
   /// between `FAILED_PRECONDITION`, `ABORTED`, and `UNAVAILABLE`:
   ///  (a) Use `UNAVAILABLE` if the client can retry just the failing call.
-  ///  (b) Use `ABORTED` if the client should retry at a higher level
-  ///      (e.g., when a client-specified test-and-set fails, indicating the
-  ///      client should restart a read-modify-write sequence).
+  ///  (b) Use `ABORTED` if the client should retry at a higher level. For
+  ///      example, when a client-specified test-and-set fails, indicating the
+  ///      client should restart a read-modify-write sequence.
   ///  (c) Use `FAILED_PRECONDITION` if the client should not retry until
-  ///      the system state has been explicitly fixed.  E.g., if an "rmdir"
+  ///      the system state has been explicitly fixed. For example, if an "rmdir"
   ///      fails because the directory is non-empty, `FAILED_PRECONDITION`
   ///      should be returned since the client should not retry unless
   ///      the files are deleted from the directory.
@@ -277,6 +277,10 @@ extension Google_Rpc_Code: CaseIterable {
 }
 
 #endif  // swift(>=4.2)
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Google_Rpc_Code: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 

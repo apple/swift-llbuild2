@@ -92,6 +92,11 @@ public struct Build_Bazel_Remote_Logstream_V1_LogStream {
   public init() {}
 }
 
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Build_Bazel_Remote_Logstream_V1_CreateLogStreamRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Logstream_V1_LogStream: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "build.bazel.remote.logstream.v1"
