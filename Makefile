@@ -41,6 +41,7 @@ clone-external-protos: clone-external-repos
 		--include api/annotations.proto \
 		--include api/client.proto \
 		--include api/http.proto \
+		--include api/launch_stage.proto \
 		--include bytestream/\*.proto \
 		--include longrunning/\*.proto \
 		--include rpc/\*.proto \
@@ -71,6 +72,7 @@ generate-protos: proto-toolchain Protos/BazelRemoteAPI
 		--swift_opt=Visibility=Public \
 		--grpc-swift_opt=Visibility=Public \
 		--grpc-swift_out=Sources/BazelRemoteAPI/Generated \
+		--experimental_allow_proto3_optional \
 		$$(find Protos/BazelRemoteAPI -name \*.proto)
 
 .PHONY:

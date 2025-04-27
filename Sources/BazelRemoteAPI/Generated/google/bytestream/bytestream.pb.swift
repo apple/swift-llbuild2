@@ -7,7 +7,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// Copyright 2016 Google Inc.
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -167,6 +167,15 @@ public struct Google_Bytestream_QueryWriteStatusResponse {
 
   public init() {}
 }
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Google_Bytestream_ReadRequest: @unchecked Sendable {}
+extension Google_Bytestream_ReadResponse: @unchecked Sendable {}
+extension Google_Bytestream_WriteRequest: @unchecked Sendable {}
+extension Google_Bytestream_WriteResponse: @unchecked Sendable {}
+extension Google_Bytestream_QueryWriteStatusRequest: @unchecked Sendable {}
+extension Google_Bytestream_QueryWriteStatusResponse: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 

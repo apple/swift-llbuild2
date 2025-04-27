@@ -104,7 +104,7 @@ public struct Build_Bazel_Remote_Asset_V1_FetchBlobRequest {
   public mutating func clearTimeout() {self._timeout = nil}
 
   /// The oldest content the client is willing to accept, as measured from the
-  /// time it was Push'd or when the underlying retrieval from origin was 
+  /// time it was Push'd or when the underlying retrieval from origin was
   /// started.
   /// Upon retries of Fetch requests that cannot be completed within a single
   /// RPC, clients *SHOULD* provide the same value for subsequent requests as the
@@ -138,6 +138,11 @@ public struct Build_Bazel_Remote_Asset_V1_FetchBlobRequest {
   /// Specified qualifier names *MUST* be unique.
   public var qualifiers: [Build_Bazel_Remote_Asset_V1_Qualifier] = []
 
+  /// The digest function the server must use to compute the digest.
+  ///
+  /// If unset, the server SHOULD default to SHA256.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -163,6 +168,8 @@ public struct Build_Bazel_Remote_Asset_V1_FetchBlobResponse {
   ///   requested an asset from a disallowed origin.
   /// * `ABORTED`: The operation could not be completed, typically due to a
   ///   failed consistency check.
+  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+  ///   perform the requested operation. The client may retry after a delay.
   public var status: Google_Rpc_Status {
     get {return _status ?? Google_Rpc_Status()}
     set {_status = newValue}
@@ -200,6 +207,15 @@ public struct Build_Bazel_Remote_Asset_V1_FetchBlobResponse {
   public var hasBlobDigest: Bool {return self._blobDigest != nil}
   /// Clears the value of `blobDigest`. Subsequent reads from it will return its default value.
   public mutating func clearBlobDigest() {self._blobDigest = nil}
+
+  /// This field SHOULD be set to the digest function that was used by the server
+  /// to compute [FetchBlobResponse.blob_digest].
+  /// Clients could use this to determine whether the server honors
+  /// [FetchBlobRequest.digest_function] that was set in the request.
+  ///
+  /// If unset, clients SHOULD default to use SHA256 regardless of the requested
+  /// [FetchBlobRequest.digest_function].
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -275,6 +291,11 @@ public struct Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest {
   /// Specified qualifier names *MUST* be unique.
   public var qualifiers: [Build_Bazel_Remote_Asset_V1_Qualifier] = []
 
+  /// The digest function the server must use to compute the digest.
+  ///
+  /// If unset, the server SHOULD default to SHA256.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -300,6 +321,8 @@ public struct Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse {
   ///   requested an asset from a disallowed origin.
   /// * `ABORTED`: The operation could not be completed, typically due to a
   ///   failed consistency check.
+  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+  ///   perform the requested operation. The client may retry after a delay.
   public var status: Google_Rpc_Status {
     get {return _status ?? Google_Rpc_Status()}
     set {_status = newValue}
@@ -338,6 +361,15 @@ public struct Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse {
   public var hasRootDirectoryDigest: Bool {return self._rootDirectoryDigest != nil}
   /// Clears the value of `rootDirectoryDigest`. Subsequent reads from it will return its default value.
   public mutating func clearRootDirectoryDigest() {self._rootDirectoryDigest = nil}
+
+  /// This field SHOULD be set to the digest function that was used by the server
+  /// to compute [FetchBlobResponse.root_directory_digest].
+  /// Clients could use this to determine whether the server honors
+  /// [FetchDirectoryRequest.digest_function] that was set in the request.
+  ///
+  /// If unset, clients SHOULD default to use SHA256 regardless of the requested
+  /// [FetchDirectoryRequest.digest_function].
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -400,6 +432,15 @@ public struct Build_Bazel_Remote_Asset_V1_PushBlobRequest {
   public var referencesBlobs: [Build_Bazel_Remote_Execution_V2_Digest] = []
 
   public var referencesDirectories: [Build_Bazel_Remote_Execution_V2_Digest] = []
+
+  /// The digest function that was used to compute the blob digest.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the action digest hash and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -475,6 +516,15 @@ public struct Build_Bazel_Remote_Asset_V1_PushDirectoryRequest {
 
   public var referencesDirectories: [Build_Bazel_Remote_Execution_V2_Digest] = []
 
+  /// The digest function that was used to compute blob digests.
+  ///
+  /// If the digest function used is one of MD5, MURMUR3, SHA1, SHA256,
+  /// SHA384, SHA512, or VSO, the client MAY leave this field unset. In
+  /// that case the server SHOULD infer the digest function using the
+  /// length of the action digest hash and the digest functions announced
+  /// in the server's capabilities.
+  public var digestFunction: Build_Bazel_Remote_Execution_V2_DigestFunction.Value = .unknown
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -494,6 +544,18 @@ public struct Build_Bazel_Remote_Asset_V1_PushDirectoryResponse {
 
   public init() {}
 }
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Build_Bazel_Remote_Asset_V1_Qualifier: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_FetchBlobRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_FetchBlobResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_PushBlobRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_PushBlobResponse: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_PushDirectoryRequest: @unchecked Sendable {}
+extension Build_Bazel_Remote_Asset_V1_PushDirectoryResponse: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
@@ -545,6 +607,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchBlobRequest: SwiftProtobuf.Message, S
     3: .standard(proto: "oldest_content_accepted"),
     4: .same(proto: "uris"),
     5: .same(proto: "qualifiers"),
+    6: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -558,26 +621,34 @@ extension Build_Bazel_Remote_Asset_V1_FetchBlobRequest: SwiftProtobuf.Message, S
       case 3: try { try decoder.decodeSingularMessageField(value: &self._oldestContentAccepted) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.uris) }()
       case 5: try { try decoder.decodeRepeatedMessageField(value: &self.qualifiers) }()
+      case 6: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
-    if let v = self._timeout {
+    try { if let v = self._timeout {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._oldestContentAccepted {
+    } }()
+    try { if let v = self._oldestContentAccepted {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
+    } }()
     if !self.uris.isEmpty {
       try visitor.visitRepeatedStringField(value: self.uris, fieldNumber: 4)
     }
     if !self.qualifiers.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.qualifiers, fieldNumber: 5)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -588,6 +659,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchBlobRequest: SwiftProtobuf.Message, S
     if lhs._oldestContentAccepted != rhs._oldestContentAccepted {return false}
     if lhs.uris != rhs.uris {return false}
     if lhs.qualifiers != rhs.qualifiers {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -601,6 +673,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchBlobResponse: SwiftProtobuf.Message, 
     3: .same(proto: "qualifiers"),
     4: .standard(proto: "expires_at"),
     5: .standard(proto: "blob_digest"),
+    6: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -614,26 +687,34 @@ extension Build_Bazel_Remote_Asset_V1_FetchBlobResponse: SwiftProtobuf.Message, 
       case 3: try { try decoder.decodeRepeatedMessageField(value: &self.qualifiers) }()
       case 4: try { try decoder.decodeSingularMessageField(value: &self._expiresAt) }()
       case 5: try { try decoder.decodeSingularMessageField(value: &self._blobDigest) }()
+      case 6: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._status {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._status {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if !self.uri.isEmpty {
       try visitor.visitSingularStringField(value: self.uri, fieldNumber: 2)
     }
     if !self.qualifiers.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.qualifiers, fieldNumber: 3)
     }
-    if let v = self._expiresAt {
+    try { if let v = self._expiresAt {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
-    if let v = self._blobDigest {
+    } }()
+    try { if let v = self._blobDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    } }()
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -644,6 +725,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchBlobResponse: SwiftProtobuf.Message, 
     if lhs.qualifiers != rhs.qualifiers {return false}
     if lhs._expiresAt != rhs._expiresAt {return false}
     if lhs._blobDigest != rhs._blobDigest {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -657,6 +739,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest: SwiftProtobuf.Messa
     3: .standard(proto: "oldest_content_accepted"),
     4: .same(proto: "uris"),
     5: .same(proto: "qualifiers"),
+    6: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -670,26 +753,34 @@ extension Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest: SwiftProtobuf.Messa
       case 3: try { try decoder.decodeSingularMessageField(value: &self._oldestContentAccepted) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.uris) }()
       case 5: try { try decoder.decodeRepeatedMessageField(value: &self.qualifiers) }()
+      case 6: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
-    if let v = self._timeout {
+    try { if let v = self._timeout {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
-    if let v = self._oldestContentAccepted {
+    } }()
+    try { if let v = self._oldestContentAccepted {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    }
+    } }()
     if !self.uris.isEmpty {
       try visitor.visitRepeatedStringField(value: self.uris, fieldNumber: 4)
     }
     if !self.qualifiers.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.qualifiers, fieldNumber: 5)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -700,6 +791,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest: SwiftProtobuf.Messa
     if lhs._oldestContentAccepted != rhs._oldestContentAccepted {return false}
     if lhs.uris != rhs.uris {return false}
     if lhs.qualifiers != rhs.qualifiers {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -713,6 +805,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse: SwiftProtobuf.Mess
     3: .same(proto: "qualifiers"),
     4: .standard(proto: "expires_at"),
     5: .standard(proto: "root_directory_digest"),
+    6: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -726,26 +819,34 @@ extension Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse: SwiftProtobuf.Mess
       case 3: try { try decoder.decodeRepeatedMessageField(value: &self.qualifiers) }()
       case 4: try { try decoder.decodeSingularMessageField(value: &self._expiresAt) }()
       case 5: try { try decoder.decodeSingularMessageField(value: &self._rootDirectoryDigest) }()
+      case 6: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if let v = self._status {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._status {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }
+    } }()
     if !self.uri.isEmpty {
       try visitor.visitSingularStringField(value: self.uri, fieldNumber: 2)
     }
     if !self.qualifiers.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.qualifiers, fieldNumber: 3)
     }
-    if let v = self._expiresAt {
+    try { if let v = self._expiresAt {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
-    if let v = self._rootDirectoryDigest {
+    } }()
+    try { if let v = self._rootDirectoryDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    } }()
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 6)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -756,6 +857,7 @@ extension Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse: SwiftProtobuf.Mess
     if lhs.qualifiers != rhs.qualifiers {return false}
     if lhs._expiresAt != rhs._expiresAt {return false}
     if lhs._rootDirectoryDigest != rhs._rootDirectoryDigest {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -771,6 +873,7 @@ extension Build_Bazel_Remote_Asset_V1_PushBlobRequest: SwiftProtobuf.Message, Sw
     5: .standard(proto: "blob_digest"),
     6: .standard(proto: "references_blobs"),
     7: .standard(proto: "references_directories"),
+    8: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -786,12 +889,17 @@ extension Build_Bazel_Remote_Asset_V1_PushBlobRequest: SwiftProtobuf.Message, Sw
       case 5: try { try decoder.decodeSingularMessageField(value: &self._blobDigest) }()
       case 6: try { try decoder.decodeRepeatedMessageField(value: &self.referencesBlobs) }()
       case 7: try { try decoder.decodeRepeatedMessageField(value: &self.referencesDirectories) }()
+      case 8: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
@@ -801,17 +909,20 @@ extension Build_Bazel_Remote_Asset_V1_PushBlobRequest: SwiftProtobuf.Message, Sw
     if !self.qualifiers.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.qualifiers, fieldNumber: 3)
     }
-    if let v = self._expireAt {
+    try { if let v = self._expireAt {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
-    if let v = self._blobDigest {
+    } }()
+    try { if let v = self._blobDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-    }
+    } }()
     if !self.referencesBlobs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.referencesBlobs, fieldNumber: 6)
     }
     if !self.referencesDirectories.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.referencesDirectories, fieldNumber: 7)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 8)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -824,6 +935,7 @@ extension Build_Bazel_Remote_Asset_V1_PushBlobRequest: SwiftProtobuf.Message, Sw
     if lhs._blobDigest != rhs._blobDigest {return false}
     if lhs.referencesBlobs != rhs.referencesBlobs {return false}
     if lhs.referencesDirectories != rhs.referencesDirectories {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -858,6 +970,7 @@ extension Build_Bazel_Remote_Asset_V1_PushDirectoryRequest: SwiftProtobuf.Messag
     5: .standard(proto: "root_directory_digest"),
     6: .standard(proto: "references_blobs"),
     7: .standard(proto: "references_directories"),
+    8: .standard(proto: "digest_function"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -873,12 +986,17 @@ extension Build_Bazel_Remote_Asset_V1_PushDirectoryRequest: SwiftProtobuf.Messag
       case 5: try { try decoder.decodeSingularMessageField(value: &self._rootDirectoryDigest) }()
       case 6: try { try decoder.decodeRepeatedMessageField(value: &self.referencesBlobs) }()
       case 7: try { try decoder.decodeRepeatedMessageField(value: &self.referencesDirectories) }()
+      case 8: try { try decoder.decodeSingularEnumField(value: &self.digestFunction) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.instanceName.isEmpty {
       try visitor.visitSingularStringField(value: self.instanceName, fieldNumber: 1)
     }
@@ -888,17 +1006,20 @@ extension Build_Bazel_Remote_Asset_V1_PushDirectoryRequest: SwiftProtobuf.Messag
     if !self.qualifiers.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.qualifiers, fieldNumber: 3)
     }
-    if let v = self._expireAt {
+    try { if let v = self._expireAt {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-    }
-    if let v = self._rootDirectoryDigest {
+    } }()
+    try { if let v = self._rootDirectoryDigest {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
-    }
+    } }()
     if !self.referencesBlobs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.referencesBlobs, fieldNumber: 6)
     }
     if !self.referencesDirectories.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.referencesDirectories, fieldNumber: 7)
+    }
+    if self.digestFunction != .unknown {
+      try visitor.visitSingularEnumField(value: self.digestFunction, fieldNumber: 8)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -911,6 +1032,7 @@ extension Build_Bazel_Remote_Asset_V1_PushDirectoryRequest: SwiftProtobuf.Messag
     if lhs._rootDirectoryDigest != rhs._rootDirectoryDigest {return false}
     if lhs.referencesBlobs != rhs.referencesBlobs {return false}
     if lhs.referencesDirectories != rhs.referencesDirectories {return false}
+    if lhs.digestFunction != rhs.digestFunction {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

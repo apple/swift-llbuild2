@@ -7,7 +7,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// Copyright 2015 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public struct Google_Api_Http {
   public init() {}
 }
 
-/// # gRPC Transcoding
+/// gRPC Transcoding
 ///
 /// gRPC Transcoding is a feature for mapping between a gRPC method and one or
 /// more HTTP REST endpoints. It allows developers to build a single API service
@@ -101,9 +101,8 @@ public struct Google_Api_Http {
 ///
 /// This enables an HTTP REST to gRPC mapping as below:
 ///
-/// HTTP | gRPC
-/// -----|-----
-/// `GET /v1/messages/123456`  | `GetMessage(name: "messages/123456")`
+/// - HTTP: `GET /v1/messages/123456`
+/// - gRPC: `GetMessage(name: "messages/123456")`
 ///
 /// Any fields in the request message which are not bound by the path template
 /// automatically become HTTP query parameters if there is no HTTP request body.
@@ -127,11 +126,9 @@ public struct Google_Api_Http {
 ///
 /// This enables a HTTP JSON to RPC mapping as below:
 ///
-/// HTTP | gRPC
-/// -----|-----
-/// `GET /v1/messages/123456?revision=2&sub.subfield=foo` |
-/// `GetMessage(message_id: "123456" revision: 2 sub: SubMessage(subfield:
-/// "foo"))`
+/// - HTTP: `GET /v1/messages/123456?revision=2&sub.subfield=foo`
+/// - gRPC: `GetMessage(message_id: "123456" revision: 2 sub:
+/// SubMessage(subfield: "foo"))`
 ///
 /// Note that fields which are mapped to URL query parameters must have a
 /// primitive type or a repeated primitive type or a non-repeated message type.
@@ -161,10 +158,8 @@ public struct Google_Api_Http {
 /// representation of the JSON in the request body is determined by
 /// protos JSON encoding:
 ///
-/// HTTP | gRPC
-/// -----|-----
-/// `PATCH /v1/messages/123456 { "text": "Hi!" }` | `UpdateMessage(message_id:
-/// "123456" message { text: "Hi!" })`
+/// - HTTP: `PATCH /v1/messages/123456 { "text": "Hi!" }`
+/// - gRPC: `UpdateMessage(message_id: "123456" message { text: "Hi!" })`
 ///
 /// The special name `*` can be used in the body mapping to define that
 /// every field not bound by the path template should be mapped to the
@@ -187,10 +182,8 @@ public struct Google_Api_Http {
 ///
 /// The following HTTP JSON to RPC mapping is enabled:
 ///
-/// HTTP | gRPC
-/// -----|-----
-/// `PATCH /v1/messages/123456 { "text": "Hi!" }` | `UpdateMessage(message_id:
-/// "123456" text: "Hi!")`
+/// - HTTP: `PATCH /v1/messages/123456 { "text": "Hi!" }`
+/// - gRPC: `UpdateMessage(message_id: "123456" text: "Hi!")`
 ///
 /// Note that when using `*` in the body mapping, it is not possible to
 /// have HTTP parameters, as all fields not bound by the path end in
@@ -218,29 +211,32 @@ public struct Google_Api_Http {
 ///
 /// This enables the following two alternative HTTP JSON to RPC mappings:
 ///
-/// HTTP | gRPC
-/// -----|-----
-/// `GET /v1/messages/123456` | `GetMessage(message_id: "123456")`
-/// `GET /v1/users/me/messages/123456` | `GetMessage(user_id: "me" message_id:
-/// "123456")`
+/// - HTTP: `GET /v1/messages/123456`
+/// - gRPC: `GetMessage(message_id: "123456")`
 ///
-/// ## Rules for HTTP mapping
+/// - HTTP: `GET /v1/users/me/messages/123456`
+/// - gRPC: `GetMessage(user_id: "me" message_id: "123456")`
+///
+/// Rules for HTTP mapping
 ///
 /// 1. Leaf request fields (recursive expansion nested messages in the request
 ///    message) are classified into three categories:
 ///    - Fields referred by the path template. They are passed via the URL path.
-///    - Fields referred by the [HttpRule.body][google.api.HttpRule.body]. They are passed via the HTTP
+///    - Fields referred by the [HttpRule.body][google.api.HttpRule.body]. They
+///    are passed via the HTTP
 ///      request body.
 ///    - All other fields are passed via the URL query parameters, and the
 ///      parameter name is the field path in the request message. A repeated
 ///      field can be represented as multiple query parameters under the same
 ///      name.
-///  2. If [HttpRule.body][google.api.HttpRule.body] is "*", there is no URL query parameter, all fields
+///  2. If [HttpRule.body][google.api.HttpRule.body] is "*", there is no URL
+///  query parameter, all fields
 ///     are passed via URL path and HTTP request body.
-///  3. If [HttpRule.body][google.api.HttpRule.body] is omitted, there is no HTTP request body, all
+///  3. If [HttpRule.body][google.api.HttpRule.body] is omitted, there is no HTTP
+///  request body, all
 ///     fields are passed via URL path and URL query parameters.
 ///
-/// ### Path template syntax
+/// Path template syntax
 ///
 ///     Template = "/" Segments [ Verb ] ;
 ///     Segments = Segment { "/" Segment } ;
@@ -279,7 +275,7 @@ public struct Google_Api_Http {
 /// Document](https://developers.google.com/discovery/v1/reference/apis) as
 /// `{+var}`.
 ///
-/// ## Using gRPC API Service Configuration
+/// Using gRPC API Service Configuration
 ///
 /// gRPC API Service Configuration (service config) is a configuration language
 /// for configuring a gRPC service to become a user-facing product. The
@@ -294,15 +290,14 @@ public struct Google_Api_Http {
 /// specified in the service config will override any matching transcoding
 /// configuration in the proto.
 ///
-/// Example:
+/// The following example selects a gRPC method and applies an `HttpRule` to it:
 ///
 ///     http:
 ///       rules:
-///         # Selects a gRPC method and applies HttpRule to it.
 ///         - selector: example.v1.Messaging.GetMessage
 ///           get: /v1/messages/{message_id}/{sub.subfield}
 ///
-/// ## Special notes
+/// Special notes
 ///
 /// When gRPC Transcoding is used to map a gRPC to JSON REST endpoints, the
 /// proto to JSON conversion must follow the [proto3
@@ -336,7 +331,8 @@ public struct Google_Api_HttpRule {
 
   /// Selects a method to which this rule applies.
   ///
-  /// Refer to [selector][google.api.DocumentationRule.selector] for syntax details.
+  /// Refer to [selector][google.api.DocumentationRule.selector] for syntax
+  /// details.
   public var selector: String = String()
 
   /// Determines the URL pattern is matched by this rules. This pattern can be
@@ -502,6 +498,13 @@ public struct Google_Api_CustomHttpPattern {
   public init() {}
 }
 
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Google_Api_Http: @unchecked Sendable {}
+extension Google_Api_HttpRule: @unchecked Sendable {}
+extension Google_Api_HttpRule.OneOf_Pattern: @unchecked Sendable {}
+extension Google_Api_CustomHttpPattern: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "google.api"
@@ -567,44 +570,58 @@ extension Google_Api_HttpRule: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.selector) }()
       case 2: try {
-        if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
-        if let v = v {self.pattern = .get(v)}
+        if let v = v {
+          if self.pattern != nil {try decoder.handleConflictingOneOf()}
+          self.pattern = .get(v)
+        }
       }()
       case 3: try {
-        if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
-        if let v = v {self.pattern = .put(v)}
+        if let v = v {
+          if self.pattern != nil {try decoder.handleConflictingOneOf()}
+          self.pattern = .put(v)
+        }
       }()
       case 4: try {
-        if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
-        if let v = v {self.pattern = .post(v)}
+        if let v = v {
+          if self.pattern != nil {try decoder.handleConflictingOneOf()}
+          self.pattern = .post(v)
+        }
       }()
       case 5: try {
-        if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
-        if let v = v {self.pattern = .delete(v)}
+        if let v = v {
+          if self.pattern != nil {try decoder.handleConflictingOneOf()}
+          self.pattern = .delete(v)
+        }
       }()
       case 6: try {
-        if self.pattern != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
-        if let v = v {self.pattern = .patch(v)}
+        if let v = v {
+          if self.pattern != nil {try decoder.handleConflictingOneOf()}
+          self.pattern = .patch(v)
+        }
       }()
       case 7: try { try decoder.decodeSingularStringField(value: &self.body) }()
       case 8: try {
         var v: Google_Api_CustomHttpPattern?
+        var hadOneofValue = false
         if let current = self.pattern {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .custom(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.pattern = .custom(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.pattern = .custom(v)
+        }
       }()
       case 11: try { try decoder.decodeRepeatedMessageField(value: &self.additionalBindings) }()
       case 12: try { try decoder.decodeSingularStringField(value: &self.responseBody) }()
@@ -614,12 +631,13 @@ extension Google_Api_HttpRule: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.selector.isEmpty {
       try visitor.visitSingularStringField(value: self.selector, fieldNumber: 1)
     }
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every case branch when no optimizations are
-    // enabled. https://github.com/apple/swift-protobuf/issues/1034
     switch self.pattern {
     case .get?: try {
       guard case .get(let v)? = self.pattern else { preconditionFailure() }
@@ -646,9 +664,9 @@ extension Google_Api_HttpRule: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     if !self.body.isEmpty {
       try visitor.visitSingularStringField(value: self.body, fieldNumber: 7)
     }
-    if case .custom(let v)? = self.pattern {
+    try { if case .custom(let v)? = self.pattern {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
-    }
+    } }()
     if !self.additionalBindings.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.additionalBindings, fieldNumber: 11)
     }

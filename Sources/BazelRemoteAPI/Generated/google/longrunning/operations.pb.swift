@@ -7,7 +7,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// Copyright 2020 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,8 @@ public struct Google_Longrunning_Operation {
 
   /// The operation result, which can be either an `error` or a valid `response`.
   /// If `done` == `false`, neither `error` nor `response` is set.
-  /// If `done` == `true`, exactly one of `error` or `response` is set.
+  /// If `done` == `true`, exactly one of `error` or `response` can be set.
+  /// Some services might not provide the result.
   public var result: Google_Longrunning_Operation.OneOf_Result? = nil
 
   /// The error result of the operation in case of failure or cancellation.
@@ -78,7 +79,7 @@ public struct Google_Longrunning_Operation {
     set {result = .error(newValue)}
   }
 
-  /// The normal response of the operation in case of success.  If the original
+  /// The normal, successful response of the operation.  If the original
   /// method returns no data on success, such as `Delete`, the response is
   /// `google.protobuf.Empty`.  If the original method is standard
   /// `Get`/`Create`/`Update`, the response should be the resource.  For other
@@ -98,11 +99,12 @@ public struct Google_Longrunning_Operation {
 
   /// The operation result, which can be either an `error` or a valid `response`.
   /// If `done` == `false`, neither `error` nor `response` is set.
-  /// If `done` == `true`, exactly one of `error` or `response` is set.
+  /// If `done` == `true`, exactly one of `error` or `response` can be set.
+  /// Some services might not provide the result.
   public enum OneOf_Result: Equatable {
     /// The error result of the operation in case of failure or cancellation.
     case error(Google_Rpc_Status)
-    /// The normal response of the operation in case of success.  If the original
+    /// The normal, successful response of the operation.  If the original
     /// method returns no data on success, such as `Delete`, the response is
     /// `google.protobuf.Empty`.  If the original method is standard
     /// `Get`/`Create`/`Update`, the response should be the resource.  For other
@@ -137,7 +139,8 @@ public struct Google_Longrunning_Operation {
   fileprivate var _metadata: SwiftProtobuf.Google_Protobuf_Any? = nil
 }
 
-/// The request message for [Operations.GetOperation][google.longrunning.Operations.GetOperation].
+/// The request message for
+/// [Operations.GetOperation][google.longrunning.Operations.GetOperation].
 public struct Google_Longrunning_GetOperationRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -151,7 +154,8 @@ public struct Google_Longrunning_GetOperationRequest {
   public init() {}
 }
 
-/// The request message for [Operations.ListOperations][google.longrunning.Operations.ListOperations].
+/// The request message for
+/// [Operations.ListOperations][google.longrunning.Operations.ListOperations].
 public struct Google_Longrunning_ListOperationsRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -174,7 +178,8 @@ public struct Google_Longrunning_ListOperationsRequest {
   public init() {}
 }
 
-/// The response message for [Operations.ListOperations][google.longrunning.Operations.ListOperations].
+/// The response message for
+/// [Operations.ListOperations][google.longrunning.Operations.ListOperations].
 public struct Google_Longrunning_ListOperationsResponse {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -191,7 +196,8 @@ public struct Google_Longrunning_ListOperationsResponse {
   public init() {}
 }
 
-/// The request message for [Operations.CancelOperation][google.longrunning.Operations.CancelOperation].
+/// The request message for
+/// [Operations.CancelOperation][google.longrunning.Operations.CancelOperation].
 public struct Google_Longrunning_CancelOperationRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -205,7 +211,8 @@ public struct Google_Longrunning_CancelOperationRequest {
   public init() {}
 }
 
-/// The request message for [Operations.DeleteOperation][google.longrunning.Operations.DeleteOperation].
+/// The request message for
+/// [Operations.DeleteOperation][google.longrunning.Operations.DeleteOperation].
 public struct Google_Longrunning_DeleteOperationRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -219,7 +226,8 @@ public struct Google_Longrunning_DeleteOperationRequest {
   public init() {}
 }
 
-/// The request message for [Operations.WaitOperation][google.longrunning.Operations.WaitOperation].
+/// The request message for
+/// [Operations.WaitOperation][google.longrunning.Operations.WaitOperation].
 public struct Google_Longrunning_WaitOperationRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -251,13 +259,12 @@ public struct Google_Longrunning_WaitOperationRequest {
 ///
 /// Example:
 ///
-///   rpc LongRunningRecognize(LongRunningRecognizeRequest)
-///       returns (google.longrunning.Operation) {
-///     option (google.longrunning.operation_info) = {
-///       response_type: "LongRunningRecognizeResponse"
-///       metadata_type: "LongRunningRecognizeMetadata"
-///     };
-///   }
+///     rpc Export(ExportRequest) returns (google.longrunning.Operation) {
+///       option (google.longrunning.operation_info) = {
+///         response_type: "ExportResponse"
+///         metadata_type: "ExportMetadata"
+///       };
+///     }
 public struct Google_Longrunning_OperationInfo {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -286,6 +293,18 @@ public struct Google_Longrunning_OperationInfo {
 
   public init() {}
 }
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Google_Longrunning_Operation: @unchecked Sendable {}
+extension Google_Longrunning_Operation.OneOf_Result: @unchecked Sendable {}
+extension Google_Longrunning_GetOperationRequest: @unchecked Sendable {}
+extension Google_Longrunning_ListOperationsRequest: @unchecked Sendable {}
+extension Google_Longrunning_ListOperationsResponse: @unchecked Sendable {}
+extension Google_Longrunning_CancelOperationRequest: @unchecked Sendable {}
+extension Google_Longrunning_DeleteOperationRequest: @unchecked Sendable {}
+extension Google_Longrunning_WaitOperationRequest: @unchecked Sendable {}
+extension Google_Longrunning_OperationInfo: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Extension support defined in operations.proto.
 
@@ -371,21 +390,29 @@ extension Google_Longrunning_Operation: SwiftProtobuf.Message, SwiftProtobuf._Me
       case 3: try { try decoder.decodeSingularBoolField(value: &self.done) }()
       case 4: try {
         var v: Google_Rpc_Status?
+        var hadOneofValue = false
         if let current = self.result {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .error(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.result = .error(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .error(v)
+        }
       }()
       case 5: try {
         var v: SwiftProtobuf.Google_Protobuf_Any?
+        var hadOneofValue = false
         if let current = self.result {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .response(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.result = .response(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .response(v)
+        }
       }()
       default: break
       }
@@ -393,18 +420,19 @@ extension Google_Longrunning_Operation: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
-    if let v = self._metadata {
+    try { if let v = self._metadata {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     if self.done != false {
       try visitor.visitSingularBoolField(value: self.done, fieldNumber: 3)
     }
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every case branch when no optimizations are
-    // enabled. https://github.com/apple/swift-protobuf/issues/1034
     switch self.result {
     case .error?: try {
       guard case .error(let v)? = self.result else { preconditionFailure() }
@@ -634,12 +662,16 @@ extension Google_Longrunning_WaitOperationRequest: SwiftProtobuf.Message, SwiftP
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
-    if let v = self._timeout {
+    try { if let v = self._timeout {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
