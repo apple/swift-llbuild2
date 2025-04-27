@@ -10,8 +10,6 @@ import Foundation
 import NIOCore
 import TSCBasic
 import TSCUtility
-import TSFCAS
-import TSFCASFileTree
 import TSFFutures
 
 extension Foundation.Process {

@@ -8,11 +8,11 @@
 
 import Foundation
 
-import llbuild2
 import BazelRemoteAPI
 import Crypto
 import SwiftProtobuf
 import TSCUtility
+import TSFCAS
 
 typealias Digest = Build_Bazel_Remote_Execution_V2_Digest
 

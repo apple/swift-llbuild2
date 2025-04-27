@@ -10,7 +10,6 @@ import Foundation
 import NIOCore
 import TSCBasic
 import TSCUtility
-import TSFCASFileTree
 
 public protocol FXTreeMaterializer {
     func materialize(tree: FXTreeID) -> AbsolutePath?

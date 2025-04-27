@@ -7,13 +7,9 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import TSCUtility
-import TSFCAS
-import TSFCASFileTree
+@_exported import TSFCAS
+@_exported import TSFCASFileTree
 import TSFFutures
 
 @_exported import struct TSCUtility.Context
-@_exported import struct TSFCAS.LLBDataID
-@_exported import struct TSFCASFileTree.LLBCASBlob
-@_exported import struct TSFCASFileTree.LLBCASFSNode
-@_exported import class TSFCASFileTree.LLBCASFileTree
 @_exported import class TSFFutures.LLBFuture

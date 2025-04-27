@@ -8,14 +8,15 @@
 
 import Foundation
 
-import llbuild2
-
 import BazelRemoteAPI
 import GRPC
 import NIOCore
 import SwiftProtobuf
 import TSCBasic
+import TSFCAS
+import TSCUtility
 
+public typealias URL = Foundation.URL
 
 /// A Bazel RE2 backed implementation of the `LLBCASDatabase` protocol.
 public final class LLBBazelCASDatabase {
