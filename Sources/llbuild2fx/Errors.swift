@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 public enum FXError: Swift.Error {
+    case nonCallableKey
     case cycleDetected([FXRequestKey])
 
     case valueComputationError(keyPrefix: String, key: String, error: Swift.Error, requestedCacheKeyPaths: FXSortedSet<String>)
@@ -19,6 +20,7 @@ public enum FXError: Swift.Error {
     case invalidValueType(String)
     case unexpectedKeyType(String)
     case inconsistentValue(String)
+    case resourceNotFound(ResourceKey)
 }
 
 func unwrapFXError(_ error: Swift.Error) -> Swift.Error {

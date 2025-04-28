@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020-2025 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -175,12 +175,13 @@ final class EngineTests: XCTestCase {
         ctx.db = db
         ctx.group = group
 
-        let internalKey = AbsoluteSum(values: [-2, -3, -4]).internalKey(ctx)
         let cachedOutput = SumOutput(total: -9)
         let cacheID = try await ctx.db.put(try cachedOutput.asCASObject(), ctx).get()
-        try await functionCache.update(key: internalKey, props: internalKey, value: cacheID, ctx).get()
 
         let engine = FXEngine(group: group, db: db, functionCache: functionCache, executor: executor)
+
+        let internalKey = AbsoluteSum(values: [-2, -3, -4]).internalKey(engine, ctx)
+        try await functionCache.update(key: internalKey, props: internalKey, value: cacheID, ctx).get()
 
         let result = try await engine.build(key: AbsoluteSum(values: [-2, -3, -4]), ctx).get()
         XCTAssertEqual(result.total, 9)

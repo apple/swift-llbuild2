@@ -11,11 +11,16 @@ public enum ConfigurationKey: Hashable, Comparable, Codable {
     case prefix(String)
 }
 
+public enum ResourceKey: Hashable, Comparable, Codable {
+    case external(String)
+}
+
 public protocol FXVersioning {
     static var name: String { get }
     static var version: Int { get }
     static var versionDependencies: [FXVersioning.Type] { get }
     static var configurationKeys: [ConfigurationKey] { get }
+    static var resourceEntitlements: [ResourceKey] { get }
 }
 
 extension FXKey {
@@ -27,11 +32,17 @@ extension FXKey {
     public static var configurationKeys: [ConfigurationKey] {
         [ConfigurationKey]()
     }
+    public static var resourceEntitlements: [ResourceKey] {
+        [ResourceKey]()
+    }
 }
 
 extension FXVersioning {
     public static var configurationKeys: [ConfigurationKey] {
         [ConfigurationKey]()
+    }
+    public static var resourceEntitlements: [ResourceKey] {
+        [ResourceKey]()
     }
 }
 
@@ -75,6 +86,10 @@ extension FXVersioning {
 
     public static var aggregatedConfigurationKeys: FXSortedSet<ConfigurationKey> {
         return FXSortedSet<ConfigurationKey>(aggregatedVersionDependencies.map { $0.configurationKeys }.reduce([], +))
+    }
+
+    public static var aggregatedResourceEntitlements: FXSortedSet<ResourceKey> {
+        return FXSortedSet<ResourceKey>(aggregatedVersionDependencies.map { $0.resourceEntitlements }.reduce([], +))
     }
 
     public static var cacheKeyPrefix: String {

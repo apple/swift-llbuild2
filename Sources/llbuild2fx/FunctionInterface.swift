@@ -27,13 +27,13 @@ public final class FXFunctionInterface<K: FXKey> {
 
     public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) -> LLBFuture<X.ValueType> {
         do {
-            let realX = x.internalKey(ctx)
+            let realX = x.internalKey(fi.engine, ctx)
 
             // Check that the key dependency is either explicity declared or
             // recursive/self-referential.
             guard K.versionDependencies.contains(where: { $0 == X.self }) || X.self == K.self else {
                 throw FXError.unexpressedKeyDependency(
-                    from: key.internalKey(ctx).logDescription(),
+                    from: key.internalKey(fi.engine, ctx).logDescription(),
                     to: realX.logDescription()
                 )
             }
@@ -73,9 +73,9 @@ public final class FXFunctionInterface<K: FXKey> {
     ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
         let actionName = String(describing: ActionType.self)
 
-        ctx.fxBuildEngineStats.add(action: actionName)
+        fi.engine.stats.add(action: actionName)
 
-        let executor = ctx.fxExecutor!
+        let executor = fi.engine.executor
         let result: LLBFuture<ActionType.ValueType>
 
         if executor.canSatisfy(requirements: requirements) {
@@ -87,7 +87,7 @@ public final class FXFunctionInterface<K: FXKey> {
         }
 
         return result.always { _ in
-            ctx.fxBuildEngineStats.remove(action: actionName)
+            self.fi.engine.stats.remove(action: actionName)
         }
     }
 
@@ -102,5 +102,13 @@ public final class FXFunctionInterface<K: FXKey> {
             requirements: ConstantPredicate(value: true),
             ctx
         )
+    }
+
+    public func resource<T>(_ key: ResourceKey) -> T? {
+        if !K.resourceEntitlements.contains(key) {
+            return nil
+        }
+
+        return fi.engine.resources[key] as? T
     }
 }
