@@ -27,22 +27,6 @@ extension FXExecutor {
     }
 }
 
-private class ContextFXExecutor {}
-
-extension Context {
-    var fxExecutor: FXExecutor! {
-        get {
-            guard let value = self[ObjectIdentifier(ContextFXExecutor.self)] as? FXExecutor else {
-                return nil
-            }
-            return value
-        }
-        set {
-            self[ObjectIdentifier(ContextFXExecutor.self)] = newValue
-        }
-    }
-}
-
 public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {

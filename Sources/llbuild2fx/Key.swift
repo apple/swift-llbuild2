@@ -48,8 +48,8 @@ extension FXKey {
 
 
 internal extension FXKey {
-    func internalKey(_ ctx: Context) -> InternalKey<Self> {
-        InternalKey(self, ctx)
+    func internalKey(_ engine: FXEngine, _ ctx: Context) -> InternalKey<Self> {
+        InternalKey(self, engine, ctx)
     }
 }
 
@@ -78,11 +78,11 @@ internal final class InternalKey<K: FXKey> {
     let stableHashValue: LLBDataID
     let cachePath: String
 
-    init(_ key: K, _ ctx: Context) {
+    init(_ key: K, _ engine: FXEngine, _ ctx: Context) {
         self.name = String(describing: K.self)
         self.key = key
         self.ctx = ctx
-        let cachePath = Self.calculateCachePath(key: key, ctx: ctx)
+        let cachePath = Self.calculateCachePath(key: key, engine: engine, ctx: ctx)
         let hashData = Array(cachePath.utf8)
         self.stableHashValue = LLBDataID(blake3hash: hashData[...])
         self.cachePath = cachePath
@@ -94,7 +94,7 @@ extension InternalKey: FXKeyProperties {
         K.volatile
     }
 
-    static func calculateCachePath(key: K, ctx: Context) -> String {
+    static func calculateCachePath(key: K, engine: FXEngine, ctx: Context) -> String {
         func cachePathWithoutConfig() -> String {
             let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
             let keyLengthLimit = 250
@@ -125,11 +125,26 @@ extension InternalKey: FXKeyProperties {
             return [basePath, str].joined(separator: "/")
         }
 
-        let config = KeyConfiguration<K>(inputs: ctx.fxConfigurationInputs)
-        guard !config.isNoop() else {
-            return cachePathWithoutConfig()
+        let prefix: String
+        if engine.cacheRequestOnly {
+            prefix = [engine.buildID.uuidString, cachePathWithoutConfig()].joined(separator: "/")
+        } else {
+            prefix = cachePathWithoutConfig()
         }
-        return [cachePathWithoutConfig(), try! StringsEncoder().encode(config)[""]!].joined(separator: "/")
+
+        var path = [prefix]
+
+        let config = KeyConfiguration<K>(inputs: ctx.fxConfigurationInputs)
+        if !config.isNoop() {
+            path.append(try! StringsEncoder().encode(config)[""]!)
+        }
+
+        let res = ResourceVersions<K>(resources: engine.resources)
+        if !res.isNoop() {
+            path.append(try! StringsEncoder().encode(res)[""]!)
+        }
+
+        return path.joined(separator: "/")
     }
 }
 
@@ -290,7 +305,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         let encodedKey = String(bytes: keyData, encoding: .utf8)!
         let keyPrefix = FXCacheKeyPrefixMemoizer.get(for: actualKey)
 
-        ctx.fxBuildEngineStats.add(key: key.name)
+        fi.engine.stats.add(key: key.name)
 
         var childContext = ctx
 
@@ -331,7 +346,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
             span.attributes["keyPrefix"] = keyPrefix.description
             span.attributes["key"] = encodedKey.description
 
-            ctx.fxBuildEngineStats.remove(key: key.name)
+            fi.engine.stats.remove(key: key.name)
             span.end()
         }
     }

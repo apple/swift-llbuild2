@@ -63,18 +63,3 @@ public final class FXBuildEngineStats {
         }
     }
 }
-
-extension Context {
-    var fxBuildEngineStats: FXBuildEngineStats! {
-        get {
-            guard let stats = self[ObjectIdentifier(FXBuildEngineStats.self)] as? FXBuildEngineStats else {
-                return nil
-            }
-
-            return stats
-        }
-        set {
-            self[ObjectIdentifier(FXBuildEngineStats.self)] = newValue
-        }
-    }
-}

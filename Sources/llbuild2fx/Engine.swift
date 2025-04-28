@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Dispatch
+import Foundation
 import Logging
 import NIOCore
 import TSFFutures
@@ -65,27 +66,14 @@ internal class FunctionInterface {
 
     /// The function execution cache
     @inlinable
-    public var functionCache: FXFunctionCache { return engine.cache }
+    var functionCache: FXFunctionCache { return engine.cache }
 
     init(engine: FXEngine, key: FXRequestKey) {
         self.engine = engine
         self.key = key
     }
 
-    public func request(_ key: FXRequestKey, _ ctx: Context) -> LLBFuture<FXResult> {
-        do {
-            try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
-        } catch {
-            return ctx.group.next().makeFailedFuture(error)
-        }
-        let future = engine.build(key: key, ctx)
-        future.whenComplete { _ in
-            self.engine.keyDependencyGraph.removeEdge(from: self.key, to: key)
-        }
-        return future
-    }
-
-    public func request<V: FXResult>(_ key: FXRequestKey, as type: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
+    func request<V: FXResult>(_ key: FXRequestKey, as type: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
         do {
             try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
         } catch {
@@ -99,22 +87,31 @@ internal class FunctionInterface {
     }
 }
 
+public typealias FXBuildID = Foundation.UUID
+
 public final class FXEngine {
-    private let group: LLBFuturesDispatchGroup
-    private let db: LLBCASDatabase
+    internal let group: LLBFuturesDispatchGroup
+    internal let db: LLBCASDatabase
     @usableFromInline internal let cache: FXFunctionCache
-    private let executor: FXExecutor
-    private let stats: FXBuildEngineStats
-    private let logger: Logger?
+    internal let resources: [ResourceKey: FXResource]
+    internal let executor: FXExecutor
+    internal let stats: FXBuildEngineStats
+    internal let logger: Logger?
+
+    internal let cacheRequestOnly: Bool
 
     fileprivate let pendingResults: LLBEventualResultsCache<HashableKey, FXResult>
     fileprivate let keyDependencyGraph = FXKeyDependencyGraph()
+
+    public let buildID: FXBuildID
 
     public init(
         group: LLBFuturesDispatchGroup,
         db: LLBCASDatabase,
         functionCache: FXFunctionCache?,
         executor: FXExecutor,
+        resources: [ResourceKey: FXResource] = [:],
+        buildID: FXBuildID = FXBuildID(),
         stats: FXBuildEngineStats? = nil,
         logger: Logger? = nil,
         partialResultExpiration: DispatchTimeInterval = .seconds(300)
@@ -122,11 +119,23 @@ public final class FXEngine {
         self.group = group
         self.db = db
         self.cache = functionCache ?? FXInMemoryFunctionCache(group: group)
+        self.resources = resources
         self.executor = executor
         self.stats = stats ?? .init()
         self.logger = logger
 
         self.pendingResults = LLBEventualResultsCache<HashableKey, FXResult>(group: group, partialResultExpiration: partialResultExpiration)
+
+        self.buildID = buildID
+
+        var cacheRequestOnly = false
+        for res in resources.values {
+            if case .requestOnly = res.lifetime {
+                cacheRequestOnly = true
+                break
+            }
+        }
+        self.cacheRequestOnly = cacheRequestOnly
     }
 
     /// Populate context with engine provided values
@@ -135,9 +144,6 @@ public final class FXEngine {
         ctx.group = self.group
         ctx.db = self.db
 
-        ctx.fxExecutor = executor
-        ctx.fxBuildEngineStats = stats
-
         if let logger = self.logger {
             ctx.logger = logger
         }
@@ -145,16 +151,11 @@ public final class FXEngine {
         return ctx
     }
 
-    enum Error: Swift.Error {
-        case noFXFunctionProvider(FXRequestKey)
-        case invalidValueType(String)
-    }
-
     internal func build(key: FXRequestKey, _ ctx: Context) -> LLBFuture<FXResult> {
         let ctx = engineContext(ctx)
         return self.pendingResults.value(for: HashableKey(key: key)) { _ in
             guard let ikey = key as? CallableKey else {
-                fatalError("non-callable key type")
+                return ctx.group.any().makeFailedFuture(FXError.nonCallableKey)
             }
             let fn = ikey.function()
             let fi = FunctionInterface(engine: self, key: key)
@@ -165,7 +166,7 @@ public final class FXEngine {
     internal func build<V: FXResult>(key: FXRequestKey, as: V.Type, _ ctx: Context) -> LLBFuture<V> {
         return self.build(key: key, ctx).flatMapThrowing {
             guard let value = $0 as? V else {
-                throw Error.invalidValueType("Expected value of type \(V.self)")
+                throw FXError.invalidValueType("Expected value of type \(V.self)")
             }
             return value
         }
@@ -176,7 +177,7 @@ public final class FXEngine {
         _ ctx: Context
     ) -> LLBFuture<K.ValueType> {
         let ctx = engineContext(ctx)
-        return self.build(key: key.internalKey(ctx), as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
+        return self.build(key: key.internalKey(self, ctx), as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
             internalValue.value
         }
     }
