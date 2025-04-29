@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Foundation
+import SwiftProtobuf
 
 public struct FXEncoder {
     private let encoder: JSONEncoder
@@ -55,5 +56,34 @@ extension Encodable {
     public func fxEncodeJSON() throws -> String {
         let encoder = FXEncoder()
         return try String(decoding: encoder.encode(self), as: UTF8.self)
+    }
+}
+
+extension Encodable where Self: SwiftProtobuf.Message {
+    public func encode(to encoder: Swift.Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.serializedData())
+    }
+}
+
+extension Decodable where Self: SwiftProtobuf.Message {
+    public init(from decoder: Swift.Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        try self.init(serializedData: container.decode(Data.self))
+    }
+}
+
+// Convenience constraint so that SwiftProtobuf serialization is preferred over Codable.
+extension LLBSerializableIn where Self: Decodable, Self: SwiftProtobuf.Message {
+    public init(from bytes: LLBByteBuffer) throws {
+        let data = Data(bytes.readableBytesView)
+        self = try Self.init(serializedData: data)
+    }
+}
+
+// Convenience constraint so that SwiftProtobuf serialization is preferred over Codable.
+extension LLBSerializableOut where Self: Encodable, Self: SwiftProtobuf.Message {
+    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+        buffer.writeBytes(try self.serializedData())
     }
 }
