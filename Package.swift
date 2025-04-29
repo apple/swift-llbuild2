@@ -26,6 +26,7 @@ let package = Package(
         .target(
             name: "llbuild2fx",
             dependencies: [
+                "SwiftProtobuf",
                 "SwiftToolsSupportCAS",
                 "Logging",
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
