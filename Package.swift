@@ -8,6 +8,7 @@ let package = Package(
        .macOS(.v10_15)
     ],
     products: [
+        .library(name: "llbuild2", targets: ["llbuild2"]),
         .library(name: "llbuild2fx", targets: ["llbuild2fx"]),
     ],
     dependencies: [
@@ -44,6 +45,12 @@ let package = Package(
                 "SwiftProtobuf",
                 "SwiftProtobufPluginLibrary",
             ]
+        ),
+
+        // Compatibility/convenience wrapper library
+        .target(
+            name: "llbuild2",
+            dependencies: ["llbuild2fx"]
         ),
 
         // Bazel CAS/Execution Backend
