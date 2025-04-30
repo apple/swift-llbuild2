@@ -7,7 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 
-public struct FXSortedSet<Element: Comparable & Hashable> {
+public struct FXSortedSet<Element: Comparable & Hashable & Sendable>: Sendable {
     fileprivate var uniqueElements: Set<Element>
     fileprivate var sortedElements: [Element]
 

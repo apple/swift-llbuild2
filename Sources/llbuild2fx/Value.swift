@@ -8,7 +8,7 @@
 
 import Foundation
 
-public protocol FXValue {
+public protocol FXValue: Sendable {
     associatedtype CodableValueType: Codable
 
     var refs: [LLBDataID] { get }
