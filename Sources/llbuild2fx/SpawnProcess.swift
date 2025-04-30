@@ -101,13 +101,13 @@ extension Foundation.Process {
     }
 }
 
-public struct ProcessSpec: Codable {
-    public enum Executable: Codable {
+public struct ProcessSpec: Codable, Sendable {
+    public enum Executable: Codable, Sendable {
         case absolutePath(AbsolutePath)
         case inputPath(RelativePath)
     }
 
-    public enum RuntimeValue: Codable, Equatable {
+    public enum RuntimeValue: Codable, Equatable, Sendable {
         case literal(String)
         case inputPath(RelativePath)
         case outputPath(RelativePath)

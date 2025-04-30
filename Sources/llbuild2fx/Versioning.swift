@@ -6,16 +6,16 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-public enum ConfigurationKey: Hashable, Comparable, Codable {
+public enum ConfigurationKey: Hashable, Comparable, Codable, Sendable {
     case literal(String)
     case prefix(String)
 }
 
-public enum ResourceKey: Hashable, Comparable, Codable {
+public enum ResourceKey: Hashable, Comparable, Codable, Sendable {
     case external(String)
 }
 
-public protocol FXVersioning {
+public protocol FXVersioning: Sendable {
     static var name: String { get }
     static var version: Int { get }
     static var versionDependencies: [FXVersioning.Type] { get }
