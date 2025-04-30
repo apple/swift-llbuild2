@@ -9,7 +9,7 @@
 import NIOConcurrencyHelpers
 import NIOCore
 
-public final class FXFunctionInterface<K: FXKey> {
+public final class FXFunctionInterface<K: FXKey>: @unchecked Sendable {
     private let key: K
     private let fi: FunctionInterface
     private var requestedKeyCachePaths = FXSortedSet<String>()
