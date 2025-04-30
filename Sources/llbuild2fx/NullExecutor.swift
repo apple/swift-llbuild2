@@ -11,6 +11,13 @@ import NIOCore
 public final class FXNullExecutor: FXExecutor {
     public init() {}
 
+    public func perform<ActionType: FXAction>(
+        _ action: ActionType,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
+        return ctx.group.any().makeFailedFuture(Error.nullExecutor)
+    }
+
     public func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
         false
     }
@@ -25,6 +32,6 @@ public final class FXNullExecutor: FXExecutor {
         requirements: P,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
-        ctx.group.next().makeFailedFuture(Error.nullExecutor)
+        return ctx.group.any().makeFailedFuture(Error.nullExecutor)
     }
 }

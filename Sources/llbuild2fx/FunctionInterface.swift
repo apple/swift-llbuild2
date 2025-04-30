@@ -65,6 +65,31 @@ public final class FXFunctionInterface<K: FXKey> {
         }
     }
 
+    public func spawn<ActionType: FXAction>(
+        _ action: ActionType,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
+        guard K.actionDependencies.contains(where: { $0 == ActionType.self }) else {
+            return ctx.group.any().makeFailedFuture(
+                FXError.unexpressedKeyDependency(
+                    from: key.internalKey(fi.engine, ctx).logDescription(),
+                    to: "action: \(ActionType.name)"
+                )
+            )
+        }
+
+        fi.engine.stats.add(action: ActionType.name)
+
+        ctx.logger?.debug("Will perform action: \(action)")
+        let result = fi.engine.executor.perform(action, ctx)
+
+        return result.always { _ in
+            self.fi.engine.stats.remove(action: ActionType.name)
+        }
+    }
+
+
+    @available(*, deprecated, message: "use spawn, with registered actions")
     public func execute<ActionType: FXAction, P: Predicate>(
         action: ActionType,
         with executable: LLBFuture<FXExecutableID>? = nil,
@@ -91,6 +116,7 @@ public final class FXFunctionInterface<K: FXKey> {
         }
     }
 
+    @available(*, deprecated, message: "use spawn, with registered actions")
     public func execute<ActionType: FXAction>(
         action: ActionType,
         with executable: LLBFuture<FXExecutableID>? = nil,
@@ -110,5 +136,18 @@ public final class FXFunctionInterface<K: FXKey> {
         }
 
         return fi.engine.resources[key] as? T
+    }
+}
+
+extension FXFunctionInterface {
+    public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) async throws -> X.ValueType {
+        return try await request(x, requireCacheHit: requireCacheHit, ctx).get()
+    }
+
+    public func spawn<ActionType: FXAction>(
+        _ action: ActionType,
+        _ ctx: Context
+    ) async throws -> ActionType.ValueType {
+        return try await spawn(action, ctx).get()
     }
 }

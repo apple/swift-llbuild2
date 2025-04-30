@@ -9,6 +9,8 @@
 public class FXRuleset {
     public let name: String
     public let entrypoints: [String : FXVersioning.Type]
+    public let actionDependencies: [any FXAction.Type]
+
     let aggregatedResourceEntitlements: FXSortedSet<ResourceKey>
 
     public init(name: String, entrypoints: [String: FXVersioning.Type]) {
@@ -16,6 +18,14 @@ public class FXRuleset {
         self.entrypoints = entrypoints
 
         aggregatedResourceEntitlements = FXSortedSet<ResourceKey>(entrypoints.values.map { $0.aggregatedResourceEntitlements }.reduce([], +))
+
+        var actionDeps: [String: any FXAction.Type] = [:]
+        for ep in entrypoints.values {
+            for ad in ep.aggregatedActionDependencies {
+                actionDeps[ad.name] = ad
+            }
+        }
+        actionDependencies = Array(actionDeps.values)
     }
 
     public func constrainResources(_ resources: [ResourceKey: FXResource]) throws -> [ResourceKey: FXResource] {

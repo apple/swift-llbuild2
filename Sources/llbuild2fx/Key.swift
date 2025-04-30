@@ -386,8 +386,3 @@ extension AsyncFXKey {
     }
 }
 
-extension FXFunctionInterface {
-    public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) async throws -> X.ValueType {
-        return try await request(x, requireCacheHit: requireCacheHit, ctx).get()
-    }
-}
