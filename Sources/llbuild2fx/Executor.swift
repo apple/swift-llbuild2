@@ -11,8 +11,14 @@ import TSFFutures
 import NIOCore
 
 public protocol FXExecutor {
+    func perform<ActionType: FXAction>(
+        _ action: ActionType,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType>
+
     func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment
 
+    @available(*, deprecated, message: "use self-resolving perform")
     func perform<ActionType: FXAction, P: Predicate>(
         action: ActionType,
         with executable: LLBFuture<FXExecutableID>,

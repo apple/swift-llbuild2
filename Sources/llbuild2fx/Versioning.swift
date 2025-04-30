@@ -19,6 +19,7 @@ public protocol FXVersioning: Sendable {
     static var name: String { get }
     static var version: Int { get }
     static var versionDependencies: [FXVersioning.Type] { get }
+    static var actionDependencies: [any FXAction.Type] { get }
     static var configurationKeys: [ConfigurationKey] { get }
     static var resourceEntitlements: [ResourceKey] { get }
 }
@@ -29,6 +30,9 @@ extension FXKey {
     public static var versionDependencies: [FXVersioning.Type] {
         [FXVersioning.Type]()
     }
+    public static var actionDependencies: [any FXAction.Type] {
+        [any FXAction.Type]()
+    }
     public static var configurationKeys: [ConfigurationKey] {
         [ConfigurationKey]()
     }
@@ -38,6 +42,9 @@ extension FXKey {
 }
 
 extension FXVersioning {
+    public static var actionDependencies: [any FXAction.Type] {
+        [any FXAction.Type]()
+    }
     public static var configurationKeys: [ConfigurationKey] {
         [ConfigurationKey]()
     }
@@ -90,6 +97,16 @@ extension FXVersioning {
 
     public static var aggregatedResourceEntitlements: FXSortedSet<ResourceKey> {
         return FXSortedSet<ResourceKey>(aggregatedVersionDependencies.map { $0.resourceEntitlements }.reduce([], +))
+    }
+
+    public static var aggregatedActionDependencies: [any FXAction.Type] {
+        var actionDeps: [String: any FXAction.Type] = [:]
+        for dep in aggregatedVersionDependencies {
+            for ad in dep.aggregatedActionDependencies {
+                actionDeps[ad.name] = ad
+            }
+        }
+        return Array(actionDeps.values)
     }
 
     public static var cacheKeyPrefix: String {

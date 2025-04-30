@@ -43,6 +43,12 @@ public final class FXLocalExecutor: FXExecutor {
         self.environment = env
     }
 
+    public func perform<ActionType: FXAction>(
+        _ action: ActionType, _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
+        return action.run(ctx)
+    }
+
     public func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
         requirements.evaluate(with: environment)
     }
