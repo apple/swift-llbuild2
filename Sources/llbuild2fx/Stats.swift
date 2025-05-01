@@ -16,7 +16,7 @@ public struct FXBuildEngineStatsSnapshot {
     public let totalActions: [String: Int]
 }
 
-public final class FXBuildEngineStats {
+public final class FXBuildEngineStats: @unchecked Sendable {
     private let lock = NIOLock()
 
     private var currentKeyCounts: [String: Int] = [:]

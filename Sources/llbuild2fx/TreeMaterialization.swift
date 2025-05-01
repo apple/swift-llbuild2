@@ -20,7 +20,7 @@ private class ContextTreeMaterializer {}
 extension Context {
     public var fxTreeMaterializer: FXTreeMaterializer? {
         get {
-            guard let value = self[ObjectIdentifier(ContextTreeMaterializer.self)] as? FXTreeMaterializer else {
+            guard let value = self[ObjectIdentifier(ContextTreeMaterializer.self), as: FXTreeMaterializer.self] else {
                 return nil
             }
 
@@ -73,7 +73,7 @@ extension FXTreeID {
         }
 
         return withTemporaryDirectory(ctx) { tmp in
-            LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, ctx).flatMap {
+            LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).flatMap {
                 body(tmp)
             }
         }

@@ -69,7 +69,7 @@ extension Encodable where Self: SwiftProtobuf.Message {
 extension Decodable where Self: SwiftProtobuf.Message {
     public init(from decoder: Swift.Decoder) throws {
         let container = try decoder.singleValueContainer()
-        try self.init(serializedData: container.decode(Data.self))
+        try self.init(serializedBytes: container.decode(Data.self))
     }
 }
 
@@ -77,7 +77,7 @@ extension Decodable where Self: SwiftProtobuf.Message {
 extension LLBSerializableIn where Self: Decodable, Self: SwiftProtobuf.Message {
     public init(from bytes: LLBByteBuffer) throws {
         let data = Data(bytes.readableBytesView)
-        self = try Self.init(serializedData: data)
+        self = try Self.init(serializedBytes: data)
     }
 }
 

@@ -16,7 +16,7 @@ public protocol FXKeyProperties {
     var cachePath: String { get }
 }
 
-public protocol FXFunctionCache {
+public protocol FXFunctionCache : Sendable {
     func get(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?>
     func update(key: FXRequestKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void>
 }

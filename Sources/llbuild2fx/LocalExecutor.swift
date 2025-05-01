@@ -13,7 +13,7 @@ extension FXActionExecutionEnvironment {
     private static let key = ContextKey()
     public var isLocal: Bool {
         get {
-            guard let value = self[ObjectIdentifier(Self.key)] as? Bool else {
+            guard let value = self[ObjectIdentifier(Self.key), as: Bool.self] else {
                 return false
             }
 

@@ -12,7 +12,7 @@ import Logging
 public extension Context {
     var logger: Logger? {
         get {
-            guard let logger = self[ObjectIdentifier(Logger.self)] as? Logger else {
+            guard let logger = self[ObjectIdentifier(Logger.self), as: Logger.self] else {
                 return nil
             }
             return logger
