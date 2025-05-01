@@ -184,7 +184,7 @@ private enum TraceIDKey { }
 public extension Context {
     var parentUUID: String? {
         get {
-            guard let parentUUID = self[ObjectIdentifier(ParentUUIDKey.self)] as? String else {
+            guard let parentUUID = self[ObjectIdentifier(ParentUUIDKey.self), as: String.self] else {
                 return nil
             }
             return parentUUID
@@ -196,7 +196,7 @@ public extension Context {
 
     var selfUUID: String? {
         get {
-            guard let selfUUID = self[ObjectIdentifier(SelfUUIDKey.self)] as? String else {
+            guard let selfUUID = self[ObjectIdentifier(SelfUUIDKey.self), as: String.self] else {
                 return nil
             }
             return selfUUID
@@ -208,7 +208,7 @@ public extension Context {
 
     var traceID: String? {
         get {
-            guard let traceID = self[ObjectIdentifier(TraceIDKey.self)] as? String else {
+            guard let traceID = self[ObjectIdentifier(TraceIDKey.self), as: String.self] else {
                 return nil
             }
             return traceID
@@ -241,7 +241,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         }
 
         let resultID = try await ctx.db.put(try value.asCASObject(), ctx).get()
-        _ = try await fi.functionCache.update(key: key, props: key, value: resultID, ctx).get()
+        _ = try await fi.engine.cache.update(key: key, props: key, value: resultID, ctx).get()
         return value
     }
 
@@ -264,7 +264,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
 
         ctx.logger?.trace("evaluating \(key.logDescription())")
 
-        guard let resultID = try await fi.functionCache.get(key: key, props: key, ctx).get(), let object = try await ctx.db.get(resultID, ctx).get() else {
+        guard let resultID = try await fi.engine.cache.get(key: key, props: key, ctx).get(), let object = try await ctx.db.get(resultID, ctx).get() else {
             return try await self.computeAndUpdate(key: key, fi, ctx).get()
         }
 
@@ -279,7 +279,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
                 }
 
                 let newResultID = try await ctx.db.put(try newValue.asCASObject(), ctx).get()
-                _ = try await fi.functionCache.update(key: key, props: key, value: newResultID, ctx).get()
+                _ = try await fi.engine.cache.update(key: key, props: key, value: newResultID, ctx).get()
                 return newValue
             }
 
@@ -321,21 +321,13 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         return actualKey.computeValue(fxfi, childContext).flatMapError { underlyingError in
             let augmentedError: Swift.Error
 
-            do {
-                augmentedError = FXError.valueComputationError(
-                    keyPrefix: keyPrefix,
-                    key: encodedKey,
-                    error: underlyingError,
-                    requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
-                )
-                span.recordError(underlyingError)
-            } catch {
-                augmentedError = FXError.keyEncodingError(
-                    keyPrefix: FXCacheKeyPrefixMemoizer.get(for: actualKey),
-                    encodingError: error,
-                    underlyingError: underlyingError
-                )
-            }
+            augmentedError = FXError.valueComputationError(
+                keyPrefix: keyPrefix,
+                key: encodedKey,
+                error: underlyingError,
+                requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
+            )
+            span.recordError(underlyingError)
 
             return ctx.group.next().makeFailedFuture(augmentedError)
         }.map { value in

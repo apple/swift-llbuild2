@@ -15,16 +15,16 @@ public struct FXDiagnostics: FXThinEncodedSingleDataIDValue, FXTreeID {
     }
 }
 
-public protocol FXDiagnosticsGathering {
+public protocol FXDiagnosticsGathering: Sendable {
     func gatherDiagnostics(pid: Int32?, _ ctx: Context) -> LLBFuture<FXDiagnostics>
 }
 
-private class ContextDiagnosticsGatherer {}
+private final class ContextDiagnosticsGatherer: Sendable {}
 
 extension Context {
     public var fxDiagnosticsGatherer: FXDiagnosticsGathering? {
         get {
-            guard let value = self[ObjectIdentifier(ContextDiagnosticsGatherer.self)] as? FXDiagnosticsGathering else {
+            guard let value = self[ObjectIdentifier(ContextDiagnosticsGatherer.self), as: FXDiagnosticsGathering.self] else {
                 return nil
             }
 

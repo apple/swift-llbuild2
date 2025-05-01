@@ -12,7 +12,7 @@ public enum ResourceLifetime {
     case requestOnly
 }
 
-public protocol FXResource {
+public protocol FXResource: Sendable {
     var name: String { get }
     var version: Int? { get }
     var lifetime: ResourceLifetime { get }

@@ -9,15 +9,13 @@
 import NIOConcurrencyHelpers
 import NIOCore
 
-public final class FXFunctionInterface<K: FXKey>: @unchecked Sendable {
+public final class FXFunctionInterface<K: FXKey>: Sendable {
     private let key: K
     private let fi: FunctionInterface
-    private var requestedKeyCachePaths = FXSortedSet<String>()
+    private let requestedKeyCachePaths = NIOLockedValueBox(FXSortedSet<String>())
     private let lock = NIOLock()
     var requestedCacheKeyPathsSnapshot: FXSortedSet<String> {
-        lock.withLock {
-            requestedKeyCachePaths
-        }
+        return requestedKeyCachePaths.withLockedValue() { return $0 }
     }
 
     init(_ key: K, _ fi: FunctionInterface) {
@@ -38,13 +36,14 @@ public final class FXFunctionInterface<K: FXKey>: @unchecked Sendable {
                 )
             }
 
-            lock.withLock {
-                _ = requestedKeyCachePaths.insert(realX.cachePath)
+            requestedKeyCachePaths.withLockedValue {
+                $0.insert(realX.cachePath)
+                return
             }
 
             let cacheCheck: LLBFuture<Void>
             if requireCacheHit {
-                cacheCheck = self.fi.functionCache.get(key: realX, props: realX, ctx).flatMapThrowing { maybeValue in
+                cacheCheck = self.fi.engine.cache.get(key: realX, props: realX, ctx).flatMapThrowing { maybeValue in
                     guard maybeValue != nil else {
                         throw FXError.missingRequiredCacheEntry(cachePath: realX.cachePath)
                     }

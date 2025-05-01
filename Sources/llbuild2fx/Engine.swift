@@ -10,11 +10,11 @@ import Dispatch
 import Foundation
 import Logging
 import NIOCore
-import TSFFutures
+@preconcurrency import TSFFutures
 import Tracing
 import Instrumentation
 
-public protocol FXStablyHashable {
+public protocol FXStablyHashable: Sendable {
     var stableHashValue: LLBDataID { get }
 }
 
@@ -58,15 +58,11 @@ internal protocol GenericFunction {
     func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<FXResult>
 }
 
-internal class FunctionInterface {
+internal final class FunctionInterface: Sendable {
     @usableFromInline
     let engine: FXEngine
 
     let key: FXRequestKey
-
-    /// The function execution cache
-    @inlinable
-    var functionCache: FXFunctionCache { return engine.cache }
 
     init(engine: FXEngine, key: FXRequestKey) {
         self.engine = engine
@@ -89,7 +85,7 @@ internal class FunctionInterface {
 
 public typealias FXBuildID = Foundation.UUID
 
-public final class FXEngine {
+public final class FXEngine: Sendable {
     internal let group: LLBFuturesDispatchGroup
     internal let db: LLBCASDatabase
     @usableFromInline internal let cache: FXFunctionCache

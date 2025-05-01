@@ -16,7 +16,7 @@ private class DeadlineKey {}
 extension Context {
     public var fxDeadline: Date? {
         get {
-            self[ObjectIdentifier(DeadlineKey.self)] as? Date
+            self[ObjectIdentifier(DeadlineKey.self), as: Date.self]
         }
         set {
             self[ObjectIdentifier(DeadlineKey.self)] = newValue

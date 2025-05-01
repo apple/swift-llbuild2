@@ -19,7 +19,7 @@ public typealias FXConfigurationInputs = [String: Encodable]
 extension Context {
     public var fxConfigurationInputs: FXConfigurationInputs {
         get {
-            return (self[ObjectIdentifier(FXConfigurationInputs.self)] as? FXConfigurationInputs) ?? [:]
+            return (self[ObjectIdentifier(FXConfigurationInputs.self), as: FXConfigurationInputs.self]) ?? [:]
         }
         set {
             self[ObjectIdentifier(FXConfigurationInputs.self)] = newValue

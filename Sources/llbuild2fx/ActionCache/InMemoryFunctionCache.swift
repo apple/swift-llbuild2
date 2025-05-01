@@ -13,7 +13,7 @@ import TSFFutures
 /// A simple in-memory implementation of the `FXFunctionCache` protocol.
 public final class FXInMemoryFunctionCache: FXFunctionCache {
     /// The cache.
-    private var cache = [HashableKey: LLBDataID]()
+    private let cache = NIOLockedValueBox([HashableKey: LLBDataID]())
 
     /// Threads capable of running futures.
     public let group: LLBFuturesDispatchGroup
@@ -27,10 +27,10 @@ public final class FXInMemoryFunctionCache: FXFunctionCache {
     }
 
     public func get(key: FXRequestKey, props: any FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?> {
-        return group.next().makeSucceededFuture(lock.withLock { cache[HashableKey(key: key)] })
+        return group.next().makeSucceededFuture(cache.withLockedValue { $0[HashableKey(key: key)] })
     }
 
     public func update(key: FXRequestKey, props: any FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
-        return group.next().makeSucceededFuture(lock.withLock { cache[HashableKey(key: key)] = value })
+        return group.next().makeSucceededFuture(cache.withLockedValue { $0[HashableKey(key: key)] = value })
     }
 }

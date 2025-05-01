@@ -9,7 +9,7 @@
 import NIOConcurrencyHelpers
 
 /// Key -> Key dependency graph maintainer. Currently used for cycle detection during the request of keys.
-public class FXKeyDependencyGraph {
+public class FXKeyDependencyGraph: @unchecked Sendable {
     // Use Ints containing the hashValue values for each key. They should be stable during the execution of this
     // process, and we're not storing them for usage in future process invocations. If that changes, this should
     // probably be refactored.

@@ -10,7 +10,7 @@ import TSCUtility
 import TSFFutures
 import NIOCore
 
-public protocol FXExecutor {
+public protocol FXExecutor: Sendable {
     func perform<ActionType: FXAction>(
         _ action: ActionType,
         _ ctx: Context

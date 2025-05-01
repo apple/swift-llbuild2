@@ -21,7 +21,7 @@ extension LLBSerializableOut where Self: SwiftProtobuf.Message {
 extension LLBSerializableIn where Self: SwiftProtobuf.Message {
     public init(from bytes: LLBByteBuffer) throws {
         let data = Data(bytes.readableBytesView)
-        self = try Self.init(serializedData: data)
+        self = try Self.init(serializedBytes: data)
     }
 }
 

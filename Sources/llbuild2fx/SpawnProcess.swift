@@ -274,7 +274,7 @@ public struct SpawnProcess {
             withTemporaryDirectory(ctx) { outputPath in
                 let export: LLBFuture<Void>
                 if let initialOutputTree = initialOutputTree {
-                    export = LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, ctx)
+                    export = LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx)
                 } else {
                     export = ctx.group.next().makeSucceededFuture(())
                 }
