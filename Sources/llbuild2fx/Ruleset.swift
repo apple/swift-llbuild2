@@ -6,14 +6,19 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+public protocol FXEntrypoint: FXKey {
+    static func construct(from casObject: LLBCASObject) throws
+    static func construct(from buffer: LLBByteBuffer) throws
+}
+
 public class FXRuleset {
     public let name: String
-    public let entrypoints: [String : FXVersioning.Type]
+    public let entrypoints: [String : any FXEntrypoint.Type]
     public let actionDependencies: [any FXAction.Type]
 
     let aggregatedResourceEntitlements: FXSortedSet<ResourceKey>
 
-    public init(name: String, entrypoints: [String: FXVersioning.Type]) {
+    public init(name: String, entrypoints: [String: any FXEntrypoint.Type]) {
         self.name = name
         self.entrypoints = entrypoints
 
@@ -38,4 +43,11 @@ public class FXRuleset {
         }
         return constrained
     }
+}
+
+public protocol FXRulesetPackage {
+    associatedtype Config
+
+    static func createRulesets() -> [FXRuleset]
+    static func createExternalResources(_ config: Config) async throws -> [FXResource]
 }
