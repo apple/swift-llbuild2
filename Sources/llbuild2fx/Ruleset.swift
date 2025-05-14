@@ -7,8 +7,8 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 public protocol FXEntrypoint: FXKey {
-    static func construct(from casObject: LLBCASObject) throws
-    static func construct(from buffer: LLBByteBuffer) throws
+    init(withEntrypointPayload casObject: LLBCASObject) throws
+    init(withEntrypointPayload buffer: LLBByteBuffer) throws
 }
 
 public class FXRuleset {
