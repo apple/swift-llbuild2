@@ -102,7 +102,7 @@ extension FXVersioning {
     public static var aggregatedActionDependencies: [any FXAction.Type] {
         var actionDeps: [String: any FXAction.Type] = [:]
         for dep in aggregatedVersionDependencies {
-            for ad in dep.aggregatedActionDependencies {
+            for ad in dep.actionDependencies {
                 actionDeps[ad.name] = ad
             }
         }
