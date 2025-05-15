@@ -7,8 +7,11 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOConcurrencyHelpers
+import TSFFutures
 
 public class FXService {
+    public let group: LLBFuturesDispatchGroup
+
     public enum Error: Swift.Error {
         case duplicateResource(String)
     }
@@ -16,8 +19,8 @@ public class FXService {
     private let _resources = NIOLockedValueBox([ResourceKey: FXResource]())
     private let _rulesets = NIOLockedValueBox([String: FXRuleset]())
 
-    public init() {
-
+    public init(group: LLBFuturesDispatchGroup) {
+        self.group = group
     }
 
     public func ruleset(_ name: String) -> FXRuleset? {
@@ -39,9 +42,9 @@ public class FXService {
         }
     }
 
-    public func registerPackage<T: FXRulesetPackage>(_ pkg: T.Type, with config: T.Config) async throws {
+    public func registerPackage<T: FXRulesetPackage>(_ pkg: T.Type, with config: T.Config, authenticator: FXResourceAuthenticator) async throws {
 
-        let newResources = try await pkg.createExternalResources(config)
+        let newResources = try await pkg.createExternalResources(config, group: group, authenticator: authenticator)
         try _resources.withLockedValue { resources in
             // check all resources first, so that we don't leave anything dangling on failure
             for r in newResources {
