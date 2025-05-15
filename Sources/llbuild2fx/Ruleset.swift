@@ -6,6 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import TSFFutures
+
 public protocol FXEntrypoint: FXKey {
     init(withEntrypointPayload casObject: LLBCASObject) throws
     init(withEntrypointPayload buffer: LLBByteBuffer) throws
@@ -45,9 +47,17 @@ public class FXRuleset {
     }
 }
 
+public protocol FXResourceAuthenticator: Sendable {
+    // stub protocol for passing an authenticator object for resource creation
+}
+
 public protocol FXRulesetPackage {
     associatedtype Config
 
     static func createRulesets() -> [FXRuleset]
-    static func createExternalResources(_ config: Config) async throws -> [FXResource]
+    static func createExternalResources(
+        _ config: Config,
+        group: LLBFuturesDispatchGroup,
+        authenticator: FXResourceAuthenticator
+    ) async throws -> [FXResource]
 }
