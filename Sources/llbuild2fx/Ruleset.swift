@@ -52,7 +52,7 @@ public protocol FXResourceAuthenticator: Sendable {
 }
 
 public protocol FXRulesetPackage {
-    associatedtype Config
+    associatedtype Config: Sendable
 
     static func createRulesets() -> [FXRuleset]
     static func createExternalResources(
