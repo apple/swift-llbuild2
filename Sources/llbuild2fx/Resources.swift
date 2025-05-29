@@ -6,7 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-public enum ResourceLifetime {
+public enum ResourceLifetime: Sendable {
     case idempotent
     case versioned
     case requestOnly
@@ -17,7 +17,6 @@ public protocol FXResource: Sendable {
     var version: Int? { get }
     var lifetime: ResourceLifetime { get }
 }
-
 
 
 final class ResourceVersions<K: FXVersioning>: Encodable {
