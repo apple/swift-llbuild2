@@ -54,10 +54,28 @@ public protocol FXResourceAuthenticator: Sendable {
 public protocol FXRulesetPackage {
     associatedtype Config: Sendable
 
+    // Create all the rulesets supported by this package
     static func createRulesets() -> [FXRuleset]
+
+    // Given the configuration for the package, construct all external resources
+    // that may be used by rulesets provided by this package and initialize any
+    // other resident facilities, such as logging handlers.  Implementations
+    // using package(s) MUST call this method exactly once per process lifetime.
     static func createExternalResources(
         _ config: Config,
         group: LLBFuturesDispatchGroup,
-        authenticator: FXResourceAuthenticator
+        authenticator: FXResourceAuthenticator,
+        _ ctx: Context
     ) async throws -> [FXResource]
+}
+
+public extension FXRulesetPackage {
+    static func createExternalResources(
+        _ config: Config,
+        group: LLBFuturesDispatchGroup,
+        authenticator: FXResourceAuthenticator,
+        _ ctx: Context
+    ) async throws -> [FXResource] {
+        return []
+    }
 }

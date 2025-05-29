@@ -42,9 +42,9 @@ public class FXService {
         }
     }
 
-    public func registerPackage<T: FXRulesetPackage>(_ pkg: T.Type, with config: T.Config, authenticator: FXResourceAuthenticator) async throws {
+    public func registerPackage<T: FXRulesetPackage>(_ pkg: T.Type, with config: T.Config, authenticator: FXResourceAuthenticator, _ ctx: Context) async throws {
 
-        let newResources = try await pkg.createExternalResources(config, group: group, authenticator: authenticator)
+        let newResources = try await pkg.createExternalResources(config, group: group, authenticator: authenticator, ctx)
         try _resources.withLockedValue { resources in
             // check all resources first, so that we don't leave anything dangling on failure
             for r in newResources {
