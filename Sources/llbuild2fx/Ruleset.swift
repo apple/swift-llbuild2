@@ -67,6 +67,8 @@ public protocol FXRulesetPackage {
         authenticator: FXResourceAuthenticator,
         _ ctx: Context
     ) async throws -> [FXResource]
+
+    static func createErrorClassifier() -> FXErrorClassifier?
 }
 
 public extension FXRulesetPackage {
@@ -77,5 +79,9 @@ public extension FXRulesetPackage {
         _ ctx: Context
     ) async throws -> [FXResource] {
         return []
+    }
+
+    static func createErrorClassifier() -> FXErrorClassifier? {
+        return nil
     }
 }
