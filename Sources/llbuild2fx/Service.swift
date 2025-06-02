@@ -9,7 +9,7 @@
 import NIOConcurrencyHelpers
 import TSFFutures
 
-public class FXService {
+public class FXService: FXErrorClassifier {
     public let group: LLBFuturesDispatchGroup
 
     public enum Error: Swift.Error {
@@ -18,6 +18,7 @@ public class FXService {
 
     private let _resources = NIOLockedValueBox([ResourceKey: FXResource]())
     private let _rulesets = NIOLockedValueBox([String: FXRuleset]())
+    private let _errorClassifiers = NIOLockedValueBox([FXErrorClassifier]())
 
     public init(group: LLBFuturesDispatchGroup) {
         self.group = group
@@ -63,6 +64,23 @@ public class FXService {
             for ruleset in newRulesets {
                 $0[ruleset.name] = ruleset
             }
+        }
+
+        if let classifier = pkg.createErrorClassifier() {
+            _errorClassifiers.withLockedValue {
+                $0.append(classifier)
+            }
+        }
+    }
+
+    public func tryClassifyError(_ error: Swift.Error) -> FXErrorDetails? {
+        return _errorClassifiers.withLockedValue { classifiers in
+            for classifier in classifiers {
+                if let details = classifier.tryClassifyError(error) {
+                    return details
+                }
+            }
+            return nil
         }
     }
 }
