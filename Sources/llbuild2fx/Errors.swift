@@ -61,6 +61,16 @@ public struct FXErrorDetails: Sendable {
     public var status: FXErrorStatus
     public var classification: FXErrorClassification
     public var details: String
+
+    public init(
+        status: FXErrorStatus,
+        classification: FXErrorClassification,
+        details: String
+    ) {
+        self.status = status
+        self.classification = classification
+        self.details = details
+    }
 }
 
 public protocol FXErrorClassifier {
