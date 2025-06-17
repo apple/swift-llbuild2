@@ -38,7 +38,7 @@ func unwrapFXError(_ error: Swift.Error) -> Swift.Error {
 }
 
 /// Overall result that this error implies
-public enum FXErrorStatus: Sendable {
+public enum FXErrorStatus: Sendable, Equatable {
     /// A non-terminal error
     case warning
 
@@ -49,7 +49,7 @@ public enum FXErrorStatus: Sendable {
     case custom(String)
 }
 
-public enum FXErrorClassification: String, Sendable {
+public enum FXErrorClassification: String, Sendable, Equatable {
     /// A user caused failure (such as bad input, config, etc.)
     case user
 
@@ -57,7 +57,7 @@ public enum FXErrorClassification: String, Sendable {
     case infrastructure
 }
 
-public struct FXErrorDetails: Sendable {
+public struct FXErrorDetails: Sendable, Equatable {
     public var status: FXErrorStatus
     public var classification: FXErrorClassification
     public var details: String
