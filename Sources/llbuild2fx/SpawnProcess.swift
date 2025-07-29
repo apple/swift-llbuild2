@@ -217,12 +217,12 @@ public struct ProcessSpec: Codable, Sendable {
             -> FileHandle?
         {
             guard let destination = destination,
-                let generator = ctx.fileHandleGenerator
+                let generator = ctx.logFileHandleGenerator
             else {
                 return nil
             }
 
-            return try generator.makeFileHandle(path: destination)
+            return try generator.makeFileHandle(name: destination)
         }
 
         func combinedOutputHandle(
