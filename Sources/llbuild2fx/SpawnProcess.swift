@@ -328,6 +328,12 @@ public struct SpawnProcess {
                         ctx.fxApplyDeadline(cancellable)
 
                         return cancellable.future.flatMap { exitCode in
+                            // Wait a moment for the output combining pipes to drain before slurping up the outputPath.
+                            ctx.group.next().makeFutureWithTask {
+                                try await Task.sleep(nanoseconds: 1_000_000)
+                                return exitCode
+                            }
+                        }.flatMap { exitCode in
                             LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
                                 SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: exitCode)
                             }
