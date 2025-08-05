@@ -8,7 +8,7 @@
 
 import NIOCore
 
-public protocol FXWrappedDataID {
+public protocol FXWrappedDataID: Sendable {
     var dataID: LLBDataID { get }
 }
 

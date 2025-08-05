@@ -12,7 +12,7 @@ import TSCBasic
 import TSCUtility
 
 public protocol FXTreeMaterializer {
-    func materialize(tree: FXTreeID) -> AbsolutePath?
+    func materialize(tree: FXTreeID) async throws -> AbsolutePath?
 }
 
 private class ContextTreeMaterializer {}
@@ -64,18 +64,33 @@ extension FXFileID {
             }
         }
     }
+
+    public func materialize<R>(filename: String, _ ctx: Context, _ body: @escaping (AbsolutePath) async throws -> R) async throws -> R {
+        return try await materialize(filename: filename, ctx, { path in
+            return ctx.group.any().makeFutureWithTask({
+                try await body(path)
+            })
+        }).get()
+    }
 }
 
 extension FXTreeID {
     public func materialize<R>(_ ctx: Context, _ body: @escaping (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
-        if let path = ctx.fxTreeMaterializer?.materialize(tree: self) {
-            return body(path)
+        return ctx.group.any().makeFutureWithTask {
+            try await self.materialize(ctx) { path in
+                try await body(path).get()
+            }
+        }
+    }
+
+    public func materialize<R>(_ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
+        if let path = try await ctx.fxTreeMaterializer?.materialize(tree: self) {
+            return try await body(path)
         }
 
-        return withTemporaryDirectory(ctx) { tmp in
-            LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).flatMap {
-                body(tmp)
-            }
+        return try await withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
+            try await LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
+            return try await body(tmp)
         }
     }
 }
