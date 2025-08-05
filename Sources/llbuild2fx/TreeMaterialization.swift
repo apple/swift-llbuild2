@@ -83,15 +83,14 @@ extension FXTreeID {
         }
     }
 
-    public func materialize<R>(_ ctx: Context, _ body: @escaping (AbsolutePath) async throws -> R) async throws -> R {
+    public func materialize<R>(_ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
         if let path = try await ctx.fxTreeMaterializer?.materialize(tree: self) {
             return try await body(path)
         }
 
-        return try await withTemporaryDirectory(ctx) { (tmp: AbsolutePath) -> LLBFuture<R> in
-            return LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).flatMap {
-                ctx.group.any().makeFutureWithTask { try await body(tmp) }
-            }
-        }.get()
+        return try await withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
+            try await LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
+            return try await body(tmp)
+        }
     }
 }
