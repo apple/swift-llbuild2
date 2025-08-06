@@ -6,18 +6,15 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
-
-import NIO
-import GRPC
-import SwiftProtobuf
 import BazelRemoteAPI
-import TSCBasic
-import TSFCAS
-import TSCUtility
-
+import Foundation
+import GRPC
 import LLBBazelBackend
-
+import NIO
+import SwiftProtobuf
+import TSCBasic
+import TSCUtility
+import TSFCAS
 
 /// Frontend to the remote execution tool.
 public final class LLBCASTool {
@@ -117,4 +114,3 @@ public final class LLBCASTool {
         return bazelDB.serverCapabilities()
     }
 }
-

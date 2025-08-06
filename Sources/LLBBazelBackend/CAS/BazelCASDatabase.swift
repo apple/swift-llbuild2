@@ -6,15 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
-
 import BazelRemoteAPI
+import Foundation
 import GRPC
 import NIOCore
 import SwiftProtobuf
 import TSCBasic
-import TSFCAS
 import TSCUtility
+import TSFCAS
 
 public typealias URL = Foundation.URL
 
@@ -147,7 +146,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
             let digest = try id.asBazelDigest()
             let resource = "\(resourcePrefix)blobs/\(digest.hash)/\(digest.sizeBytes)"
 
-            let request =  Google_Bytestream_ReadRequest.with {
+            let request = Google_Bytestream_ReadRequest.with {
                 $0.resourceName = resource
                 $0.readOffset = 0
             }
@@ -192,7 +191,7 @@ extension LLBBazelCASDatabase: LLBCASDatabase {
             let digest = Digest(with: objData)
             let resource = "\(resourcePrefix)uploads/\(bytestreamUUID)/blobs/\(digest.hash)/\(digest.sizeBytes)"
 
-            let request =  Google_Bytestream_WriteRequest.with {
+            let request = Google_Bytestream_WriteRequest.with {
                 $0.resourceName = resource
                 $0.writeOffset = 0
                 $0.finishWrite = true

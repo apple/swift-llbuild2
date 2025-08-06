@@ -15,7 +15,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
     private let requestedKeyCachePaths = NIOLockedValueBox(FXSortedSet<String>())
     private let lock = NIOLock()
     var requestedCacheKeyPathsSnapshot: FXSortedSet<String> {
-        return requestedKeyCachePaths.withLockedValue() { return $0 }
+        return requestedKeyCachePaths.withLockedValue { return $0 }
     }
 
     init(_ key: K, _ fi: FunctionInterface) {

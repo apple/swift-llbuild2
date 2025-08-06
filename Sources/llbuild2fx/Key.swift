@@ -7,11 +7,11 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Foundation
+import Logging
 import NIOConcurrencyHelpers
 import NIOCore
 import TSCUtility
 import Tracing
-import Logging
 
 public protocol FXKey: Encodable, FXVersioning {
     associatedtype ValueType: FXValue
@@ -47,7 +47,7 @@ extension FXKey {
 }
 
 
-internal extension FXKey {
+extension FXKey {
     func internalKey(_ engine: FXEngine, _ ctx: Context) -> InternalKey<Self> {
         InternalKey(self, engine, ctx)
     }
@@ -176,13 +176,13 @@ extension InternalKey: CustomDebugStringConvertible {
     }
 }
 
-private enum ParentUUIDKey { }
-private enum SelfUUIDKey { }
-private enum TraceIDKey { }
+private enum ParentUUIDKey {}
+private enum SelfUUIDKey {}
+private enum TraceIDKey {}
 
 /// Support storing and retrieving a tracer instance from a Context.
-public extension Context {
-    var parentUUID: String? {
+extension Context {
+    public var parentUUID: String? {
         get {
             guard let parentUUID = self[ObjectIdentifier(ParentUUIDKey.self), as: String.self] else {
                 return nil
@@ -194,7 +194,7 @@ public extension Context {
         }
     }
 
-    var selfUUID: String? {
+    public var selfUUID: String? {
         get {
             guard let selfUUID = self[ObjectIdentifier(SelfUUIDKey.self), as: String.self] else {
                 return nil
@@ -206,7 +206,7 @@ public extension Context {
         }
     }
 
-    var traceID: String? {
+    public var traceID: String? {
         get {
             guard let traceID = self[ObjectIdentifier(TraceIDKey.self), as: String.self] else {
                 return nil
@@ -351,7 +351,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         let actualKey = key.key
 
         let fxfi = FXFunctionInterface(actualKey, fi)
-        return actualKey.fixCached(value: value.value, fxfi, ctx).map { maybeFixed in maybeFixed.map { InternalValue($0, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot) }}
+        return actualKey.fixCached(value: value.value, fxfi, ctx).map { maybeFixed in maybeFixed.map { InternalValue($0, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot) } }
     }
 }
 
@@ -377,4 +377,3 @@ extension AsyncFXKey {
         return nil
     }
 }
-

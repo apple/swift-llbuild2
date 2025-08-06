@@ -6,12 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import XCTest
-
 import NIOCore
 import TSCBasic
 import TSFCAS
 import TSFFutures
+import XCTest
+
 @testable import llbuild2fx
 
 class StatefulResource<T>: FXResource {
@@ -28,7 +28,6 @@ class StatefulResource<T>: FXResource {
         self.version = version
     }
 }
-
 
 
 final class ResourcesTests: XCTestCase {

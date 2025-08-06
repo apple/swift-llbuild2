@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import llbuild2
 import LLBBuildSystem
+import llbuild2
 
 /// GenerationKey represents the request for a board at a particular generation
 /// for a given board size and initial state.
@@ -68,4 +68,3 @@ class GenerationFunction: LLBBuildFunction<GenerationKey, GenerationValue> {
         }
     }
 }
-

@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
 import ArgumentParser
+import Foundation
 import GRPC
 import TSCBasic
 
@@ -26,7 +26,8 @@ extension AbsolutePath: ExpressibleByArgument {
         if let path = try? AbsolutePath(validating: argument) {
             self = path
         } else if let cwd = localFileSystem.currentWorkingDirectory,
-                  let path = try? AbsolutePath(validating: argument, relativeTo: cwd) {
+            let path = try? AbsolutePath(validating: argument, relativeTo: cwd)
+        {
             self = path
         } else {
             return nil

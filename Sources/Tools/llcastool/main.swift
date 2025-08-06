@@ -7,9 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import ArgumentParser
-
 import LLBBazelBackend
-
 
 struct llcastoolCommand: ParsableCommand {
     static var configuration = CommandConfiguration(

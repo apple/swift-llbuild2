@@ -40,8 +40,8 @@ public protocol LogFileHandleGenerator {
 }
 
 // Support storing and retrieving logger, metrics, and file handle generator instances from a Context.
-public extension Context {
-    var logger: Logger? {
+extension Context {
+    public var logger: Logger? {
         get {
             return self[ObjectIdentifier(Logger.self), as: Logger.self]
         }
@@ -50,7 +50,7 @@ public extension Context {
         }
     }
 
-    var metrics: FXMetricsSink? {
+    public var metrics: FXMetricsSink? {
         get {
             return self[ObjectIdentifier(FXMetricsSink.self), as: FXMetricsSink.self]
         }
@@ -58,8 +58,8 @@ public extension Context {
             self[ObjectIdentifier(FXMetricsSink.self)] = newValue
         }
     }
-    
-    var logFileHandleGenerator: LogFileHandleGenerator? {
+
+    public var logFileHandleGenerator: LogFileHandleGenerator? {
         get {
             return self[ObjectIdentifier(LogFileHandleGenerator.self), as: LogFileHandleGenerator.self]
         }

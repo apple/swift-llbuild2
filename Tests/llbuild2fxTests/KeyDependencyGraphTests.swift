@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import XCTest
-
 import llbuild2fx
 
 extension Int: @retroactive FXRequestKey {
@@ -31,7 +30,7 @@ final class KeyDependencyGraphTests: XCTestCase {
         XCTAssertNoThrow(try keyDependencyGraph.addEdge(from: 3, to: 4))
 
         XCTAssertThrowsError(try keyDependencyGraph.addEdge(from: 4, to: 1)) { error in
-            guard case let FXError.cycleDetected(cycle) = error else {
+            guard case FXError.cycleDetected(let cycle) = error else {
                 XCTFail("Unexpected error type")
                 return
             }
@@ -40,4 +39,3 @@ final class KeyDependencyGraphTests: XCTestCase {
         }
     }
 }
-

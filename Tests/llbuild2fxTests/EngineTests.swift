@@ -6,13 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import XCTest
-
 import NIOCore
 import TSFCAS
 import TSFFutures
-@testable import llbuild2fx
+import XCTest
 
+@testable import llbuild2fx
 
 public struct SumInput: Codable {
     public let values: [Int]
@@ -43,7 +42,6 @@ extension SumAction: FXAction {
         self.init(codableValue)
     }
 }
-
 
 
 public struct SumAction {

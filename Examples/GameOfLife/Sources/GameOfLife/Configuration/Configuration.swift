@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import LLBBuildSystem
 import Foundation
+import LLBBuildSystem
 import llbuild2
 
 /// A simple structure containing the initial state for the board at generation 0.

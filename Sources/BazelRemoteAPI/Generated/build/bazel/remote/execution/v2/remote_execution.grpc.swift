@@ -25,7 +25,6 @@ import NIO
 import NIOConcurrencyHelpers
 import SwiftProtobuf
 
-
 /// The Remote Execution API is used to execute an
 /// [Action][build.bazel.remote.execution.v2.Action] on the remote
 /// workers.
@@ -37,352 +36,352 @@ import SwiftProtobuf
 ///
 /// Usage: instantiate `Build_Bazel_Remote_Execution_V2_ExecutionClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol: GRPCClient {
-  var serviceName: String { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? { get }
+    var serviceName: String { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? { get }
 
-  func execute(
-    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
-    callOptions: CallOptions?,
-    handler: @escaping (Google_Longrunning_Operation) -> Void
-  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>
+    func execute(
+        _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+        callOptions: CallOptions?,
+        handler: @escaping (Google_Longrunning_Operation) -> Void
+    ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>
 
-  func waitExecution(
-    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
-    callOptions: CallOptions?,
-    handler: @escaping (Google_Longrunning_Operation) -> Void
-  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>
+    func waitExecution(
+        _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+        callOptions: CallOptions?,
+        handler: @escaping (Google_Longrunning_Operation) -> Void
+    ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>
 }
 
 extension Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
-  public var serviceName: String {
-    return "build.bazel.remote.execution.v2.Execution"
-  }
+    public var serviceName: String {
+        return "build.bazel.remote.execution.v2.Execution"
+    }
 
-  /// Execute an action remotely.
-  ///
-  /// In order to execute an action, the client must first upload all of the
-  /// inputs, the
-  /// [Command][build.bazel.remote.execution.v2.Command] to run, and the
-  /// [Action][build.bazel.remote.execution.v2.Action] into the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-  /// It then calls `Execute` with an `action_digest` referring to them. The
-  /// server will run the action and eventually return the result.
-  ///
-  /// The input `Action`'s fields MUST meet the various canonicalization
-  /// requirements specified in the documentation for their types so that it has
-  /// the same digest as other logically equivalent `Action`s. The server MAY
-  /// enforce the requirements and return errors if a non-canonical input is
-  /// received. It MAY also proceed without verifying some or all of the
-  /// requirements, such as for performance reasons. If the server does not
-  /// verify the requirement, then it will treat the `Action` as distinct from
-  /// another logically equivalent action if they hash differently.
-  ///
-  /// Returns a stream of
-  /// [google.longrunning.Operation][google.longrunning.Operation] messages
-  /// describing the resulting execution, with eventual `response`
-  /// [ExecuteResponse][build.bazel.remote.execution.v2.ExecuteResponse]. The
-  /// `metadata` on the operation is of type
-  /// [ExecuteOperationMetadata][build.bazel.remote.execution.v2.ExecuteOperationMetadata].
-  ///
-  /// If the client remains connected after the first response is returned after
-  /// the server, then updates are streamed as if the client had called
-  /// [WaitExecution][build.bazel.remote.execution.v2.Execution.WaitExecution]
-  /// until the execution completes or the request reaches an error. The
-  /// operation can also be queried using [Operations
-  /// API][google.longrunning.Operations.GetOperation].
-  ///
-  /// The server NEED NOT implement other methods or functionality of the
-  /// Operations API.
-  ///
-  /// Errors discovered during creation of the `Operation` will be reported
-  /// as gRPC Status errors, while errors that occurred while running the
-  /// action will be reported in the `status` field of the `ExecuteResponse`. The
-  /// server MUST NOT set the `error` field of the `Operation` proto.
-  /// The possible errors include:
-  ///
-  /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
-  /// * `FAILED_PRECONDITION`: One or more errors occurred in setting up the
-  ///   action requested, such as a missing input or command or no worker being
-  ///   available. The client may be able to fix the errors and retry.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to run
-  ///   the action.
-  /// * `UNAVAILABLE`: Due to a transient condition, such as all workers being
-  ///   occupied (and the server does not support a queue), the action could not
-  ///   be started. The client should retry.
-  /// * `INTERNAL`: An internal error occurred in the execution engine or the
-  ///   worker.
-  /// * `DEADLINE_EXCEEDED`: The execution timed out.
-  /// * `CANCELLED`: The operation was cancelled by the client. This status is
-  ///   only possible if the server implements the Operations API CancelOperation
-  ///   method, and it was called for the current execution.
-  ///
-  /// In the case of a missing input or command, the server SHOULD additionally
-  /// send a [PreconditionFailure][google.rpc.PreconditionFailure] error detail
-  /// where, for each requested blob not present in the CAS, there is a
-  /// `Violation` with a `type` of `MISSING` and a `subject` of
-  /// `"blobs/{digest_function/}{hash}/{size}"` indicating the digest of the
-  /// missing blob. The `subject` is formatted the same way as the
-  /// `resource_name` provided to
-  /// [ByteStream.Read][google.bytestream.ByteStream.Read], with the leading
-  /// instance name omitted. `digest_function` MUST thus be omitted if its value
-  /// is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512, or VSO.
-  ///
-  /// The server does not need to guarantee that a call to this method leads to
-  /// at most one execution of the action. The server MAY execute the action
-  /// multiple times, potentially in parallel. These redundant executions MAY
-  /// continue to run, even if the operation is completed.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to Execute.
-  ///   - callOptions: Call options.
-  ///   - handler: A closure called when each response is received from the server.
-  /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func execute(
-    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
-    callOptions: CallOptions? = nil,
-    handler: @escaping (Google_Longrunning_Operation) -> Void
-  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation> {
-    return self.makeServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
-      handler: handler
-    )
-  }
+    /// Execute an action remotely.
+    ///
+    /// In order to execute an action, the client must first upload all of the
+    /// inputs, the
+    /// [Command][build.bazel.remote.execution.v2.Command] to run, and the
+    /// [Action][build.bazel.remote.execution.v2.Action] into the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+    /// It then calls `Execute` with an `action_digest` referring to them. The
+    /// server will run the action and eventually return the result.
+    ///
+    /// The input `Action`'s fields MUST meet the various canonicalization
+    /// requirements specified in the documentation for their types so that it has
+    /// the same digest as other logically equivalent `Action`s. The server MAY
+    /// enforce the requirements and return errors if a non-canonical input is
+    /// received. It MAY also proceed without verifying some or all of the
+    /// requirements, such as for performance reasons. If the server does not
+    /// verify the requirement, then it will treat the `Action` as distinct from
+    /// another logically equivalent action if they hash differently.
+    ///
+    /// Returns a stream of
+    /// [google.longrunning.Operation][google.longrunning.Operation] messages
+    /// describing the resulting execution, with eventual `response`
+    /// [ExecuteResponse][build.bazel.remote.execution.v2.ExecuteResponse]. The
+    /// `metadata` on the operation is of type
+    /// [ExecuteOperationMetadata][build.bazel.remote.execution.v2.ExecuteOperationMetadata].
+    ///
+    /// If the client remains connected after the first response is returned after
+    /// the server, then updates are streamed as if the client had called
+    /// [WaitExecution][build.bazel.remote.execution.v2.Execution.WaitExecution]
+    /// until the execution completes or the request reaches an error. The
+    /// operation can also be queried using [Operations
+    /// API][google.longrunning.Operations.GetOperation].
+    ///
+    /// The server NEED NOT implement other methods or functionality of the
+    /// Operations API.
+    ///
+    /// Errors discovered during creation of the `Operation` will be reported
+    /// as gRPC Status errors, while errors that occurred while running the
+    /// action will be reported in the `status` field of the `ExecuteResponse`. The
+    /// server MUST NOT set the `error` field of the `Operation` proto.
+    /// The possible errors include:
+    ///
+    /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
+    /// * `FAILED_PRECONDITION`: One or more errors occurred in setting up the
+    ///   action requested, such as a missing input or command or no worker being
+    ///   available. The client may be able to fix the errors and retry.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to run
+    ///   the action.
+    /// * `UNAVAILABLE`: Due to a transient condition, such as all workers being
+    ///   occupied (and the server does not support a queue), the action could not
+    ///   be started. The client should retry.
+    /// * `INTERNAL`: An internal error occurred in the execution engine or the
+    ///   worker.
+    /// * `DEADLINE_EXCEEDED`: The execution timed out.
+    /// * `CANCELLED`: The operation was cancelled by the client. This status is
+    ///   only possible if the server implements the Operations API CancelOperation
+    ///   method, and it was called for the current execution.
+    ///
+    /// In the case of a missing input or command, the server SHOULD additionally
+    /// send a [PreconditionFailure][google.rpc.PreconditionFailure] error detail
+    /// where, for each requested blob not present in the CAS, there is a
+    /// `Violation` with a `type` of `MISSING` and a `subject` of
+    /// `"blobs/{digest_function/}{hash}/{size}"` indicating the digest of the
+    /// missing blob. The `subject` is formatted the same way as the
+    /// `resource_name` provided to
+    /// [ByteStream.Read][google.bytestream.ByteStream.Read], with the leading
+    /// instance name omitted. `digest_function` MUST thus be omitted if its value
+    /// is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512, or VSO.
+    ///
+    /// The server does not need to guarantee that a call to this method leads to
+    /// at most one execution of the action. The server MAY execute the action
+    /// multiple times, potentially in parallel. These redundant executions MAY
+    /// continue to run, even if the operation is completed.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to Execute.
+    ///   - callOptions: Call options.
+    ///   - handler: A closure called when each response is received from the server.
+    /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
+    public func execute(
+        _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+        callOptions: CallOptions? = nil,
+        handler: @escaping (Google_Longrunning_Operation) -> Void
+    ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation> {
+        return self.makeServerStreamingCall(
+            path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
+            handler: handler
+        )
+    }
 
-  /// Wait for an execution operation to complete. When the client initially
-  /// makes the request, the server immediately responds with the current status
-  /// of the execution. The server will leave the request stream open until the
-  /// operation completes, and then respond with the completed operation. The
-  /// server MAY choose to stream additional updates as execution progresses,
-  /// such as to provide an update as to the state of the execution.
-  ///
-  /// In addition to the cases describe for Execute, the WaitExecution method
-  /// may fail as follows:
-  ///
-  /// * `NOT_FOUND`: The operation no longer exists due to any of a transient
-  ///   condition, an unknown operation name, or if the server implements the
-  ///   Operations API DeleteOperation method and it was called for the current
-  ///   execution. The client should call `Execute` to retry.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to WaitExecution.
-  ///   - callOptions: Call options.
-  ///   - handler: A closure called when each response is received from the server.
-  /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func waitExecution(
-    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
-    callOptions: CallOptions? = nil,
-    handler: @escaping (Google_Longrunning_Operation) -> Void
-  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation> {
-    return self.makeServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
-      handler: handler
-    )
-  }
+    /// Wait for an execution operation to complete. When the client initially
+    /// makes the request, the server immediately responds with the current status
+    /// of the execution. The server will leave the request stream open until the
+    /// operation completes, and then respond with the completed operation. The
+    /// server MAY choose to stream additional updates as execution progresses,
+    /// such as to provide an update as to the state of the execution.
+    ///
+    /// In addition to the cases describe for Execute, the WaitExecution method
+    /// may fail as follows:
+    ///
+    /// * `NOT_FOUND`: The operation no longer exists due to any of a transient
+    ///   condition, an unknown operation name, or if the server implements the
+    ///   Operations API DeleteOperation method and it was called for the current
+    ///   execution. The client should call `Execute` to retry.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to WaitExecution.
+    ///   - callOptions: Call options.
+    ///   - handler: A closure called when each response is received from the server.
+    /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
+    public func waitExecution(
+        _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+        callOptions: CallOptions? = nil,
+        handler: @escaping (Google_Longrunning_Operation) -> Void
+    ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation> {
+        return self.makeServerStreamingCall(
+            path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
+            handler: handler
+        )
+    }
 }
 
 #if compiler(>=5.6)
-@available(*, deprecated)
-extension Build_Bazel_Remote_Execution_V2_ExecutionClient: @unchecked Sendable {}
-#endif // compiler(>=5.6)
+    @available(*, deprecated)
+    extension Build_Bazel_Remote_Execution_V2_ExecutionClient: @unchecked Sendable {}
+#endif  // compiler(>=5.6)
 
 @available(*, deprecated, renamed: "Build_Bazel_Remote_Execution_V2_ExecutionNIOClient")
 public final class Build_Bazel_Remote_Execution_V2_ExecutionClient: Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
-  private let lock = Lock()
-  private var _defaultCallOptions: CallOptions
-  private var _interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions {
-    get { self.lock.withLock { return self._defaultCallOptions } }
-    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
-  }
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? {
-    get { self.lock.withLock { return self._interceptors } }
-    set { self.lock.withLockVoid { self._interceptors = newValue } }
-  }
+    private let lock = Lock()
+    private var _defaultCallOptions: CallOptions
+    private var _interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
+    public let channel: GRPCChannel
+    public var defaultCallOptions: CallOptions {
+        get { self.lock.withLock { return self._defaultCallOptions } }
+        set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+    }
+    public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? {
+        get { self.lock.withLock { return self._interceptors } }
+        set { self.lock.withLockVoid { self._interceptors = newValue } }
+    }
 
-  /// Creates a client for the build.bazel.remote.execution.v2.Execution service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self._defaultCallOptions = defaultCallOptions
-    self._interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.Execution service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self._defaultCallOptions = defaultCallOptions
+        self._interceptors = interceptors
+    }
 }
 
 public struct Build_Bazel_Remote_Execution_V2_ExecutionNIOClient: Build_Bazel_Remote_Execution_V2_ExecutionClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
+    public var channel: GRPCChannel
+    public var defaultCallOptions: CallOptions
+    public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.Execution service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.Execution service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self.defaultCallOptions = defaultCallOptions
+        self.interceptors = interceptors
+    }
 }
 
 #if compiler(>=5.6)
-/// The Remote Execution API is used to execute an
-/// [Action][build.bazel.remote.execution.v2.Action] on the remote
-/// workers.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol: GRPCClient {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? { get }
+    /// The Remote Execution API is used to execute an
+    /// [Action][build.bazel.remote.execution.v2.Action] on the remote
+    /// workers.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol: GRPCClient {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? { get }
 
-  func makeExecuteCall(
-    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>
+        func makeExecuteCall(
+            _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>
 
-  func makeWaitExecutionCall(
-    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>
-}
+        func makeWaitExecutionCall(
+            _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.serviceDescriptor
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.serviceDescriptor
+        }
 
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? {
-    return nil
-  }
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? {
+            return nil
+        }
 
-  public func makeExecuteCall(
-    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation> {
-    return self.makeAsyncServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeExecuteInterceptors() ?? []
-    )
-  }
+        public func makeExecuteCall(
+            _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation> {
+            return self.makeAsyncServerStreamingCall(
+                path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeExecuteInterceptors() ?? []
+            )
+        }
 
-  public func makeWaitExecutionCall(
-    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation> {
-    return self.makeAsyncServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? []
-    )
-  }
-}
+        public func makeWaitExecutionCall(
+            _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation> {
+            return self.makeAsyncServerStreamingCall(
+                path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol {
-  public func execute(
-    _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncResponseStream<Google_Longrunning_Operation> {
-    return self.performAsyncServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeExecuteInterceptors() ?? []
-    )
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol {
+        public func execute(
+            _ request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncResponseStream<Google_Longrunning_Operation> {
+            return self.performAsyncServerStreamingCall(
+                path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeExecuteInterceptors() ?? []
+            )
+        }
 
-  public func waitExecution(
-    _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncResponseStream<Google_Longrunning_Operation> {
-    return self.performAsyncServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? []
-    )
-  }
-}
+        public func waitExecution(
+            _ request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncResponseStream<Google_Longrunning_Operation> {
+            return self.performAsyncServerStreamingCall(
+                path: Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public struct Build_Bazel_Remote_Execution_V2_ExecutionAsyncClient: Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public struct Build_Bazel_Remote_Execution_V2_ExecutionAsyncClient: Build_Bazel_Remote_Execution_V2_ExecutionAsyncClientProtocol {
+        public var channel: GRPCChannel
+        public var defaultCallOptions: CallOptions
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol?
 
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
-}
+        public init(
+            channel: GRPCChannel,
+            defaultCallOptions: CallOptions = CallOptions(),
+            interceptors: Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol? = nil
+        ) {
+            self.channel = channel
+            self.defaultCallOptions = defaultCallOptions
+            self.interceptors = interceptors
+        }
+    }
 
-#endif // compiler(>=5.6)
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_ExecutionClientInterceptorFactoryProtocol: GRPCSendable {
 
-  /// - Returns: Interceptors to use when invoking 'execute'.
-  func makeExecuteInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>]
+    /// - Returns: Interceptors to use when invoking 'execute'.
+    func makeExecuteInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>]
 
-  /// - Returns: Interceptors to use when invoking 'waitExecution'.
-  func makeWaitExecutionInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>]
+    /// - Returns: Interceptors to use when invoking 'waitExecution'.
+    func makeWaitExecutionInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Execution",
-    fullName: "build.bazel.remote.execution.v2.Execution",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute,
-      Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution,
-    ]
-  )
-
-  public enum Methods {
-    public static let execute = GRPCMethodDescriptor(
-      name: "Execute",
-      path: "/build.bazel.remote.execution.v2.Execution/Execute",
-      type: GRPCCallType.serverStreaming
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Execution",
+        fullName: "build.bazel.remote.execution.v2.Execution",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.execute,
+            Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata.Methods.waitExecution,
+        ]
     )
 
-    public static let waitExecution = GRPCMethodDescriptor(
-      name: "WaitExecution",
-      path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
-      type: GRPCCallType.serverStreaming
-    )
-  }
+    public enum Methods {
+        public static let execute = GRPCMethodDescriptor(
+            name: "Execute",
+            path: "/build.bazel.remote.execution.v2.Execution/Execute",
+            type: GRPCCallType.serverStreaming
+        )
+
+        public static let waitExecution = GRPCMethodDescriptor(
+            name: "WaitExecution",
+            path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
+            type: GRPCCallType.serverStreaming
+        )
+    }
 }
 
 /// The action cache API is used to query whether a given action has already been
@@ -404,296 +403,296 @@ public enum Build_Bazel_Remote_Execution_V2_ExecutionClientMetadata {
 ///
 /// Usage: instantiate `Build_Bazel_Remote_Execution_V2_ActionCacheClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol: GRPCClient {
-  var serviceName: String { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? { get }
+    var serviceName: String { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? { get }
 
-  func getActionResult(
-    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+    func getActionResult(
+        _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
 
-  func updateActionResult(
-    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+    func updateActionResult(
+        _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
 }
 
 extension Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
-  public var serviceName: String {
-    return "build.bazel.remote.execution.v2.ActionCache"
-  }
+    public var serviceName: String {
+        return "build.bazel.remote.execution.v2.ActionCache"
+    }
 
-  /// Retrieve a cached execution result.
-  ///
-  /// Implementations SHOULD ensure that any blobs referenced from the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
-  /// are available at the time of returning the
-  /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
-  /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
-  /// if necessary and applicable.
-  ///
-  /// Errors:
-  ///
-  /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to GetActionResult.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func getActionResult(
-    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
-    )
-  }
+    /// Retrieve a cached execution result.
+    ///
+    /// Implementations SHOULD ensure that any blobs referenced from the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
+    /// are available at the time of returning the
+    /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
+    /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
+    /// if necessary and applicable.
+    ///
+    /// Errors:
+    ///
+    /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to GetActionResult.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func getActionResult(
+        _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
+        )
+    }
 
-  /// Upload a new execution result.
-  ///
-  /// In order to allow the server to perform access control based on the type of
-  /// action, and to assist with client debugging, the client MUST first upload
-  /// the [Action][build.bazel.remote.execution.v2.Action] that produced the
-  /// result, along with its
-  /// [Command][build.bazel.remote.execution.v2.Command], into the
-  /// `ContentAddressableStorage`.
-  ///
-  /// Server implementations MAY modify the
-  /// `UpdateActionResultRequest.action_result` and return an equivalent value.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
-  /// * `FAILED_PRECONDITION`: One or more errors occurred in updating the
-  ///   action result, such as a missing command or action.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient storage space to add the
-  ///   entry to the cache.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to UpdateActionResult.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func updateActionResult(
-    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
-    )
-  }
+    /// Upload a new execution result.
+    ///
+    /// In order to allow the server to perform access control based on the type of
+    /// action, and to assist with client debugging, the client MUST first upload
+    /// the [Action][build.bazel.remote.execution.v2.Action] that produced the
+    /// result, along with its
+    /// [Command][build.bazel.remote.execution.v2.Command], into the
+    /// `ContentAddressableStorage`.
+    ///
+    /// Server implementations MAY modify the
+    /// `UpdateActionResultRequest.action_result` and return an equivalent value.
+    ///
+    /// Errors:
+    ///
+    /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
+    /// * `FAILED_PRECONDITION`: One or more errors occurred in updating the
+    ///   action result, such as a missing command or action.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient storage space to add the
+    ///   entry to the cache.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to UpdateActionResult.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func updateActionResult(
+        _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
+        )
+    }
 }
 
 #if compiler(>=5.6)
-@available(*, deprecated)
-extension Build_Bazel_Remote_Execution_V2_ActionCacheClient: @unchecked Sendable {}
-#endif // compiler(>=5.6)
+    @available(*, deprecated)
+    extension Build_Bazel_Remote_Execution_V2_ActionCacheClient: @unchecked Sendable {}
+#endif  // compiler(>=5.6)
 
 @available(*, deprecated, renamed: "Build_Bazel_Remote_Execution_V2_ActionCacheNIOClient")
 public final class Build_Bazel_Remote_Execution_V2_ActionCacheClient: Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
-  private let lock = Lock()
-  private var _defaultCallOptions: CallOptions
-  private var _interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions {
-    get { self.lock.withLock { return self._defaultCallOptions } }
-    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
-  }
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? {
-    get { self.lock.withLock { return self._interceptors } }
-    set { self.lock.withLockVoid { self._interceptors = newValue } }
-  }
+    private let lock = Lock()
+    private var _defaultCallOptions: CallOptions
+    private var _interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
+    public let channel: GRPCChannel
+    public var defaultCallOptions: CallOptions {
+        get { self.lock.withLock { return self._defaultCallOptions } }
+        set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+    }
+    public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? {
+        get { self.lock.withLock { return self._interceptors } }
+        set { self.lock.withLockVoid { self._interceptors = newValue } }
+    }
 
-  /// Creates a client for the build.bazel.remote.execution.v2.ActionCache service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self._defaultCallOptions = defaultCallOptions
-    self._interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.ActionCache service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self._defaultCallOptions = defaultCallOptions
+        self._interceptors = interceptors
+    }
 }
 
 public struct Build_Bazel_Remote_Execution_V2_ActionCacheNIOClient: Build_Bazel_Remote_Execution_V2_ActionCacheClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
+    public var channel: GRPCChannel
+    public var defaultCallOptions: CallOptions
+    public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.ActionCache service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.ActionCache service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self.defaultCallOptions = defaultCallOptions
+        self.interceptors = interceptors
+    }
 }
 
 #if compiler(>=5.6)
-/// The action cache API is used to query whether a given action has already been
-/// performed and, if so, retrieve its result. Unlike the
-/// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage],
-/// which addresses blobs by their own content, the action cache addresses the
-/// [ActionResult][build.bazel.remote.execution.v2.ActionResult] by a
-/// digest of the encoded [Action][build.bazel.remote.execution.v2.Action]
-/// which produced them.
-///
-/// The lifetime of entries in the action cache is implementation-specific, but
-/// the server SHOULD assume that more recently used entries are more likely to
-/// be used again.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol: GRPCClient {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? { get }
+    /// The action cache API is used to query whether a given action has already been
+    /// performed and, if so, retrieve its result. Unlike the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage],
+    /// which addresses blobs by their own content, the action cache addresses the
+    /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] by a
+    /// digest of the encoded [Action][build.bazel.remote.execution.v2.Action]
+    /// which produced them.
+    ///
+    /// The lifetime of entries in the action cache is implementation-specific, but
+    /// the server SHOULD assume that more recently used entries are more likely to
+    /// be used again.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol: GRPCClient {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? { get }
 
-  func makeGetActionResultCall(
-    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+        func makeGetActionResultCall(
+            _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
 
-  func makeUpdateActionResultCall(
-    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
-}
+        func makeUpdateActionResultCall(
+            _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.serviceDescriptor
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.serviceDescriptor
+        }
 
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? {
-    return nil
-  }
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? {
+            return nil
+        }
 
-  public func makeGetActionResultCall(
-    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
-    )
-  }
+        public func makeGetActionResultCall(
+            _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
+            )
+        }
 
-  public func makeUpdateActionResultCall(
-    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
-    )
-  }
-}
+        public func makeUpdateActionResultCall(
+            _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol {
-  public func getActionResult(
-    _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
-    )
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol {
+        public func getActionResult(
+            _ request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? []
+            )
+        }
 
-  public func updateActionResult(
-    _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
-    )
-  }
-}
+        public func updateActionResult(
+            _ request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public struct Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClient: Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public struct Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClient: Build_Bazel_Remote_Execution_V2_ActionCacheAsyncClientProtocol {
+        public var channel: GRPCChannel
+        public var defaultCallOptions: CallOptions
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol?
 
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
-}
+        public init(
+            channel: GRPCChannel,
+            defaultCallOptions: CallOptions = CallOptions(),
+            interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol? = nil
+        ) {
+            self.channel = channel
+            self.defaultCallOptions = defaultCallOptions
+            self.interceptors = interceptors
+        }
+    }
 
-#endif // compiler(>=5.6)
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_ActionCacheClientInterceptorFactoryProtocol: GRPCSendable {
 
-  /// - Returns: Interceptors to use when invoking 'getActionResult'.
-  func makeGetActionResultInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+    /// - Returns: Interceptors to use when invoking 'getActionResult'.
+    func makeGetActionResultInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
 
-  /// - Returns: Interceptors to use when invoking 'updateActionResult'.
-  func makeUpdateActionResultInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+    /// - Returns: Interceptors to use when invoking 'updateActionResult'.
+    func makeUpdateActionResultInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "ActionCache",
-    fullName: "build.bazel.remote.execution.v2.ActionCache",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult,
-      Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult,
-    ]
-  )
-
-  public enum Methods {
-    public static let getActionResult = GRPCMethodDescriptor(
-      name: "GetActionResult",
-      path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "ActionCache",
+        fullName: "build.bazel.remote.execution.v2.ActionCache",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.getActionResult,
+            Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata.Methods.updateActionResult,
+        ]
     )
 
-    public static let updateActionResult = GRPCMethodDescriptor(
-      name: "UpdateActionResult",
-      path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
-      type: GRPCCallType.unary
-    )
-  }
+    public enum Methods {
+        public static let getActionResult = GRPCMethodDescriptor(
+            name: "GetActionResult",
+            path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
+            type: GRPCCallType.unary
+        )
+
+        public static let updateActionResult = GRPCMethodDescriptor(
+            name: "UpdateActionResult",
+            path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
+            type: GRPCCallType.unary
+        )
+    }
 }
 
 /// The CAS (content-addressable storage) is used to store the inputs to and
@@ -851,603 +850,603 @@ public enum Build_Bazel_Remote_Execution_V2_ActionCacheClientMetadata {
 ///
 /// Usage: instantiate `Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol: GRPCClient {
-  var serviceName: String { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? { get }
+    var serviceName: String { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? { get }
 
-  func findMissingBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
+    func findMissingBlobs(
+        _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
 
-  func batchUpdateBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
+    func batchUpdateBlobs(
+        _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
 
-  func batchReadBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
+    func batchReadBlobs(
+        _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
 
-  func getTree(
-    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
-    callOptions: CallOptions?,
-    handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void
-  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>
+    func getTree(
+        _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+        callOptions: CallOptions?,
+        handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void
+    ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>
 }
 
 extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
-  public var serviceName: String {
-    return "build.bazel.remote.execution.v2.ContentAddressableStorage"
-  }
+    public var serviceName: String {
+        return "build.bazel.remote.execution.v2.ContentAddressableStorage"
+    }
 
-  /// Determine if blobs are present in the CAS.
-  ///
-  /// Clients can use this API before uploading blobs to determine which ones are
-  /// already present in the CAS and do not need to be uploaded again.
-  ///
-  /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
-  /// applicable.
-  ///
-  /// There are no method-specific errors.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to FindMissingBlobs.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func findMissingBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
-    )
-  }
+    /// Determine if blobs are present in the CAS.
+    ///
+    /// Clients can use this API before uploading blobs to determine which ones are
+    /// already present in the CAS and do not need to be uploaded again.
+    ///
+    /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
+    /// applicable.
+    ///
+    /// There are no method-specific errors.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to FindMissingBlobs.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func findMissingBlobs(
+        _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
+        )
+    }
 
-  /// Upload many blobs at once.
-  ///
-  /// The server may enforce a limit of the combined total size of blobs
-  /// to be uploaded using this API. This limit may be obtained using the
-  /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
-  /// Requests exceeding the limit should either be split into smaller
-  /// chunks or uploaded using the
-  /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
-  ///
-  /// This request is equivalent to calling a Bytestream `Write` request
-  /// on each individual blob, in parallel. The requests may succeed or fail
-  /// independently.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: The client attempted to upload more than the
-  ///   server supported limit.
-  ///
-  /// Individual requests may return the following errors, additionally:
-  ///
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient disk quota to store the blob.
-  /// * `INVALID_ARGUMENT`: The
-  /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
-  /// provided data.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to BatchUpdateBlobs.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func batchUpdateBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
-    )
-  }
+    /// Upload many blobs at once.
+    ///
+    /// The server may enforce a limit of the combined total size of blobs
+    /// to be uploaded using this API. This limit may be obtained using the
+    /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
+    /// Requests exceeding the limit should either be split into smaller
+    /// chunks or uploaded using the
+    /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
+    ///
+    /// This request is equivalent to calling a Bytestream `Write` request
+    /// on each individual blob, in parallel. The requests may succeed or fail
+    /// independently.
+    ///
+    /// Errors:
+    ///
+    /// * `INVALID_ARGUMENT`: The client attempted to upload more than the
+    ///   server supported limit.
+    ///
+    /// Individual requests may return the following errors, additionally:
+    ///
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient disk quota to store the blob.
+    /// * `INVALID_ARGUMENT`: The
+    /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
+    /// provided data.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to BatchUpdateBlobs.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func batchUpdateBlobs(
+        _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
+        )
+    }
 
-  /// Download many blobs at once.
-  ///
-  /// The server may enforce a limit of the combined total size of blobs
-  /// to be downloaded using this API. This limit may be obtained using the
-  /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
-  /// Requests exceeding the limit should either be split into smaller
-  /// chunks or downloaded using the
-  /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
-  ///
-  /// This request is equivalent to calling a Bytestream `Read` request
-  /// on each individual blob, in parallel. The requests may succeed or fail
-  /// independently.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: The client attempted to read more than the
-  ///   server supported limit.
-  ///
-  /// Every error on individual read will be returned in the corresponding digest
-  /// status.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to BatchReadBlobs.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func batchReadBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
-    )
-  }
+    /// Download many blobs at once.
+    ///
+    /// The server may enforce a limit of the combined total size of blobs
+    /// to be downloaded using this API. This limit may be obtained using the
+    /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
+    /// Requests exceeding the limit should either be split into smaller
+    /// chunks or downloaded using the
+    /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
+    ///
+    /// This request is equivalent to calling a Bytestream `Read` request
+    /// on each individual blob, in parallel. The requests may succeed or fail
+    /// independently.
+    ///
+    /// Errors:
+    ///
+    /// * `INVALID_ARGUMENT`: The client attempted to read more than the
+    ///   server supported limit.
+    ///
+    /// Every error on individual read will be returned in the corresponding digest
+    /// status.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to BatchReadBlobs.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func batchReadBlobs(
+        _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
+        )
+    }
 
-  /// Fetch the entire directory tree rooted at a node.
-  ///
-  /// This request must be targeted at a
-  /// [Directory][build.bazel.remote.execution.v2.Directory] stored in the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
-  /// (CAS). The server will enumerate the `Directory` tree recursively and
-  /// return every node descended from the root.
-  ///
-  /// The GetTreeRequest.page_token parameter can be used to skip ahead in
-  /// the stream (e.g. when retrying a partially completed and aborted request),
-  /// by setting it to a value taken from GetTreeResponse.next_page_token of the
-  /// last successfully processed GetTreeResponse).
-  ///
-  /// The exact traversal order is unspecified and, unless retrieving subsequent
-  /// pages from an earlier request, is not guaranteed to be stable across
-  /// multiple invocations of `GetTree`.
-  ///
-  /// If part of the tree is missing from the CAS, the server will return the
-  /// portion present and omit the rest.
-  ///
-  /// Errors:
-  ///
-  /// * `NOT_FOUND`: The requested tree root is not present in the CAS.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to GetTree.
-  ///   - callOptions: Call options.
-  ///   - handler: A closure called when each response is received from the server.
-  /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
-  public func getTree(
-    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
-    callOptions: CallOptions? = nil,
-    handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void
-  ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
-    return self.makeServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
-      handler: handler
-    )
-  }
+    /// Fetch the entire directory tree rooted at a node.
+    ///
+    /// This request must be targeted at a
+    /// [Directory][build.bazel.remote.execution.v2.Directory] stored in the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
+    /// (CAS). The server will enumerate the `Directory` tree recursively and
+    /// return every node descended from the root.
+    ///
+    /// The GetTreeRequest.page_token parameter can be used to skip ahead in
+    /// the stream (e.g. when retrying a partially completed and aborted request),
+    /// by setting it to a value taken from GetTreeResponse.next_page_token of the
+    /// last successfully processed GetTreeResponse).
+    ///
+    /// The exact traversal order is unspecified and, unless retrieving subsequent
+    /// pages from an earlier request, is not guaranteed to be stable across
+    /// multiple invocations of `GetTree`.
+    ///
+    /// If part of the tree is missing from the CAS, the server will return the
+    /// portion present and omit the rest.
+    ///
+    /// Errors:
+    ///
+    /// * `NOT_FOUND`: The requested tree root is not present in the CAS.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to GetTree.
+    ///   - callOptions: Call options.
+    ///   - handler: A closure called when each response is received from the server.
+    /// - Returns: A `ServerStreamingCall` with futures for the metadata and status.
+    public func getTree(
+        _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+        callOptions: CallOptions? = nil,
+        handler: @escaping (Build_Bazel_Remote_Execution_V2_GetTreeResponse) -> Void
+    ) -> ServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
+        return self.makeServerStreamingCall(
+            path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
+            handler: handler
+        )
+    }
 }
 
 #if compiler(>=5.6)
-@available(*, deprecated)
-extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient: @unchecked Sendable {}
-#endif // compiler(>=5.6)
+    @available(*, deprecated)
+    extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient: @unchecked Sendable {}
+#endif  // compiler(>=5.6)
 
 @available(*, deprecated, renamed: "Build_Bazel_Remote_Execution_V2_ContentAddressableStorageNIOClient")
 public final class Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClient: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
-  private let lock = Lock()
-  private var _defaultCallOptions: CallOptions
-  private var _interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions {
-    get { self.lock.withLock { return self._defaultCallOptions } }
-    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
-  }
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? {
-    get { self.lock.withLock { return self._interceptors } }
-    set { self.lock.withLockVoid { self._interceptors = newValue } }
-  }
+    private let lock = Lock()
+    private var _defaultCallOptions: CallOptions
+    private var _interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
+    public let channel: GRPCChannel
+    public var defaultCallOptions: CallOptions {
+        get { self.lock.withLock { return self._defaultCallOptions } }
+        set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+    }
+    public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? {
+        get { self.lock.withLock { return self._interceptors } }
+        set { self.lock.withLockVoid { self._interceptors = newValue } }
+    }
 
-  /// Creates a client for the build.bazel.remote.execution.v2.ContentAddressableStorage service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self._defaultCallOptions = defaultCallOptions
-    self._interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.ContentAddressableStorage service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self._defaultCallOptions = defaultCallOptions
+        self._interceptors = interceptors
+    }
 }
 
 public struct Build_Bazel_Remote_Execution_V2_ContentAddressableStorageNIOClient: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
+    public var channel: GRPCChannel
+    public var defaultCallOptions: CallOptions
+    public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.ContentAddressableStorage service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.ContentAddressableStorage service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self.defaultCallOptions = defaultCallOptions
+        self.interceptors = interceptors
+    }
 }
 
 #if compiler(>=5.6)
-/// The CAS (content-addressable storage) is used to store the inputs to and
-/// outputs from the execution service. Each piece of content is addressed by the
-/// digest of its binary data.
-///
-/// Most of the binary data stored in the CAS is opaque to the execution engine,
-/// and is only used as a communication medium. In order to build an
-/// [Action][build.bazel.remote.execution.v2.Action],
-/// however, the client will need to also upload the
-/// [Command][build.bazel.remote.execution.v2.Command] and input root
-/// [Directory][build.bazel.remote.execution.v2.Directory] for the Action.
-/// The Command and Directory messages must be marshalled to wire format and then
-/// uploaded under the hash as with any other piece of content. In practice, the
-/// input root directory is likely to refer to other Directories in its
-/// hierarchy, which must also each be uploaded on their own.
-///
-/// For small file uploads the client should group them together and call
-/// [BatchUpdateBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchUpdateBlobs].
-///
-/// For large uploads, the client must use the
-/// [Write method][google.bytestream.ByteStream.Write] of the ByteStream API.
-///
-/// For uncompressed data, The `WriteRequest.resource_name` is of the following form:
-/// `{instance_name}/uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`
-///
-/// Where:
-/// * `instance_name` is an identifier used to distinguish between the various
-///   instances on the server. Syntax and semantics of this field are defined
-///   by the server; Clients must not make any assumptions about it (e.g.,
-///   whether it spans multiple path segments or not). If it is the empty path,
-///   the leading slash is omitted, so that  the `resource_name` becomes
-///   `uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`.
-///   To simplify parsing, a path segment cannot equal any of the following
-///   keywords: `blobs`, `uploads`, `actions`, `actionResults`, `operations`,
-///   `capabilities` or `compressed-blobs`.
-/// * `uuid` is a version 4 UUID generated by the client, used to avoid
-///   collisions between concurrent uploads of the same data. Clients MAY
-///   reuse the same `uuid` for uploading different blobs.
-/// * `digest_function` is a lowercase string form of a `DigestFunction.Value`
-///   enum, indicating which digest function was used to compute `hash`. If the
-///   digest function used is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512,
-///   or VSO, this component MUST be omitted. In that case the server SHOULD
-///   infer the digest function using the length of the `hash` and the digest
-///   functions announced in the server's capabilities.
-/// * `hash` and `size` refer to the [Digest][build.bazel.remote.execution.v2.Digest]
-///   of the data being uploaded.
-/// * `optional_metadata` is implementation specific data, which clients MAY omit.
-///   Servers MAY ignore this metadata.
-///
-/// Data can alternatively be uploaded in compressed form, with the following
-/// `WriteRequest.resource_name` form:
-/// `{instance_name}/uploads/{uuid}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}{/optional_metadata}`
-///
-/// Where:
-/// * `instance_name`, `uuid`, `digest_function` and `optional_metadata` are
-///   defined as above.
-/// * `compressor` is a lowercase string form of a `Compressor.Value` enum
-///   other than `identity`, which is supported by the server and advertised in
-///   [CacheCapabilities.supported_compressor][build.bazel.remote.execution.v2.CacheCapabilities.supported_compressor].
-/// * `uncompressed_hash` and `uncompressed_size` refer to the
-///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
-///   uploaded, once uncompressed. Servers MUST verify that these match
-///   the uploaded data once uncompressed, and MUST return an
-///   `INVALID_ARGUMENT` error in the case of mismatch.
-///
-/// Note that when writing compressed blobs, the `WriteRequest.write_offset` in
-/// the initial request in a stream refers to the offset in the uncompressed form
-/// of the blob. In subsequent requests, `WriteRequest.write_offset` MUST be the
-/// sum of the first request's 'WriteRequest.write_offset' and the total size of
-/// all the compressed data bundles in the previous requests.
-/// Note that this mixes an uncompressed offset with a compressed byte length,
-/// which is nonsensical, but it is done to fit the semantics of the existing
-/// ByteStream protocol.
-///
-/// Uploads of the same data MAY occur concurrently in any form, compressed or
-/// uncompressed.
-///
-/// Clients SHOULD NOT use gRPC-level compression for ByteStream API `Write`
-/// calls of compressed blobs, since this would compress already-compressed data.
-///
-/// When attempting an upload, if another client has already completed the upload
-/// (which may occur in the middle of a single upload if another client uploads
-/// the same blob concurrently), the request will terminate immediately without
-/// error, and with a response whose `committed_size` is the value `-1` if this
-/// is a compressed upload, or with the full size of the uploaded file if this is
-/// an uncompressed upload (regardless of how much data was transmitted by the
-/// client). If the client completes the upload but the
-/// [Digest][build.bazel.remote.execution.v2.Digest] does not match, an
-/// `INVALID_ARGUMENT` error will be returned. In either case, the client should
-/// not attempt to retry the upload.
-///
-/// Small downloads can be grouped and requested in a batch via
-/// [BatchReadBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchReadBlobs].
-///
-/// For large downloads, the client must use the
-/// [Read method][google.bytestream.ByteStream.Read] of the ByteStream API.
-///
-/// For uncompressed data, The `ReadRequest.resource_name` is of the following form:
-/// `{instance_name}/blobs/{digest_function/}{hash}/{size}`
-/// Where `instance_name`, `digest_function`, `hash` and `size` are defined as
-/// for uploads.
-///
-/// Data can alternatively be downloaded in compressed form, with the following
-/// `ReadRequest.resource_name` form:
-/// `{instance_name}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}`
-///
-/// Where:
-/// * `instance_name`, `compressor` and `digest_function` are defined as for
-///   uploads.
-/// * `uncompressed_hash` and `uncompressed_size` refer to the
-///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
-///   downloaded, once uncompressed. Clients MUST verify that these match
-///   the downloaded data once uncompressed, and take appropriate steps in
-///   the case of failure such as retrying a limited number of times or
-///   surfacing an error to the user.
-///
-/// When downloading compressed blobs:
-/// * `ReadRequest.read_offset` refers to the offset in the uncompressed form
-///   of the blob.
-/// * Servers MUST return `INVALID_ARGUMENT` if `ReadRequest.read_limit` is
-///   non-zero.
-/// * Servers MAY use any compression level they choose, including different
-///   levels for different blobs (e.g. choosing a level designed for maximum
-///   speed for data known to be incompressible).
-/// * Clients SHOULD NOT use gRPC-level compression, since this would compress
-///   already-compressed data.
-///
-/// Servers MUST be able to provide data for all recently advertised blobs in
-/// each of the compression formats that the server supports, as well as in
-/// uncompressed form.
-///
-/// Additionally, ByteStream requests MAY come with an additional plain text header
-/// that indicates the `resource_name` of the blob being sent.  The header, if
-/// present, MUST follow the following convention:
-/// * name: `build.bazel.remote.execution.v2.resource-name`.
-/// * contents: the plain text resource_name of the request message.
-/// If set, the contents of the header MUST match the `resource_name` of the request
-/// message.  Servers MAY use this header to assist in routing requests to the
-/// appropriate backend.
-///
-/// The lifetime of entries in the CAS is implementation specific, but it SHOULD
-/// be long enough to allow for newly-added and recently looked-up entries to be
-/// used in subsequent calls (e.g. to
-/// [Execute][build.bazel.remote.execution.v2.Execution.Execute]).
-///
-/// Servers MUST behave as though empty blobs are always available, even if they
-/// have not been uploaded. Clients MAY optimize away the uploading or
-/// downloading of empty blobs.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol: GRPCClient {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? { get }
+    /// The CAS (content-addressable storage) is used to store the inputs to and
+    /// outputs from the execution service. Each piece of content is addressed by the
+    /// digest of its binary data.
+    ///
+    /// Most of the binary data stored in the CAS is opaque to the execution engine,
+    /// and is only used as a communication medium. In order to build an
+    /// [Action][build.bazel.remote.execution.v2.Action],
+    /// however, the client will need to also upload the
+    /// [Command][build.bazel.remote.execution.v2.Command] and input root
+    /// [Directory][build.bazel.remote.execution.v2.Directory] for the Action.
+    /// The Command and Directory messages must be marshalled to wire format and then
+    /// uploaded under the hash as with any other piece of content. In practice, the
+    /// input root directory is likely to refer to other Directories in its
+    /// hierarchy, which must also each be uploaded on their own.
+    ///
+    /// For small file uploads the client should group them together and call
+    /// [BatchUpdateBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchUpdateBlobs].
+    ///
+    /// For large uploads, the client must use the
+    /// [Write method][google.bytestream.ByteStream.Write] of the ByteStream API.
+    ///
+    /// For uncompressed data, The `WriteRequest.resource_name` is of the following form:
+    /// `{instance_name}/uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`
+    ///
+    /// Where:
+    /// * `instance_name` is an identifier used to distinguish between the various
+    ///   instances on the server. Syntax and semantics of this field are defined
+    ///   by the server; Clients must not make any assumptions about it (e.g.,
+    ///   whether it spans multiple path segments or not). If it is the empty path,
+    ///   the leading slash is omitted, so that  the `resource_name` becomes
+    ///   `uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`.
+    ///   To simplify parsing, a path segment cannot equal any of the following
+    ///   keywords: `blobs`, `uploads`, `actions`, `actionResults`, `operations`,
+    ///   `capabilities` or `compressed-blobs`.
+    /// * `uuid` is a version 4 UUID generated by the client, used to avoid
+    ///   collisions between concurrent uploads of the same data. Clients MAY
+    ///   reuse the same `uuid` for uploading different blobs.
+    /// * `digest_function` is a lowercase string form of a `DigestFunction.Value`
+    ///   enum, indicating which digest function was used to compute `hash`. If the
+    ///   digest function used is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512,
+    ///   or VSO, this component MUST be omitted. In that case the server SHOULD
+    ///   infer the digest function using the length of the `hash` and the digest
+    ///   functions announced in the server's capabilities.
+    /// * `hash` and `size` refer to the [Digest][build.bazel.remote.execution.v2.Digest]
+    ///   of the data being uploaded.
+    /// * `optional_metadata` is implementation specific data, which clients MAY omit.
+    ///   Servers MAY ignore this metadata.
+    ///
+    /// Data can alternatively be uploaded in compressed form, with the following
+    /// `WriteRequest.resource_name` form:
+    /// `{instance_name}/uploads/{uuid}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}{/optional_metadata}`
+    ///
+    /// Where:
+    /// * `instance_name`, `uuid`, `digest_function` and `optional_metadata` are
+    ///   defined as above.
+    /// * `compressor` is a lowercase string form of a `Compressor.Value` enum
+    ///   other than `identity`, which is supported by the server and advertised in
+    ///   [CacheCapabilities.supported_compressor][build.bazel.remote.execution.v2.CacheCapabilities.supported_compressor].
+    /// * `uncompressed_hash` and `uncompressed_size` refer to the
+    ///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
+    ///   uploaded, once uncompressed. Servers MUST verify that these match
+    ///   the uploaded data once uncompressed, and MUST return an
+    ///   `INVALID_ARGUMENT` error in the case of mismatch.
+    ///
+    /// Note that when writing compressed blobs, the `WriteRequest.write_offset` in
+    /// the initial request in a stream refers to the offset in the uncompressed form
+    /// of the blob. In subsequent requests, `WriteRequest.write_offset` MUST be the
+    /// sum of the first request's 'WriteRequest.write_offset' and the total size of
+    /// all the compressed data bundles in the previous requests.
+    /// Note that this mixes an uncompressed offset with a compressed byte length,
+    /// which is nonsensical, but it is done to fit the semantics of the existing
+    /// ByteStream protocol.
+    ///
+    /// Uploads of the same data MAY occur concurrently in any form, compressed or
+    /// uncompressed.
+    ///
+    /// Clients SHOULD NOT use gRPC-level compression for ByteStream API `Write`
+    /// calls of compressed blobs, since this would compress already-compressed data.
+    ///
+    /// When attempting an upload, if another client has already completed the upload
+    /// (which may occur in the middle of a single upload if another client uploads
+    /// the same blob concurrently), the request will terminate immediately without
+    /// error, and with a response whose `committed_size` is the value `-1` if this
+    /// is a compressed upload, or with the full size of the uploaded file if this is
+    /// an uncompressed upload (regardless of how much data was transmitted by the
+    /// client). If the client completes the upload but the
+    /// [Digest][build.bazel.remote.execution.v2.Digest] does not match, an
+    /// `INVALID_ARGUMENT` error will be returned. In either case, the client should
+    /// not attempt to retry the upload.
+    ///
+    /// Small downloads can be grouped and requested in a batch via
+    /// [BatchReadBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchReadBlobs].
+    ///
+    /// For large downloads, the client must use the
+    /// [Read method][google.bytestream.ByteStream.Read] of the ByteStream API.
+    ///
+    /// For uncompressed data, The `ReadRequest.resource_name` is of the following form:
+    /// `{instance_name}/blobs/{digest_function/}{hash}/{size}`
+    /// Where `instance_name`, `digest_function`, `hash` and `size` are defined as
+    /// for uploads.
+    ///
+    /// Data can alternatively be downloaded in compressed form, with the following
+    /// `ReadRequest.resource_name` form:
+    /// `{instance_name}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}`
+    ///
+    /// Where:
+    /// * `instance_name`, `compressor` and `digest_function` are defined as for
+    ///   uploads.
+    /// * `uncompressed_hash` and `uncompressed_size` refer to the
+    ///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
+    ///   downloaded, once uncompressed. Clients MUST verify that these match
+    ///   the downloaded data once uncompressed, and take appropriate steps in
+    ///   the case of failure such as retrying a limited number of times or
+    ///   surfacing an error to the user.
+    ///
+    /// When downloading compressed blobs:
+    /// * `ReadRequest.read_offset` refers to the offset in the uncompressed form
+    ///   of the blob.
+    /// * Servers MUST return `INVALID_ARGUMENT` if `ReadRequest.read_limit` is
+    ///   non-zero.
+    /// * Servers MAY use any compression level they choose, including different
+    ///   levels for different blobs (e.g. choosing a level designed for maximum
+    ///   speed for data known to be incompressible).
+    /// * Clients SHOULD NOT use gRPC-level compression, since this would compress
+    ///   already-compressed data.
+    ///
+    /// Servers MUST be able to provide data for all recently advertised blobs in
+    /// each of the compression formats that the server supports, as well as in
+    /// uncompressed form.
+    ///
+    /// Additionally, ByteStream requests MAY come with an additional plain text header
+    /// that indicates the `resource_name` of the blob being sent.  The header, if
+    /// present, MUST follow the following convention:
+    /// * name: `build.bazel.remote.execution.v2.resource-name`.
+    /// * contents: the plain text resource_name of the request message.
+    /// If set, the contents of the header MUST match the `resource_name` of the request
+    /// message.  Servers MAY use this header to assist in routing requests to the
+    /// appropriate backend.
+    ///
+    /// The lifetime of entries in the CAS is implementation specific, but it SHOULD
+    /// be long enough to allow for newly-added and recently looked-up entries to be
+    /// used in subsequent calls (e.g. to
+    /// [Execute][build.bazel.remote.execution.v2.Execution.Execute]).
+    ///
+    /// Servers MUST behave as though empty blobs are always available, even if they
+    /// have not been uploaded. Clients MAY optimize away the uploading or
+    /// downloading of empty blobs.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol: GRPCClient {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? { get }
 
-  func makeFindMissingBlobsCall(
-    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
+        func makeFindMissingBlobsCall(
+            _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
 
-  func makeBatchUpdateBlobsCall(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
+        func makeBatchUpdateBlobsCall(
+            _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
 
-  func makeBatchReadBlobsCall(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
+        func makeBatchReadBlobsCall(
+            _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
 
-  func makeGetTreeCall(
-    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>
-}
+        func makeGetTreeCall(
+            _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.serviceDescriptor
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.serviceDescriptor
+        }
 
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? {
-    return nil
-  }
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? {
+            return nil
+        }
 
-  public func makeFindMissingBlobsCall(
-    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
-    )
-  }
+        public func makeFindMissingBlobsCall(
+            _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
+            )
+        }
 
-  public func makeBatchUpdateBlobsCall(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
-    )
-  }
+        public func makeBatchUpdateBlobsCall(
+            _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
+            )
+        }
 
-  public func makeBatchReadBlobsCall(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
-    )
-  }
+        public func makeBatchReadBlobsCall(
+            _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
+            )
+        }
 
-  public func makeGetTreeCall(
-    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
-    return self.makeAsyncServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetTreeInterceptors() ?? []
-    )
-  }
-}
+        public func makeGetTreeCall(
+            _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncServerStreamingCall<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
+            return self.makeAsyncServerStreamingCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeGetTreeInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol {
-  public func findMissingBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
-    )
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol {
+        public func findMissingBlobs(
+            _ request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? []
+            )
+        }
 
-  public func batchUpdateBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
-    )
-  }
+        public func batchUpdateBlobs(
+            _ request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? []
+            )
+        }
 
-  public func batchReadBlobs(
-    _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
-    )
-  }
+        public func batchReadBlobs(
+            _ request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? []
+            )
+        }
 
-  public func getTree(
-    _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncResponseStream<Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
-    return self.performAsyncServerStreamingCall(
-      path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetTreeInterceptors() ?? []
-    )
-  }
-}
+        public func getTree(
+            _ request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncResponseStream<Build_Bazel_Remote_Execution_V2_GetTreeResponse> {
+            return self.performAsyncServerStreamingCall(
+                path: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeGetTreeInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public struct Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClient: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public struct Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClient: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncClientProtocol {
+        public var channel: GRPCChannel
+        public var defaultCallOptions: CallOptions
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol?
 
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
-}
+        public init(
+            channel: GRPCChannel,
+            defaultCallOptions: CallOptions = CallOptions(),
+            interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol? = nil
+        ) {
+            self.channel = channel
+            self.defaultCallOptions = defaultCallOptions
+            self.interceptors = interceptors
+        }
+    }
 
-#endif // compiler(>=5.6)
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientInterceptorFactoryProtocol: GRPCSendable {
 
-  /// - Returns: Interceptors to use when invoking 'findMissingBlobs'.
-  func makeFindMissingBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>]
+    /// - Returns: Interceptors to use when invoking 'findMissingBlobs'.
+    func makeFindMissingBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>]
 
-  /// - Returns: Interceptors to use when invoking 'batchUpdateBlobs'.
-  func makeBatchUpdateBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>]
+    /// - Returns: Interceptors to use when invoking 'batchUpdateBlobs'.
+    func makeBatchUpdateBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>]
 
-  /// - Returns: Interceptors to use when invoking 'batchReadBlobs'.
-  func makeBatchReadBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>]
+    /// - Returns: Interceptors to use when invoking 'batchReadBlobs'.
+    func makeBatchReadBlobsInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>]
 
-  /// - Returns: Interceptors to use when invoking 'getTree'.
-  func makeGetTreeInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>]
+    /// - Returns: Interceptors to use when invoking 'getTree'.
+    func makeGetTreeInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "ContentAddressableStorage",
-    fullName: "build.bazel.remote.execution.v2.ContentAddressableStorage",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs,
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs,
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs,
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree,
-    ]
-  )
-
-  public enum Methods {
-    public static let findMissingBlobs = GRPCMethodDescriptor(
-      name: "FindMissingBlobs",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "ContentAddressableStorage",
+        fullName: "build.bazel.remote.execution.v2.ContentAddressableStorage",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.findMissingBlobs,
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchUpdateBlobs,
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.batchReadBlobs,
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetadata.Methods.getTree,
+        ]
     )
 
-    public static let batchUpdateBlobs = GRPCMethodDescriptor(
-      name: "BatchUpdateBlobs",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
-      type: GRPCCallType.unary
-    )
+    public enum Methods {
+        public static let findMissingBlobs = GRPCMethodDescriptor(
+            name: "FindMissingBlobs",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
+            type: GRPCCallType.unary
+        )
 
-    public static let batchReadBlobs = GRPCMethodDescriptor(
-      name: "BatchReadBlobs",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
-      type: GRPCCallType.unary
-    )
+        public static let batchUpdateBlobs = GRPCMethodDescriptor(
+            name: "BatchUpdateBlobs",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
+            type: GRPCCallType.unary
+        )
 
-    public static let getTree = GRPCMethodDescriptor(
-      name: "GetTree",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
-      type: GRPCCallType.serverStreaming
-    )
-  }
+        public static let batchReadBlobs = GRPCMethodDescriptor(
+            name: "BatchReadBlobs",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
+            type: GRPCCallType.unary
+        )
+
+        public static let getTree = GRPCMethodDescriptor(
+            name: "GetTree",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
+            type: GRPCCallType.serverStreaming
+        )
+    }
 }
 
 /// The Capabilities service may be used by remote execution clients to query
@@ -1459,204 +1458,204 @@ public enum Build_Bazel_Remote_Execution_V2_ContentAddressableStorageClientMetad
 ///
 /// Usage: instantiate `Build_Bazel_Remote_Execution_V2_CapabilitiesClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol: GRPCClient {
-  var serviceName: String { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? { get }
+    var serviceName: String { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? { get }
 
-  func getCapabilities(
-    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>
+    func getCapabilities(
+        _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>
 }
 
 extension Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
-  public var serviceName: String {
-    return "build.bazel.remote.execution.v2.Capabilities"
-  }
+    public var serviceName: String {
+        return "build.bazel.remote.execution.v2.Capabilities"
+    }
 
-  /// GetCapabilities returns the server capabilities configuration of the
-  /// remote endpoint.
-  /// Only the capabilities of the services supported by the endpoint will
-  /// be returned:
-  /// * Execution + CAS + Action Cache endpoints should return both
-  ///   CacheCapabilities and ExecutionCapabilities.
-  /// * Execution only endpoints should return ExecutionCapabilities.
-  /// * CAS + Action Cache only endpoints should return CacheCapabilities.
-  ///
-  /// There are no method-specific errors.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to GetCapabilities.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func getCapabilities(
-    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
-    )
-  }
+    /// GetCapabilities returns the server capabilities configuration of the
+    /// remote endpoint.
+    /// Only the capabilities of the services supported by the endpoint will
+    /// be returned:
+    /// * Execution + CAS + Action Cache endpoints should return both
+    ///   CacheCapabilities and ExecutionCapabilities.
+    /// * Execution only endpoints should return ExecutionCapabilities.
+    /// * CAS + Action Cache only endpoints should return CacheCapabilities.
+    ///
+    /// There are no method-specific errors.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to GetCapabilities.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func getCapabilities(
+        _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
+        )
+    }
 }
 
 #if compiler(>=5.6)
-@available(*, deprecated)
-extension Build_Bazel_Remote_Execution_V2_CapabilitiesClient: @unchecked Sendable {}
-#endif // compiler(>=5.6)
+    @available(*, deprecated)
+    extension Build_Bazel_Remote_Execution_V2_CapabilitiesClient: @unchecked Sendable {}
+#endif  // compiler(>=5.6)
 
 @available(*, deprecated, renamed: "Build_Bazel_Remote_Execution_V2_CapabilitiesNIOClient")
 public final class Build_Bazel_Remote_Execution_V2_CapabilitiesClient: Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
-  private let lock = Lock()
-  private var _defaultCallOptions: CallOptions
-  private var _interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions {
-    get { self.lock.withLock { return self._defaultCallOptions } }
-    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
-  }
-  public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? {
-    get { self.lock.withLock { return self._interceptors } }
-    set { self.lock.withLockVoid { self._interceptors = newValue } }
-  }
+    private let lock = Lock()
+    private var _defaultCallOptions: CallOptions
+    private var _interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
+    public let channel: GRPCChannel
+    public var defaultCallOptions: CallOptions {
+        get { self.lock.withLock { return self._defaultCallOptions } }
+        set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+    }
+    public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? {
+        get { self.lock.withLock { return self._interceptors } }
+        set { self.lock.withLockVoid { self._interceptors = newValue } }
+    }
 
-  /// Creates a client for the build.bazel.remote.execution.v2.Capabilities service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self._defaultCallOptions = defaultCallOptions
-    self._interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.Capabilities service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self._defaultCallOptions = defaultCallOptions
+        self._interceptors = interceptors
+    }
 }
 
 public struct Build_Bazel_Remote_Execution_V2_CapabilitiesNIOClient: Build_Bazel_Remote_Execution_V2_CapabilitiesClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
+    public var channel: GRPCChannel
+    public var defaultCallOptions: CallOptions
+    public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.execution.v2.Capabilities service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.execution.v2.Capabilities service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self.defaultCallOptions = defaultCallOptions
+        self.interceptors = interceptors
+    }
 }
 
 #if compiler(>=5.6)
-/// The Capabilities service may be used by remote execution clients to query
-/// various server properties, in order to self-configure or return meaningful
-/// error messages.
-///
-/// The query may include a particular `instance_name`, in which case the values
-/// returned will pertain to that instance.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol: GRPCClient {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? { get }
+    /// The Capabilities service may be used by remote execution clients to query
+    /// various server properties, in order to self-configure or return meaningful
+    /// error messages.
+    ///
+    /// The query may include a particular `instance_name`, in which case the values
+    /// returned will pertain to that instance.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol: GRPCClient {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? { get }
 
-  func makeGetCapabilitiesCall(
-    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>
-}
+        func makeGetCapabilitiesCall(
+            _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.serviceDescriptor
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.serviceDescriptor
+        }
 
-  public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? {
-    return nil
-  }
+        public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? {
+            return nil
+        }
 
-  public func makeGetCapabilitiesCall(
-    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
-    )
-  }
-}
+        public func makeGetCapabilitiesCall(
+            _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol {
-  public func getCapabilities(
-    _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Execution_V2_ServerCapabilities {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
-    )
-  }
-}
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol {
+        public func getCapabilities(
+            _ request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Execution_V2_ServerCapabilities {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public struct Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClient: Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public struct Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClient: Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncClientProtocol {
+        public var channel: GRPCChannel
+        public var defaultCallOptions: CallOptions
+        public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol?
 
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
-}
+        public init(
+            channel: GRPCChannel,
+            defaultCallOptions: CallOptions = CallOptions(),
+            interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol? = nil
+        ) {
+            self.channel = channel
+            self.defaultCallOptions = defaultCallOptions
+            self.interceptors = interceptors
+        }
+    }
 
-#endif // compiler(>=5.6)
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesClientInterceptorFactoryProtocol: GRPCSendable {
 
-  /// - Returns: Interceptors to use when invoking 'getCapabilities'.
-  func makeGetCapabilitiesInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>]
+    /// - Returns: Interceptors to use when invoking 'getCapabilities'.
+    func makeGetCapabilitiesInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Capabilities",
-    fullName: "build.bazel.remote.execution.v2.Capabilities",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities,
-    ]
-  )
-
-  public enum Methods {
-    public static let getCapabilities = GRPCMethodDescriptor(
-      name: "GetCapabilities",
-      path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Capabilities",
+        fullName: "build.bazel.remote.execution.v2.Capabilities",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata.Methods.getCapabilities
+        ]
     )
-  }
+
+    public enum Methods {
+        public static let getCapabilities = GRPCMethodDescriptor(
+            name: "GetCapabilities",
+            path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
+            type: GRPCCallType.unary
+        )
+    }
 }
 
 /// The Remote Execution API is used to execute an
@@ -1670,332 +1669,332 @@ public enum Build_Bazel_Remote_Execution_V2_CapabilitiesClientMetadata {
 ///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_ExecutionProvider: CallHandlerProvider {
-  var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? { get }
 
-  /// Execute an action remotely.
-  ///
-  /// In order to execute an action, the client must first upload all of the
-  /// inputs, the
-  /// [Command][build.bazel.remote.execution.v2.Command] to run, and the
-  /// [Action][build.bazel.remote.execution.v2.Action] into the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-  /// It then calls `Execute` with an `action_digest` referring to them. The
-  /// server will run the action and eventually return the result.
-  ///
-  /// The input `Action`'s fields MUST meet the various canonicalization
-  /// requirements specified in the documentation for their types so that it has
-  /// the same digest as other logically equivalent `Action`s. The server MAY
-  /// enforce the requirements and return errors if a non-canonical input is
-  /// received. It MAY also proceed without verifying some or all of the
-  /// requirements, such as for performance reasons. If the server does not
-  /// verify the requirement, then it will treat the `Action` as distinct from
-  /// another logically equivalent action if they hash differently.
-  ///
-  /// Returns a stream of
-  /// [google.longrunning.Operation][google.longrunning.Operation] messages
-  /// describing the resulting execution, with eventual `response`
-  /// [ExecuteResponse][build.bazel.remote.execution.v2.ExecuteResponse]. The
-  /// `metadata` on the operation is of type
-  /// [ExecuteOperationMetadata][build.bazel.remote.execution.v2.ExecuteOperationMetadata].
-  ///
-  /// If the client remains connected after the first response is returned after
-  /// the server, then updates are streamed as if the client had called
-  /// [WaitExecution][build.bazel.remote.execution.v2.Execution.WaitExecution]
-  /// until the execution completes or the request reaches an error. The
-  /// operation can also be queried using [Operations
-  /// API][google.longrunning.Operations.GetOperation].
-  ///
-  /// The server NEED NOT implement other methods or functionality of the
-  /// Operations API.
-  ///
-  /// Errors discovered during creation of the `Operation` will be reported
-  /// as gRPC Status errors, while errors that occurred while running the
-  /// action will be reported in the `status` field of the `ExecuteResponse`. The
-  /// server MUST NOT set the `error` field of the `Operation` proto.
-  /// The possible errors include:
-  ///
-  /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
-  /// * `FAILED_PRECONDITION`: One or more errors occurred in setting up the
-  ///   action requested, such as a missing input or command or no worker being
-  ///   available. The client may be able to fix the errors and retry.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to run
-  ///   the action.
-  /// * `UNAVAILABLE`: Due to a transient condition, such as all workers being
-  ///   occupied (and the server does not support a queue), the action could not
-  ///   be started. The client should retry.
-  /// * `INTERNAL`: An internal error occurred in the execution engine or the
-  ///   worker.
-  /// * `DEADLINE_EXCEEDED`: The execution timed out.
-  /// * `CANCELLED`: The operation was cancelled by the client. This status is
-  ///   only possible if the server implements the Operations API CancelOperation
-  ///   method, and it was called for the current execution.
-  ///
-  /// In the case of a missing input or command, the server SHOULD additionally
-  /// send a [PreconditionFailure][google.rpc.PreconditionFailure] error detail
-  /// where, for each requested blob not present in the CAS, there is a
-  /// `Violation` with a `type` of `MISSING` and a `subject` of
-  /// `"blobs/{digest_function/}{hash}/{size}"` indicating the digest of the
-  /// missing blob. The `subject` is formatted the same way as the
-  /// `resource_name` provided to
-  /// [ByteStream.Read][google.bytestream.ByteStream.Read], with the leading
-  /// instance name omitted. `digest_function` MUST thus be omitted if its value
-  /// is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512, or VSO.
-  ///
-  /// The server does not need to guarantee that a call to this method leads to
-  /// at most one execution of the action. The server MAY execute the action
-  /// multiple times, potentially in parallel. These redundant executions MAY
-  /// continue to run, even if the operation is completed.
-  func execute(request: Build_Bazel_Remote_Execution_V2_ExecuteRequest, context: StreamingResponseCallContext<Google_Longrunning_Operation>) -> EventLoopFuture<GRPCStatus>
+    /// Execute an action remotely.
+    ///
+    /// In order to execute an action, the client must first upload all of the
+    /// inputs, the
+    /// [Command][build.bazel.remote.execution.v2.Command] to run, and the
+    /// [Action][build.bazel.remote.execution.v2.Action] into the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+    /// It then calls `Execute` with an `action_digest` referring to them. The
+    /// server will run the action and eventually return the result.
+    ///
+    /// The input `Action`'s fields MUST meet the various canonicalization
+    /// requirements specified in the documentation for their types so that it has
+    /// the same digest as other logically equivalent `Action`s. The server MAY
+    /// enforce the requirements and return errors if a non-canonical input is
+    /// received. It MAY also proceed without verifying some or all of the
+    /// requirements, such as for performance reasons. If the server does not
+    /// verify the requirement, then it will treat the `Action` as distinct from
+    /// another logically equivalent action if they hash differently.
+    ///
+    /// Returns a stream of
+    /// [google.longrunning.Operation][google.longrunning.Operation] messages
+    /// describing the resulting execution, with eventual `response`
+    /// [ExecuteResponse][build.bazel.remote.execution.v2.ExecuteResponse]. The
+    /// `metadata` on the operation is of type
+    /// [ExecuteOperationMetadata][build.bazel.remote.execution.v2.ExecuteOperationMetadata].
+    ///
+    /// If the client remains connected after the first response is returned after
+    /// the server, then updates are streamed as if the client had called
+    /// [WaitExecution][build.bazel.remote.execution.v2.Execution.WaitExecution]
+    /// until the execution completes or the request reaches an error. The
+    /// operation can also be queried using [Operations
+    /// API][google.longrunning.Operations.GetOperation].
+    ///
+    /// The server NEED NOT implement other methods or functionality of the
+    /// Operations API.
+    ///
+    /// Errors discovered during creation of the `Operation` will be reported
+    /// as gRPC Status errors, while errors that occurred while running the
+    /// action will be reported in the `status` field of the `ExecuteResponse`. The
+    /// server MUST NOT set the `error` field of the `Operation` proto.
+    /// The possible errors include:
+    ///
+    /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
+    /// * `FAILED_PRECONDITION`: One or more errors occurred in setting up the
+    ///   action requested, such as a missing input or command or no worker being
+    ///   available. The client may be able to fix the errors and retry.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to run
+    ///   the action.
+    /// * `UNAVAILABLE`: Due to a transient condition, such as all workers being
+    ///   occupied (and the server does not support a queue), the action could not
+    ///   be started. The client should retry.
+    /// * `INTERNAL`: An internal error occurred in the execution engine or the
+    ///   worker.
+    /// * `DEADLINE_EXCEEDED`: The execution timed out.
+    /// * `CANCELLED`: The operation was cancelled by the client. This status is
+    ///   only possible if the server implements the Operations API CancelOperation
+    ///   method, and it was called for the current execution.
+    ///
+    /// In the case of a missing input or command, the server SHOULD additionally
+    /// send a [PreconditionFailure][google.rpc.PreconditionFailure] error detail
+    /// where, for each requested blob not present in the CAS, there is a
+    /// `Violation` with a `type` of `MISSING` and a `subject` of
+    /// `"blobs/{digest_function/}{hash}/{size}"` indicating the digest of the
+    /// missing blob. The `subject` is formatted the same way as the
+    /// `resource_name` provided to
+    /// [ByteStream.Read][google.bytestream.ByteStream.Read], with the leading
+    /// instance name omitted. `digest_function` MUST thus be omitted if its value
+    /// is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512, or VSO.
+    ///
+    /// The server does not need to guarantee that a call to this method leads to
+    /// at most one execution of the action. The server MAY execute the action
+    /// multiple times, potentially in parallel. These redundant executions MAY
+    /// continue to run, even if the operation is completed.
+    func execute(request: Build_Bazel_Remote_Execution_V2_ExecuteRequest, context: StreamingResponseCallContext<Google_Longrunning_Operation>) -> EventLoopFuture<GRPCStatus>
 
-  /// Wait for an execution operation to complete. When the client initially
-  /// makes the request, the server immediately responds with the current status
-  /// of the execution. The server will leave the request stream open until the
-  /// operation completes, and then respond with the completed operation. The
-  /// server MAY choose to stream additional updates as execution progresses,
-  /// such as to provide an update as to the state of the execution.
-  ///
-  /// In addition to the cases describe for Execute, the WaitExecution method
-  /// may fail as follows:
-  ///
-  /// * `NOT_FOUND`: The operation no longer exists due to any of a transient
-  ///   condition, an unknown operation name, or if the server implements the
-  ///   Operations API DeleteOperation method and it was called for the current
-  ///   execution. The client should call `Execute` to retry.
-  func waitExecution(request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, context: StreamingResponseCallContext<Google_Longrunning_Operation>) -> EventLoopFuture<GRPCStatus>
+    /// Wait for an execution operation to complete. When the client initially
+    /// makes the request, the server immediately responds with the current status
+    /// of the execution. The server will leave the request stream open until the
+    /// operation completes, and then respond with the completed operation. The
+    /// server MAY choose to stream additional updates as execution progresses,
+    /// such as to provide an update as to the state of the execution.
+    ///
+    /// In addition to the cases describe for Execute, the WaitExecution method
+    /// may fail as follows:
+    ///
+    /// * `NOT_FOUND`: The operation no longer exists due to any of a transient
+    ///   condition, an unknown operation name, or if the server implements the
+    ///   Operations API DeleteOperation method and it was called for the current
+    ///   execution. The client should call `Execute` to retry.
+    func waitExecution(request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, context: StreamingResponseCallContext<Google_Longrunning_Operation>) -> EventLoopFuture<GRPCStatus>
 }
 
 extension Build_Bazel_Remote_Execution_V2_ExecutionProvider {
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
-  /// Returns nil for methods not handled by this service.
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "Execute":
-      return ServerStreamingServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_ExecuteRequest>(),
-        responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
-        interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
-        userFunction: self.execute(request:context:)
-      )
-
-    case "WaitExecution":
-      return ServerStreamingServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest>(),
-        responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
-        interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
-        userFunction: self.waitExecution(request:context:)
-      )
-
-    default:
-      return nil
+    public var serviceName: Substring {
+        return Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.serviceDescriptor.fullName[...]
     }
-  }
+
+    /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+    /// Returns nil for methods not handled by this service.
+    public func handle(
+        method name: Substring,
+        context: CallHandlerContext
+    ) -> GRPCServerHandlerProtocol? {
+        switch name {
+        case "Execute":
+            return ServerStreamingServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_ExecuteRequest>(),
+                responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
+                interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
+                userFunction: self.execute(request:context:)
+            )
+
+        case "WaitExecution":
+            return ServerStreamingServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest>(),
+                responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
+                interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
+                userFunction: self.waitExecution(request:context:)
+            )
+
+        default:
+            return nil
+        }
+    }
 }
 
 #if compiler(>=5.6)
 
-/// The Remote Execution API is used to execute an
-/// [Action][build.bazel.remote.execution.v2.Action] on the remote
-/// workers.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-///
-/// To implement a server, implement an object which conforms to this protocol.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_ExecutionAsyncProvider: CallHandlerProvider {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? { get }
+    /// The Remote Execution API is used to execute an
+    /// [Action][build.bazel.remote.execution.v2.Action] on the remote
+    /// workers.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    ///
+    /// To implement a server, implement an object which conforms to this protocol.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_ExecutionAsyncProvider: CallHandlerProvider {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? { get }
 
-  /// Execute an action remotely.
-  ///
-  /// In order to execute an action, the client must first upload all of the
-  /// inputs, the
-  /// [Command][build.bazel.remote.execution.v2.Command] to run, and the
-  /// [Action][build.bazel.remote.execution.v2.Action] into the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-  /// It then calls `Execute` with an `action_digest` referring to them. The
-  /// server will run the action and eventually return the result.
-  ///
-  /// The input `Action`'s fields MUST meet the various canonicalization
-  /// requirements specified in the documentation for their types so that it has
-  /// the same digest as other logically equivalent `Action`s. The server MAY
-  /// enforce the requirements and return errors if a non-canonical input is
-  /// received. It MAY also proceed without verifying some or all of the
-  /// requirements, such as for performance reasons. If the server does not
-  /// verify the requirement, then it will treat the `Action` as distinct from
-  /// another logically equivalent action if they hash differently.
-  ///
-  /// Returns a stream of
-  /// [google.longrunning.Operation][google.longrunning.Operation] messages
-  /// describing the resulting execution, with eventual `response`
-  /// [ExecuteResponse][build.bazel.remote.execution.v2.ExecuteResponse]. The
-  /// `metadata` on the operation is of type
-  /// [ExecuteOperationMetadata][build.bazel.remote.execution.v2.ExecuteOperationMetadata].
-  ///
-  /// If the client remains connected after the first response is returned after
-  /// the server, then updates are streamed as if the client had called
-  /// [WaitExecution][build.bazel.remote.execution.v2.Execution.WaitExecution]
-  /// until the execution completes or the request reaches an error. The
-  /// operation can also be queried using [Operations
-  /// API][google.longrunning.Operations.GetOperation].
-  ///
-  /// The server NEED NOT implement other methods or functionality of the
-  /// Operations API.
-  ///
-  /// Errors discovered during creation of the `Operation` will be reported
-  /// as gRPC Status errors, while errors that occurred while running the
-  /// action will be reported in the `status` field of the `ExecuteResponse`. The
-  /// server MUST NOT set the `error` field of the `Operation` proto.
-  /// The possible errors include:
-  ///
-  /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
-  /// * `FAILED_PRECONDITION`: One or more errors occurred in setting up the
-  ///   action requested, such as a missing input or command or no worker being
-  ///   available. The client may be able to fix the errors and retry.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to run
-  ///   the action.
-  /// * `UNAVAILABLE`: Due to a transient condition, such as all workers being
-  ///   occupied (and the server does not support a queue), the action could not
-  ///   be started. The client should retry.
-  /// * `INTERNAL`: An internal error occurred in the execution engine or the
-  ///   worker.
-  /// * `DEADLINE_EXCEEDED`: The execution timed out.
-  /// * `CANCELLED`: The operation was cancelled by the client. This status is
-  ///   only possible if the server implements the Operations API CancelOperation
-  ///   method, and it was called for the current execution.
-  ///
-  /// In the case of a missing input or command, the server SHOULD additionally
-  /// send a [PreconditionFailure][google.rpc.PreconditionFailure] error detail
-  /// where, for each requested blob not present in the CAS, there is a
-  /// `Violation` with a `type` of `MISSING` and a `subject` of
-  /// `"blobs/{digest_function/}{hash}/{size}"` indicating the digest of the
-  /// missing blob. The `subject` is formatted the same way as the
-  /// `resource_name` provided to
-  /// [ByteStream.Read][google.bytestream.ByteStream.Read], with the leading
-  /// instance name omitted. `digest_function` MUST thus be omitted if its value
-  /// is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512, or VSO.
-  ///
-  /// The server does not need to guarantee that a call to this method leads to
-  /// at most one execution of the action. The server MAY execute the action
-  /// multiple times, potentially in parallel. These redundant executions MAY
-  /// continue to run, even if the operation is completed.
-  @Sendable func execute(
-    request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
-    responseStream: GRPCAsyncResponseStreamWriter<Google_Longrunning_Operation>,
-    context: GRPCAsyncServerCallContext
-  ) async throws
+        /// Execute an action remotely.
+        ///
+        /// In order to execute an action, the client must first upload all of the
+        /// inputs, the
+        /// [Command][build.bazel.remote.execution.v2.Command] to run, and the
+        /// [Action][build.bazel.remote.execution.v2.Action] into the
+        /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+        /// It then calls `Execute` with an `action_digest` referring to them. The
+        /// server will run the action and eventually return the result.
+        ///
+        /// The input `Action`'s fields MUST meet the various canonicalization
+        /// requirements specified in the documentation for their types so that it has
+        /// the same digest as other logically equivalent `Action`s. The server MAY
+        /// enforce the requirements and return errors if a non-canonical input is
+        /// received. It MAY also proceed without verifying some or all of the
+        /// requirements, such as for performance reasons. If the server does not
+        /// verify the requirement, then it will treat the `Action` as distinct from
+        /// another logically equivalent action if they hash differently.
+        ///
+        /// Returns a stream of
+        /// [google.longrunning.Operation][google.longrunning.Operation] messages
+        /// describing the resulting execution, with eventual `response`
+        /// [ExecuteResponse][build.bazel.remote.execution.v2.ExecuteResponse]. The
+        /// `metadata` on the operation is of type
+        /// [ExecuteOperationMetadata][build.bazel.remote.execution.v2.ExecuteOperationMetadata].
+        ///
+        /// If the client remains connected after the first response is returned after
+        /// the server, then updates are streamed as if the client had called
+        /// [WaitExecution][build.bazel.remote.execution.v2.Execution.WaitExecution]
+        /// until the execution completes or the request reaches an error. The
+        /// operation can also be queried using [Operations
+        /// API][google.longrunning.Operations.GetOperation].
+        ///
+        /// The server NEED NOT implement other methods or functionality of the
+        /// Operations API.
+        ///
+        /// Errors discovered during creation of the `Operation` will be reported
+        /// as gRPC Status errors, while errors that occurred while running the
+        /// action will be reported in the `status` field of the `ExecuteResponse`. The
+        /// server MUST NOT set the `error` field of the `Operation` proto.
+        /// The possible errors include:
+        ///
+        /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
+        /// * `FAILED_PRECONDITION`: One or more errors occurred in setting up the
+        ///   action requested, such as a missing input or command or no worker being
+        ///   available. The client may be able to fix the errors and retry.
+        /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to run
+        ///   the action.
+        /// * `UNAVAILABLE`: Due to a transient condition, such as all workers being
+        ///   occupied (and the server does not support a queue), the action could not
+        ///   be started. The client should retry.
+        /// * `INTERNAL`: An internal error occurred in the execution engine or the
+        ///   worker.
+        /// * `DEADLINE_EXCEEDED`: The execution timed out.
+        /// * `CANCELLED`: The operation was cancelled by the client. This status is
+        ///   only possible if the server implements the Operations API CancelOperation
+        ///   method, and it was called for the current execution.
+        ///
+        /// In the case of a missing input or command, the server SHOULD additionally
+        /// send a [PreconditionFailure][google.rpc.PreconditionFailure] error detail
+        /// where, for each requested blob not present in the CAS, there is a
+        /// `Violation` with a `type` of `MISSING` and a `subject` of
+        /// `"blobs/{digest_function/}{hash}/{size}"` indicating the digest of the
+        /// missing blob. The `subject` is formatted the same way as the
+        /// `resource_name` provided to
+        /// [ByteStream.Read][google.bytestream.ByteStream.Read], with the leading
+        /// instance name omitted. `digest_function` MUST thus be omitted if its value
+        /// is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512, or VSO.
+        ///
+        /// The server does not need to guarantee that a call to this method leads to
+        /// at most one execution of the action. The server MAY execute the action
+        /// multiple times, potentially in parallel. These redundant executions MAY
+        /// continue to run, even if the operation is completed.
+        @Sendable func execute(
+            request: Build_Bazel_Remote_Execution_V2_ExecuteRequest,
+            responseStream: GRPCAsyncResponseStreamWriter<Google_Longrunning_Operation>,
+            context: GRPCAsyncServerCallContext
+        ) async throws
 
-  /// Wait for an execution operation to complete. When the client initially
-  /// makes the request, the server immediately responds with the current status
-  /// of the execution. The server will leave the request stream open until the
-  /// operation completes, and then respond with the completed operation. The
-  /// server MAY choose to stream additional updates as execution progresses,
-  /// such as to provide an update as to the state of the execution.
-  ///
-  /// In addition to the cases describe for Execute, the WaitExecution method
-  /// may fail as follows:
-  ///
-  /// * `NOT_FOUND`: The operation no longer exists due to any of a transient
-  ///   condition, an unknown operation name, or if the server implements the
-  ///   Operations API DeleteOperation method and it was called for the current
-  ///   execution. The client should call `Execute` to retry.
-  @Sendable func waitExecution(
-    request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
-    responseStream: GRPCAsyncResponseStreamWriter<Google_Longrunning_Operation>,
-    context: GRPCAsyncServerCallContext
-  ) async throws
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ExecutionAsyncProvider {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.serviceDescriptor
-  }
-
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? {
-    return nil
-  }
-
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "Execute":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_ExecuteRequest>(),
-        responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
-        interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
-        wrapping: self.execute(request:responseStream:context:)
-      )
-
-    case "WaitExecution":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest>(),
-        responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
-        interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
-        wrapping: self.waitExecution(request:responseStream:context:)
-      )
-
-    default:
-      return nil
+        /// Wait for an execution operation to complete. When the client initially
+        /// makes the request, the server immediately responds with the current status
+        /// of the execution. The server will leave the request stream open until the
+        /// operation completes, and then respond with the completed operation. The
+        /// server MAY choose to stream additional updates as execution progresses,
+        /// such as to provide an update as to the state of the execution.
+        ///
+        /// In addition to the cases describe for Execute, the WaitExecution method
+        /// may fail as follows:
+        ///
+        /// * `NOT_FOUND`: The operation no longer exists due to any of a transient
+        ///   condition, an unknown operation name, or if the server implements the
+        ///   Operations API DeleteOperation method and it was called for the current
+        ///   execution. The client should call `Execute` to retry.
+        @Sendable func waitExecution(
+            request: Build_Bazel_Remote_Execution_V2_WaitExecutionRequest,
+            responseStream: GRPCAsyncResponseStreamWriter<Google_Longrunning_Operation>,
+            context: GRPCAsyncServerCallContext
+        ) async throws
     }
-  }
-}
 
-#endif // compiler(>=5.6)
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ExecutionAsyncProvider {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.serviceDescriptor
+        }
+
+        public var serviceName: Substring {
+            return Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.serviceDescriptor.fullName[...]
+        }
+
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol? {
+            return nil
+        }
+
+        public func handle(
+            method name: Substring,
+            context: CallHandlerContext
+        ) -> GRPCServerHandlerProtocol? {
+            switch name {
+            case "Execute":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_ExecuteRequest>(),
+                    responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
+                    interceptors: self.interceptors?.makeExecuteInterceptors() ?? [],
+                    wrapping: self.execute(request:responseStream:context:)
+                )
+
+            case "WaitExecution":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest>(),
+                    responseSerializer: ProtobufSerializer<Google_Longrunning_Operation>(),
+                    interceptors: self.interceptors?.makeWaitExecutionInterceptors() ?? [],
+                    wrapping: self.waitExecution(request:responseStream:context:)
+                )
+
+            default:
+                return nil
+            }
+        }
+    }
+
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_ExecutionServerInterceptorFactoryProtocol {
 
-  /// - Returns: Interceptors to use when handling 'execute'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeExecuteInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>]
+    /// - Returns: Interceptors to use when handling 'execute'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeExecuteInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_ExecuteRequest, Google_Longrunning_Operation>]
 
-  /// - Returns: Interceptors to use when handling 'waitExecution'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeWaitExecutionInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>]
+    /// - Returns: Interceptors to use when handling 'waitExecution'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeWaitExecutionInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_WaitExecutionRequest, Google_Longrunning_Operation>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Execution",
-    fullName: "build.bazel.remote.execution.v2.Execution",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.Methods.execute,
-      Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.Methods.waitExecution,
-    ]
-  )
-
-  public enum Methods {
-    public static let execute = GRPCMethodDescriptor(
-      name: "Execute",
-      path: "/build.bazel.remote.execution.v2.Execution/Execute",
-      type: GRPCCallType.serverStreaming
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Execution",
+        fullName: "build.bazel.remote.execution.v2.Execution",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.Methods.execute,
+            Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata.Methods.waitExecution,
+        ]
     )
 
-    public static let waitExecution = GRPCMethodDescriptor(
-      name: "WaitExecution",
-      path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
-      type: GRPCCallType.serverStreaming
-    )
-  }
+    public enum Methods {
+        public static let execute = GRPCMethodDescriptor(
+            name: "Execute",
+            path: "/build.bazel.remote.execution.v2.Execution/Execute",
+            type: GRPCCallType.serverStreaming
+        )
+
+        public static let waitExecution = GRPCMethodDescriptor(
+            name: "WaitExecution",
+            path: "/build.bazel.remote.execution.v2.Execution/WaitExecution",
+            type: GRPCCallType.serverStreaming
+        )
+    }
 }
 /// The action cache API is used to query whether a given action has already been
 /// performed and, if so, retrieve its result. Unlike the
@@ -2016,226 +2015,226 @@ public enum Build_Bazel_Remote_Execution_V2_ExecutionServerMetadata {
 ///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_ActionCacheProvider: CallHandlerProvider {
-  var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? { get }
 
-  /// Retrieve a cached execution result.
-  ///
-  /// Implementations SHOULD ensure that any blobs referenced from the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
-  /// are available at the time of returning the
-  /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
-  /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
-  /// if necessary and applicable.
-  ///
-  /// Errors:
-  ///
-  /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
-  func getActionResult(request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ActionResult>
+    /// Retrieve a cached execution result.
+    ///
+    /// Implementations SHOULD ensure that any blobs referenced from the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
+    /// are available at the time of returning the
+    /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
+    /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
+    /// if necessary and applicable.
+    ///
+    /// Errors:
+    ///
+    /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
+    func getActionResult(request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ActionResult>
 
-  /// Upload a new execution result.
-  ///
-  /// In order to allow the server to perform access control based on the type of
-  /// action, and to assist with client debugging, the client MUST first upload
-  /// the [Action][build.bazel.remote.execution.v2.Action] that produced the
-  /// result, along with its
-  /// [Command][build.bazel.remote.execution.v2.Command], into the
-  /// `ContentAddressableStorage`.
-  ///
-  /// Server implementations MAY modify the
-  /// `UpdateActionResultRequest.action_result` and return an equivalent value.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
-  /// * `FAILED_PRECONDITION`: One or more errors occurred in updating the
-  ///   action result, such as a missing command or action.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient storage space to add the
-  ///   entry to the cache.
-  func updateActionResult(request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ActionResult>
+    /// Upload a new execution result.
+    ///
+    /// In order to allow the server to perform access control based on the type of
+    /// action, and to assist with client debugging, the client MUST first upload
+    /// the [Action][build.bazel.remote.execution.v2.Action] that produced the
+    /// result, along with its
+    /// [Command][build.bazel.remote.execution.v2.Command], into the
+    /// `ContentAddressableStorage`.
+    ///
+    /// Server implementations MAY modify the
+    /// `UpdateActionResultRequest.action_result` and return an equivalent value.
+    ///
+    /// Errors:
+    ///
+    /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
+    /// * `FAILED_PRECONDITION`: One or more errors occurred in updating the
+    ///   action result, such as a missing command or action.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient storage space to add the
+    ///   entry to the cache.
+    func updateActionResult(request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ActionResult>
 }
 
 extension Build_Bazel_Remote_Execution_V2_ActionCacheProvider {
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
-  /// Returns nil for methods not handled by this service.
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "GetActionResult":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetActionResultRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
-        interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? [],
-        userFunction: self.getActionResult(request:context:)
-      )
-
-    case "UpdateActionResult":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
-        interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? [],
-        userFunction: self.updateActionResult(request:context:)
-      )
-
-    default:
-      return nil
+    public var serviceName: Substring {
+        return Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.serviceDescriptor.fullName[...]
     }
-  }
+
+    /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+    /// Returns nil for methods not handled by this service.
+    public func handle(
+        method name: Substring,
+        context: CallHandlerContext
+    ) -> GRPCServerHandlerProtocol? {
+        switch name {
+        case "GetActionResult":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetActionResultRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
+                interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? [],
+                userFunction: self.getActionResult(request:context:)
+            )
+
+        case "UpdateActionResult":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
+                interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? [],
+                userFunction: self.updateActionResult(request:context:)
+            )
+
+        default:
+            return nil
+        }
+    }
 }
 
 #if compiler(>=5.6)
 
-/// The action cache API is used to query whether a given action has already been
-/// performed and, if so, retrieve its result. Unlike the
-/// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage],
-/// which addresses blobs by their own content, the action cache addresses the
-/// [ActionResult][build.bazel.remote.execution.v2.ActionResult] by a
-/// digest of the encoded [Action][build.bazel.remote.execution.v2.Action]
-/// which produced them.
-///
-/// The lifetime of entries in the action cache is implementation-specific, but
-/// the server SHOULD assume that more recently used entries are more likely to
-/// be used again.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-///
-/// To implement a server, implement an object which conforms to this protocol.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_ActionCacheAsyncProvider: CallHandlerProvider {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? { get }
+    /// The action cache API is used to query whether a given action has already been
+    /// performed and, if so, retrieve its result. Unlike the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage],
+    /// which addresses blobs by their own content, the action cache addresses the
+    /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] by a
+    /// digest of the encoded [Action][build.bazel.remote.execution.v2.Action]
+    /// which produced them.
+    ///
+    /// The lifetime of entries in the action cache is implementation-specific, but
+    /// the server SHOULD assume that more recently used entries are more likely to
+    /// be used again.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    ///
+    /// To implement a server, implement an object which conforms to this protocol.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_ActionCacheAsyncProvider: CallHandlerProvider {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? { get }
 
-  /// Retrieve a cached execution result.
-  ///
-  /// Implementations SHOULD ensure that any blobs referenced from the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
-  /// are available at the time of returning the
-  /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
-  /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
-  /// if necessary and applicable.
-  ///
-  /// Errors:
-  ///
-  /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
-  @Sendable func getActionResult(
-    request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult
+        /// Retrieve a cached execution result.
+        ///
+        /// Implementations SHOULD ensure that any blobs referenced from the
+        /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
+        /// are available at the time of returning the
+        /// [ActionResult][build.bazel.remote.execution.v2.ActionResult] and will be
+        /// for some period of time afterwards. The lifetimes of the referenced blobs SHOULD be increased
+        /// if necessary and applicable.
+        ///
+        /// Errors:
+        ///
+        /// * `NOT_FOUND`: The requested `ActionResult` is not in the cache.
+        @Sendable func getActionResult(
+            request: Build_Bazel_Remote_Execution_V2_GetActionResultRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult
 
-  /// Upload a new execution result.
-  ///
-  /// In order to allow the server to perform access control based on the type of
-  /// action, and to assist with client debugging, the client MUST first upload
-  /// the [Action][build.bazel.remote.execution.v2.Action] that produced the
-  /// result, along with its
-  /// [Command][build.bazel.remote.execution.v2.Command], into the
-  /// `ContentAddressableStorage`.
-  ///
-  /// Server implementations MAY modify the
-  /// `UpdateActionResultRequest.action_result` and return an equivalent value.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
-  /// * `FAILED_PRECONDITION`: One or more errors occurred in updating the
-  ///   action result, such as a missing command or action.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient storage space to add the
-  ///   entry to the cache.
-  @Sendable func updateActionResult(
-    request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ActionCacheAsyncProvider {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.serviceDescriptor
-  }
-
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? {
-    return nil
-  }
-
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "GetActionResult":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetActionResultRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
-        interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? [],
-        wrapping: self.getActionResult(request:context:)
-      )
-
-    case "UpdateActionResult":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
-        interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? [],
-        wrapping: self.updateActionResult(request:context:)
-      )
-
-    default:
-      return nil
+        /// Upload a new execution result.
+        ///
+        /// In order to allow the server to perform access control based on the type of
+        /// action, and to assist with client debugging, the client MUST first upload
+        /// the [Action][build.bazel.remote.execution.v2.Action] that produced the
+        /// result, along with its
+        /// [Command][build.bazel.remote.execution.v2.Command], into the
+        /// `ContentAddressableStorage`.
+        ///
+        /// Server implementations MAY modify the
+        /// `UpdateActionResultRequest.action_result` and return an equivalent value.
+        ///
+        /// Errors:
+        ///
+        /// * `INVALID_ARGUMENT`: One or more arguments are invalid.
+        /// * `FAILED_PRECONDITION`: One or more errors occurred in updating the
+        ///   action result, such as a missing command or action.
+        /// * `RESOURCE_EXHAUSTED`: There is insufficient storage space to add the
+        ///   entry to the cache.
+        @Sendable func updateActionResult(
+            request: Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Execution_V2_ActionResult
     }
-  }
-}
 
-#endif // compiler(>=5.6)
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ActionCacheAsyncProvider {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.serviceDescriptor
+        }
+
+        public var serviceName: Substring {
+            return Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.serviceDescriptor.fullName[...]
+        }
+
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol? {
+            return nil
+        }
+
+        public func handle(
+            method name: Substring,
+            context: CallHandlerContext
+        ) -> GRPCServerHandlerProtocol? {
+            switch name {
+            case "GetActionResult":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetActionResultRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
+                    interceptors: self.interceptors?.makeGetActionResultInterceptors() ?? [],
+                    wrapping: self.getActionResult(request:context:)
+                )
+
+            case "UpdateActionResult":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ActionResult>(),
+                    interceptors: self.interceptors?.makeUpdateActionResultInterceptors() ?? [],
+                    wrapping: self.updateActionResult(request:context:)
+                )
+
+            default:
+                return nil
+            }
+        }
+    }
+
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_ActionCacheServerInterceptorFactoryProtocol {
 
-  /// - Returns: Interceptors to use when handling 'getActionResult'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetActionResultInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+    /// - Returns: Interceptors to use when handling 'getActionResult'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeGetActionResultInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
 
-  /// - Returns: Interceptors to use when handling 'updateActionResult'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeUpdateActionResultInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
+    /// - Returns: Interceptors to use when handling 'updateActionResult'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeUpdateActionResultInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_UpdateActionResultRequest, Build_Bazel_Remote_Execution_V2_ActionResult>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "ActionCache",
-    fullName: "build.bazel.remote.execution.v2.ActionCache",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.Methods.getActionResult,
-      Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.Methods.updateActionResult,
-    ]
-  )
-
-  public enum Methods {
-    public static let getActionResult = GRPCMethodDescriptor(
-      name: "GetActionResult",
-      path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "ActionCache",
+        fullName: "build.bazel.remote.execution.v2.ActionCache",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.Methods.getActionResult,
+            Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata.Methods.updateActionResult,
+        ]
     )
 
-    public static let updateActionResult = GRPCMethodDescriptor(
-      name: "UpdateActionResult",
-      path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
-      type: GRPCCallType.unary
-    )
-  }
+    public enum Methods {
+        public static let getActionResult = GRPCMethodDescriptor(
+            name: "GetActionResult",
+            path: "/build.bazel.remote.execution.v2.ActionCache/GetActionResult",
+            type: GRPCCallType.unary
+        )
+
+        public static let updateActionResult = GRPCMethodDescriptor(
+            name: "UpdateActionResult",
+            path: "/build.bazel.remote.execution.v2.ActionCache/UpdateActionResult",
+            type: GRPCCallType.unary
+        )
+    }
 }
 /// The CAS (content-addressable storage) is used to store the inputs to and
 /// outputs from the execution service. Each piece of content is addressed by the
@@ -2392,525 +2391,525 @@ public enum Build_Bazel_Remote_Execution_V2_ActionCacheServerMetadata {
 ///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvider: CallHandlerProvider {
-  var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? { get }
 
-  /// Determine if blobs are present in the CAS.
-  ///
-  /// Clients can use this API before uploading blobs to determine which ones are
-  /// already present in the CAS and do not need to be uploaded again.
-  ///
-  /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
-  /// applicable.
-  ///
-  /// There are no method-specific errors.
-  func findMissingBlobs(request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
+    /// Determine if blobs are present in the CAS.
+    ///
+    /// Clients can use this API before uploading blobs to determine which ones are
+    /// already present in the CAS and do not need to be uploaded again.
+    ///
+    /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
+    /// applicable.
+    ///
+    /// There are no method-specific errors.
+    func findMissingBlobs(request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>
 
-  /// Upload many blobs at once.
-  ///
-  /// The server may enforce a limit of the combined total size of blobs
-  /// to be uploaded using this API. This limit may be obtained using the
-  /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
-  /// Requests exceeding the limit should either be split into smaller
-  /// chunks or uploaded using the
-  /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
-  ///
-  /// This request is equivalent to calling a Bytestream `Write` request
-  /// on each individual blob, in parallel. The requests may succeed or fail
-  /// independently.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: The client attempted to upload more than the
-  ///   server supported limit.
-  ///
-  /// Individual requests may return the following errors, additionally:
-  ///
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient disk quota to store the blob.
-  /// * `INVALID_ARGUMENT`: The
-  /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
-  /// provided data.
-  func batchUpdateBlobs(request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
+    /// Upload many blobs at once.
+    ///
+    /// The server may enforce a limit of the combined total size of blobs
+    /// to be uploaded using this API. This limit may be obtained using the
+    /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
+    /// Requests exceeding the limit should either be split into smaller
+    /// chunks or uploaded using the
+    /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
+    ///
+    /// This request is equivalent to calling a Bytestream `Write` request
+    /// on each individual blob, in parallel. The requests may succeed or fail
+    /// independently.
+    ///
+    /// Errors:
+    ///
+    /// * `INVALID_ARGUMENT`: The client attempted to upload more than the
+    ///   server supported limit.
+    ///
+    /// Individual requests may return the following errors, additionally:
+    ///
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient disk quota to store the blob.
+    /// * `INVALID_ARGUMENT`: The
+    /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
+    /// provided data.
+    func batchUpdateBlobs(request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>
 
-  /// Download many blobs at once.
-  ///
-  /// The server may enforce a limit of the combined total size of blobs
-  /// to be downloaded using this API. This limit may be obtained using the
-  /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
-  /// Requests exceeding the limit should either be split into smaller
-  /// chunks or downloaded using the
-  /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
-  ///
-  /// This request is equivalent to calling a Bytestream `Read` request
-  /// on each individual blob, in parallel. The requests may succeed or fail
-  /// independently.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: The client attempted to read more than the
-  ///   server supported limit.
-  ///
-  /// Every error on individual read will be returned in the corresponding digest
-  /// status.
-  func batchReadBlobs(request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
+    /// Download many blobs at once.
+    ///
+    /// The server may enforce a limit of the combined total size of blobs
+    /// to be downloaded using this API. This limit may be obtained using the
+    /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
+    /// Requests exceeding the limit should either be split into smaller
+    /// chunks or downloaded using the
+    /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
+    ///
+    /// This request is equivalent to calling a Bytestream `Read` request
+    /// on each individual blob, in parallel. The requests may succeed or fail
+    /// independently.
+    ///
+    /// Errors:
+    ///
+    /// * `INVALID_ARGUMENT`: The client attempted to read more than the
+    ///   server supported limit.
+    ///
+    /// Every error on individual read will be returned in the corresponding digest
+    /// status.
+    func batchReadBlobs(request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>
 
-  /// Fetch the entire directory tree rooted at a node.
-  ///
-  /// This request must be targeted at a
-  /// [Directory][build.bazel.remote.execution.v2.Directory] stored in the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
-  /// (CAS). The server will enumerate the `Directory` tree recursively and
-  /// return every node descended from the root.
-  ///
-  /// The GetTreeRequest.page_token parameter can be used to skip ahead in
-  /// the stream (e.g. when retrying a partially completed and aborted request),
-  /// by setting it to a value taken from GetTreeResponse.next_page_token of the
-  /// last successfully processed GetTreeResponse).
-  ///
-  /// The exact traversal order is unspecified and, unless retrieving subsequent
-  /// pages from an earlier request, is not guaranteed to be stable across
-  /// multiple invocations of `GetTree`.
-  ///
-  /// If part of the tree is missing from the CAS, the server will return the
-  /// portion present and omit the rest.
-  ///
-  /// Errors:
-  ///
-  /// * `NOT_FOUND`: The requested tree root is not present in the CAS.
-  func getTree(request: Build_Bazel_Remote_Execution_V2_GetTreeRequest, context: StreamingResponseCallContext<Build_Bazel_Remote_Execution_V2_GetTreeResponse>) -> EventLoopFuture<GRPCStatus>
+    /// Fetch the entire directory tree rooted at a node.
+    ///
+    /// This request must be targeted at a
+    /// [Directory][build.bazel.remote.execution.v2.Directory] stored in the
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
+    /// (CAS). The server will enumerate the `Directory` tree recursively and
+    /// return every node descended from the root.
+    ///
+    /// The GetTreeRequest.page_token parameter can be used to skip ahead in
+    /// the stream (e.g. when retrying a partially completed and aborted request),
+    /// by setting it to a value taken from GetTreeResponse.next_page_token of the
+    /// last successfully processed GetTreeResponse).
+    ///
+    /// The exact traversal order is unspecified and, unless retrieving subsequent
+    /// pages from an earlier request, is not guaranteed to be stable across
+    /// multiple invocations of `GetTree`.
+    ///
+    /// If part of the tree is missing from the CAS, the server will return the
+    /// portion present and omit the rest.
+    ///
+    /// Errors:
+    ///
+    /// * `NOT_FOUND`: The requested tree root is not present in the CAS.
+    func getTree(request: Build_Bazel_Remote_Execution_V2_GetTreeRequest, context: StreamingResponseCallContext<Build_Bazel_Remote_Execution_V2_GetTreeResponse>) -> EventLoopFuture<GRPCStatus>
 }
 
 extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageProvider {
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
-  /// Returns nil for methods not handled by this service.
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "FindMissingBlobs":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>(),
-        interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? [],
-        userFunction: self.findMissingBlobs(request:context:)
-      )
-
-    case "BatchUpdateBlobs":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>(),
-        interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? [],
-        userFunction: self.batchUpdateBlobs(request:context:)
-      )
-
-    case "BatchReadBlobs":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>(),
-        interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? [],
-        userFunction: self.batchReadBlobs(request:context:)
-      )
-
-    case "GetTree":
-      return ServerStreamingServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetTreeRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_GetTreeResponse>(),
-        interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
-        userFunction: self.getTree(request:context:)
-      )
-
-    default:
-      return nil
+    public var serviceName: Substring {
+        return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.serviceDescriptor.fullName[...]
     }
-  }
+
+    /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+    /// Returns nil for methods not handled by this service.
+    public func handle(
+        method name: Substring,
+        context: CallHandlerContext
+    ) -> GRPCServerHandlerProtocol? {
+        switch name {
+        case "FindMissingBlobs":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>(),
+                interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? [],
+                userFunction: self.findMissingBlobs(request:context:)
+            )
+
+        case "BatchUpdateBlobs":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>(),
+                interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? [],
+                userFunction: self.batchUpdateBlobs(request:context:)
+            )
+
+        case "BatchReadBlobs":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>(),
+                interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? [],
+                userFunction: self.batchReadBlobs(request:context:)
+            )
+
+        case "GetTree":
+            return ServerStreamingServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetTreeRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_GetTreeResponse>(),
+                interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
+                userFunction: self.getTree(request:context:)
+            )
+
+        default:
+            return nil
+        }
+    }
 }
 
 #if compiler(>=5.6)
 
-/// The CAS (content-addressable storage) is used to store the inputs to and
-/// outputs from the execution service. Each piece of content is addressed by the
-/// digest of its binary data.
-///
-/// Most of the binary data stored in the CAS is opaque to the execution engine,
-/// and is only used as a communication medium. In order to build an
-/// [Action][build.bazel.remote.execution.v2.Action],
-/// however, the client will need to also upload the
-/// [Command][build.bazel.remote.execution.v2.Command] and input root
-/// [Directory][build.bazel.remote.execution.v2.Directory] for the Action.
-/// The Command and Directory messages must be marshalled to wire format and then
-/// uploaded under the hash as with any other piece of content. In practice, the
-/// input root directory is likely to refer to other Directories in its
-/// hierarchy, which must also each be uploaded on their own.
-///
-/// For small file uploads the client should group them together and call
-/// [BatchUpdateBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchUpdateBlobs].
-///
-/// For large uploads, the client must use the
-/// [Write method][google.bytestream.ByteStream.Write] of the ByteStream API.
-///
-/// For uncompressed data, The `WriteRequest.resource_name` is of the following form:
-/// `{instance_name}/uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`
-///
-/// Where:
-/// * `instance_name` is an identifier used to distinguish between the various
-///   instances on the server. Syntax and semantics of this field are defined
-///   by the server; Clients must not make any assumptions about it (e.g.,
-///   whether it spans multiple path segments or not). If it is the empty path,
-///   the leading slash is omitted, so that  the `resource_name` becomes
-///   `uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`.
-///   To simplify parsing, a path segment cannot equal any of the following
-///   keywords: `blobs`, `uploads`, `actions`, `actionResults`, `operations`,
-///   `capabilities` or `compressed-blobs`.
-/// * `uuid` is a version 4 UUID generated by the client, used to avoid
-///   collisions between concurrent uploads of the same data. Clients MAY
-///   reuse the same `uuid` for uploading different blobs.
-/// * `digest_function` is a lowercase string form of a `DigestFunction.Value`
-///   enum, indicating which digest function was used to compute `hash`. If the
-///   digest function used is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512,
-///   or VSO, this component MUST be omitted. In that case the server SHOULD
-///   infer the digest function using the length of the `hash` and the digest
-///   functions announced in the server's capabilities.
-/// * `hash` and `size` refer to the [Digest][build.bazel.remote.execution.v2.Digest]
-///   of the data being uploaded.
-/// * `optional_metadata` is implementation specific data, which clients MAY omit.
-///   Servers MAY ignore this metadata.
-///
-/// Data can alternatively be uploaded in compressed form, with the following
-/// `WriteRequest.resource_name` form:
-/// `{instance_name}/uploads/{uuid}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}{/optional_metadata}`
-///
-/// Where:
-/// * `instance_name`, `uuid`, `digest_function` and `optional_metadata` are
-///   defined as above.
-/// * `compressor` is a lowercase string form of a `Compressor.Value` enum
-///   other than `identity`, which is supported by the server and advertised in
-///   [CacheCapabilities.supported_compressor][build.bazel.remote.execution.v2.CacheCapabilities.supported_compressor].
-/// * `uncompressed_hash` and `uncompressed_size` refer to the
-///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
-///   uploaded, once uncompressed. Servers MUST verify that these match
-///   the uploaded data once uncompressed, and MUST return an
-///   `INVALID_ARGUMENT` error in the case of mismatch.
-///
-/// Note that when writing compressed blobs, the `WriteRequest.write_offset` in
-/// the initial request in a stream refers to the offset in the uncompressed form
-/// of the blob. In subsequent requests, `WriteRequest.write_offset` MUST be the
-/// sum of the first request's 'WriteRequest.write_offset' and the total size of
-/// all the compressed data bundles in the previous requests.
-/// Note that this mixes an uncompressed offset with a compressed byte length,
-/// which is nonsensical, but it is done to fit the semantics of the existing
-/// ByteStream protocol.
-///
-/// Uploads of the same data MAY occur concurrently in any form, compressed or
-/// uncompressed.
-///
-/// Clients SHOULD NOT use gRPC-level compression for ByteStream API `Write`
-/// calls of compressed blobs, since this would compress already-compressed data.
-///
-/// When attempting an upload, if another client has already completed the upload
-/// (which may occur in the middle of a single upload if another client uploads
-/// the same blob concurrently), the request will terminate immediately without
-/// error, and with a response whose `committed_size` is the value `-1` if this
-/// is a compressed upload, or with the full size of the uploaded file if this is
-/// an uncompressed upload (regardless of how much data was transmitted by the
-/// client). If the client completes the upload but the
-/// [Digest][build.bazel.remote.execution.v2.Digest] does not match, an
-/// `INVALID_ARGUMENT` error will be returned. In either case, the client should
-/// not attempt to retry the upload.
-///
-/// Small downloads can be grouped and requested in a batch via
-/// [BatchReadBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchReadBlobs].
-///
-/// For large downloads, the client must use the
-/// [Read method][google.bytestream.ByteStream.Read] of the ByteStream API.
-///
-/// For uncompressed data, The `ReadRequest.resource_name` is of the following form:
-/// `{instance_name}/blobs/{digest_function/}{hash}/{size}`
-/// Where `instance_name`, `digest_function`, `hash` and `size` are defined as
-/// for uploads.
-///
-/// Data can alternatively be downloaded in compressed form, with the following
-/// `ReadRequest.resource_name` form:
-/// `{instance_name}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}`
-///
-/// Where:
-/// * `instance_name`, `compressor` and `digest_function` are defined as for
-///   uploads.
-/// * `uncompressed_hash` and `uncompressed_size` refer to the
-///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
-///   downloaded, once uncompressed. Clients MUST verify that these match
-///   the downloaded data once uncompressed, and take appropriate steps in
-///   the case of failure such as retrying a limited number of times or
-///   surfacing an error to the user.
-///
-/// When downloading compressed blobs:
-/// * `ReadRequest.read_offset` refers to the offset in the uncompressed form
-///   of the blob.
-/// * Servers MUST return `INVALID_ARGUMENT` if `ReadRequest.read_limit` is
-///   non-zero.
-/// * Servers MAY use any compression level they choose, including different
-///   levels for different blobs (e.g. choosing a level designed for maximum
-///   speed for data known to be incompressible).
-/// * Clients SHOULD NOT use gRPC-level compression, since this would compress
-///   already-compressed data.
-///
-/// Servers MUST be able to provide data for all recently advertised blobs in
-/// each of the compression formats that the server supports, as well as in
-/// uncompressed form.
-///
-/// Additionally, ByteStream requests MAY come with an additional plain text header
-/// that indicates the `resource_name` of the blob being sent.  The header, if
-/// present, MUST follow the following convention:
-/// * name: `build.bazel.remote.execution.v2.resource-name`.
-/// * contents: the plain text resource_name of the request message.
-/// If set, the contents of the header MUST match the `resource_name` of the request
-/// message.  Servers MAY use this header to assist in routing requests to the
-/// appropriate backend.
-///
-/// The lifetime of entries in the CAS is implementation specific, but it SHOULD
-/// be long enough to allow for newly-added and recently looked-up entries to be
-/// used in subsequent calls (e.g. to
-/// [Execute][build.bazel.remote.execution.v2.Execution.Execute]).
-///
-/// Servers MUST behave as though empty blobs are always available, even if they
-/// have not been uploaded. Clients MAY optimize away the uploading or
-/// downloading of empty blobs.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-///
-/// To implement a server, implement an object which conforms to this protocol.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncProvider: CallHandlerProvider {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? { get }
+    /// The CAS (content-addressable storage) is used to store the inputs to and
+    /// outputs from the execution service. Each piece of content is addressed by the
+    /// digest of its binary data.
+    ///
+    /// Most of the binary data stored in the CAS is opaque to the execution engine,
+    /// and is only used as a communication medium. In order to build an
+    /// [Action][build.bazel.remote.execution.v2.Action],
+    /// however, the client will need to also upload the
+    /// [Command][build.bazel.remote.execution.v2.Command] and input root
+    /// [Directory][build.bazel.remote.execution.v2.Directory] for the Action.
+    /// The Command and Directory messages must be marshalled to wire format and then
+    /// uploaded under the hash as with any other piece of content. In practice, the
+    /// input root directory is likely to refer to other Directories in its
+    /// hierarchy, which must also each be uploaded on their own.
+    ///
+    /// For small file uploads the client should group them together and call
+    /// [BatchUpdateBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchUpdateBlobs].
+    ///
+    /// For large uploads, the client must use the
+    /// [Write method][google.bytestream.ByteStream.Write] of the ByteStream API.
+    ///
+    /// For uncompressed data, The `WriteRequest.resource_name` is of the following form:
+    /// `{instance_name}/uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`
+    ///
+    /// Where:
+    /// * `instance_name` is an identifier used to distinguish between the various
+    ///   instances on the server. Syntax and semantics of this field are defined
+    ///   by the server; Clients must not make any assumptions about it (e.g.,
+    ///   whether it spans multiple path segments or not). If it is the empty path,
+    ///   the leading slash is omitted, so that  the `resource_name` becomes
+    ///   `uploads/{uuid}/blobs/{digest_function/}{hash}/{size}{/optional_metadata}`.
+    ///   To simplify parsing, a path segment cannot equal any of the following
+    ///   keywords: `blobs`, `uploads`, `actions`, `actionResults`, `operations`,
+    ///   `capabilities` or `compressed-blobs`.
+    /// * `uuid` is a version 4 UUID generated by the client, used to avoid
+    ///   collisions between concurrent uploads of the same data. Clients MAY
+    ///   reuse the same `uuid` for uploading different blobs.
+    /// * `digest_function` is a lowercase string form of a `DigestFunction.Value`
+    ///   enum, indicating which digest function was used to compute `hash`. If the
+    ///   digest function used is one of MD5, MURMUR3, SHA1, SHA256, SHA384, SHA512,
+    ///   or VSO, this component MUST be omitted. In that case the server SHOULD
+    ///   infer the digest function using the length of the `hash` and the digest
+    ///   functions announced in the server's capabilities.
+    /// * `hash` and `size` refer to the [Digest][build.bazel.remote.execution.v2.Digest]
+    ///   of the data being uploaded.
+    /// * `optional_metadata` is implementation specific data, which clients MAY omit.
+    ///   Servers MAY ignore this metadata.
+    ///
+    /// Data can alternatively be uploaded in compressed form, with the following
+    /// `WriteRequest.resource_name` form:
+    /// `{instance_name}/uploads/{uuid}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}{/optional_metadata}`
+    ///
+    /// Where:
+    /// * `instance_name`, `uuid`, `digest_function` and `optional_metadata` are
+    ///   defined as above.
+    /// * `compressor` is a lowercase string form of a `Compressor.Value` enum
+    ///   other than `identity`, which is supported by the server and advertised in
+    ///   [CacheCapabilities.supported_compressor][build.bazel.remote.execution.v2.CacheCapabilities.supported_compressor].
+    /// * `uncompressed_hash` and `uncompressed_size` refer to the
+    ///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
+    ///   uploaded, once uncompressed. Servers MUST verify that these match
+    ///   the uploaded data once uncompressed, and MUST return an
+    ///   `INVALID_ARGUMENT` error in the case of mismatch.
+    ///
+    /// Note that when writing compressed blobs, the `WriteRequest.write_offset` in
+    /// the initial request in a stream refers to the offset in the uncompressed form
+    /// of the blob. In subsequent requests, `WriteRequest.write_offset` MUST be the
+    /// sum of the first request's 'WriteRequest.write_offset' and the total size of
+    /// all the compressed data bundles in the previous requests.
+    /// Note that this mixes an uncompressed offset with a compressed byte length,
+    /// which is nonsensical, but it is done to fit the semantics of the existing
+    /// ByteStream protocol.
+    ///
+    /// Uploads of the same data MAY occur concurrently in any form, compressed or
+    /// uncompressed.
+    ///
+    /// Clients SHOULD NOT use gRPC-level compression for ByteStream API `Write`
+    /// calls of compressed blobs, since this would compress already-compressed data.
+    ///
+    /// When attempting an upload, if another client has already completed the upload
+    /// (which may occur in the middle of a single upload if another client uploads
+    /// the same blob concurrently), the request will terminate immediately without
+    /// error, and with a response whose `committed_size` is the value `-1` if this
+    /// is a compressed upload, or with the full size of the uploaded file if this is
+    /// an uncompressed upload (regardless of how much data was transmitted by the
+    /// client). If the client completes the upload but the
+    /// [Digest][build.bazel.remote.execution.v2.Digest] does not match, an
+    /// `INVALID_ARGUMENT` error will be returned. In either case, the client should
+    /// not attempt to retry the upload.
+    ///
+    /// Small downloads can be grouped and requested in a batch via
+    /// [BatchReadBlobs][build.bazel.remote.execution.v2.ContentAddressableStorage.BatchReadBlobs].
+    ///
+    /// For large downloads, the client must use the
+    /// [Read method][google.bytestream.ByteStream.Read] of the ByteStream API.
+    ///
+    /// For uncompressed data, The `ReadRequest.resource_name` is of the following form:
+    /// `{instance_name}/blobs/{digest_function/}{hash}/{size}`
+    /// Where `instance_name`, `digest_function`, `hash` and `size` are defined as
+    /// for uploads.
+    ///
+    /// Data can alternatively be downloaded in compressed form, with the following
+    /// `ReadRequest.resource_name` form:
+    /// `{instance_name}/compressed-blobs/{compressor}/{digest_function/}{uncompressed_hash}/{uncompressed_size}`
+    ///
+    /// Where:
+    /// * `instance_name`, `compressor` and `digest_function` are defined as for
+    ///   uploads.
+    /// * `uncompressed_hash` and `uncompressed_size` refer to the
+    ///   [Digest][build.bazel.remote.execution.v2.Digest] of the data being
+    ///   downloaded, once uncompressed. Clients MUST verify that these match
+    ///   the downloaded data once uncompressed, and take appropriate steps in
+    ///   the case of failure such as retrying a limited number of times or
+    ///   surfacing an error to the user.
+    ///
+    /// When downloading compressed blobs:
+    /// * `ReadRequest.read_offset` refers to the offset in the uncompressed form
+    ///   of the blob.
+    /// * Servers MUST return `INVALID_ARGUMENT` if `ReadRequest.read_limit` is
+    ///   non-zero.
+    /// * Servers MAY use any compression level they choose, including different
+    ///   levels for different blobs (e.g. choosing a level designed for maximum
+    ///   speed for data known to be incompressible).
+    /// * Clients SHOULD NOT use gRPC-level compression, since this would compress
+    ///   already-compressed data.
+    ///
+    /// Servers MUST be able to provide data for all recently advertised blobs in
+    /// each of the compression formats that the server supports, as well as in
+    /// uncompressed form.
+    ///
+    /// Additionally, ByteStream requests MAY come with an additional plain text header
+    /// that indicates the `resource_name` of the blob being sent.  The header, if
+    /// present, MUST follow the following convention:
+    /// * name: `build.bazel.remote.execution.v2.resource-name`.
+    /// * contents: the plain text resource_name of the request message.
+    /// If set, the contents of the header MUST match the `resource_name` of the request
+    /// message.  Servers MAY use this header to assist in routing requests to the
+    /// appropriate backend.
+    ///
+    /// The lifetime of entries in the CAS is implementation specific, but it SHOULD
+    /// be long enough to allow for newly-added and recently looked-up entries to be
+    /// used in subsequent calls (e.g. to
+    /// [Execute][build.bazel.remote.execution.v2.Execution.Execute]).
+    ///
+    /// Servers MUST behave as though empty blobs are always available, even if they
+    /// have not been uploaded. Clients MAY optimize away the uploading or
+    /// downloading of empty blobs.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    ///
+    /// To implement a server, implement an object which conforms to this protocol.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncProvider: CallHandlerProvider {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? { get }
 
-  /// Determine if blobs are present in the CAS.
-  ///
-  /// Clients can use this API before uploading blobs to determine which ones are
-  /// already present in the CAS and do not need to be uploaded again.
-  ///
-  /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
-  /// applicable.
-  ///
-  /// There are no method-specific errors.
-  @Sendable func findMissingBlobs(
-    request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse
+        /// Determine if blobs are present in the CAS.
+        ///
+        /// Clients can use this API before uploading blobs to determine which ones are
+        /// already present in the CAS and do not need to be uploaded again.
+        ///
+        /// Servers SHOULD increase the lifetimes of the referenced blobs if necessary and
+        /// applicable.
+        ///
+        /// There are no method-specific errors.
+        @Sendable func findMissingBlobs(
+            request: Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse
 
-  /// Upload many blobs at once.
-  ///
-  /// The server may enforce a limit of the combined total size of blobs
-  /// to be uploaded using this API. This limit may be obtained using the
-  /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
-  /// Requests exceeding the limit should either be split into smaller
-  /// chunks or uploaded using the
-  /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
-  ///
-  /// This request is equivalent to calling a Bytestream `Write` request
-  /// on each individual blob, in parallel. The requests may succeed or fail
-  /// independently.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: The client attempted to upload more than the
-  ///   server supported limit.
-  ///
-  /// Individual requests may return the following errors, additionally:
-  ///
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient disk quota to store the blob.
-  /// * `INVALID_ARGUMENT`: The
-  /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
-  /// provided data.
-  @Sendable func batchUpdateBlobs(
-    request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse
+        /// Upload many blobs at once.
+        ///
+        /// The server may enforce a limit of the combined total size of blobs
+        /// to be uploaded using this API. This limit may be obtained using the
+        /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
+        /// Requests exceeding the limit should either be split into smaller
+        /// chunks or uploaded using the
+        /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
+        ///
+        /// This request is equivalent to calling a Bytestream `Write` request
+        /// on each individual blob, in parallel. The requests may succeed or fail
+        /// independently.
+        ///
+        /// Errors:
+        ///
+        /// * `INVALID_ARGUMENT`: The client attempted to upload more than the
+        ///   server supported limit.
+        ///
+        /// Individual requests may return the following errors, additionally:
+        ///
+        /// * `RESOURCE_EXHAUSTED`: There is insufficient disk quota to store the blob.
+        /// * `INVALID_ARGUMENT`: The
+        /// [Digest][build.bazel.remote.execution.v2.Digest] does not match the
+        /// provided data.
+        @Sendable func batchUpdateBlobs(
+            request: Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse
 
-  /// Download many blobs at once.
-  ///
-  /// The server may enforce a limit of the combined total size of blobs
-  /// to be downloaded using this API. This limit may be obtained using the
-  /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
-  /// Requests exceeding the limit should either be split into smaller
-  /// chunks or downloaded using the
-  /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
-  ///
-  /// This request is equivalent to calling a Bytestream `Read` request
-  /// on each individual blob, in parallel. The requests may succeed or fail
-  /// independently.
-  ///
-  /// Errors:
-  ///
-  /// * `INVALID_ARGUMENT`: The client attempted to read more than the
-  ///   server supported limit.
-  ///
-  /// Every error on individual read will be returned in the corresponding digest
-  /// status.
-  @Sendable func batchReadBlobs(
-    request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse
+        /// Download many blobs at once.
+        ///
+        /// The server may enforce a limit of the combined total size of blobs
+        /// to be downloaded using this API. This limit may be obtained using the
+        /// [Capabilities][build.bazel.remote.execution.v2.Capabilities] API.
+        /// Requests exceeding the limit should either be split into smaller
+        /// chunks or downloaded using the
+        /// [ByteStream API][google.bytestream.ByteStream], as appropriate.
+        ///
+        /// This request is equivalent to calling a Bytestream `Read` request
+        /// on each individual blob, in parallel. The requests may succeed or fail
+        /// independently.
+        ///
+        /// Errors:
+        ///
+        /// * `INVALID_ARGUMENT`: The client attempted to read more than the
+        ///   server supported limit.
+        ///
+        /// Every error on individual read will be returned in the corresponding digest
+        /// status.
+        @Sendable func batchReadBlobs(
+            request: Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse
 
-  /// Fetch the entire directory tree rooted at a node.
-  ///
-  /// This request must be targeted at a
-  /// [Directory][build.bazel.remote.execution.v2.Directory] stored in the
-  /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
-  /// (CAS). The server will enumerate the `Directory` tree recursively and
-  /// return every node descended from the root.
-  ///
-  /// The GetTreeRequest.page_token parameter can be used to skip ahead in
-  /// the stream (e.g. when retrying a partially completed and aborted request),
-  /// by setting it to a value taken from GetTreeResponse.next_page_token of the
-  /// last successfully processed GetTreeResponse).
-  ///
-  /// The exact traversal order is unspecified and, unless retrieving subsequent
-  /// pages from an earlier request, is not guaranteed to be stable across
-  /// multiple invocations of `GetTree`.
-  ///
-  /// If part of the tree is missing from the CAS, the server will return the
-  /// portion present and omit the rest.
-  ///
-  /// Errors:
-  ///
-  /// * `NOT_FOUND`: The requested tree root is not present in the CAS.
-  @Sendable func getTree(
-    request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
-    responseStream: GRPCAsyncResponseStreamWriter<Build_Bazel_Remote_Execution_V2_GetTreeResponse>,
-    context: GRPCAsyncServerCallContext
-  ) async throws
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncProvider {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.serviceDescriptor
-  }
-
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? {
-    return nil
-  }
-
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "FindMissingBlobs":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>(),
-        interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? [],
-        wrapping: self.findMissingBlobs(request:context:)
-      )
-
-    case "BatchUpdateBlobs":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>(),
-        interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? [],
-        wrapping: self.batchUpdateBlobs(request:context:)
-      )
-
-    case "BatchReadBlobs":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>(),
-        interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? [],
-        wrapping: self.batchReadBlobs(request:context:)
-      )
-
-    case "GetTree":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetTreeRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_GetTreeResponse>(),
-        interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
-        wrapping: self.getTree(request:responseStream:context:)
-      )
-
-    default:
-      return nil
+        /// Fetch the entire directory tree rooted at a node.
+        ///
+        /// This request must be targeted at a
+        /// [Directory][build.bazel.remote.execution.v2.Directory] stored in the
+        /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage]
+        /// (CAS). The server will enumerate the `Directory` tree recursively and
+        /// return every node descended from the root.
+        ///
+        /// The GetTreeRequest.page_token parameter can be used to skip ahead in
+        /// the stream (e.g. when retrying a partially completed and aborted request),
+        /// by setting it to a value taken from GetTreeResponse.next_page_token of the
+        /// last successfully processed GetTreeResponse).
+        ///
+        /// The exact traversal order is unspecified and, unless retrieving subsequent
+        /// pages from an earlier request, is not guaranteed to be stable across
+        /// multiple invocations of `GetTree`.
+        ///
+        /// If part of the tree is missing from the CAS, the server will return the
+        /// portion present and omit the rest.
+        ///
+        /// Errors:
+        ///
+        /// * `NOT_FOUND`: The requested tree root is not present in the CAS.
+        @Sendable func getTree(
+            request: Build_Bazel_Remote_Execution_V2_GetTreeRequest,
+            responseStream: GRPCAsyncResponseStreamWriter<Build_Bazel_Remote_Execution_V2_GetTreeResponse>,
+            context: GRPCAsyncServerCallContext
+        ) async throws
     }
-  }
-}
 
-#endif // compiler(>=5.6)
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_ContentAddressableStorageAsyncProvider {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.serviceDescriptor
+        }
+
+        public var serviceName: Substring {
+            return Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.serviceDescriptor.fullName[...]
+        }
+
+        public var interceptors: Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol? {
+            return nil
+        }
+
+        public func handle(
+            method name: Substring,
+            context: CallHandlerContext
+        ) -> GRPCServerHandlerProtocol? {
+            switch name {
+            case "FindMissingBlobs":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>(),
+                    interceptors: self.interceptors?.makeFindMissingBlobsInterceptors() ?? [],
+                    wrapping: self.findMissingBlobs(request:context:)
+                )
+
+            case "BatchUpdateBlobs":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>(),
+                    interceptors: self.interceptors?.makeBatchUpdateBlobsInterceptors() ?? [],
+                    wrapping: self.batchUpdateBlobs(request:context:)
+                )
+
+            case "BatchReadBlobs":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>(),
+                    interceptors: self.interceptors?.makeBatchReadBlobsInterceptors() ?? [],
+                    wrapping: self.batchReadBlobs(request:context:)
+                )
+
+            case "GetTree":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetTreeRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_GetTreeResponse>(),
+                    interceptors: self.interceptors?.makeGetTreeInterceptors() ?? [],
+                    wrapping: self.getTree(request:responseStream:context:)
+                )
+
+            default:
+                return nil
+            }
+        }
+    }
+
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerInterceptorFactoryProtocol {
 
-  /// - Returns: Interceptors to use when handling 'findMissingBlobs'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeFindMissingBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>]
+    /// - Returns: Interceptors to use when handling 'findMissingBlobs'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeFindMissingBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_FindMissingBlobsRequest, Build_Bazel_Remote_Execution_V2_FindMissingBlobsResponse>]
 
-  /// - Returns: Interceptors to use when handling 'batchUpdateBlobs'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeBatchUpdateBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>]
+    /// - Returns: Interceptors to use when handling 'batchUpdateBlobs'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeBatchUpdateBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchUpdateBlobsResponse>]
 
-  /// - Returns: Interceptors to use when handling 'batchReadBlobs'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeBatchReadBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>]
+    /// - Returns: Interceptors to use when handling 'batchReadBlobs'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeBatchReadBlobsInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_BatchReadBlobsRequest, Build_Bazel_Remote_Execution_V2_BatchReadBlobsResponse>]
 
-  /// - Returns: Interceptors to use when handling 'getTree'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetTreeInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>]
+    /// - Returns: Interceptors to use when handling 'getTree'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeGetTreeInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetTreeRequest, Build_Bazel_Remote_Execution_V2_GetTreeResponse>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "ContentAddressableStorage",
-    fullName: "build.bazel.remote.execution.v2.ContentAddressableStorage",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.findMissingBlobs,
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.batchUpdateBlobs,
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.batchReadBlobs,
-      Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.getTree,
-    ]
-  )
-
-  public enum Methods {
-    public static let findMissingBlobs = GRPCMethodDescriptor(
-      name: "FindMissingBlobs",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "ContentAddressableStorage",
+        fullName: "build.bazel.remote.execution.v2.ContentAddressableStorage",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.findMissingBlobs,
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.batchUpdateBlobs,
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.batchReadBlobs,
+            Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetadata.Methods.getTree,
+        ]
     )
 
-    public static let batchUpdateBlobs = GRPCMethodDescriptor(
-      name: "BatchUpdateBlobs",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
-      type: GRPCCallType.unary
-    )
+    public enum Methods {
+        public static let findMissingBlobs = GRPCMethodDescriptor(
+            name: "FindMissingBlobs",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/FindMissingBlobs",
+            type: GRPCCallType.unary
+        )
 
-    public static let batchReadBlobs = GRPCMethodDescriptor(
-      name: "BatchReadBlobs",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
-      type: GRPCCallType.unary
-    )
+        public static let batchUpdateBlobs = GRPCMethodDescriptor(
+            name: "BatchUpdateBlobs",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchUpdateBlobs",
+            type: GRPCCallType.unary
+        )
 
-    public static let getTree = GRPCMethodDescriptor(
-      name: "GetTree",
-      path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
-      type: GRPCCallType.serverStreaming
-    )
-  }
+        public static let batchReadBlobs = GRPCMethodDescriptor(
+            name: "BatchReadBlobs",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/BatchReadBlobs",
+            type: GRPCCallType.unary
+        )
+
+        public static let getTree = GRPCMethodDescriptor(
+            name: "GetTree",
+            path: "/build.bazel.remote.execution.v2.ContentAddressableStorage/GetTree",
+            type: GRPCCallType.serverStreaming
+        )
+    }
 }
 /// The Capabilities service may be used by remote execution clients to query
 /// various server properties, in order to self-configure or return meaningful
@@ -2921,136 +2920,136 @@ public enum Build_Bazel_Remote_Execution_V2_ContentAddressableStorageServerMetad
 ///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesProvider: CallHandlerProvider {
-  var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? { get }
+    var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? { get }
 
-  /// GetCapabilities returns the server capabilities configuration of the
-  /// remote endpoint.
-  /// Only the capabilities of the services supported by the endpoint will
-  /// be returned:
-  /// * Execution + CAS + Action Cache endpoints should return both
-  ///   CacheCapabilities and ExecutionCapabilities.
-  /// * Execution only endpoints should return ExecutionCapabilities.
-  /// * CAS + Action Cache only endpoints should return CacheCapabilities.
-  ///
-  /// There are no method-specific errors.
-  func getCapabilities(request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ServerCapabilities>
+    /// GetCapabilities returns the server capabilities configuration of the
+    /// remote endpoint.
+    /// Only the capabilities of the services supported by the endpoint will
+    /// be returned:
+    /// * Execution + CAS + Action Cache endpoints should return both
+    ///   CacheCapabilities and ExecutionCapabilities.
+    /// * Execution only endpoints should return ExecutionCapabilities.
+    /// * CAS + Action Cache only endpoints should return CacheCapabilities.
+    ///
+    /// There are no method-specific errors.
+    func getCapabilities(request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Execution_V2_ServerCapabilities>
 }
 
 extension Build_Bazel_Remote_Execution_V2_CapabilitiesProvider {
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
-  /// Returns nil for methods not handled by this service.
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "GetCapabilities":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ServerCapabilities>(),
-        interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? [],
-        userFunction: self.getCapabilities(request:context:)
-      )
-
-    default:
-      return nil
+    public var serviceName: Substring {
+        return Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.serviceDescriptor.fullName[...]
     }
-  }
+
+    /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+    /// Returns nil for methods not handled by this service.
+    public func handle(
+        method name: Substring,
+        context: CallHandlerContext
+    ) -> GRPCServerHandlerProtocol? {
+        switch name {
+        case "GetCapabilities":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ServerCapabilities>(),
+                interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? [],
+                userFunction: self.getCapabilities(request:context:)
+            )
+
+        default:
+            return nil
+        }
+    }
 }
 
 #if compiler(>=5.6)
 
-/// The Capabilities service may be used by remote execution clients to query
-/// various server properties, in order to self-configure or return meaningful
-/// error messages.
-///
-/// The query may include a particular `instance_name`, in which case the values
-/// returned will pertain to that instance.
-///
-/// To implement a server, implement an object which conforms to this protocol.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncProvider: CallHandlerProvider {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? { get }
+    /// The Capabilities service may be used by remote execution clients to query
+    /// various server properties, in order to self-configure or return meaningful
+    /// error messages.
+    ///
+    /// The query may include a particular `instance_name`, in which case the values
+    /// returned will pertain to that instance.
+    ///
+    /// To implement a server, implement an object which conforms to this protocol.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncProvider: CallHandlerProvider {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? { get }
 
-  /// GetCapabilities returns the server capabilities configuration of the
-  /// remote endpoint.
-  /// Only the capabilities of the services supported by the endpoint will
-  /// be returned:
-  /// * Execution + CAS + Action Cache endpoints should return both
-  ///   CacheCapabilities and ExecutionCapabilities.
-  /// * Execution only endpoints should return ExecutionCapabilities.
-  /// * CAS + Action Cache only endpoints should return CacheCapabilities.
-  ///
-  /// There are no method-specific errors.
-  @Sendable func getCapabilities(
-    request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Execution_V2_ServerCapabilities
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncProvider {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.serviceDescriptor
-  }
-
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? {
-    return nil
-  }
-
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "GetCapabilities":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ServerCapabilities>(),
-        interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? [],
-        wrapping: self.getCapabilities(request:context:)
-      )
-
-    default:
-      return nil
+        /// GetCapabilities returns the server capabilities configuration of the
+        /// remote endpoint.
+        /// Only the capabilities of the services supported by the endpoint will
+        /// be returned:
+        /// * Execution + CAS + Action Cache endpoints should return both
+        ///   CacheCapabilities and ExecutionCapabilities.
+        /// * Execution only endpoints should return ExecutionCapabilities.
+        /// * CAS + Action Cache only endpoints should return CacheCapabilities.
+        ///
+        /// There are no method-specific errors.
+        @Sendable func getCapabilities(
+            request: Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Execution_V2_ServerCapabilities
     }
-  }
-}
 
-#endif // compiler(>=5.6)
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Execution_V2_CapabilitiesAsyncProvider {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.serviceDescriptor
+        }
+
+        public var serviceName: Substring {
+            return Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.serviceDescriptor.fullName[...]
+        }
+
+        public var interceptors: Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol? {
+            return nil
+        }
+
+        public func handle(
+            method name: Substring,
+            context: CallHandlerContext
+        ) -> GRPCServerHandlerProtocol? {
+            switch name {
+            case "GetCapabilities":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Execution_V2_ServerCapabilities>(),
+                    interceptors: self.interceptors?.makeGetCapabilitiesInterceptors() ?? [],
+                    wrapping: self.getCapabilities(request:context:)
+                )
+
+            default:
+                return nil
+            }
+        }
+    }
+
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Execution_V2_CapabilitiesServerInterceptorFactoryProtocol {
 
-  /// - Returns: Interceptors to use when handling 'getCapabilities'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeGetCapabilitiesInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>]
+    /// - Returns: Interceptors to use when handling 'getCapabilities'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeGetCapabilitiesInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Execution_V2_GetCapabilitiesRequest, Build_Bazel_Remote_Execution_V2_ServerCapabilities>]
 }
 
 public enum Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Capabilities",
-    fullName: "build.bazel.remote.execution.v2.Capabilities",
-    methods: [
-      Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.Methods.getCapabilities,
-    ]
-  )
-
-  public enum Methods {
-    public static let getCapabilities = GRPCMethodDescriptor(
-      name: "GetCapabilities",
-      path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Capabilities",
+        fullName: "build.bazel.remote.execution.v2.Capabilities",
+        methods: [
+            Build_Bazel_Remote_Execution_V2_CapabilitiesServerMetadata.Methods.getCapabilities
+        ]
     )
-  }
+
+    public enum Methods {
+        public static let getCapabilities = GRPCMethodDescriptor(
+            name: "GetCapabilities",
+            path: "/build.bazel.remote.execution.v2.Capabilities/GetCapabilities",
+            type: GRPCCallType.unary
+        )
+    }
 }

@@ -6,10 +6,9 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
-
 import BazelRemoteAPI
 import Crypto
+import Foundation
 import SwiftProtobuf
 import TSCUtility
 import TSFCAS
@@ -18,7 +17,7 @@ typealias Digest = Build_Bazel_Remote_Execution_V2_Digest
 
 /// A Bazel digest.
 extension Digest {
-    public init<D>(with bytes: D) where D : DataProtocol {
+    public init<D>(with bytes: D) where D: DataProtocol {
         // Translate to SHA256.
         var hashFunction = Crypto.SHA256()
         hashFunction.update(data: bytes)
@@ -43,7 +42,8 @@ extension Digest {
 extension LLBDataID {
     func asBazelDigest() throws -> Digest {
         return try bytes.dropFirst().withUnsafeBytes {
-            try Digest.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none)) }
+            try Digest.init(serializedData: Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: $0.baseAddress!), count: $0.count, deallocator: .none))
+        }
     }
 }
 

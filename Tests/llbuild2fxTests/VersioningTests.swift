@@ -5,9 +5,9 @@
 //  Created by David Bryson on 5/14/25.
 //
 
-@testable import llbuild2fx
 import XCTest
 
+@testable import llbuild2fx
 
 struct ExampleActionResult: Codable, Sendable {
 }

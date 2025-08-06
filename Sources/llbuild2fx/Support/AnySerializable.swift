@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import Foundation
-
 import NIOConcurrencyHelpers
 import SwiftProtobuf
 import TSFUtility
@@ -51,7 +50,7 @@ public class LLBSerializableRegistry: LLBSerializableLookup {
     /// Types registered at runtime that are allowed to be deserialized.
     private var registeredTypes: [String: LLBPolymorphicSerializable.Type] = [:]
 
-    public init() { }
+    public init() {}
 
     /// Register a new type for use in polymorphic serialization
     ///
@@ -135,4 +134,3 @@ extension LLBAnySerializable: LLBCASObjectConstructable {
         self = try LLBAnySerializable.init(from: casObject.data)
     }
 }
-

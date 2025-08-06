@@ -6,9 +6,9 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import SwiftUI
-import LLBBuildSystem
 import Dispatch
+import LLBBuildSystem
+import SwiftUI
 import llbuild2
 
 /// Environment object with a reference to the engine and database.
@@ -65,9 +65,9 @@ struct GameOfLifeView: View {
                                     return
                                 }
                                 if self.boardState.contains(Point(x, y)) {
-                                    self.boardState.remove(Point(x,y))
+                                    self.boardState.remove(Point(x, y))
                                 } else {
-                                    self.boardState.insert(Point(x,y))
+                                    self.boardState.insert(Point(x, y))
                                 }
                             }
                     }
@@ -77,13 +77,13 @@ struct GameOfLifeView: View {
                 Button(action: self.devolve) {
                     Text("Devolve")
                 }
-                    .padding()
-                    .disabled(self.loading || self.generation == 0)
+                .padding()
+                .disabled(self.loading || self.generation == 0)
                 Button(action: self.evolve) {
                     Text("Evolve")
                 }
-                    .padding()
-                    .disabled(self.loading || self.boardState.isEmpty)
+                .padding()
+                .disabled(self.loading || self.boardState.isEmpty)
             }
             Text("Elapsed: \(updateTime)s")
         }
@@ -144,8 +144,8 @@ struct GameOfLifeView: View {
                     let boardString = String(data: data, encoding: .utf8)!
                     let lines = boardString.split(separator: "\n")
                     var boardState = Set<Point>()
-                    for y in 0 ..< self.gridSize {
-                        for x in 0 ..< self.gridSize {
+                    for y in 0..<self.gridSize {
+                        for x in 0..<self.gridSize {
                             if Array(lines[y])[x] == "1" {
                                 boardState.insert(Point(x, y))
                             }

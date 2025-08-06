@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import llbuild2fx
 import XCTest
+import llbuild2fx
 
 final class FXKeyTests: XCTestCase {
     private struct TestValue: FXSingleDataIDValue {

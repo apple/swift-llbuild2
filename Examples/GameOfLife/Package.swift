@@ -6,19 +6,19 @@ import PackageDescription
 let package = Package(
     name: "GameOfLife",
     platforms: [
-       .macOS(.v10_15)
+        .macOS(.v10_15)
     ],
     products: [
         .executable(
             name: "game_of_life",
-            targets: ["GameOfLife"]),
+            targets: ["GameOfLife"])
     ],
     dependencies: [
-        .package(path: "../.."),
+        .package(path: "../..")
     ],
     targets: [
         .target(
             name: "GameOfLife",
-            dependencies: ["llbuild2BuildSystem", "llbuild2Util"]),
+            dependencies: ["llbuild2BuildSystem", "llbuild2Util"])
     ]
 )

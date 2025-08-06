@@ -37,7 +37,8 @@ public struct ConstantPredicate<EvaluatedType>: Predicate {
     }
 }
 
-public struct EqualityPredicate<LHS, RHS>: Predicate where
+public struct EqualityPredicate<LHS, RHS>: Predicate
+where
     LHS: Expression,
     RHS: Expression,
     LHS.EvaluatedType == RHS.EvaluatedType,
