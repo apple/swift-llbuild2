@@ -11,7 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 import AsyncAlgorithms
-import AsyncProcess
+import AsyncProcess2
 import Atomics
 import Logging
 import NIO

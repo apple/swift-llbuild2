@@ -10,7 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import AsyncProcess
+import AsyncProcess2
 import Foundation
 import NIO
 import XCTest

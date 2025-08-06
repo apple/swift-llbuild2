@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-typedef enum ps_error_kind_s {
+typedef enum llb_ps_error_kind_s {
     PS_ERROR_KIND_EXECVE = 1,
     PS_ERROR_KIND_PIPE = 2,
     PS_ERROR_KIND_FCNTL = 3,
@@ -29,27 +29,27 @@ typedef enum ps_error_kind_s {
     PS_ERROR_KIND_DUP = 10,
     PS_ERROR_KIND_SIGMASK_THREAD = 11,
     PS_ERROR_KIND_FAILED_CHILD_WAITPID = 12,
-} ps_error_kind;
+} llb_ps_error_kind;
 
-typedef struct ps_error_s {
-    ps_error_kind pse_kind;
+typedef struct llb_ps_error_s {
+    llb_ps_error_kind pse_kind;
     int pse_code;
     const char *pse_file;
     int pse_line;
     int pse_extra_info;
-} ps_error;
+} llb_ps_error;
 
-typedef enum ps_fd_setup_kind_s {
+typedef enum llb_ps_fd_setup_kind_s {
     PS_MAP_FD = 1,
     PS_CLOSE_FD = 2,
-} ps_fd_setup_kind;
+} llb_ps_fd_setup_kind;
 
-typedef struct ps_fd_setup_s {
-    ps_fd_setup_kind psfd_kind;
+typedef struct llb_ps_fd_setup_s {
+    llb_ps_fd_setup_kind psfd_kind;
     int psfd_parent_fd;
-} ps_fd_setup;
+} llb_ps_fd_setup;
 
-typedef struct ps_process_configuration_s {
+typedef struct llb_ps_process_configuration_s {
     const char *psc_path;
 
     // including argv[0]
@@ -60,14 +60,14 @@ typedef struct ps_process_configuration_s {
     const char *psc_cwd;
 
     int psc_fd_setup_count;
-    const ps_fd_setup *psc_fd_setup_instructions;
+    const llb_ps_fd_setup *psc_fd_setup_instructions;
 
     bool psc_new_session;
     bool psc_close_other_fds;
-} ps_process_configuration;
+} llb_ps_process_configuration;
 
-pid_t ps_spawn_process(ps_process_configuration *config, ps_error *out_error);
+pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *out_error);
 
-void ps_convert_exit_status(int in_status, bool *out_has_exited, bool *out_is_exit_code, int *out_code);
+void llb_ps_convert_exit_status(int in_status, bool *out_has_exited, bool *out_is_exit_code, int *out_code);
 
 #endif

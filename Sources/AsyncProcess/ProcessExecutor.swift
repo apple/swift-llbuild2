@@ -14,7 +14,7 @@ import AsyncAlgorithms
 import Atomics
 import Logging
 import NIO
-import ProcessSpawnSync
+import ProcessSpawnSync2
 
 @_exported import struct SystemPackage.FileDescriptor
 

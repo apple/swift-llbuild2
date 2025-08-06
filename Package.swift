@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.9
 
 import PackageDescription
 
@@ -31,11 +31,13 @@ let package = Package(
         .target(
             name: "llbuild2fx",
             dependencies: [
-                "SwiftProtobuf",
-                "SwiftToolsSupportCAS",
-                "Logging",
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
+                .product(name: "Logging", package: "swift-log"),
+                "AsyncProcess2",
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
                 .product(name: "Instrumentation", package: "swift-distributed-tracing"),
+                .product(name: "_NIOFileSystem", package: "swift-nio")
             ]
         ),
         .testTarget(
@@ -44,52 +46,56 @@ let package = Package(
         ),
 
         // Async Process vendored library
+        // TODO: global target name conflict shenanigans.
         .target(
-            name: "AsyncProcess",
+            name: "AsyncProcess2",
             dependencies: [
-                "ProcessSpawnSync",
+                "ProcessSpawnSync2",
                 .product(name: "Atomics", package: "swift-atomics"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "NIO", package: "swift-nio"),
                 .product(name: "DequeModule", package: "swift-collections"),
                 .product(name: "SystemPackage", package: "swift-system"),
-            ]
+            ],
+            path: "Sources/AsyncProcess"
         ),
         .testTarget(
-            name: "AsyncProcessTests",
+            name: "AsyncProcess2Tests",
             dependencies: [
-                "AsyncProcess",
+                "AsyncProcess2",
                 .product(name: "Atomics", package: "swift-atomics"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "NIO", package: "swift-nio"),
                 .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "_NIOFileSystem", package: "swift-nio"),
-            ]
+            ],
+            path: "Tests/AsyncProcessTests"
         ),
         .target(
-            name: "CProcessSpawnSync",
+            name: "CProcessSpawnSync2",
             cSettings: [
                 .define("_GNU_SOURCE")
             ]
         ),
         .target(
-            name: "ProcessSpawnSync",
+            name: "ProcessSpawnSync2",
             dependencies: [
-                "CProcessSpawnSync",
+                "CProcessSpawnSync2",
                 .product(name: "Atomics", package: "swift-atomics"),
                 .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
-            ]
+            ],
+            path: "Sources/ProcessSpawnSync"
         ),
 
         // Bazel RemoteAPI Protocol
         .target(
             name: "BazelRemoteAPI",
             dependencies: [
-                "GRPC",
-                "SwiftProtobuf",
-                "SwiftProtobufPluginLibrary",
+                .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SwiftProtobufPluginLibrary", package: "swift-protobuf"),
             ]
         ),
 
@@ -104,9 +110,9 @@ let package = Package(
             name: "LLBBazelBackend",
             dependencies: [
                 "BazelRemoteAPI",
-                "Crypto",
-                "GRPC",
-                "SwiftToolsSupportCAS",
+                .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
             ]
         ),
 
@@ -114,17 +120,17 @@ let package = Package(
         .target(
             name: "LLBCASTool",
             dependencies: [
-                "GRPC",
-                "SwiftToolsSupport-auto",
+                .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
                 "BazelRemoteAPI",
                 "LLBBazelBackend",
             ]
         ),
 
         // `llcastool` executable.
-        .target(
+        .executableTarget(
             name: "llcastool",
-            dependencies: ["LLBCASTool", "ArgumentParser"],
+            dependencies: ["LLBCASTool", .product(name: "ArgumentParser", package: "swift-argument-parser")],
             path: "Sources/Tools/llcastool"
         ),
     ]
