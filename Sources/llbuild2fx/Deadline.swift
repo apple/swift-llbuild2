@@ -54,16 +54,4 @@ extension Context {
 
         return ctx
     }
-
-    public func fxApplyDeadline<T>(_ cancellable: LLBCancellableFuture<T>) {
-        if let actualDeadline = nioDeadline {
-            let timer = cancellable.future.eventLoop.scheduleTask(deadline: actualDeadline) {
-                cancellable.cancel(reason: "timeout")
-            }
-
-            cancellable.future.whenComplete {
-                _ in timer.cancel()
-            }
-        }
-    }
 }
