@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import LLBBuildSystem
 import Foundation
+import LLBBuildSystem
 import llbuild2
 
 /// Simple 2D point struct.
@@ -42,8 +42,8 @@ struct CellTarget: LLBConfiguredTarget, Codable {
         self.previousState = previousState
         self.neighbours = neighbours
     }
-    
-    var targetDependencies: [String : LLBTargetDependency] {
+
+    var targetDependencies: [String: LLBTargetDependency] {
         var targetDependencies = ["neighbours": LLBTargetDependency.list(neighbours)]
         if let previousState = previousState {
             targetDependencies["previousState"] = .single(previousState)
@@ -88,7 +88,7 @@ struct CellTarget: LLBConfiguredTarget, Codable {
 
         // Request the dependency for the same point at the previous generation.
         let previousStateLabel = try LLBLabel("//cell/\(generation - 1):\(position.x)-\(position.y)")
-        
+
         return ctx.group.next().makeSucceededFuture(
             CellTarget(
                 position: position,
@@ -154,7 +154,7 @@ class CellRule: LLBBuildRule<CellTarget> {
                 else
                     cp -f \(previousState.path) \(stateArtifact.path)
                 fi
-                """
+                """,
             ],
             inputs: neighbours + [previousState],
             outputs: [stateArtifact],

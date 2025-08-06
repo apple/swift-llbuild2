@@ -25,7 +25,6 @@ import NIO
 import NIOConcurrencyHelpers
 import SwiftProtobuf
 
-
 /// The Fetch service resolves or fetches assets referenced by URI and
 /// Qualifiers, returning a Digest for the content in
 /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
@@ -37,315 +36,315 @@ import SwiftProtobuf
 ///
 /// Usage: instantiate `Build_Bazel_Remote_Asset_V1_FetchClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Asset_V1_FetchClientProtocol: GRPCClient {
-  var serviceName: String { get }
-  var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? { get }
+    var serviceName: String { get }
+    var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? { get }
 
-  func fetchBlob(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
+    func fetchBlob(
+        _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
 
-  func fetchDirectory(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
+    func fetchDirectory(
+        _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
 }
 
 extension Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
-  public var serviceName: String {
-    return "build.bazel.remote.asset.v1.Fetch"
-  }
+    public var serviceName: String {
+        return "build.bazel.remote.asset.v1.Fetch"
+    }
 
-  /// Resolve or fetch referenced assets, making them available to the caller and
-  /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-  ///
-  /// Servers *MAY* fetch content that they do not already have cached, for any
-  /// URLs they support.
-  ///
-  /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
-  /// time of the response, and (if supported) that they will remain available
-  /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
-  /// be increased if necessary and applicable.
-  /// In the event that a client receives a reference to content that is no
-  /// longer present, it *MAY* re-issue the request with
-  /// `oldest_content_accepted` set to a more recent timestamp than the original
-  /// attempt, to induce a re-fetch from origin.
-  ///
-  /// Servers *MAY* cache fetched content and reuse it for subsequent requests,
-  /// subject to `oldest_content_accepted`.
-  ///
-  /// Servers *MAY* support the complementary [Push][build.bazel.remote.asset.v1.Push]
-  /// API and allow content to be directly inserted for use in future fetch
-  /// responses.
-  ///
-  /// Servers *MUST* ensure Fetch'd content matches all the specified
-  /// qualifiers except in the case of previously Push'd resources, for which
-  /// the server *MAY* trust the pushing client to have set the qualifiers
-  /// correctly, without validation.
-  ///
-  /// Servers not implementing the complementary [Push][build.bazel.remote.asset.v1.Push]
-  /// API *MUST* reject requests containing qualifiers it does not support.
-  ///
-  /// Servers *MAY* transform assets as part of the fetch. For example a
-  /// tarball fetched by [FetchDirectory][build.bazel.remote.asset.v1.Fetch.FetchDirectory]
-  /// might be unpacked, or a Git repository
-  /// fetched by [FetchBlob][build.bazel.remote.asset.v1.Fetch.FetchBlob]
-  /// might be passed through `git-archive`.
-  ///
-  /// Errors handling the requested assets will be returned as gRPC Status errors
-  /// here; errors outside the server's control will be returned inline in the
-  /// `status` field of the response (see comment there for details).
-  /// The possible RPC errors include:
-  /// * `INVALID_ARGUMENT`: One or more arguments were invalid, such as a
-  ///   qualifier that is not supported by the server.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
-  ///   perform the requested operation. The client may retry after a delay.
-  /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
-  ///   completed. The client should retry.
-  /// * `INTERNAL`: An internal error occurred while performing the operation.
-  ///   The client should retry.
-  /// * `DEADLINE_EXCEEDED`: The fetch could not be completed within the given
-  ///   RPC deadline. The client should retry for at least as long as the value
-  ///   provided in `timeout` field of the request.
-  ///
-  /// In the case of unsupported qualifiers, the server *SHOULD* additionally
-  /// send a [BadRequest][google.rpc.BadRequest] error detail where, for each
-  /// unsupported qualifier, there is a `FieldViolation` with a `field` of
-  /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
-  /// indicating the name of the unsupported qualifier.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to FetchBlob.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func fetchBlob(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
-    )
-  }
+    /// Resolve or fetch referenced assets, making them available to the caller and
+    /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+    ///
+    /// Servers *MAY* fetch content that they do not already have cached, for any
+    /// URLs they support.
+    ///
+    /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
+    /// time of the response, and (if supported) that they will remain available
+    /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
+    /// be increased if necessary and applicable.
+    /// In the event that a client receives a reference to content that is no
+    /// longer present, it *MAY* re-issue the request with
+    /// `oldest_content_accepted` set to a more recent timestamp than the original
+    /// attempt, to induce a re-fetch from origin.
+    ///
+    /// Servers *MAY* cache fetched content and reuse it for subsequent requests,
+    /// subject to `oldest_content_accepted`.
+    ///
+    /// Servers *MAY* support the complementary [Push][build.bazel.remote.asset.v1.Push]
+    /// API and allow content to be directly inserted for use in future fetch
+    /// responses.
+    ///
+    /// Servers *MUST* ensure Fetch'd content matches all the specified
+    /// qualifiers except in the case of previously Push'd resources, for which
+    /// the server *MAY* trust the pushing client to have set the qualifiers
+    /// correctly, without validation.
+    ///
+    /// Servers not implementing the complementary [Push][build.bazel.remote.asset.v1.Push]
+    /// API *MUST* reject requests containing qualifiers it does not support.
+    ///
+    /// Servers *MAY* transform assets as part of the fetch. For example a
+    /// tarball fetched by [FetchDirectory][build.bazel.remote.asset.v1.Fetch.FetchDirectory]
+    /// might be unpacked, or a Git repository
+    /// fetched by [FetchBlob][build.bazel.remote.asset.v1.Fetch.FetchBlob]
+    /// might be passed through `git-archive`.
+    ///
+    /// Errors handling the requested assets will be returned as gRPC Status errors
+    /// here; errors outside the server's control will be returned inline in the
+    /// `status` field of the response (see comment there for details).
+    /// The possible RPC errors include:
+    /// * `INVALID_ARGUMENT`: One or more arguments were invalid, such as a
+    ///   qualifier that is not supported by the server.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+    ///   perform the requested operation. The client may retry after a delay.
+    /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
+    ///   completed. The client should retry.
+    /// * `INTERNAL`: An internal error occurred while performing the operation.
+    ///   The client should retry.
+    /// * `DEADLINE_EXCEEDED`: The fetch could not be completed within the given
+    ///   RPC deadline. The client should retry for at least as long as the value
+    ///   provided in `timeout` field of the request.
+    ///
+    /// In the case of unsupported qualifiers, the server *SHOULD* additionally
+    /// send a [BadRequest][google.rpc.BadRequest] error detail where, for each
+    /// unsupported qualifier, there is a `FieldViolation` with a `field` of
+    /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
+    /// indicating the name of the unsupported qualifier.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to FetchBlob.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func fetchBlob(
+        _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
+        )
+    }
 
-  /// Unary call to FetchDirectory
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to FetchDirectory.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func fetchDirectory(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
-    )
-  }
+    /// Unary call to FetchDirectory
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to FetchDirectory.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func fetchDirectory(
+        _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
+        )
+    }
 }
 
 #if compiler(>=5.6)
-@available(*, deprecated)
-extension Build_Bazel_Remote_Asset_V1_FetchClient: @unchecked Sendable {}
-#endif // compiler(>=5.6)
+    @available(*, deprecated)
+    extension Build_Bazel_Remote_Asset_V1_FetchClient: @unchecked Sendable {}
+#endif  // compiler(>=5.6)
 
 @available(*, deprecated, renamed: "Build_Bazel_Remote_Asset_V1_FetchNIOClient")
 public final class Build_Bazel_Remote_Asset_V1_FetchClient: Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
-  private let lock = Lock()
-  private var _defaultCallOptions: CallOptions
-  private var _interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions {
-    get { self.lock.withLock { return self._defaultCallOptions } }
-    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
-  }
-  public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? {
-    get { self.lock.withLock { return self._interceptors } }
-    set { self.lock.withLockVoid { self._interceptors = newValue } }
-  }
+    private let lock = Lock()
+    private var _defaultCallOptions: CallOptions
+    private var _interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
+    public let channel: GRPCChannel
+    public var defaultCallOptions: CallOptions {
+        get { self.lock.withLock { return self._defaultCallOptions } }
+        set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+    }
+    public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? {
+        get { self.lock.withLock { return self._interceptors } }
+        set { self.lock.withLockVoid { self._interceptors = newValue } }
+    }
 
-  /// Creates a client for the build.bazel.remote.asset.v1.Fetch service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self._defaultCallOptions = defaultCallOptions
-    self._interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.asset.v1.Fetch service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self._defaultCallOptions = defaultCallOptions
+        self._interceptors = interceptors
+    }
 }
 
 public struct Build_Bazel_Remote_Asset_V1_FetchNIOClient: Build_Bazel_Remote_Asset_V1_FetchClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
+    public var channel: GRPCChannel
+    public var defaultCallOptions: CallOptions
+    public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.asset.v1.Fetch service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.asset.v1.Fetch service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self.defaultCallOptions = defaultCallOptions
+        self.interceptors = interceptors
+    }
 }
 
 #if compiler(>=5.6)
-/// The Fetch service resolves or fetches assets referenced by URI and
-/// Qualifiers, returning a Digest for the content in
-/// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol: GRPCClient {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? { get }
+    /// The Fetch service resolves or fetches assets referenced by URI and
+    /// Qualifiers, returning a Digest for the content in
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol: GRPCClient {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? { get }
 
-  func makeFetchBlobCall(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
+        func makeFetchBlobCall(
+            _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
 
-  func makeFetchDirectoryCall(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
-}
+        func makeFetchDirectoryCall(
+            _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Asset_V1_FetchClientMetadata.serviceDescriptor
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Asset_V1_FetchClientMetadata.serviceDescriptor
+        }
 
-  public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? {
-    return nil
-  }
+        public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? {
+            return nil
+        }
 
-  public func makeFetchBlobCall(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
-    )
-  }
+        public func makeFetchBlobCall(
+            _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
+            )
+        }
 
-  public func makeFetchDirectoryCall(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
-    )
-  }
-}
+        public func makeFetchDirectoryCall(
+            _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol {
-  public func fetchBlob(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Asset_V1_FetchBlobResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
-    )
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol {
+        public func fetchBlob(
+            _ request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Asset_V1_FetchBlobResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? []
+            )
+        }
 
-  public func fetchDirectory(
-    _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
-    )
-  }
-}
+        public func fetchDirectory(
+            _ request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public struct Build_Bazel_Remote_Asset_V1_FetchAsyncClient: Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public struct Build_Bazel_Remote_Asset_V1_FetchAsyncClient: Build_Bazel_Remote_Asset_V1_FetchAsyncClientProtocol {
+        public var channel: GRPCChannel
+        public var defaultCallOptions: CallOptions
+        public var interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol?
 
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
-}
+        public init(
+            channel: GRPCChannel,
+            defaultCallOptions: CallOptions = CallOptions(),
+            interceptors: Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol? = nil
+        ) {
+            self.channel = channel
+            self.defaultCallOptions = defaultCallOptions
+            self.interceptors = interceptors
+        }
+    }
 
-#endif // compiler(>=5.6)
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Asset_V1_FetchClientInterceptorFactoryProtocol: GRPCSendable {
 
-  /// - Returns: Interceptors to use when invoking 'fetchBlob'.
-  func makeFetchBlobInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>]
+    /// - Returns: Interceptors to use when invoking 'fetchBlob'.
+    func makeFetchBlobInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>]
 
-  /// - Returns: Interceptors to use when invoking 'fetchDirectory'.
-  func makeFetchDirectoryInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
+    /// - Returns: Interceptors to use when invoking 'fetchDirectory'.
+    func makeFetchDirectoryInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
 }
 
 public enum Build_Bazel_Remote_Asset_V1_FetchClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Fetch",
-    fullName: "build.bazel.remote.asset.v1.Fetch",
-    methods: [
-      Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob,
-      Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory,
-    ]
-  )
-
-  public enum Methods {
-    public static let fetchBlob = GRPCMethodDescriptor(
-      name: "FetchBlob",
-      path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Fetch",
+        fullName: "build.bazel.remote.asset.v1.Fetch",
+        methods: [
+            Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchBlob,
+            Build_Bazel_Remote_Asset_V1_FetchClientMetadata.Methods.fetchDirectory,
+        ]
     )
 
-    public static let fetchDirectory = GRPCMethodDescriptor(
-      name: "FetchDirectory",
-      path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
-      type: GRPCCallType.unary
-    )
-  }
+    public enum Methods {
+        public static let fetchBlob = GRPCMethodDescriptor(
+            name: "FetchBlob",
+            path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
+            type: GRPCCallType.unary
+        )
+
+        public static let fetchDirectory = GRPCMethodDescriptor(
+            name: "FetchDirectory",
+            path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
+            type: GRPCCallType.unary
+        )
+    }
 }
 
 /// The Push service is complementary to the Fetch, and allows for
@@ -358,291 +357,291 @@ public enum Build_Bazel_Remote_Asset_V1_FetchClientMetadata {
 ///
 /// Usage: instantiate `Build_Bazel_Remote_Asset_V1_PushClient`, then call methods of this protocol to make API calls.
 public protocol Build_Bazel_Remote_Asset_V1_PushClientProtocol: GRPCClient {
-  var serviceName: String { get }
-  var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? { get }
+    var serviceName: String { get }
+    var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? { get }
 
-  func pushBlob(
-    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>
+    func pushBlob(
+        _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>
 
-  func pushDirectory(
-    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
-    callOptions: CallOptions?
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
+    func pushDirectory(
+        _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
 }
 
 extension Build_Bazel_Remote_Asset_V1_PushClientProtocol {
-  public var serviceName: String {
-    return "build.bazel.remote.asset.v1.Push"
-  }
+    public var serviceName: String {
+        return "build.bazel.remote.asset.v1.Push"
+    }
 
-  /// These APIs associate the identifying information of a resource, as
-  /// indicated by URI and optionally Qualifiers, with content available in the
-  /// CAS. For example, associating a repository url and a commit id with a
-  /// Directory Digest.
-  ///
-  /// Servers *SHOULD* only allow trusted clients to associate content, and *MAY*
-  /// only allow certain URIs to be pushed.
-  ///
-  /// Clients *MUST* ensure associated content is available in CAS prior to
-  /// pushing.
-  ///
-  /// Clients *MUST* ensure the Qualifiers listed correctly match the contents,
-  /// and Servers *MAY* trust these values without validation.
-  /// Fetch servers *MAY* require exact match of all qualifiers when returning
-  /// content previously pushed, or allow fetching content with only a subset of
-  /// the qualifiers specified on Push.
-  ///
-  /// Clients can specify expiration information that the server *SHOULD*
-  /// respect. Subsequent requests can be used to alter the expiration time.
-  ///
-  /// A minimal compliant Fetch implementation may support only Push'd content
-  /// and return `NOT_FOUND` for any resource that was not pushed first.
-  /// Alternatively, a compliant implementation may choose to not support Push
-  /// and only return resources that can be Fetch'd from origin.
-  ///
-  /// Errors will be returned as gRPC Status errors.
-  /// The possible RPC errors include:
-  /// * `INVALID_ARGUMENT`: One or more arguments to the RPC were invalid.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
-  ///   perform the requested operation. The client may retry after a delay.
-  /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
-  ///   completed. The client should retry.
-  /// * `INTERNAL`: An internal error occurred while performing the operation.
-  ///   The client should retry.
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to PushBlob.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func pushBlob(
-    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
-    )
-  }
+    /// These APIs associate the identifying information of a resource, as
+    /// indicated by URI and optionally Qualifiers, with content available in the
+    /// CAS. For example, associating a repository url and a commit id with a
+    /// Directory Digest.
+    ///
+    /// Servers *SHOULD* only allow trusted clients to associate content, and *MAY*
+    /// only allow certain URIs to be pushed.
+    ///
+    /// Clients *MUST* ensure associated content is available in CAS prior to
+    /// pushing.
+    ///
+    /// Clients *MUST* ensure the Qualifiers listed correctly match the contents,
+    /// and Servers *MAY* trust these values without validation.
+    /// Fetch servers *MAY* require exact match of all qualifiers when returning
+    /// content previously pushed, or allow fetching content with only a subset of
+    /// the qualifiers specified on Push.
+    ///
+    /// Clients can specify expiration information that the server *SHOULD*
+    /// respect. Subsequent requests can be used to alter the expiration time.
+    ///
+    /// A minimal compliant Fetch implementation may support only Push'd content
+    /// and return `NOT_FOUND` for any resource that was not pushed first.
+    /// Alternatively, a compliant implementation may choose to not support Push
+    /// and only return resources that can be Fetch'd from origin.
+    ///
+    /// Errors will be returned as gRPC Status errors.
+    /// The possible RPC errors include:
+    /// * `INVALID_ARGUMENT`: One or more arguments to the RPC were invalid.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+    ///   perform the requested operation. The client may retry after a delay.
+    /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
+    ///   completed. The client should retry.
+    /// * `INTERNAL`: An internal error occurred while performing the operation.
+    ///   The client should retry.
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to PushBlob.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func pushBlob(
+        _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
+        )
+    }
 
-  /// Unary call to PushDirectory
-  ///
-  /// - Parameters:
-  ///   - request: Request to send to PushDirectory.
-  ///   - callOptions: Call options.
-  /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func pushDirectory(
-    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
-    callOptions: CallOptions? = nil
-  ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse> {
-    return self.makeUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
-    )
-  }
+    /// Unary call to PushDirectory
+    ///
+    /// - Parameters:
+    ///   - request: Request to send to PushDirectory.
+    ///   - callOptions: Call options.
+    /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
+    public func pushDirectory(
+        _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse> {
+        return self.makeUnaryCall(
+            path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory.path,
+            request: request,
+            callOptions: callOptions ?? self.defaultCallOptions,
+            interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
+        )
+    }
 }
 
 #if compiler(>=5.6)
-@available(*, deprecated)
-extension Build_Bazel_Remote_Asset_V1_PushClient: @unchecked Sendable {}
-#endif // compiler(>=5.6)
+    @available(*, deprecated)
+    extension Build_Bazel_Remote_Asset_V1_PushClient: @unchecked Sendable {}
+#endif  // compiler(>=5.6)
 
 @available(*, deprecated, renamed: "Build_Bazel_Remote_Asset_V1_PushNIOClient")
 public final class Build_Bazel_Remote_Asset_V1_PushClient: Build_Bazel_Remote_Asset_V1_PushClientProtocol {
-  private let lock = Lock()
-  private var _defaultCallOptions: CallOptions
-  private var _interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions {
-    get { self.lock.withLock { return self._defaultCallOptions } }
-    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
-  }
-  public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? {
-    get { self.lock.withLock { return self._interceptors } }
-    set { self.lock.withLockVoid { self._interceptors = newValue } }
-  }
+    private let lock = Lock()
+    private var _defaultCallOptions: CallOptions
+    private var _interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
+    public let channel: GRPCChannel
+    public var defaultCallOptions: CallOptions {
+        get { self.lock.withLock { return self._defaultCallOptions } }
+        set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+    }
+    public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? {
+        get { self.lock.withLock { return self._interceptors } }
+        set { self.lock.withLockVoid { self._interceptors = newValue } }
+    }
 
-  /// Creates a client for the build.bazel.remote.asset.v1.Push service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self._defaultCallOptions = defaultCallOptions
-    self._interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.asset.v1.Push service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self._defaultCallOptions = defaultCallOptions
+        self._interceptors = interceptors
+    }
 }
 
 public struct Build_Bazel_Remote_Asset_V1_PushNIOClient: Build_Bazel_Remote_Asset_V1_PushClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
+    public var channel: GRPCChannel
+    public var defaultCallOptions: CallOptions
+    public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
 
-  /// Creates a client for the build.bazel.remote.asset.v1.Push service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
+    /// Creates a client for the build.bazel.remote.asset.v1.Push service.
+    ///
+    /// - Parameters:
+    ///   - channel: `GRPCChannel` to the service host.
+    ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+    ///   - interceptors: A factory providing interceptors for each RPC.
+    public init(
+        channel: GRPCChannel,
+        defaultCallOptions: CallOptions = CallOptions(),
+        interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
+    ) {
+        self.channel = channel
+        self.defaultCallOptions = defaultCallOptions
+        self.interceptors = interceptors
+    }
 }
 
 #if compiler(>=5.6)
-/// The Push service is complementary to the Fetch, and allows for
-/// associating contents of URLs to be returned in future Fetch API calls.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol: GRPCClient {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? { get }
+    /// The Push service is complementary to the Fetch, and allows for
+    /// associating contents of URLs to be returned in future Fetch API calls.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol: GRPCClient {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? { get }
 
-  func makePushBlobCall(
-    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>
+        func makePushBlobCall(
+            _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>
 
-  func makePushDirectoryCall(
-    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
-    callOptions: CallOptions?
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
-}
+        func makePushDirectoryCall(
+            _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+            callOptions: CallOptions?
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Asset_V1_PushClientMetadata.serviceDescriptor
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Asset_V1_PushClientMetadata.serviceDescriptor
+        }
 
-  public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? {
-    return nil
-  }
+        public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? {
+            return nil
+        }
 
-  public func makePushBlobCall(
-    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
-    )
-  }
+        public func makePushBlobCall(
+            _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
+            )
+        }
 
-  public func makePushDirectoryCall(
-    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
-    callOptions: CallOptions? = nil
-  ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse> {
-    return self.makeAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
-    )
-  }
-}
+        public func makePushDirectoryCall(
+            _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+            callOptions: CallOptions? = nil
+        ) -> GRPCAsyncUnaryCall<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse> {
+            return self.makeAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol {
-  public func pushBlob(
-    _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Asset_V1_PushBlobResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
-    )
-  }
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol {
+        public func pushBlob(
+            _ request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Asset_V1_PushBlobResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makePushBlobInterceptors() ?? []
+            )
+        }
 
-  public func pushDirectory(
-    _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
-    callOptions: CallOptions? = nil
-  ) async throws -> Build_Bazel_Remote_Asset_V1_PushDirectoryResponse {
-    return try await self.performAsyncUnaryCall(
-      path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory.path,
-      request: request,
-      callOptions: callOptions ?? self.defaultCallOptions,
-      interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
-    )
-  }
-}
+        public func pushDirectory(
+            _ request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+            callOptions: CallOptions? = nil
+        ) async throws -> Build_Bazel_Remote_Asset_V1_PushDirectoryResponse {
+            return try await self.performAsyncUnaryCall(
+                path: Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory.path,
+                request: request,
+                callOptions: callOptions ?? self.defaultCallOptions,
+                interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? []
+            )
+        }
+    }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public struct Build_Bazel_Remote_Asset_V1_PushAsyncClient: Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol {
-  public var channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-  public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public struct Build_Bazel_Remote_Asset_V1_PushAsyncClient: Build_Bazel_Remote_Asset_V1_PushAsyncClientProtocol {
+        public var channel: GRPCChannel
+        public var defaultCallOptions: CallOptions
+        public var interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol?
 
-  public init(
-    channel: GRPCChannel,
-    defaultCallOptions: CallOptions = CallOptions(),
-    interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
-  ) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
-    self.interceptors = interceptors
-  }
-}
+        public init(
+            channel: GRPCChannel,
+            defaultCallOptions: CallOptions = CallOptions(),
+            interceptors: Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol? = nil
+        ) {
+            self.channel = channel
+            self.defaultCallOptions = defaultCallOptions
+            self.interceptors = interceptors
+        }
+    }
 
-#endif // compiler(>=5.6)
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Asset_V1_PushClientInterceptorFactoryProtocol: GRPCSendable {
 
-  /// - Returns: Interceptors to use when invoking 'pushBlob'.
-  func makePushBlobInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>]
+    /// - Returns: Interceptors to use when invoking 'pushBlob'.
+    func makePushBlobInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>]
 
-  /// - Returns: Interceptors to use when invoking 'pushDirectory'.
-  func makePushDirectoryInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>]
+    /// - Returns: Interceptors to use when invoking 'pushDirectory'.
+    func makePushDirectoryInterceptors() -> [ClientInterceptor<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>]
 }
 
 public enum Build_Bazel_Remote_Asset_V1_PushClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Push",
-    fullName: "build.bazel.remote.asset.v1.Push",
-    methods: [
-      Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob,
-      Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory,
-    ]
-  )
-
-  public enum Methods {
-    public static let pushBlob = GRPCMethodDescriptor(
-      name: "PushBlob",
-      path: "/build.bazel.remote.asset.v1.Push/PushBlob",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Push",
+        fullName: "build.bazel.remote.asset.v1.Push",
+        methods: [
+            Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushBlob,
+            Build_Bazel_Remote_Asset_V1_PushClientMetadata.Methods.pushDirectory,
+        ]
     )
 
-    public static let pushDirectory = GRPCMethodDescriptor(
-      name: "PushDirectory",
-      path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
-      type: GRPCCallType.unary
-    )
-  }
+    public enum Methods {
+        public static let pushBlob = GRPCMethodDescriptor(
+            name: "PushBlob",
+            path: "/build.bazel.remote.asset.v1.Push/PushBlob",
+            type: GRPCCallType.unary
+        )
+
+        public static let pushDirectory = GRPCMethodDescriptor(
+            name: "PushDirectory",
+            path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
+            type: GRPCCallType.unary
+        )
+    }
 }
 
 /// The Fetch service resolves or fetches assets referenced by URI and
@@ -656,270 +655,270 @@ public enum Build_Bazel_Remote_Asset_V1_PushClientMetadata {
 ///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Asset_V1_FetchProvider: CallHandlerProvider {
-  var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? { get }
+    var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? { get }
 
-  /// Resolve or fetch referenced assets, making them available to the caller and
-  /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-  ///
-  /// Servers *MAY* fetch content that they do not already have cached, for any
-  /// URLs they support.
-  ///
-  /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
-  /// time of the response, and (if supported) that they will remain available
-  /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
-  /// be increased if necessary and applicable.
-  /// In the event that a client receives a reference to content that is no
-  /// longer present, it *MAY* re-issue the request with
-  /// `oldest_content_accepted` set to a more recent timestamp than the original
-  /// attempt, to induce a re-fetch from origin.
-  ///
-  /// Servers *MAY* cache fetched content and reuse it for subsequent requests,
-  /// subject to `oldest_content_accepted`.
-  ///
-  /// Servers *MAY* support the complementary [Push][build.bazel.remote.asset.v1.Push]
-  /// API and allow content to be directly inserted for use in future fetch
-  /// responses.
-  ///
-  /// Servers *MUST* ensure Fetch'd content matches all the specified
-  /// qualifiers except in the case of previously Push'd resources, for which
-  /// the server *MAY* trust the pushing client to have set the qualifiers
-  /// correctly, without validation.
-  ///
-  /// Servers not implementing the complementary [Push][build.bazel.remote.asset.v1.Push]
-  /// API *MUST* reject requests containing qualifiers it does not support.
-  ///
-  /// Servers *MAY* transform assets as part of the fetch. For example a
-  /// tarball fetched by [FetchDirectory][build.bazel.remote.asset.v1.Fetch.FetchDirectory]
-  /// might be unpacked, or a Git repository
-  /// fetched by [FetchBlob][build.bazel.remote.asset.v1.Fetch.FetchBlob]
-  /// might be passed through `git-archive`.
-  ///
-  /// Errors handling the requested assets will be returned as gRPC Status errors
-  /// here; errors outside the server's control will be returned inline in the
-  /// `status` field of the response (see comment there for details).
-  /// The possible RPC errors include:
-  /// * `INVALID_ARGUMENT`: One or more arguments were invalid, such as a
-  ///   qualifier that is not supported by the server.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
-  ///   perform the requested operation. The client may retry after a delay.
-  /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
-  ///   completed. The client should retry.
-  /// * `INTERNAL`: An internal error occurred while performing the operation.
-  ///   The client should retry.
-  /// * `DEADLINE_EXCEEDED`: The fetch could not be completed within the given
-  ///   RPC deadline. The client should retry for at least as long as the value
-  ///   provided in `timeout` field of the request.
-  ///
-  /// In the case of unsupported qualifiers, the server *SHOULD* additionally
-  /// send a [BadRequest][google.rpc.BadRequest] error detail where, for each
-  /// unsupported qualifier, there is a `FieldViolation` with a `field` of
-  /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
-  /// indicating the name of the unsupported qualifier.
-  func fetchBlob(request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
+    /// Resolve or fetch referenced assets, making them available to the caller and
+    /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+    ///
+    /// Servers *MAY* fetch content that they do not already have cached, for any
+    /// URLs they support.
+    ///
+    /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
+    /// time of the response, and (if supported) that they will remain available
+    /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
+    /// be increased if necessary and applicable.
+    /// In the event that a client receives a reference to content that is no
+    /// longer present, it *MAY* re-issue the request with
+    /// `oldest_content_accepted` set to a more recent timestamp than the original
+    /// attempt, to induce a re-fetch from origin.
+    ///
+    /// Servers *MAY* cache fetched content and reuse it for subsequent requests,
+    /// subject to `oldest_content_accepted`.
+    ///
+    /// Servers *MAY* support the complementary [Push][build.bazel.remote.asset.v1.Push]
+    /// API and allow content to be directly inserted for use in future fetch
+    /// responses.
+    ///
+    /// Servers *MUST* ensure Fetch'd content matches all the specified
+    /// qualifiers except in the case of previously Push'd resources, for which
+    /// the server *MAY* trust the pushing client to have set the qualifiers
+    /// correctly, without validation.
+    ///
+    /// Servers not implementing the complementary [Push][build.bazel.remote.asset.v1.Push]
+    /// API *MUST* reject requests containing qualifiers it does not support.
+    ///
+    /// Servers *MAY* transform assets as part of the fetch. For example a
+    /// tarball fetched by [FetchDirectory][build.bazel.remote.asset.v1.Fetch.FetchDirectory]
+    /// might be unpacked, or a Git repository
+    /// fetched by [FetchBlob][build.bazel.remote.asset.v1.Fetch.FetchBlob]
+    /// might be passed through `git-archive`.
+    ///
+    /// Errors handling the requested assets will be returned as gRPC Status errors
+    /// here; errors outside the server's control will be returned inline in the
+    /// `status` field of the response (see comment there for details).
+    /// The possible RPC errors include:
+    /// * `INVALID_ARGUMENT`: One or more arguments were invalid, such as a
+    ///   qualifier that is not supported by the server.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+    ///   perform the requested operation. The client may retry after a delay.
+    /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
+    ///   completed. The client should retry.
+    /// * `INTERNAL`: An internal error occurred while performing the operation.
+    ///   The client should retry.
+    /// * `DEADLINE_EXCEEDED`: The fetch could not be completed within the given
+    ///   RPC deadline. The client should retry for at least as long as the value
+    ///   provided in `timeout` field of the request.
+    ///
+    /// In the case of unsupported qualifiers, the server *SHOULD* additionally
+    /// send a [BadRequest][google.rpc.BadRequest] error detail where, for each
+    /// unsupported qualifier, there is a `FieldViolation` with a `field` of
+    /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
+    /// indicating the name of the unsupported qualifier.
+    func fetchBlob(request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>
 
-  func fetchDirectory(request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
+    func fetchDirectory(request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>
 }
 
 extension Build_Bazel_Remote_Asset_V1_FetchProvider {
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Asset_V1_FetchServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
-  /// Returns nil for methods not handled by this service.
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "FetchBlob":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchBlobRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>(),
-        interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? [],
-        userFunction: self.fetchBlob(request:context:)
-      )
-
-    case "FetchDirectory":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>(),
-        interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? [],
-        userFunction: self.fetchDirectory(request:context:)
-      )
-
-    default:
-      return nil
+    public var serviceName: Substring {
+        return Build_Bazel_Remote_Asset_V1_FetchServerMetadata.serviceDescriptor.fullName[...]
     }
-  }
+
+    /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+    /// Returns nil for methods not handled by this service.
+    public func handle(
+        method name: Substring,
+        context: CallHandlerContext
+    ) -> GRPCServerHandlerProtocol? {
+        switch name {
+        case "FetchBlob":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchBlobRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>(),
+                interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? [],
+                userFunction: self.fetchBlob(request:context:)
+            )
+
+        case "FetchDirectory":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>(),
+                interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? [],
+                userFunction: self.fetchDirectory(request:context:)
+            )
+
+        default:
+            return nil
+        }
+    }
 }
 
 #if compiler(>=5.6)
 
-/// The Fetch service resolves or fetches assets referenced by URI and
-/// Qualifiers, returning a Digest for the content in
-/// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-///
-/// To implement a server, implement an object which conforms to this protocol.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Asset_V1_FetchAsyncProvider: CallHandlerProvider {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? { get }
+    /// The Fetch service resolves or fetches assets referenced by URI and
+    /// Qualifiers, returning a Digest for the content in
+    /// [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    ///
+    /// To implement a server, implement an object which conforms to this protocol.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Asset_V1_FetchAsyncProvider: CallHandlerProvider {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? { get }
 
-  /// Resolve or fetch referenced assets, making them available to the caller and
-  /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
-  ///
-  /// Servers *MAY* fetch content that they do not already have cached, for any
-  /// URLs they support.
-  ///
-  /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
-  /// time of the response, and (if supported) that they will remain available
-  /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
-  /// be increased if necessary and applicable.
-  /// In the event that a client receives a reference to content that is no
-  /// longer present, it *MAY* re-issue the request with
-  /// `oldest_content_accepted` set to a more recent timestamp than the original
-  /// attempt, to induce a re-fetch from origin.
-  ///
-  /// Servers *MAY* cache fetched content and reuse it for subsequent requests,
-  /// subject to `oldest_content_accepted`.
-  ///
-  /// Servers *MAY* support the complementary [Push][build.bazel.remote.asset.v1.Push]
-  /// API and allow content to be directly inserted for use in future fetch
-  /// responses.
-  ///
-  /// Servers *MUST* ensure Fetch'd content matches all the specified
-  /// qualifiers except in the case of previously Push'd resources, for which
-  /// the server *MAY* trust the pushing client to have set the qualifiers
-  /// correctly, without validation.
-  ///
-  /// Servers not implementing the complementary [Push][build.bazel.remote.asset.v1.Push]
-  /// API *MUST* reject requests containing qualifiers it does not support.
-  ///
-  /// Servers *MAY* transform assets as part of the fetch. For example a
-  /// tarball fetched by [FetchDirectory][build.bazel.remote.asset.v1.Fetch.FetchDirectory]
-  /// might be unpacked, or a Git repository
-  /// fetched by [FetchBlob][build.bazel.remote.asset.v1.Fetch.FetchBlob]
-  /// might be passed through `git-archive`.
-  ///
-  /// Errors handling the requested assets will be returned as gRPC Status errors
-  /// here; errors outside the server's control will be returned inline in the
-  /// `status` field of the response (see comment there for details).
-  /// The possible RPC errors include:
-  /// * `INVALID_ARGUMENT`: One or more arguments were invalid, such as a
-  ///   qualifier that is not supported by the server.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
-  ///   perform the requested operation. The client may retry after a delay.
-  /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
-  ///   completed. The client should retry.
-  /// * `INTERNAL`: An internal error occurred while performing the operation.
-  ///   The client should retry.
-  /// * `DEADLINE_EXCEEDED`: The fetch could not be completed within the given
-  ///   RPC deadline. The client should retry for at least as long as the value
-  ///   provided in `timeout` field of the request.
-  ///
-  /// In the case of unsupported qualifiers, the server *SHOULD* additionally
-  /// send a [BadRequest][google.rpc.BadRequest] error detail where, for each
-  /// unsupported qualifier, there is a `FieldViolation` with a `field` of
-  /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
-  /// indicating the name of the unsupported qualifier.
-  @Sendable func fetchBlob(
-    request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Asset_V1_FetchBlobResponse
+        /// Resolve or fetch referenced assets, making them available to the caller and
+        /// other consumers in the [ContentAddressableStorage][build.bazel.remote.execution.v2.ContentAddressableStorage].
+        ///
+        /// Servers *MAY* fetch content that they do not already have cached, for any
+        /// URLs they support.
+        ///
+        /// Servers *SHOULD* ensure that referenced files are present in the CAS at the
+        /// time of the response, and (if supported) that they will remain available
+        /// for a reasonable period of time. The lifetimes of the referenced blobs *SHOULD*
+        /// be increased if necessary and applicable.
+        /// In the event that a client receives a reference to content that is no
+        /// longer present, it *MAY* re-issue the request with
+        /// `oldest_content_accepted` set to a more recent timestamp than the original
+        /// attempt, to induce a re-fetch from origin.
+        ///
+        /// Servers *MAY* cache fetched content and reuse it for subsequent requests,
+        /// subject to `oldest_content_accepted`.
+        ///
+        /// Servers *MAY* support the complementary [Push][build.bazel.remote.asset.v1.Push]
+        /// API and allow content to be directly inserted for use in future fetch
+        /// responses.
+        ///
+        /// Servers *MUST* ensure Fetch'd content matches all the specified
+        /// qualifiers except in the case of previously Push'd resources, for which
+        /// the server *MAY* trust the pushing client to have set the qualifiers
+        /// correctly, without validation.
+        ///
+        /// Servers not implementing the complementary [Push][build.bazel.remote.asset.v1.Push]
+        /// API *MUST* reject requests containing qualifiers it does not support.
+        ///
+        /// Servers *MAY* transform assets as part of the fetch. For example a
+        /// tarball fetched by [FetchDirectory][build.bazel.remote.asset.v1.Fetch.FetchDirectory]
+        /// might be unpacked, or a Git repository
+        /// fetched by [FetchBlob][build.bazel.remote.asset.v1.Fetch.FetchBlob]
+        /// might be passed through `git-archive`.
+        ///
+        /// Errors handling the requested assets will be returned as gRPC Status errors
+        /// here; errors outside the server's control will be returned inline in the
+        /// `status` field of the response (see comment there for details).
+        /// The possible RPC errors include:
+        /// * `INVALID_ARGUMENT`: One or more arguments were invalid, such as a
+        ///   qualifier that is not supported by the server.
+        /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+        ///   perform the requested operation. The client may retry after a delay.
+        /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
+        ///   completed. The client should retry.
+        /// * `INTERNAL`: An internal error occurred while performing the operation.
+        ///   The client should retry.
+        /// * `DEADLINE_EXCEEDED`: The fetch could not be completed within the given
+        ///   RPC deadline. The client should retry for at least as long as the value
+        ///   provided in `timeout` field of the request.
+        ///
+        /// In the case of unsupported qualifiers, the server *SHOULD* additionally
+        /// send a [BadRequest][google.rpc.BadRequest] error detail where, for each
+        /// unsupported qualifier, there is a `FieldViolation` with a `field` of
+        /// `qualifiers.name` and a `description` of `"{qualifier}" not supported`
+        /// indicating the name of the unsupported qualifier.
+        @Sendable func fetchBlob(
+            request: Build_Bazel_Remote_Asset_V1_FetchBlobRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Asset_V1_FetchBlobResponse
 
-  @Sendable func fetchDirectory(
-    request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Asset_V1_FetchAsyncProvider {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Asset_V1_FetchServerMetadata.serviceDescriptor
-  }
-
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Asset_V1_FetchServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  public var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? {
-    return nil
-  }
-
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "FetchBlob":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchBlobRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>(),
-        interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? [],
-        wrapping: self.fetchBlob(request:context:)
-      )
-
-    case "FetchDirectory":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>(),
-        interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? [],
-        wrapping: self.fetchDirectory(request:context:)
-      )
-
-    default:
-      return nil
+        @Sendable func fetchDirectory(
+            request: Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse
     }
-  }
-}
 
-#endif // compiler(>=5.6)
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Asset_V1_FetchAsyncProvider {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Asset_V1_FetchServerMetadata.serviceDescriptor
+        }
+
+        public var serviceName: Substring {
+            return Build_Bazel_Remote_Asset_V1_FetchServerMetadata.serviceDescriptor.fullName[...]
+        }
+
+        public var interceptors: Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol? {
+            return nil
+        }
+
+        public func handle(
+            method name: Substring,
+            context: CallHandlerContext
+        ) -> GRPCServerHandlerProtocol? {
+            switch name {
+            case "FetchBlob":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchBlobRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchBlobResponse>(),
+                    interceptors: self.interceptors?.makeFetchBlobInterceptors() ?? [],
+                    wrapping: self.fetchBlob(request:context:)
+                )
+
+            case "FetchDirectory":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>(),
+                    interceptors: self.interceptors?.makeFetchDirectoryInterceptors() ?? [],
+                    wrapping: self.fetchDirectory(request:context:)
+                )
+
+            default:
+                return nil
+            }
+        }
+    }
+
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Asset_V1_FetchServerInterceptorFactoryProtocol {
 
-  /// - Returns: Interceptors to use when handling 'fetchBlob'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeFetchBlobInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>]
+    /// - Returns: Interceptors to use when handling 'fetchBlob'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeFetchBlobInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchBlobRequest, Build_Bazel_Remote_Asset_V1_FetchBlobResponse>]
 
-  /// - Returns: Interceptors to use when handling 'fetchDirectory'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makeFetchDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
+    /// - Returns: Interceptors to use when handling 'fetchDirectory'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makeFetchDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_FetchDirectoryRequest, Build_Bazel_Remote_Asset_V1_FetchDirectoryResponse>]
 }
 
 public enum Build_Bazel_Remote_Asset_V1_FetchServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Fetch",
-    fullName: "build.bazel.remote.asset.v1.Fetch",
-    methods: [
-      Build_Bazel_Remote_Asset_V1_FetchServerMetadata.Methods.fetchBlob,
-      Build_Bazel_Remote_Asset_V1_FetchServerMetadata.Methods.fetchDirectory,
-    ]
-  )
-
-  public enum Methods {
-    public static let fetchBlob = GRPCMethodDescriptor(
-      name: "FetchBlob",
-      path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Fetch",
+        fullName: "build.bazel.remote.asset.v1.Fetch",
+        methods: [
+            Build_Bazel_Remote_Asset_V1_FetchServerMetadata.Methods.fetchBlob,
+            Build_Bazel_Remote_Asset_V1_FetchServerMetadata.Methods.fetchDirectory,
+        ]
     )
 
-    public static let fetchDirectory = GRPCMethodDescriptor(
-      name: "FetchDirectory",
-      path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
-      type: GRPCCallType.unary
-    )
-  }
+    public enum Methods {
+        public static let fetchBlob = GRPCMethodDescriptor(
+            name: "FetchBlob",
+            path: "/build.bazel.remote.asset.v1.Fetch/FetchBlob",
+            type: GRPCCallType.unary
+        )
+
+        public static let fetchDirectory = GRPCMethodDescriptor(
+            name: "FetchDirectory",
+            path: "/build.bazel.remote.asset.v1.Fetch/FetchDirectory",
+            type: GRPCCallType.unary
+        )
+    }
 }
 /// The Push service is complementary to the Fetch, and allows for
 /// associating contents of URLs to be returned in future Fetch API calls.
@@ -931,221 +930,221 @@ public enum Build_Bazel_Remote_Asset_V1_FetchServerMetadata {
 ///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Build_Bazel_Remote_Asset_V1_PushProvider: CallHandlerProvider {
-  var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? { get }
+    var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? { get }
 
-  /// These APIs associate the identifying information of a resource, as
-  /// indicated by URI and optionally Qualifiers, with content available in the
-  /// CAS. For example, associating a repository url and a commit id with a
-  /// Directory Digest.
-  ///
-  /// Servers *SHOULD* only allow trusted clients to associate content, and *MAY*
-  /// only allow certain URIs to be pushed.
-  ///
-  /// Clients *MUST* ensure associated content is available in CAS prior to
-  /// pushing.
-  ///
-  /// Clients *MUST* ensure the Qualifiers listed correctly match the contents,
-  /// and Servers *MAY* trust these values without validation.
-  /// Fetch servers *MAY* require exact match of all qualifiers when returning
-  /// content previously pushed, or allow fetching content with only a subset of
-  /// the qualifiers specified on Push.
-  ///
-  /// Clients can specify expiration information that the server *SHOULD*
-  /// respect. Subsequent requests can be used to alter the expiration time.
-  ///
-  /// A minimal compliant Fetch implementation may support only Push'd content
-  /// and return `NOT_FOUND` for any resource that was not pushed first.
-  /// Alternatively, a compliant implementation may choose to not support Push
-  /// and only return resources that can be Fetch'd from origin.
-  ///
-  /// Errors will be returned as gRPC Status errors.
-  /// The possible RPC errors include:
-  /// * `INVALID_ARGUMENT`: One or more arguments to the RPC were invalid.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
-  ///   perform the requested operation. The client may retry after a delay.
-  /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
-  ///   completed. The client should retry.
-  /// * `INTERNAL`: An internal error occurred while performing the operation.
-  ///   The client should retry.
-  func pushBlob(request: Build_Bazel_Remote_Asset_V1_PushBlobRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_PushBlobResponse>
+    /// These APIs associate the identifying information of a resource, as
+    /// indicated by URI and optionally Qualifiers, with content available in the
+    /// CAS. For example, associating a repository url and a commit id with a
+    /// Directory Digest.
+    ///
+    /// Servers *SHOULD* only allow trusted clients to associate content, and *MAY*
+    /// only allow certain URIs to be pushed.
+    ///
+    /// Clients *MUST* ensure associated content is available in CAS prior to
+    /// pushing.
+    ///
+    /// Clients *MUST* ensure the Qualifiers listed correctly match the contents,
+    /// and Servers *MAY* trust these values without validation.
+    /// Fetch servers *MAY* require exact match of all qualifiers when returning
+    /// content previously pushed, or allow fetching content with only a subset of
+    /// the qualifiers specified on Push.
+    ///
+    /// Clients can specify expiration information that the server *SHOULD*
+    /// respect. Subsequent requests can be used to alter the expiration time.
+    ///
+    /// A minimal compliant Fetch implementation may support only Push'd content
+    /// and return `NOT_FOUND` for any resource that was not pushed first.
+    /// Alternatively, a compliant implementation may choose to not support Push
+    /// and only return resources that can be Fetch'd from origin.
+    ///
+    /// Errors will be returned as gRPC Status errors.
+    /// The possible RPC errors include:
+    /// * `INVALID_ARGUMENT`: One or more arguments to the RPC were invalid.
+    /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+    ///   perform the requested operation. The client may retry after a delay.
+    /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
+    ///   completed. The client should retry.
+    /// * `INTERNAL`: An internal error occurred while performing the operation.
+    ///   The client should retry.
+    func pushBlob(request: Build_Bazel_Remote_Asset_V1_PushBlobRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_PushBlobResponse>
 
-  func pushDirectory(request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
+    func pushDirectory(request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>
 }
 
 extension Build_Bazel_Remote_Asset_V1_PushProvider {
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Asset_V1_PushServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
-  /// Returns nil for methods not handled by this service.
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "PushBlob":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushBlobRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushBlobResponse>(),
-        interceptors: self.interceptors?.makePushBlobInterceptors() ?? [],
-        userFunction: self.pushBlob(request:context:)
-      )
-
-    case "PushDirectory":
-      return UnaryServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>(),
-        interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? [],
-        userFunction: self.pushDirectory(request:context:)
-      )
-
-    default:
-      return nil
+    public var serviceName: Substring {
+        return Build_Bazel_Remote_Asset_V1_PushServerMetadata.serviceDescriptor.fullName[...]
     }
-  }
+
+    /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+    /// Returns nil for methods not handled by this service.
+    public func handle(
+        method name: Substring,
+        context: CallHandlerContext
+    ) -> GRPCServerHandlerProtocol? {
+        switch name {
+        case "PushBlob":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushBlobRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushBlobResponse>(),
+                interceptors: self.interceptors?.makePushBlobInterceptors() ?? [],
+                userFunction: self.pushBlob(request:context:)
+            )
+
+        case "PushDirectory":
+            return UnaryServerHandler(
+                context: context,
+                requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest>(),
+                responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>(),
+                interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? [],
+                userFunction: self.pushDirectory(request:context:)
+            )
+
+        default:
+            return nil
+        }
+    }
 }
 
 #if compiler(>=5.6)
 
-/// The Push service is complementary to the Fetch, and allows for
-/// associating contents of URLs to be returned in future Fetch API calls.
-///
-/// As with other services in the Remote Execution API, any call may return an
-/// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
-/// information about when the client should retry the request; clients SHOULD
-/// respect the information provided.
-///
-/// To implement a server, implement an object which conforms to this protocol.
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-public protocol Build_Bazel_Remote_Asset_V1_PushAsyncProvider: CallHandlerProvider {
-  static var serviceDescriptor: GRPCServiceDescriptor { get }
-  var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? { get }
+    /// The Push service is complementary to the Fetch, and allows for
+    /// associating contents of URLs to be returned in future Fetch API calls.
+    ///
+    /// As with other services in the Remote Execution API, any call may return an
+    /// error with a [RetryInfo][google.rpc.RetryInfo] error detail providing
+    /// information about when the client should retry the request; clients SHOULD
+    /// respect the information provided.
+    ///
+    /// To implement a server, implement an object which conforms to this protocol.
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    public protocol Build_Bazel_Remote_Asset_V1_PushAsyncProvider: CallHandlerProvider {
+        static var serviceDescriptor: GRPCServiceDescriptor { get }
+        var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? { get }
 
-  /// These APIs associate the identifying information of a resource, as
-  /// indicated by URI and optionally Qualifiers, with content available in the
-  /// CAS. For example, associating a repository url and a commit id with a
-  /// Directory Digest.
-  ///
-  /// Servers *SHOULD* only allow trusted clients to associate content, and *MAY*
-  /// only allow certain URIs to be pushed.
-  ///
-  /// Clients *MUST* ensure associated content is available in CAS prior to
-  /// pushing.
-  ///
-  /// Clients *MUST* ensure the Qualifiers listed correctly match the contents,
-  /// and Servers *MAY* trust these values without validation.
-  /// Fetch servers *MAY* require exact match of all qualifiers when returning
-  /// content previously pushed, or allow fetching content with only a subset of
-  /// the qualifiers specified on Push.
-  ///
-  /// Clients can specify expiration information that the server *SHOULD*
-  /// respect. Subsequent requests can be used to alter the expiration time.
-  ///
-  /// A minimal compliant Fetch implementation may support only Push'd content
-  /// and return `NOT_FOUND` for any resource that was not pushed first.
-  /// Alternatively, a compliant implementation may choose to not support Push
-  /// and only return resources that can be Fetch'd from origin.
-  ///
-  /// Errors will be returned as gRPC Status errors.
-  /// The possible RPC errors include:
-  /// * `INVALID_ARGUMENT`: One or more arguments to the RPC were invalid.
-  /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
-  ///   perform the requested operation. The client may retry after a delay.
-  /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
-  ///   completed. The client should retry.
-  /// * `INTERNAL`: An internal error occurred while performing the operation.
-  ///   The client should retry.
-  @Sendable func pushBlob(
-    request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Asset_V1_PushBlobResponse
+        /// These APIs associate the identifying information of a resource, as
+        /// indicated by URI and optionally Qualifiers, with content available in the
+        /// CAS. For example, associating a repository url and a commit id with a
+        /// Directory Digest.
+        ///
+        /// Servers *SHOULD* only allow trusted clients to associate content, and *MAY*
+        /// only allow certain URIs to be pushed.
+        ///
+        /// Clients *MUST* ensure associated content is available in CAS prior to
+        /// pushing.
+        ///
+        /// Clients *MUST* ensure the Qualifiers listed correctly match the contents,
+        /// and Servers *MAY* trust these values without validation.
+        /// Fetch servers *MAY* require exact match of all qualifiers when returning
+        /// content previously pushed, or allow fetching content with only a subset of
+        /// the qualifiers specified on Push.
+        ///
+        /// Clients can specify expiration information that the server *SHOULD*
+        /// respect. Subsequent requests can be used to alter the expiration time.
+        ///
+        /// A minimal compliant Fetch implementation may support only Push'd content
+        /// and return `NOT_FOUND` for any resource that was not pushed first.
+        /// Alternatively, a compliant implementation may choose to not support Push
+        /// and only return resources that can be Fetch'd from origin.
+        ///
+        /// Errors will be returned as gRPC Status errors.
+        /// The possible RPC errors include:
+        /// * `INVALID_ARGUMENT`: One or more arguments to the RPC were invalid.
+        /// * `RESOURCE_EXHAUSTED`: There is insufficient quota of some resource to
+        ///   perform the requested operation. The client may retry after a delay.
+        /// * `UNAVAILABLE`: Due to a transient condition the operation could not be
+        ///   completed. The client should retry.
+        /// * `INTERNAL`: An internal error occurred while performing the operation.
+        ///   The client should retry.
+        @Sendable func pushBlob(
+            request: Build_Bazel_Remote_Asset_V1_PushBlobRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Asset_V1_PushBlobResponse
 
-  @Sendable func pushDirectory(
-    request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
-    context: GRPCAsyncServerCallContext
-  ) async throws -> Build_Bazel_Remote_Asset_V1_PushDirectoryResponse
-}
-
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-extension Build_Bazel_Remote_Asset_V1_PushAsyncProvider {
-  public static var serviceDescriptor: GRPCServiceDescriptor {
-    return Build_Bazel_Remote_Asset_V1_PushServerMetadata.serviceDescriptor
-  }
-
-  public var serviceName: Substring {
-    return Build_Bazel_Remote_Asset_V1_PushServerMetadata.serviceDescriptor.fullName[...]
-  }
-
-  public var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? {
-    return nil
-  }
-
-  public func handle(
-    method name: Substring,
-    context: CallHandlerContext
-  ) -> GRPCServerHandlerProtocol? {
-    switch name {
-    case "PushBlob":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushBlobRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushBlobResponse>(),
-        interceptors: self.interceptors?.makePushBlobInterceptors() ?? [],
-        wrapping: self.pushBlob(request:context:)
-      )
-
-    case "PushDirectory":
-      return GRPCAsyncServerHandler(
-        context: context,
-        requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest>(),
-        responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>(),
-        interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? [],
-        wrapping: self.pushDirectory(request:context:)
-      )
-
-    default:
-      return nil
+        @Sendable func pushDirectory(
+            request: Build_Bazel_Remote_Asset_V1_PushDirectoryRequest,
+            context: GRPCAsyncServerCallContext
+        ) async throws -> Build_Bazel_Remote_Asset_V1_PushDirectoryResponse
     }
-  }
-}
 
-#endif // compiler(>=5.6)
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    extension Build_Bazel_Remote_Asset_V1_PushAsyncProvider {
+        public static var serviceDescriptor: GRPCServiceDescriptor {
+            return Build_Bazel_Remote_Asset_V1_PushServerMetadata.serviceDescriptor
+        }
+
+        public var serviceName: Substring {
+            return Build_Bazel_Remote_Asset_V1_PushServerMetadata.serviceDescriptor.fullName[...]
+        }
+
+        public var interceptors: Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol? {
+            return nil
+        }
+
+        public func handle(
+            method name: Substring,
+            context: CallHandlerContext
+        ) -> GRPCServerHandlerProtocol? {
+            switch name {
+            case "PushBlob":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushBlobRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushBlobResponse>(),
+                    interceptors: self.interceptors?.makePushBlobInterceptors() ?? [],
+                    wrapping: self.pushBlob(request:context:)
+                )
+
+            case "PushDirectory":
+                return GRPCAsyncServerHandler(
+                    context: context,
+                    requestDeserializer: ProtobufDeserializer<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest>(),
+                    responseSerializer: ProtobufSerializer<Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>(),
+                    interceptors: self.interceptors?.makePushDirectoryInterceptors() ?? [],
+                    wrapping: self.pushDirectory(request:context:)
+                )
+
+            default:
+                return nil
+            }
+        }
+    }
+
+#endif  // compiler(>=5.6)
 
 public protocol Build_Bazel_Remote_Asset_V1_PushServerInterceptorFactoryProtocol {
 
-  /// - Returns: Interceptors to use when handling 'pushBlob'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makePushBlobInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>]
+    /// - Returns: Interceptors to use when handling 'pushBlob'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makePushBlobInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_PushBlobRequest, Build_Bazel_Remote_Asset_V1_PushBlobResponse>]
 
-  /// - Returns: Interceptors to use when handling 'pushDirectory'.
-  ///   Defaults to calling `self.makeInterceptors()`.
-  func makePushDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>]
+    /// - Returns: Interceptors to use when handling 'pushDirectory'.
+    ///   Defaults to calling `self.makeInterceptors()`.
+    func makePushDirectoryInterceptors() -> [ServerInterceptor<Build_Bazel_Remote_Asset_V1_PushDirectoryRequest, Build_Bazel_Remote_Asset_V1_PushDirectoryResponse>]
 }
 
 public enum Build_Bazel_Remote_Asset_V1_PushServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(
-    name: "Push",
-    fullName: "build.bazel.remote.asset.v1.Push",
-    methods: [
-      Build_Bazel_Remote_Asset_V1_PushServerMetadata.Methods.pushBlob,
-      Build_Bazel_Remote_Asset_V1_PushServerMetadata.Methods.pushDirectory,
-    ]
-  )
-
-  public enum Methods {
-    public static let pushBlob = GRPCMethodDescriptor(
-      name: "PushBlob",
-      path: "/build.bazel.remote.asset.v1.Push/PushBlob",
-      type: GRPCCallType.unary
+    public static let serviceDescriptor = GRPCServiceDescriptor(
+        name: "Push",
+        fullName: "build.bazel.remote.asset.v1.Push",
+        methods: [
+            Build_Bazel_Remote_Asset_V1_PushServerMetadata.Methods.pushBlob,
+            Build_Bazel_Remote_Asset_V1_PushServerMetadata.Methods.pushDirectory,
+        ]
     )
 
-    public static let pushDirectory = GRPCMethodDescriptor(
-      name: "PushDirectory",
-      path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
-      type: GRPCCallType.unary
-    )
-  }
+    public enum Methods {
+        public static let pushBlob = GRPCMethodDescriptor(
+            name: "PushBlob",
+            path: "/build.bazel.remote.asset.v1.Push/PushBlob",
+            type: GRPCCallType.unary
+        )
+
+        public static let pushDirectory = GRPCMethodDescriptor(
+            name: "PushDirectory",
+            path: "/build.bazel.remote.asset.v1.Push/PushDirectory",
+            type: GRPCCallType.unary
+        )
+    }
 }

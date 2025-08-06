@@ -6,15 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
-
 import ArgumentParser
-import TSCBasic
-import TSFCAS
-import TSCUtility
-
+import Foundation
 import LLBCASTool
-
+import TSCBasic
+import TSCUtility
+import TSFCAS
 
 struct CASPut: ParsableCommand {
     static let configuration: CommandConfiguration = CommandConfiguration(

@@ -6,15 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
-
 import ArgumentParser
+import Foundation
 import GRPC
+import LLBCASTool
 import TSCBasic
 import TSFFutures
-
-import LLBCASTool
-
 
 struct Capabilities: ParsableCommand {
     static let configuration: CommandConfiguration = CommandConfiguration(
@@ -33,4 +30,3 @@ struct Capabilities: ParsableCommand {
         print(response)
     }
 }
-

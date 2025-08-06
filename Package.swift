@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "llbuild2",
     platforms: [
-       .macOS(.v10_15)
+        .macOS(.v10_15)
     ],
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto.git", "1.1.4" ..< "4.0.0"),
+        .package(url: "https://github.com/apple/swift-crypto.git", "1.1.4"..<"4.0.0"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.10.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
@@ -30,7 +30,7 @@ let package = Package(
                 "SwiftToolsSupportCAS",
                 "Logging",
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
-                .product(name: "Instrumentation", package: "swift-distributed-tracing")
+                .product(name: "Instrumentation", package: "swift-distributed-tracing"),
             ]
         ),
         .testTarget(

@@ -66,11 +66,14 @@ extension FXFileID {
     }
 
     public func materialize<R>(filename: String, _ ctx: Context, _ body: @escaping (AbsolutePath) async throws -> R) async throws -> R {
-        return try await materialize(filename: filename, ctx, { path in
-            return ctx.group.any().makeFutureWithTask({
-                try await body(path)
-            })
-        }).get()
+        return try await materialize(
+            filename: filename, ctx,
+            { path in
+                return ctx.group.any().makeFutureWithTask({
+                    try await body(path)
+                })
+            }
+        ).get()
     }
 }
 

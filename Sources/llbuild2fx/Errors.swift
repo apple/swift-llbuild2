@@ -24,12 +24,14 @@ public enum FXError: Swift.Error {
 }
 
 func unwrapFXError(_ error: Swift.Error) -> Swift.Error {
-    guard case FXError.valueComputationError(
-         keyPrefix: _,
-         key: _,
-         error: let underlyingError,
-         requestedCacheKeyPaths: _
-    ) = error else {
+    guard
+        case FXError.valueComputationError(
+            keyPrefix: _,
+            key: _,
+            error: let underlyingError,
+            requestedCacheKeyPaths: _
+        ) = error
+    else {
         return error
     }
 

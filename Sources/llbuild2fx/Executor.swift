@@ -6,9 +6,9 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import NIOCore
 import TSCUtility
 import TSFFutures
-import NIOCore
 
 public protocol FXExecutor: Sendable {
     func perform<ActionType: FXAction>(
