@@ -13,6 +13,7 @@ public final class FXNullExecutor: FXExecutor {
 
     public func perform<ActionType: FXAction>(
         _ action: ActionType,
+        requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType> {
         return ctx.group.any().makeFailedFuture(Error.nullExecutor)

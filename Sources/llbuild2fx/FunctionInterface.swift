@@ -15,7 +15,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
     private let requestedKeyCachePaths = NIOLockedValueBox(FXSortedSet<String>())
     private let lock = NIOLock()
     var requestedCacheKeyPathsSnapshot: FXSortedSet<String> {
-        return requestedKeyCachePaths.withLockedValue() { return $0 }
+        return requestedKeyCachePaths.withLockedValue { return $0 }
     }
 
     init(_ key: K, _ fi: FunctionInterface) {
@@ -66,6 +66,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
 
     public func spawn<ActionType: FXAction>(
         _ action: ActionType,
+        requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType> {
         guard K.actionDependencies.contains(where: { $0 == ActionType.self }) else {
@@ -80,13 +81,13 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
         fi.engine.stats.add(action: ActionType.name)
 
         ctx.logger?.debug("Will perform action: \(action)")
-        let result = fi.engine.executor.perform(action, ctx)
+
+        let result = fi.engine.executor.perform(action, requirements: requirements, ctx)
 
         return result.always { _ in
             self.fi.engine.stats.remove(action: ActionType.name)
         }
     }
-
 
     @available(*, deprecated, message: "use spawn, with registered actions")
     public func execute<ActionType: FXAction, P: Predicate>(
@@ -145,8 +146,9 @@ extension FXFunctionInterface {
 
     public func spawn<ActionType: FXAction>(
         _ action: ActionType,
+        requirements: FXActionRequirements? = nil,
         _ ctx: Context
     ) async throws -> ActionType.ValueType {
-        return try await spawn(action, ctx).get()
+        return try await spawn(action, requirements: requirements, ctx).get()
     }
 }
