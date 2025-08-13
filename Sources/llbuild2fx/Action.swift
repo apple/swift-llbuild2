@@ -11,11 +11,16 @@ import NIOCore
 import TSCUtility
 import TSFFutures
 
-public struct FXActionRequirements {
-    public let predicate: (any Predicate)?
+public enum FXActionWorkerSize: Equatable {
+    case small
+    case large
+}
 
-    public init(predicate: (any Predicate)? = nil) {
-        self.predicate = predicate
+public struct FXActionRequirements {
+    public let workerSize: FXActionWorkerSize?
+
+    public init(workerSize: FXActionWorkerSize? = nil) {
+        self.workerSize = workerSize
     }
 }
 
@@ -25,18 +30,12 @@ public protocol FXAction: FXValue {
     static var name: String { get }
     static var version: Int { get }
 
-    var requirements: FXActionRequirements { get }
-
     func run(_ ctx: Context) -> LLBFuture<ValueType>
 }
 
 extension FXAction {
     public static var name: String { String(describing: self) }
     public static var version: Int { 0 }
-
-    public var requirements: FXActionRequirements {
-        FXActionRequirements()
-    }
 }
 
 public protocol AsyncFXAction: FXAction {
@@ -50,4 +49,3 @@ extension AsyncFXAction {
         }
     }
 }
-

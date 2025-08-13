@@ -6,13 +6,14 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import NIOCore
 import TSCUtility
 import TSFFutures
-import NIOCore
 
 public protocol FXExecutor: Sendable {
     func perform<ActionType: FXAction>(
         _ action: ActionType,
+        requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType>
 
@@ -30,6 +31,13 @@ public protocol FXExecutor: Sendable {
 extension FXExecutor {
     func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
         true
+    }
+
+    func perform<ActionType: FXAction>(
+        _ action: ActionType,
+        _ ctx: Context
+    ) -> LLBFuture<ActionType.ValueType> {
+        return perform(action, requirements: nil, ctx)
     }
 }
 

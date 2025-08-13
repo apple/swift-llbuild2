@@ -44,7 +44,7 @@ public final class FXLocalExecutor: FXExecutor {
     }
 
     public func perform<ActionType: FXAction>(
-        _ action: ActionType, _ ctx: Context
+        _ action: ActionType, requirements: FXActionRequirements?, _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType> {
         return action.run(ctx)
     }
