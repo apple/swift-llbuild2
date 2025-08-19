@@ -35,8 +35,8 @@ extension FXMetricsSink {
 }
 
 /// Protocol for creating file handles during FXAction evaluations. (Useful for capturing the output of spawned processes while they're still running.)
-public protocol LogFileHandleGenerator {
-    func makeFileHandle(name: String) throws -> FileHandle
+public protocol FileHandleGenerator {
+    func makeFileHandle(path: String) throws -> FileHandle
 }
 
 // Support storing and retrieving logger, metrics, and file handle generator instances from a Context.
@@ -59,12 +59,12 @@ public extension Context {
         }
     }
     
-    var logFileHandleGenerator: LogFileHandleGenerator? {
+    var fileHandleGenerator: FileHandleGenerator? {
         get {
-            return self[ObjectIdentifier(LogFileHandleGenerator.self), as: LogFileHandleGenerator.self]
+            return self[ObjectIdentifier(FileHandleGenerator.self), as: FileHandleGenerator.self]
         }
         set {
-            self[ObjectIdentifier(LogFileHandleGenerator.self)] = newValue
+            self[ObjectIdentifier(FileHandleGenerator.self)] = newValue
         }
     }
 }
