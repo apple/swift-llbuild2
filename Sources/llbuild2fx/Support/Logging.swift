@@ -6,10 +6,9 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import Foundation
 import Logging
 
-/// Support protocol for recording events during FXKey evaluations
+// Support protocol for recording events during FXKey evaluations
 public protocol FXMetricsSink {
     func event(
         _ message: Logger.Message,
@@ -34,12 +33,7 @@ extension FXMetricsSink {
     }
 }
 
-/// Protocol for creating file handles during FXAction evaluations. (Useful for capturing the output of spawned processes while they're still running.)
-public protocol FileHandleGenerator {
-    func makeFileHandle(path: String) throws -> FileHandle
-}
-
-// Support storing and retrieving logger, metrics, and file handle generator instances from a Context.
+// Support storing and retrieving logger and metrics instances from a Context.
 public extension Context {
     var logger: Logger? {
         get {
@@ -56,15 +50,6 @@ public extension Context {
         }
         set {
             self[ObjectIdentifier(FXMetricsSink.self)] = newValue
-        }
-    }
-    
-    var fileHandleGenerator: FileHandleGenerator? {
-        get {
-            return self[ObjectIdentifier(FileHandleGenerator.self), as: FileHandleGenerator.self]
-        }
-        set {
-            self[ObjectIdentifier(FileHandleGenerator.self)] = newValue
         }
     }
 }

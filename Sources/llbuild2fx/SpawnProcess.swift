@@ -121,10 +121,6 @@ public struct ProcessSpec: Codable, Sendable {
     let stdinSource: RelativePath?
     let stdoutDestination: RelativePath?
     let stderrDestination: RelativePath?
-    
-    /// Paths as recognized by the Context's `fileHandleGenerator`.
-    let stdoutStreamingDestination: String?
-    let stderrStreamingDestination: String?
 
     public init(
         executable: Executable,
@@ -132,9 +128,7 @@ public struct ProcessSpec: Codable, Sendable {
         environment: [String: RuntimeValue] = [:],
         stdinSource: RelativePath? = nil,
         stdoutDestination: RelativePath? = nil,
-        stderrDestination: RelativePath? = nil,
-        stdoutStreamingDestination: String? = "stdout.log",
-        stderrStreamingDestination: String? = "stderr.log"
+        stderrDestination: RelativePath? = nil
     ) {
         self.executable = executable
         self.arguments = arguments
@@ -142,8 +136,6 @@ public struct ProcessSpec: Codable, Sendable {
         self.stdinSource = stdinSource
         self.stdoutDestination = stdoutDestination
         self.stderrDestination = stderrDestination
-        self.stdoutStreamingDestination = stdoutStreamingDestination
-        self.stderrStreamingDestination = stderrStreamingDestination
     }
 
     enum ProcessSpecError: Error {
@@ -151,7 +143,7 @@ public struct ProcessSpec: Codable, Sendable {
         case unableToCreateFileHandle(RelativePath)
     }
 
-    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath, _ ctx: Context) throws -> Foundation.Process {
+    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath) throws -> Foundation.Process {
         func runtimeValueMapper(_ value: RuntimeValue) -> String {
             switch value {
             case .literal(let v):
@@ -198,7 +190,9 @@ public struct ProcessSpec: Codable, Sendable {
         let fileManager = FileManager()
 
         func outputFileHandle(for destination: RelativePath?) throws -> FileHandle? {
-            guard let destination = destination else { return nil }
+            guard let destination = destination else {
+                return FileHandle(forWritingAtPath: devNull)
+            }
 
             let path = outputPath.appending(destination).pathString
 
@@ -213,48 +207,13 @@ public struct ProcessSpec: Codable, Sendable {
             return handle
         }
 
-        func streamingOutputFileHandle(for destination: String?) throws
-            -> FileHandle?
-        {
-            guard let destination = destination,
-                let generator = ctx.fileHandleGenerator
-            else {
-                return nil
-            }
-
-            return try generator.makeFileHandle(path: destination)
-        }
-
-        func combinedOutputHandle(
-            for destination: RelativePath?,
-            and streamingDestination: String?
-        ) throws -> FileHandle {
-            return try writingHandle(
-                combining: [
-                    outputFileHandle(for: destination),
-                    streamingOutputFileHandle(for: streamingDestination),
-                ].compactMap { $0 }
-            )
-        }
-
-        if stdoutDestination == stderrDestination
-            && stdoutStreamingDestination == stderrStreamingDestination
-        {
-            let handle = try combinedOutputHandle(
-                for: stdoutDestination,
-                and: stdoutStreamingDestination
-            )
+        if stdoutDestination == stderrDestination {
+            let handle = try outputFileHandle(for: stdoutDestination)
             process.standardOutput = handle
             process.standardError = handle
         } else {
-            process.standardOutput = try combinedOutputHandle(
-                for: stdoutDestination,
-                and: stdoutStreamingDestination
-            )
-            process.standardError = try combinedOutputHandle(
-                for: stderrDestination,
-                and: stderrStreamingDestination
-            )
+            process.standardOutput = try outputFileHandle(for: stdoutDestination)
+            process.standardError = try outputFileHandle(for: stderrDestination)
         }
 
         return process
@@ -322,7 +281,7 @@ public struct SpawnProcess {
 
                 return export.flatMap { _ in
                     do {
-                        let process = try spec.process(inputPath: inputPath, outputPath: outputPath, ctx)
+                        let process = try spec.process(inputPath: inputPath, outputPath: outputPath)
                         let cancellable = process.runCancellable(ctx)
 
                         ctx.fxApplyDeadline(cancellable)
