@@ -8,11 +8,11 @@
 
 import Dispatch
 import Foundation
+import Instrumentation
 import Logging
 import NIOCore
 @preconcurrency import TSFFutures
 import Tracing
-import Instrumentation
 
 public protocol FXStablyHashable: Sendable {
     var stableHashValue: LLBDataID { get }
@@ -27,10 +27,10 @@ public protocol FXRequestKey: FXStablyHashable {
     func logDescription() -> String
 }
 
-public extension FXRequestKey {
+extension FXRequestKey {
     /// Default implementation for all keys. Keys can implement their own method if they want to display more relevant
     /// information.
-    func logDescription() -> String {
+    public func logDescription() -> String {
         String(describing: type(of: self))
     }
 }
@@ -46,7 +46,7 @@ extension HashableKey: Hashable {
     func hash(into hasher: inout Hasher) {
         key.hash(into: &hasher)
     }
-    static func ==(lhs: HashableKey, rhs: HashableKey) -> Bool {
+    static func == (lhs: HashableKey, rhs: HashableKey) -> Bool {
         return lhs.key.hashValue == rhs.key.hashValue
     }
 }

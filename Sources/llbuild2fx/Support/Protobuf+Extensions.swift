@@ -6,9 +6,9 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import SwiftProtobuf
 import Foundation
 import NIOCore
+import SwiftProtobuf
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message.
 extension LLBSerializableOut where Self: SwiftProtobuf.Message {

@@ -75,10 +75,11 @@ extension Foundation.Process {
                 completionPromise.succeed(status)
             case .uncaughtSignal:
                 if status == SIGKILL && killer.cancelled {
-                    completionPromise.fail(ProcessTerminationError.cancelled(
-                        reason: killer.cancellationReason,
-                        diagnostics: killer.diagnostics
-                    ))
+                    completionPromise.fail(
+                        ProcessTerminationError.cancelled(
+                            reason: killer.cancellationReason,
+                            diagnostics: killer.diagnostics
+                        ))
                 } else {
                     completionPromise.fail(ProcessTerminationError.signaled(status))
                 }
@@ -152,10 +153,11 @@ public struct ProcessSpec: Codable, Sendable {
                 return inputPath.appending(path).pathString
             case .outputPath(let path):
                 return outputPath.appending(path).pathString
-            case .sequence(values: let values, separator: let separator):
-                return String(values.map {
-                    runtimeValueMapper($0)
-                }.joined(separator: separator))
+            case .sequence(let values, let separator):
+                return String(
+                    values.map {
+                        runtimeValueMapper($0)
+                    }.joined(separator: separator))
             }
         }
 

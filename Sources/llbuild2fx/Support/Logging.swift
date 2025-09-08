@@ -34,8 +34,8 @@ extension FXMetricsSink {
 }
 
 // Support storing and retrieving logger and metrics instances from a Context.
-public extension Context {
-    var logger: Logger? {
+extension Context {
+    public var logger: Logger? {
         get {
             return self[ObjectIdentifier(Logger.self), as: Logger.self]
         }
@@ -44,7 +44,7 @@ public extension Context {
         }
     }
 
-    var metrics: FXMetricsSink? {
+    public var metrics: FXMetricsSink? {
         get {
             return self[ObjectIdentifier(FXMetricsSink.self), as: FXMetricsSink.self]
         }
