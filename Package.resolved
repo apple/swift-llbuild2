@@ -37,6 +37,15 @@
       }
     },
     {
+      "identity" : "swift-async-algorithms",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-async-algorithms.git",
+      "state" : {
+        "revision" : "042e1c4d9d19748c9c228f8d4ebc97bb1e339b0b",
+        "version" : "1.0.4"
+      }
+    },
+    {
       "identity" : "swift-atomics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-atomics.git",
@@ -185,8 +194,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-tools-support-async.git",
       "state" : {
-        "revision" : "8fcd85de84e3d4748053c5d563de3c5ea584d190",
-        "version" : "0.14.1"
+        "revision" : "16f2963c6f338c814f6116660f1ee91d79d93b11",
+        "version" : "0.16.0"
       }
     },
     {
