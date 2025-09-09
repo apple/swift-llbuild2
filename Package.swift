@@ -1,11 +1,11 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.9
 
 import PackageDescription
 
 let package = Package(
     name: "llbuild2",
     platforms: [
-       .macOS(.v10_15)
+        .macOS(.v10_15)
     ],
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
@@ -13,24 +13,27 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto.git", "1.1.4" ..< "4.0.0"),
-        .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.10.0"),
-        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
-        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
+        .package(url: "https://github.com/apple/swift-crypto.git", "1.1.4"..<"4.0.0"),
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.1.2"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
+        .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.16.0"),
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
+        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
     ],
     targets: [
         // FX build engine
         .target(
             name: "llbuild2fx",
             dependencies: [
-                "SwiftProtobuf",
-                "SwiftToolsSupportCAS",
-                "Logging",
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SwiftToolsSupportAsync", package: "swift-tools-support-async"),
+                .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
+                .product(name: "Logging", package: "swift-log"),
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
-                .product(name: "Instrumentation", package: "swift-distributed-tracing")
+                .product(name: "Instrumentation", package: "swift-distributed-tracing"),
+                .product(name: "_NIOFileSystem", package: "swift-nio"),
             ]
         ),
         .testTarget(
@@ -42,9 +45,9 @@ let package = Package(
         .target(
             name: "BazelRemoteAPI",
             dependencies: [
-                "GRPC",
-                "SwiftProtobuf",
-                "SwiftProtobufPluginLibrary",
+                .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SwiftProtobufPluginLibrary", package: "swift-protobuf"),
             ]
         ),
 
@@ -59,9 +62,9 @@ let package = Package(
             name: "LLBBazelBackend",
             dependencies: [
                 "BazelRemoteAPI",
-                "Crypto",
-                "GRPC",
-                "SwiftToolsSupportCAS",
+                .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
             ]
         ),
 
@@ -69,17 +72,17 @@ let package = Package(
         .target(
             name: "LLBCASTool",
             dependencies: [
-                "GRPC",
-                "SwiftToolsSupport-auto",
+                .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
                 "BazelRemoteAPI",
                 "LLBBazelBackend",
             ]
         ),
 
         // `llcastool` executable.
-        .target(
+        .executableTarget(
             name: "llcastool",
-            dependencies: ["LLBCASTool", "ArgumentParser"],
+            dependencies: ["LLBCASTool", .product(name: "ArgumentParser", package: "swift-argument-parser")],
             path: "Sources/Tools/llcastool"
         ),
     ]

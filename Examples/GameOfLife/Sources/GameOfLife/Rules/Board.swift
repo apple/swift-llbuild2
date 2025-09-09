@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import LLBBuildSystem
 import Foundation
+import LLBBuildSystem
 import llbuild2
 
 /// A BoardTarget represents a target for a complete board. The size of the board is specified in the configuration for
@@ -21,8 +21,8 @@ struct BoardTarget: LLBConfiguredTarget, Codable {
     init(dependencies: [LLBLabel]) {
         self.dependencies = dependencies
     }
-    
-    var targetDependencies: [String : LLBTargetDependency] {
+
+    var targetDependencies: [String: LLBTargetDependency] {
         return ["dependencies": .list(dependencies)]
     }
 
@@ -42,13 +42,13 @@ struct BoardTarget: LLBConfiguredTarget, Codable {
         // Request the cell dependendency for each of the points in the board. This will effectively trigger the
         // evaluation of those targets and rules in order to provided the ProviderMap for each of the cell targets.
         // Once those are evaluated, the build system will be unblocked to evaluate this target.
-        for x in 0 ..< boardSize.x {
-            for y in 0 ..< boardSize.y {
+        for x in 0..<boardSize.x {
+            for y in 0..<boardSize.y {
                 let dependencyLabel = try LLBLabel("//cell/\(generation):\(x)-\(y)")
                 dependencies.append(dependencyLabel)
             }
         }
-        
+
         return ctx.group.next().makeSucceededFuture(BoardTarget(dependencies: dependencies))
     }
 }
@@ -81,8 +81,8 @@ class BoardRule: LLBBuildRule<BoardTarget> {
         // Go over the complete board finding the state artifact for each point, and add them as rows into the matrix.
         // Since we requested a dependency on the cell for each point, the boardMap will contain an artifact for each
         // point.
-        for y in 0 ..< boardSize.y {
-            matrix.append((0 ..< boardSize.x).map { x in boardMap[Point(x, y)]! })
+        for y in 0..<boardSize.y {
+            matrix.append((0..<boardSize.x).map { x in boardMap[Point(x, y)]! })
         }
 
         // Declare the output artifact for the board. Declared artifacts are namespaced to the active configuration and
@@ -101,7 +101,7 @@ class BoardRule: LLBBuildRule<BoardTarget> {
                 """
                 echo "" > \(board.path)
                 \(catCommands)
-                """
+                """,
             ],
             inputs: Array(boardMap.values),
             outputs: [board],

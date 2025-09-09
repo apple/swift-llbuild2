@@ -16,7 +16,7 @@ public struct FXDiagnostics: FXThinEncodedSingleDataIDValue, FXTreeID {
 }
 
 public protocol FXDiagnosticsGathering: Sendable {
-    func gatherDiagnostics(pid: Int32?, _ ctx: Context) -> LLBFuture<FXDiagnostics>
+    func gatherDiagnostics(pid: Int32?, _ ctx: Context) async throws -> FXDiagnostics
 }
 
 private final class ContextDiagnosticsGatherer: Sendable {}

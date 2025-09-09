@@ -6,99 +6,17 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import AsyncAlgorithms
 import Foundation
 import NIOCore
 import TSCBasic
 import TSCUtility
+import TSFAsyncProcess
 import TSFFutures
+import _NIOFileSystem
 
-extension Foundation.Process {
-    private enum ProcessTerminationError: Error {
-        case signaled(Int32)
-        case unknown(Int32)
-        case notStarted
-        case notFinished
-        case cancelled(reason: String?, diagnostics: Result<FXDiagnostics, Error>?)
-    }
-
-    private class ProcessKiller: LLBCancelProtocol {
-        private let runningProcess: Foundation.Process
-        private let context: Context
-        init(runningProcess: Foundation.Process, _ ctx: Context) {
-            self.runningProcess = runningProcess
-            self.context = ctx
-        }
-
-        var cancelled = false
-        var cancellationReason: String? = nil
-        var diagnostics: Result<FXDiagnostics, Error>? = nil
-
-        func cancel(reason: String?) {
-            cancelled = true
-            cancellationReason = reason
-
-            let pid = runningProcess.processIdentifier
-
-            if let gatherer = context.fxDiagnosticsGatherer {
-                _ = gatherer.gatherDiagnostics(pid: pid, context).always { result in
-                    self.diagnostics = result
-                    kill(pid, SIGKILL)
-                }
-            } else {
-                kill(pid, SIGKILL)
-            }
-        }
-    }
-
-    fileprivate func runCancellable(_ ctx: Context) -> LLBCancellableFuture<Int32> {
-        let completionPromise: LLBPromise<Int32> = ctx.group.next().makePromise()
-
-        let killer = ProcessKiller(runningProcess: self, ctx)
-
-        self.terminationHandler = { process in
-            ctx.logger?.debug("Process terminated: \(process)")
-
-            guard process.processIdentifier > 0 else {
-                completionPromise.fail(ProcessTerminationError.notStarted)
-                return
-            }
-
-            guard !process.isRunning else {
-                completionPromise.fail(ProcessTerminationError.notFinished)
-                return
-            }
-
-            let status = process.terminationStatus
-
-            switch process.terminationReason {
-            case .exit:
-                completionPromise.succeed(status)
-            case .uncaughtSignal:
-                if status == SIGKILL && killer.cancelled {
-                    completionPromise.fail(ProcessTerminationError.cancelled(
-                        reason: killer.cancellationReason,
-                        diagnostics: killer.diagnostics
-                    ))
-                } else {
-                    completionPromise.fail(ProcessTerminationError.signaled(status))
-                }
-            @unknown default:
-                completionPromise.fail(ProcessTerminationError.unknown(status))
-            }
-        }
-
-        do {
-            ctx.logger?.debug("Will start running process: \(self)")
-            try run()
-            ctx.logger?.trace("Did start running process: \(self)")
-        } catch {
-            completionPromise.fail(error)
-        }
-
-        let canceller = LLBCanceller(killer)
-
-        return LLBCancellableFuture(completionPromise.futureResult, canceller: canceller)
-    }
+public struct ProcessTerminationError: Error {
+    public var diagnostics: Result<FXDiagnostics, Error>?
 }
 
 public struct ProcessSpec: Codable, Sendable {
@@ -122,13 +40,19 @@ public struct ProcessSpec: Codable, Sendable {
     let stdoutDestination: RelativePath?
     let stderrDestination: RelativePath?
 
+    /// Paths as recognized by the Context's `fileHandleGenerator`.
+    let stdoutStreamingDestination: String?
+    let stderrStreamingDestination: String?
+
     public init(
         executable: Executable,
         arguments: [RuntimeValue] = [],
         environment: [String: RuntimeValue] = [:],
         stdinSource: RelativePath? = nil,
         stdoutDestination: RelativePath? = nil,
-        stderrDestination: RelativePath? = nil
+        stderrDestination: RelativePath? = nil,
+        stdoutStreamingDestination: String? = "stdout.log",
+        stderrStreamingDestination: String? = "stderr.log"
     ) {
         self.executable = executable
         self.arguments = arguments
@@ -136,15 +60,12 @@ public struct ProcessSpec: Codable, Sendable {
         self.stdinSource = stdinSource
         self.stdoutDestination = stdoutDestination
         self.stderrDestination = stderrDestination
+        self.stdoutStreamingDestination = stdoutStreamingDestination
+        self.stderrStreamingDestination = stderrStreamingDestination
     }
 
-    enum ProcessSpecError: Error {
-        case unableToCreateFile(RelativePath)
-        case unableToCreateFileHandle(RelativePath)
-    }
-
-    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath) throws -> Foundation.Process {
-        func runtimeValueMapper(_ value: RuntimeValue) -> String {
+    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath, _ ctx: Context) async throws -> ProcessExitReason {
+        @Sendable func runtimeValueMapper(_ value: RuntimeValue) -> String {
             switch value {
             case .literal(let v):
                 return v
@@ -152,10 +73,11 @@ public struct ProcessSpec: Codable, Sendable {
                 return inputPath.appending(path).pathString
             case .outputPath(let path):
                 return outputPath.appending(path).pathString
-            case .sequence(values: let values, separator: let separator):
-                return String(values.map {
-                    runtimeValueMapper($0)
-                }.joined(separator: separator))
+            case .sequence(let values, let separator):
+                return String(
+                    values.map {
+                        runtimeValueMapper($0)
+                    }.joined(separator: separator))
             }
         }
 
@@ -167,56 +89,137 @@ public struct ProcessSpec: Codable, Sendable {
             exePath = inputPath.appending(path)
         }
 
-        let process = Process()
-
-        process.executableURL = URL(fileURLWithPath: exePath.pathString)
-        process.arguments = arguments.map(runtimeValueMapper)
-        process.environment = environment.mapValues(runtimeValueMapper)
-
-        let devNull = "/dev/null"
-
-        if let stdin = stdinSource {
-            let path = inputPath.appending(stdin).pathString
-
-            guard let standardInput = FileHandle(forReadingAtPath: path) else {
-                throw ProcessSpecError.unableToCreateFileHandle(stdin)
-            }
-
-            process.standardInput = standardInput
+        let stdinPath: String
+        if let stdinRelative = stdinSource {
+            stdinPath = runtimeValueMapper(.inputPath(stdinRelative))
         } else {
-            process.standardInput = FileHandle(forReadingAtPath: devNull)
+            stdinPath = "/dev/null"
         }
 
-        let fileManager = FileManager()
+        return try await FileSystem.shared.withFileHandle(forReadingAt: FilePath(stdinPath)) { stdin in
+            let exe = ProcessExecutor(
+                executable: exePath.pathString,
+                arguments.map(runtimeValueMapper),
+                environment: environment.mapValues(runtimeValueMapper),
+                standardInput: stdin.readChunks(),
+                standardOutput: .stream,
+                standardError: .stream,
+                logger: ctx.logger ?? ProcessExecutor.disableLogging)
 
-        func outputFileHandle(for destination: RelativePath?) throws -> FileHandle? {
-            guard let destination = destination else {
-                return FileHandle(forWritingAtPath: devNull)
+            enum WhoReturned {
+                case run(ProcessExitReason)
+                case deadline(Result<FXDiagnostics, Error>?)
             }
 
-            let path = outputPath.appending(destination).pathString
+            return try await withThrowingTaskGroup(of: WhoReturned.self) { group in
+                ctx.logger?.debug("Running process: \(exe)")
+                defer { ctx.logger?.debug("Finished running process: \(exe)") }
 
-            guard fileManager.createFile(atPath: path, contents: nil) else {
-                throw ProcessSpecError.unableToCreateFile(destination)
+                // Main task.
+                group.addTask {
+                    // Run the process and handle its outputs in parallel, ensuring we fully consume the process's outputs.
+                    async let runExe = exe.run()
+                    // Merge stdout and stderr into a single tagged stream so we don't have to worry about data races when stdout and stderr get written to the same destination.
+                    let taggedOutputs = merge(
+                        await exe.standardOutput.map { ($0, OutputSource.stdout) },
+                        await exe.standardError.map { ($0, OutputSource.stderr) }
+                    )
+                    let stdoutPath = stdoutDestination.map { FilePath(runtimeValueMapper(.outputPath($0))) }
+                    let stderrPath = stderrDestination.map { FilePath(runtimeValueMapper(.outputPath($0))) }
+                    async let handleOutputs: () = handleOutputs(taggedOutputs, stdoutPath: stdoutPath, stderrPath: stderrPath, ctx)
+                    let (result, _) = try await (runExe, handleOutputs)
+                    return .run(result)
+                }
+
+                // Timeout / diagnostics-gathering task.
+                if let deadline = ctx.fxDeadline {
+                    group.addTask {
+                        // Wait until the deadline.
+                        // (`try await Task.sleep(for: .seconds(deadline.timeIntervalSinceNow))` is only available in macOS 13.0 or newer.)
+                        let deadlineSeconds = deadline.timeIntervalSinceNow
+                        if deadlineSeconds > 0 {
+                            let deadlineNanoseconds = UInt64(exactly: (deadlineSeconds * 1_000_000_000).rounded()) ?? UInt64.max
+                            try await Task.sleep(nanoseconds: deadlineNanoseconds)
+                        }
+
+                        // If we don't have a diagnostics gatherer, just return a signal that the deadline was reached.
+                        guard let gatherer = ctx.fxDiagnosticsGatherer else { return .deadline(nil) }
+
+                        // Gather diagnostics about the potentially-hung task.
+                        let diagnostics: Result<FXDiagnostics, Error>  // Workaround for lack of async initializer on `Result`.
+                        do { diagnostics = .success(try await gatherer.gatherDiagnostics(pid: exe.bestEffortProcessIdentifier, ctx)) } catch { diagnostics = .failure(error) }
+                        return .deadline(diagnostics)
+                    }
+                }
+
+                switch try await group.next() {
+                case .run(let result):
+                    // Ran successfully; cancel the timeout and return the result.
+                    ctx.logger?.debug("Process finished: \(exe); result: \(result)")
+                    group.cancelAll()
+                    return result
+                case .deadline(let diagnostics):
+                    ctx.logger?.debug("Process timed out: \(exe)")
+                    // Timeout triggered and gathered diagnostics; cancel the running process and throw an error containing the diagnostics.
+                    group.cancelAll()
+                    throw ProcessTerminationError(diagnostics: diagnostics)
+                case .none:
+                    fatalError("unreachable")
+                }
             }
-
-            guard let handle = FileHandle(forWritingAtPath: path) else {
-                throw ProcessSpecError.unableToCreateFileHandle(destination)
-            }
-
-            return handle
         }
+    }
 
-        if stdoutDestination == stderrDestination {
-            let handle = try outputFileHandle(for: stdoutDestination)
-            process.standardOutput = handle
-            process.standardError = handle
-        } else {
-            process.standardOutput = try outputFileHandle(for: stdoutDestination)
-            process.standardError = try outputFileHandle(for: stderrDestination)
+    private func withOptionalBufferedWriter<T>(forWritingAt path: FilePath?, body: (inout BufferedWriter<WriteFileHandle>?) async throws -> T) async throws -> T {
+        guard let path = path else {
+            var writer: BufferedWriter<WriteFileHandle>? = nil
+            return try await body(&writer)
         }
+        return try await FileSystem.shared.withFileHandle(forWritingAt: path, options: OpenOptions.Write.newFile(replaceExisting: false)) { fileHandle in
+            try await fileHandle.withBufferedWriter { writer in
+                var maybeWriter: BufferedWriter<WriteFileHandle>? = writer
+                defer { if let finalWriter = maybeWriter { writer = finalWriter } }
+                return try await body(&maybeWriter)
+            }
+        }
+    }
 
-        return process
+    /// No cleanup has to be done, so this isn't a `withStreamingWriter` function.
+    private func makeStreamingWriter(channel: String?, _ ctx: Context) -> ((ByteBuffer) async throws -> Void) {
+        guard let streamingLogHandler = ctx.streamingLogHandler, let channel = channel else {
+            return { _ in () }
+        }
+        return { try await streamingLogHandler.streamLog(channel: channel, $0) }
+    }
+
+    private enum OutputSource {
+        case stdout
+        case stderr
+    }
+
+    private func handleOutputs<S: AsyncSequence>(_ taggedOutputs: S, stdoutPath: FilePath?, stderrPath: FilePath?, _ ctx: Context) async throws where S.Element == (ByteBuffer, OutputSource) {
+        let areLocalOutputsMerged = stdoutPath == stderrPath
+
+        let stdoutStreamer = makeStreamingWriter(channel: stdoutStreamingDestination, ctx)
+        let stderrStreamer = makeStreamingWriter(channel: stderrStreamingDestination, ctx)
+        try await withOptionalBufferedWriter(forWritingAt: stdoutPath) { stdoutWriter in
+            // If local stdout and stderr are being written to the same file, only open one writer.
+            try await withOptionalBufferedWriter(forWritingAt: areLocalOutputsMerged ? nil : stderrPath) { stderrWriter in
+                for try await (chunk, source) in taggedOutputs {
+                    switch source {
+                    case .stdout:
+                        async let localWriteResult = stdoutWriter?.write(contentsOf: chunk)
+                        async let streamingWriteResult: () = stdoutStreamer(chunk)
+                        _ = try await (localWriteResult, streamingWriteResult)
+                    case .stderr:
+                        // I wish Swift let you make references to structs; that would make this a lot cleaner/simpler.
+                        async let localWriteResult = (areLocalOutputsMerged ? stdoutWriter?.write(contentsOf: chunk) : stderrWriter?.write(contentsOf: chunk))
+                        async let streamingWriteResult: () = stderrStreamer(chunk)
+                        _ = try await (localWriteResult, streamingWriteResult)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -224,7 +227,9 @@ struct ProcessInputTree: FXTreeID {
     let dataID: LLBDataID
 }
 
-extension SpawnProcess: FXAction {
+extension SpawnProcess: AsyncFXAction {
+    public typealias ValueType = SpawnProcessResult
+
     private enum SpawnProcessError: Swift.Error {
         case emptyRefs
         case tooManyRefs
@@ -264,42 +269,30 @@ public struct SpawnProcess {
         self.initialOutputTree = initialOutputTree
     }
 
-    enum FXSpawnError: Error {
+    public enum FXSpawnError: Error {
         case failure(outputTree: LLBDataID, underlyingError: Error)
         case recoveryUploadFailure(uploadError: Error, originalError: Error)
     }
 
-    public func run(_ ctx: Context) -> LLBFuture<SpawnProcessResult> {
-        inputTree.materialize(ctx) { inputPath in
-            withTemporaryDirectory(ctx) { outputPath in
-                let export: LLBFuture<Void>
+    public func run(_ ctx: Context) async throws -> SpawnProcessResult {
+        try await inputTree.materialize(ctx) { inputPath in
+            try await withTemporaryDirectory(ctx) { outputPath in
                 if let initialOutputTree = initialOutputTree {
-                    export = LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx)
-                } else {
-                    export = ctx.group.next().makeSucceededFuture(())
+                    try await LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
                 }
 
-                return export.flatMap { _ in
+                do {
+                    let exitCode = try await spec.process(inputPath: inputPath, outputPath: outputPath, ctx).asShellExitCode
+                    let treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
+                    return SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: Int32(truncatingIfNeeded: exitCode))
+                } catch (let error) {
+                    let treeID: LLBDataID
                     do {
-                        let process = try spec.process(inputPath: inputPath, outputPath: outputPath)
-                        let cancellable = process.runCancellable(ctx)
-
-                        ctx.fxApplyDeadline(cancellable)
-
-                        return cancellable.future.flatMap { exitCode in
-                            LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).map { treeID in
-                                SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: exitCode)
-                            }
-                        }.flatMapError { error in
-                            return LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).flatMapErrorThrowing { uploadError in
-                                throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
-                            }.flatMapThrowing { treeID in
-                                throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
-                            }
-                        }
-                    } catch {
-                        return ctx.group.next().makeFailedFuture(error)
+                        treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
+                    } catch (let uploadError) {
+                        throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
                     }
+                    throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
                 }
             }
         }

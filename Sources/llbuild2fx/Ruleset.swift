@@ -15,7 +15,7 @@ public protocol FXEntrypoint: FXKey {
 
 public class FXRuleset {
     public let name: String
-    public let entrypoints: [String : any FXEntrypoint.Type]
+    public let entrypoints: [String: any FXEntrypoint.Type]
     public let actionDependencies: [any FXAction.Type]
 
     let aggregatedResourceEntitlements: FXSortedSet<ResourceKey>
@@ -71,8 +71,8 @@ public protocol FXRulesetPackage {
     static func createErrorClassifier() -> FXErrorClassifier?
 }
 
-public extension FXRulesetPackage {
-    static func createExternalResources(
+extension FXRulesetPackage {
+    public static func createExternalResources(
         _ config: Config,
         group: LLBFuturesDispatchGroup,
         authenticator: FXResourceAuthenticator,
@@ -81,7 +81,7 @@ public extension FXRulesetPackage {
         return []
     }
 
-    static func createErrorClassifier() -> FXErrorClassifier? {
+    public static func createErrorClassifier() -> FXErrorClassifier? {
         return nil
     }
 }

@@ -6,9 +6,10 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Foundation
 import Logging
 
-// Support protocol for recording events during FXKey evaluations
+/// Support protocol for recording events during FXKey evaluations
 public protocol FXMetricsSink {
     func event(
         _ message: Logger.Message,
@@ -33,9 +34,14 @@ extension FXMetricsSink {
     }
 }
 
-// Support storing and retrieving logger and metrics instances from a Context.
-public extension Context {
-    var logger: Logger? {
+/// Protocol for streaming log messages during FXAction evaluations. (Useful for capturing the output of spawned processes while they're still running.)
+public protocol StreamingLogHandler {
+    func streamLog(channel: String, _ data: LLBByteBuffer) async throws
+}
+
+// Support storing and retrieving logger, metrics, and file handle generator instances from a Context.
+extension Context {
+    public var logger: Logger? {
         get {
             return self[ObjectIdentifier(Logger.self), as: Logger.self]
         }
@@ -44,12 +50,17 @@ public extension Context {
         }
     }
 
-    var metrics: FXMetricsSink? {
+    public var metrics: FXMetricsSink? {
         get {
             return self[ObjectIdentifier(FXMetricsSink.self), as: FXMetricsSink.self]
         }
         set {
             self[ObjectIdentifier(FXMetricsSink.self)] = newValue
         }
+    }
+
+    public var streamingLogHandler: StreamingLogHandler? {
+        get { self[ObjectIdentifier(StreamingLogHandler.self)] }
+        set { self[ObjectIdentifier(StreamingLogHandler.self)] = newValue }
     }
 }

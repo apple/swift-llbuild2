@@ -6,10 +6,9 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import XCTest
-
-import llbuild2fx
 import TSCBasic
+import XCTest
+import llbuild2fx
 
 extension String: @retroactive FXRequestKey {
     public var stableHashValue: LLBDataID {

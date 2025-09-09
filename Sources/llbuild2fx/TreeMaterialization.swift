@@ -34,7 +34,7 @@ extension Context {
 
 public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
     do {
-        return try withTemporaryDirectory(removeTreeOnDeinit: false) { path in
+        return try TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: false) { path in
             body(path).always { _ in
                 _ = try? FileManager.default.removeItem(atPath: path.pathString)
             }
@@ -42,6 +42,10 @@ public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> 
     } catch {
         return ctx.group.next().makeFailedFuture(error)
     }
+}
+
+public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
+    return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true, body)
 }
 
 struct UntypedTreeID: FXSingleDataIDValue, FXTreeID {
@@ -66,11 +70,14 @@ extension FXFileID {
     }
 
     public func materialize<R>(filename: String, _ ctx: Context, _ body: @escaping (AbsolutePath) async throws -> R) async throws -> R {
-        return try await materialize(filename: filename, ctx, { path in
-            return ctx.group.any().makeFutureWithTask({
-                try await body(path)
-            })
-        }).get()
+        return try await materialize(
+            filename: filename, ctx,
+            { path in
+                return ctx.group.any().makeFutureWithTask({
+                    try await body(path)
+                })
+            }
+        ).get()
     }
 }
 
@@ -88,7 +95,7 @@ extension FXTreeID {
             return try await body(path)
         }
 
-        return try await withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
+        return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
             try await LLBCASFileTree.export(self.dataID, from: ctx.db, to: tmp, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
             return try await body(tmp)
         }
