@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.1.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
+        .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.38.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.16.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
@@ -46,6 +47,7 @@ let package = Package(
             name: "BazelRemoteAPI",
             dependencies: [
                 .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "SwiftProtobufPluginLibrary", package: "swift-protobuf"),
             ]
@@ -64,6 +66,7 @@ let package = Package(
                 "BazelRemoteAPI",
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
             ]
         ),
@@ -73,6 +76,7 @@ let package = Package(
             name: "LLBCASTool",
             dependencies: [
                 .product(name: "GRPC", package: "grpc-swift"),
+                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
                 "BazelRemoteAPI",
                 "LLBBazelBackend",
