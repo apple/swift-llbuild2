@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.38.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
-        .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.16.0"),
+        .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.17.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
     ],

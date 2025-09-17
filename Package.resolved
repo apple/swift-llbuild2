@@ -194,8 +194,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-tools-support-async.git",
       "state" : {
-        "revision" : "16f2963c6f338c814f6116660f1ee91d79d93b11",
-        "version" : "0.16.0"
+        "revision" : "8cd215778056b7baab3cd9e57ba03559c02f480a",
+        "version" : "0.17.0"
       }
     },
     {
