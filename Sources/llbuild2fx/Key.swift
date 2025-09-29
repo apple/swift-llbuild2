@@ -362,9 +362,9 @@ public protocol AsyncFXKey: FXKey {
 
 extension AsyncFXKey {
     public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType> {
-        ctx.group.any().makeFutureWithTask {
-            try await computeValue(fi, ctx)
-        }
+        TaskCancellationRegistry.makeCancellableTask({
+            try await self.computeValue(fi, ctx)
+        }, ctx)
     }
 
     public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?> {
