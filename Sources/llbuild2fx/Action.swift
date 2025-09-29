@@ -44,8 +44,8 @@ public protocol AsyncFXAction: FXAction {
 
 extension AsyncFXAction {
     public func run(_ ctx: Context) -> LLBFuture<ValueType> {
-        ctx.group.any().makeFutureWithTask {
-            try await run(ctx)
-        }
+        TaskCancellationRegistry.makeCancellableTask({
+            try await self.run(ctx)
+        }, ctx)
     }
 }

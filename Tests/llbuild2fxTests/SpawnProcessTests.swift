@@ -21,6 +21,40 @@ final class SpawnProcessTests: XCTestCase {
         ctx.streamingLogHandler = streamAccumulator
     }
 
+    func testCancellation() async throws {
+        let taskCancellationRegistry = TaskCancellationRegistry()
+        ctx.taskCancellationRegistry = taskCancellationRegistry
+        ctx.group = ctx.db.group
+
+        struct MyValue: FXValue, Codable {
+            let value: Int32
+        }
+
+        struct MyKey: AsyncFXKey {
+            typealias ValueType = MyValue
+
+            func computeValue(_ fi: llbuild2fx.FXFunctionInterface<MyKey>, _ ctx: Context) async throws -> MyValue {
+                let process = try await llbuild2fxTests.makeProcess(ctx: ctx, "/bin/sh", ["-c", "sleep 5"])
+                async let result = process.run(ctx)
+                ctx.taskCancellationRegistry?.cancelAllTasks()
+                return try await MyValue(value: result.exitCode)
+            }
+        }
+
+        let engine = FXEngine(group: ctx.group, db: ctx.db, functionCache: nil, executor: FXLocalExecutor())
+
+        do {
+            _ = try await engine.build(key: MyKey(), ctx).get()
+        } catch let error as FXError {
+            switch error {
+            case .valueComputationError(_, _, let error, _):
+                XCTAssertTrue(error is SpawnProcess.FXSpawnError)
+            default:
+                throw error
+            }
+        }
+    }
+
     func testCapturesStdout() async throws {
         let process = try await makeProcess("/bin/sh", ["-c", "echo output"])
         let result = try await process.run(ctx)
@@ -48,7 +82,7 @@ final class SpawnProcessTests: XCTestCase {
     }
 
     func testReadsInput() async throws {
-        let process = try await makeProcess("/bin/cat", [.inputPath(RelativePath(validating: "stdin.txt"))], stdinContents: "input data")
+        let process = try await llbuild2fxTests.makeProcess(ctx: ctx, "/bin/cat", [.inputPath(RelativePath(validating: "stdin.txt"))], stdinContents: "input data")
         let result = try await process.run(ctx)
         XCTAssertEqual(result.exitCode, 0)
         try await assertLocalStdout(hasContents: "input data", inResult: result)
@@ -128,36 +162,13 @@ final class SpawnProcessTests: XCTestCase {
 
     // MARK: - Helpers for creating SpawnProcess instances and asserting on their outputs.
 
-    func makeProcess(
-        _ executable: String, _ arguments: [ProcessSpec.RuntimeValue], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
+    func makeProcess(_ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
         stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
     ) async throws
         -> SpawnProcess
     {
-        try await withTemporaryDirectory(removeTreeOnDeinit: true) { tempDir in
-            let stdinPath = try tempDir.appending(RelativePath(validating: "stdin.txt"))
-            try await stdinContents.write(toFileAt: .init(stdinPath.pathString))
-            let inputTreeId = ProcessInputTreeID(dataID: try await LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).get())
-
-            let processSpec = try ProcessSpec(
-                executable: .absolutePath(.init(validating: executable)),
-                arguments: arguments,
-                stdinSource: RelativePath(validating: "stdin.txt"),
-                stdoutDestination: RelativePath(validating: stdoutDestination),
-                stderrDestination: RelativePath(validating: stderrDestination),
-                stdoutStreamingDestination: stdoutStreamingDestination,
-                stderrStreamingDestination: stderrStreamingDestination)
-
-            return SpawnProcess(inputTree: inputTreeId, spec: processSpec)
-        }
-    }
-    func makeProcess(
-        _ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
-        stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
-    ) async throws
-        -> SpawnProcess
-    {
-        try await makeProcess(
+        try await llbuild2fxTests.makeProcess(
+            ctx: ctx,
             executable, arguments.map(ProcessSpec.RuntimeValue.literal), stdinContents: stdinContents, stdoutDestination: stdoutDestination, stderrDestination: stderrDestination,
             stdoutStreamingDestination: stdoutStreamingDestination, stderrStreamingDestination: stderrStreamingDestination)
     }
@@ -201,4 +212,39 @@ struct MockDiagnosticsGatherer: FXDiagnosticsGathering {
     func gatherDiagnostics(pid: Int32?, _ ctx: Context) async throws -> FXDiagnostics {
         return returnValue
     }
+}
+
+func makeProcess(ctx: Context, _ executable: String, _ arguments: [ProcessSpec.RuntimeValue], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
+    stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
+) async throws
+    -> SpawnProcess
+{
+    try await withTemporaryDirectory(removeTreeOnDeinit: true) { tempDir in
+        let stdinPath = try tempDir.appending(RelativePath(validating: "stdin.txt"))
+        try await stdinContents.write(toFileAt: .init(stdinPath.pathString))
+        let inputTreeId = ProcessInputTreeID(dataID: try await LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).get())
+
+        let processSpec = try ProcessSpec(
+            executable: .absolutePath(.init(validating: executable)),
+            arguments: arguments,
+            stdinSource: RelativePath(validating: "stdin.txt"),
+            stdoutDestination: RelativePath(validating: stdoutDestination),
+            stderrDestination: RelativePath(validating: stderrDestination),
+            stdoutStreamingDestination: stdoutStreamingDestination,
+            stderrStreamingDestination: stderrStreamingDestination)
+
+        return SpawnProcess(inputTree: inputTreeId, spec: processSpec)
+    }
+}
+
+func makeProcess(
+    ctx: Context, _ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
+    stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
+) async throws
+    -> SpawnProcess
+{
+    try await makeProcess(
+        ctx: ctx,
+        executable, arguments.map(ProcessSpec.RuntimeValue.literal), stdinContents: stdinContents, stdoutDestination: stdoutDestination, stderrDestination: stderrDestination,
+        stdoutStreamingDestination: stdoutStreamingDestination, stderrStreamingDestination: stderrStreamingDestination)
 }
