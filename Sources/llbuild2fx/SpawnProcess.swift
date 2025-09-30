@@ -32,9 +32,19 @@ public struct ProcessSpec: Codable, Sendable {
         case sequence(values: [RuntimeValue], separator: String)
     }
 
+    public struct SpawnOptions: Codable, Equatable, Sendable {
+        public var changedWorkingDirectory: RuntimeValue?
+
+        public static var `default`: SpawnOptions {
+            .init(changedWorkingDirectory: nil)
+        }
+    }
+
     let executable: Executable
     let arguments: [RuntimeValue]
     let environment: [String: RuntimeValue]
+
+    let spawnOptions: SpawnOptions
 
     let stdinSource: RelativePath?
     let stdoutDestination: RelativePath?
@@ -48,6 +58,7 @@ public struct ProcessSpec: Codable, Sendable {
         executable: Executable,
         arguments: [RuntimeValue] = [],
         environment: [String: RuntimeValue] = [:],
+        spawnOptions: SpawnOptions = .default,
         stdinSource: RelativePath? = nil,
         stdoutDestination: RelativePath? = nil,
         stderrDestination: RelativePath? = nil,
@@ -57,6 +68,7 @@ public struct ProcessSpec: Codable, Sendable {
         self.executable = executable
         self.arguments = arguments
         self.environment = environment
+        self.spawnOptions = spawnOptions
         self.stdinSource = stdinSource
         self.stdoutDestination = stdoutDestination
         self.stderrDestination = stderrDestination
@@ -101,6 +113,7 @@ public struct ProcessSpec: Codable, Sendable {
                 executable: exePath.pathString,
                 arguments.map(runtimeValueMapper),
                 environment: environment.mapValues(runtimeValueMapper),
+                spawnOptions: spawnOptions.toProcessExecutorSpawnOptions(runtimeValueMapper),
                 standardInput: stdin.readChunks(),
                 standardOutput: .stream,
                 standardError: .stream,
@@ -354,5 +367,19 @@ public struct SpawnProcessResult: FXValue, FXTreeID {
 
         treeID = ProcessOutputTreeID(dataID: refs[0])
         exitCode = codableValue
+    }
+}
+
+extension ProcessSpec.SpawnOptions {
+    func toProcessExecutorSpawnOptions(
+        _ runtimeValueMapper: (ProcessSpec.RuntimeValue) -> String
+    ) -> ProcessExecutor.SpawnOptions {
+        var result = ProcessExecutor.SpawnOptions.default
+
+        if let changedWorkingDirectory {
+            result.changedWorkingDirectory = runtimeValueMapper(changedWorkingDirectory)
+        }
+
+        return result
     }
 }
