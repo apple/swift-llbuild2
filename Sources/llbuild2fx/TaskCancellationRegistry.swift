@@ -18,24 +18,27 @@ public final class TaskCancellationRegistry {
 
     public func registerForCancellation(_ trigger: @escaping () -> Void) -> UUID {
         let uuid = UUID()
-        triggers.withLockedValue { triggers in
+        self.triggers.withLockedValue { triggers in
             triggers[uuid] = trigger
         }
         return uuid
     }
 
     public func deregisterForCancellation(taskID uuid: UUID) {
-        triggers.withLockedValue { triggers in
+        self.triggers.withLockedValue { triggers in
             triggers[uuid] = nil
         }
     }
 
     public func cancelAllTasks() {
-        triggers.withLockedValue { triggers in
-            for (_, trigger) in triggers {
-                trigger()
-            }
+        let triggersToCall = self.triggers.withLockedValue { triggers in
+            let triggersToCall = triggers
             triggers = [:]
+            return triggersToCall
+        }
+
+        for (_, trigger) in triggersToCall {
+            trigger()
         }
     }
 
