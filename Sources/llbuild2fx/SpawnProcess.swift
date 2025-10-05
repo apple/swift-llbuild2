@@ -40,19 +40,19 @@ public struct ProcessSpec: Codable, Sendable {
         }
     }
 
-    let executable: Executable
-    let arguments: [RuntimeValue]
-    let environment: [String: RuntimeValue]
+    public let executable: Executable
+    public let arguments: [RuntimeValue]
+    public let environment: [String: RuntimeValue]
 
-    let spawnOptions: SpawnOptions
+    public let spawnOptions: SpawnOptions
 
-    let stdinSource: RelativePath?
-    let stdoutDestination: RelativePath?
-    let stderrDestination: RelativePath?
+    public let stdinSource: RelativePath?
+    public let stdoutDestination: RelativePath?
+    public let stderrDestination: RelativePath?
 
     /// Paths as recognized by the Context's `fileHandleGenerator`.
-    let stdoutStreamingDestination: String?
-    let stderrStreamingDestination: String?
+    public let stdoutStreamingDestination: String?
+    public let stderrStreamingDestination: String?
 
     public init(
         executable: Executable,
@@ -266,11 +266,11 @@ extension SpawnProcess: AsyncFXAction {
 }
 
 public struct SpawnProcess {
-    let inputTree: ProcessInputTreeID
+    public let inputTree: ProcessInputTreeID
 
-    let spec: ProcessSpec
+    public let spec: ProcessSpec
 
-    let initialOutputTree: ProcessOutputTreeID?
+    public let initialOutputTree: ProcessOutputTreeID?
 
     public init(
         inputTree: ProcessInputTreeID,
