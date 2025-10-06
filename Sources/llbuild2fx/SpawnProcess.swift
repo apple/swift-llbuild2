@@ -29,6 +29,7 @@ public struct ProcessSpec: Codable, Sendable {
         case literal(String)
         case inputPath(RelativePath)
         case outputPath(RelativePath)
+        case temporaryDirectory(RelativePath)
         case sequence(values: [RuntimeValue], separator: String)
     }
 
@@ -76,7 +77,7 @@ public struct ProcessSpec: Codable, Sendable {
         self.stderrStreamingDestination = stderrStreamingDestination
     }
 
-    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath, _ ctx: Context) async throws -> ProcessExitReason {
+    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath, tmpDir: AbsolutePath, _ ctx: Context) async throws -> ProcessExitReason {
         @Sendable func runtimeValueMapper(_ value: RuntimeValue) -> String {
             switch value {
             case .literal(let v):
@@ -85,6 +86,8 @@ public struct ProcessSpec: Codable, Sendable {
                 return inputPath.appending(path).pathString
             case .outputPath(let path):
                 return outputPath.appending(path).pathString
+            case .temporaryDirectory(let path):
+                return tmpDir.appending(path).pathString
             case .sequence(let values, let separator):
                 return String(
                     values.map {
@@ -288,25 +291,31 @@ public struct SpawnProcess {
     }
 
     public func run(_ ctx: Context) async throws -> SpawnProcessResult {
-        try await inputTree.materialize(ctx) { inputPath in
+        try await withTemporaryDirectory(ctx) { tmpDir in
             try await withTemporaryDirectory(ctx) { outputPath in
-                if let initialOutputTree = initialOutputTree {
-                    try await LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
-                }
+                return try await run(outputPath: outputPath, tmpDir: tmpDir, ctx)
+            }
+        }
+    }
 
+    private func run(outputPath: AbsolutePath, tmpDir: AbsolutePath, _ ctx: Context) async throws -> SpawnProcessResult {
+        try await inputTree.materialize(ctx) { inputPath in
+            if let initialOutputTree = initialOutputTree {
+                try await LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
+            }
+
+            do {
+                let exitCode = try await spec.process(inputPath: inputPath, outputPath: outputPath, tmpDir: tmpDir, ctx).asShellExitCode
+                let treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
+                return SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: Int32(truncatingIfNeeded: exitCode))
+            } catch (let error) {
+                let treeID: LLBDataID
                 do {
-                    let exitCode = try await spec.process(inputPath: inputPath, outputPath: outputPath, ctx).asShellExitCode
-                    let treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
-                    return SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: Int32(truncatingIfNeeded: exitCode))
-                } catch (let error) {
-                    let treeID: LLBDataID
-                    do {
-                        treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
-                    } catch (let uploadError) {
-                        throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
-                    }
-                    throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
+                    treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
+                } catch (let uploadError) {
+                    throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
                 }
+                throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
             }
         }
     }
