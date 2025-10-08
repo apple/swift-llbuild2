@@ -18,9 +18,17 @@ public enum FXActionWorkerSize: Equatable {
 
 public struct FXActionRequirements {
     public let workerSize: FXActionWorkerSize?
+    public let networkSandbox: Bool?
+    public let requirements: [String: String]
 
-    public init(workerSize: FXActionWorkerSize? = nil) {
+    public init(
+        workerSize: FXActionWorkerSize? = nil,
+        networkSandbox: Bool? = nil,
+        requirements: [String: String] = [:]
+    ) {
         self.workerSize = workerSize
+        self.networkSandbox = networkSandbox
+        self.requirements = requirements
     }
 }
 
