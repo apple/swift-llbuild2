@@ -154,7 +154,9 @@ public struct ProcessSpec: Codable, Sendable {
                         // (`try await Task.sleep(for: .seconds(deadline.timeIntervalSinceNow))` is only available in macOS 13.0 or newer.)
                         let deadlineSeconds = deadline.timeIntervalSinceNow
                         if deadlineSeconds > 0 {
-                            let deadlineNanoseconds = UInt64(exactly: (deadlineSeconds * 1_000_000_000).rounded()) ?? UInt64.max
+                            let converted = UInt64(exactly: (deadlineSeconds * 1_000_000_000).rounded()) ?? UInt64.max
+                            // Clamp to `(UInt64.max / 2)` to work around a bug in older versions of `Task.sleep`. (https://github.com/swiftlang/swift/issues/80791)
+                            let deadlineNanoseconds = min(converted, UInt64.max / 2)
                             try await Task.sleep(nanoseconds: deadlineNanoseconds)
                         }
 
