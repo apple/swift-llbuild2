@@ -128,6 +128,15 @@ final class SpawnProcessTests: XCTestCase {
         XCTFail("Process didn't throw a ProcessTerminationError when the deadline was reached.")
     }
 
+    // Regression test for issues caused by https://github.com/swiftlang/swift/issues/80791.
+    func testLongDeadlineDoesntCauseEarlyCancellation() async throws {
+        let process = try await makeProcess("/bin/sh", ["-c", "echo output"])
+        var localCtx: Context = ctx
+        localCtx.fxDeadline = Date.distantFuture
+        let result = try await process.run(localCtx)
+        XCTAssertEqual(result.exitCode, 0)
+    }
+
     func testKeepsOutputWhenCancelled() async throws {
         let process = try await makeProcess("/bin/sh", ["-c", "echo output; sleep 1d"])
         ctx.fxDeadline = Date(timeIntervalSinceNow: 0.1)
@@ -162,7 +171,8 @@ final class SpawnProcessTests: XCTestCase {
 
     // MARK: - Helpers for creating SpawnProcess instances and asserting on their outputs.
 
-    func makeProcess(_ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
+    func makeProcess(
+        _ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
         stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
     ) async throws
         -> SpawnProcess
@@ -214,7 +224,8 @@ struct MockDiagnosticsGatherer: FXDiagnosticsGathering {
     }
 }
 
-func makeProcess(ctx: Context, _ executable: String, _ arguments: [ProcessSpec.RuntimeValue], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
+func makeProcess(
+    ctx: Context, _ executable: String, _ arguments: [ProcessSpec.RuntimeValue], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
     stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
 ) async throws
     -> SpawnProcess
