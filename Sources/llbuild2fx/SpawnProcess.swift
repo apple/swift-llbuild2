@@ -205,7 +205,7 @@ public struct ProcessSpec: Codable, Sendable {
         guard let streamingLogHandler = ctx.streamingLogHandler, let channel = channel else {
             return { _ in () }
         }
-        return { try await streamingLogHandler.streamLog(channel: channel, $0) }
+        return { try await streamingLogHandler.streamLog(spec: self, channel: channel, $0) }
     }
 
     private enum OutputSource {
