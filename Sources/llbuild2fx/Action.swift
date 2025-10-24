@@ -11,12 +11,12 @@ import NIOCore
 import TSCUtility
 import TSFFutures
 
-public enum FXActionWorkerSize: Equatable {
+public enum FXActionWorkerSize: Codable, Equatable {
     case small
     case large
 }
 
-public struct FXActionRequirements {
+public struct FXActionRequirements: Codable {
     public let workerSize: FXActionWorkerSize?
     public let allowNetworkAccess: Bool?
     public let requirements: [String: String]
@@ -38,7 +38,15 @@ public protocol FXAction: FXValue {
     static var name: String { get }
     static var version: Int { get }
 
+    var requirements: FXActionRequirements { get }
+
     func run(_ ctx: Context) -> LLBFuture<ValueType>
+}
+
+extension FXAction {
+    public var requirements: FXActionRequirements {
+        return .init()
+    }
 }
 
 extension FXAction {
