@@ -11,6 +11,9 @@ import Logging
 
 /// Support protocol for recording events during FXKey evaluations
 public protocol FXMetricsSink {
+
+    subscript(sinkMetadataKey metadataKey: String) -> Logger.Metadata.Value? { get set }
+
     func event(
         _ message: Logger.Message,
         metadata: @autoclosure () -> Logger.Metadata,
