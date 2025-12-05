@@ -211,7 +211,7 @@ final class SpawnProcessTests: XCTestCase {
 class StreamAccumulator: StreamingLogHandler {
     var accumulatedLogs: [String: String] = [:]
 
-    func streamLog(channel: String, _ data: LLBByteBuffer) {
+    func streamLog(spec: ProcessSpec, channel: String, _ data: LLBByteBuffer) {
         accumulatedLogs[channel, default: ""].append(String(buffer: data))
     }
 }
