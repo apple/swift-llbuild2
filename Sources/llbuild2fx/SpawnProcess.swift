@@ -55,6 +55,9 @@ public struct ProcessSpec: Codable, Sendable {
     public let stdoutStreamingDestination: String?
     public let stderrStreamingDestination: String?
 
+    /// Path under which temporary directories will be created.
+    public let temporaryDirectoryBase: AbsolutePath?
+
     public init(
         executable: Executable,
         arguments: [RuntimeValue] = [],
@@ -64,7 +67,8 @@ public struct ProcessSpec: Codable, Sendable {
         stdoutDestination: RelativePath? = nil,
         stderrDestination: RelativePath? = nil,
         stdoutStreamingDestination: String? = "stdout.log",
-        stderrStreamingDestination: String? = "stderr.log"
+        stderrStreamingDestination: String? = "stderr.log",
+        temporaryDirectoryBase: AbsolutePath? = nil
     ) {
         self.executable = executable
         self.arguments = arguments
@@ -75,6 +79,7 @@ public struct ProcessSpec: Codable, Sendable {
         self.stderrDestination = stderrDestination
         self.stdoutStreamingDestination = stdoutStreamingDestination
         self.stderrStreamingDestination = stderrStreamingDestination
+        self.temporaryDirectoryBase = temporaryDirectoryBase
     }
 
     fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath, tmpDir: AbsolutePath, _ ctx: Context) async throws -> ProcessExitReason {
@@ -293,8 +298,8 @@ public struct SpawnProcess {
     }
 
     public func run(_ ctx: Context) async throws -> SpawnProcessResult {
-        try await withTemporaryDirectory(ctx) { tmpDir in
-            try await withTemporaryDirectory(ctx) { outputPath in
+        try await withTemporaryDirectory(dir: self.spec.temporaryDirectoryBase, ctx) { tmpDir in
+            try await withTemporaryDirectory(dir: self.spec.temporaryDirectoryBase, ctx) { outputPath in
                 return try await run(outputPath: outputPath, tmpDir: tmpDir, ctx)
             }
         }
