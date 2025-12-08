@@ -32,9 +32,9 @@ extension Context {
     }
 }
 
-public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
+public func withTemporaryDirectory<R>(dir: AbsolutePath? = nil, _ ctx: Context, _ body: (AbsolutePath) -> LLBFuture<R>) -> LLBFuture<R> {
     do {
-        return try TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: false) { path in
+        return try TSCBasic.withTemporaryDirectory(dir: dir, removeTreeOnDeinit: false) { path in
             body(path).always { _ in
                 _ = try? FileManager.default.removeItem(atPath: path.pathString)
             }
@@ -44,8 +44,8 @@ public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) -> 
     }
 }
 
-public func withTemporaryDirectory<R>(_ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
-    return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true, body)
+public func withTemporaryDirectory<R>(dir: AbsolutePath? = nil, _ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
+    return try await TSCBasic.withTemporaryDirectory(dir: dir, removeTreeOnDeinit: true, body)
 }
 
 struct UntypedTreeID: FXSingleDataIDValue, FXTreeID {
