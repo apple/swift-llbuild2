@@ -17,12 +17,14 @@ public class FXRuleset {
     public let name: String
     public let entrypoints: [String: any FXEntrypoint.Type]
     public let actionDependencies: [any FXAction.Type]
+    public let version: String? // semver
 
     let aggregatedResourceEntitlements: FXSortedSet<ResourceKey>
 
-    public init(name: String, entrypoints: [String: any FXEntrypoint.Type]) {
+    public init(name: String, entrypoints: [String: any FXEntrypoint.Type], version: String? = nil) {
         self.name = name
         self.entrypoints = entrypoints
+        self.version = version
 
         aggregatedResourceEntitlements = FXSortedSet<ResourceKey>(entrypoints.values.map { $0.aggregatedResourceEntitlements }.reduce([], +))
 
