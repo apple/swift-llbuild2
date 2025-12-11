@@ -23,6 +23,37 @@ public enum FXError: Swift.Error {
     case resourceNotFound(ResourceKey)
 }
 
+extension FXError: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        switch self {
+        case .nonCallableKey:
+            return "Non-callable key"
+        case .cycleDetected(let keys):
+            return "Cycle detected in dependency graph: \(keys)"
+        case .valueComputationError(let keyPrefix, let key, let error, let requestedCacheKeyPaths):
+            return "Value computation failed, key: \(keyPrefix), error: \(error)"
+        case .keyEncodingError(let keyPrefix, let encodingError, let underlyingError):
+            return "Key encoding error for \(keyPrefix), encoding error: \(encodingError), underlying error: \(underlyingError)"
+        case .missingRequiredCacheEntry(let cachePath):
+            return "Missing required cache entry: \(cachePath)"
+        case .unexpressedKeyDependency(let from, let to):
+            return "Unexpressed key dependency from \(from) to \(to)"
+        case .executorCannotSatisfyRequirements:
+            return "Executor cannot satisfy requirements"
+        case .noExecutable:
+            return "No executable found"
+        case .invalidValueType(let message):
+            return "Invalid value type: \(message)"
+        case .unexpectedKeyType(let message):
+            return "Unexpected key type: \(message)"
+        case .inconsistentValue(let message):
+            return "Inconsistent value: \(message)"
+        case .resourceNotFound(let resourceKey):
+            return "Resource not found: \(resourceKey)"
+        }
+    }
+}
+
 func unwrapFXError(_ error: Swift.Error) -> Swift.Error {
     guard
         case FXError.valueComputationError(
