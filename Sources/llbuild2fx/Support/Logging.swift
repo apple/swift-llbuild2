@@ -39,7 +39,7 @@ extension FXMetricsSink {
 
 /// Protocol for streaming log messages during FXAction evaluations. (Useful for capturing the output of spawned processes while they're still running.)
 public protocol StreamingLogHandler {
-    func streamLog(channel: String, _ data: LLBByteBuffer) async throws
+    func streamLog(spec: ProcessSpec, channel: String, _ data: LLBByteBuffer) async throws
 }
 
 // Support storing and retrieving logger, metrics, and file handle generator instances from a Context.
