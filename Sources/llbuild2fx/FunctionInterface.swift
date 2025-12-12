@@ -66,7 +66,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
 
     public func spawn<ActionType: FXAction>(
         _ action: ActionType,
-        requirements: FXActionRequirements?,
+        requirements: FXActionRequirements? = nil,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType> {
         guard K.actionDependencies.contains(where: { $0 == ActionType.self }) else {
@@ -89,46 +89,6 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
         }
     }
 
-    @available(*, deprecated, message: "use spawn, with registered actions")
-    public func execute<ActionType: FXAction, P: Predicate>(
-        action: ActionType,
-        with executable: LLBFuture<FXExecutableID>? = nil,
-        requirements: P,
-        _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
-        let actionName = String(describing: ActionType.self)
-
-        fi.engine.stats.add(action: actionName)
-
-        let executor = fi.engine.executor
-        let result: LLBFuture<ActionType.ValueType>
-
-        if executor.canSatisfy(requirements: requirements) {
-            ctx.logger?.debug("Will perform action: \(action)")
-            let exe = executable ?? ctx.group.next().makeFailedFuture(FXError.noExecutable)
-            result = executor.perform(action: action, with: exe, requirements: requirements, ctx)
-        } else {
-            result = ctx.group.next().makeFailedFuture(FXError.executorCannotSatisfyRequirements)
-        }
-
-        return result.always { _ in
-            self.fi.engine.stats.remove(action: actionName)
-        }
-    }
-
-    @available(*, deprecated, message: "use spawn, with registered actions")
-    public func execute<ActionType: FXAction>(
-        action: ActionType,
-        with executable: LLBFuture<FXExecutableID>? = nil,
-        _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> {
-        execute(
-            action: action,
-            with: executable,
-            requirements: ConstantPredicate(value: true),
-            ctx
-        )
-    }
 
     public func resource<T>(_ key: ResourceKey) -> T? {
         if !K.resourceEntitlements.contains(key) {

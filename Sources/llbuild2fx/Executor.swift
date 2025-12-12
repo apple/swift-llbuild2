@@ -16,23 +16,9 @@ public protocol FXExecutor: Sendable {
         requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType>
-
-    func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment
-
-    @available(*, deprecated, message: "use self-resolving perform")
-    func perform<ActionType: FXAction, P: Predicate>(
-        action: ActionType,
-        with executable: LLBFuture<FXExecutableID>,
-        requirements: P,
-        _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment
 }
 
 extension FXExecutor {
-    func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
-        true
-    }
-
     func perform<ActionType: FXAction>(
         _ action: ActionType,
         _ ctx: Context

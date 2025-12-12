@@ -13,7 +13,7 @@ import XCTest
 
 @testable import llbuild2fx
 
-public struct SumInput: Codable {
+public struct SumInput: Codable, Sendable {
     public let values: [Int]
 
     public init(
@@ -59,24 +59,11 @@ public struct SumAction {
 
 extension SumAction: Encodable {}
 
-public struct FakeExecutable: FXKey {
-    public static var volatile: Bool { true }
-
-    public let name: String
-    public init(name: String) {
-        self.name = name
-    }
-
-    public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<FXExecutableID> {
-        return ctx.group.next().makeSucceededFuture(FXExecutableID(dataID: LLBDataID()))
-    }
-}
-
-
 public struct Sum: FXKey {
     public static let version = SumAction.version
 
     public static let versionDependencies: [FXVersioning.Type] = []
+    public static let actionDependencies: [any FXAction.Type] = [SumAction.self]
 
     public let values: [Int]
 
@@ -86,8 +73,7 @@ public struct Sum: FXKey {
 
     public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<SumAction.ValueType> {
         let action = SumAction(SumInput(values: self.values))
-        let exe = fi.request(FakeExecutable(name: "sum-task"), ctx)
-        return fi.execute(action: action, with: exe, ctx)
+        return fi.spawn(action, ctx)
     }
 }
 

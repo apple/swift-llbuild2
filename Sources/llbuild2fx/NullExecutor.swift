@@ -19,20 +19,7 @@ public final class FXNullExecutor: FXExecutor {
         return ctx.group.any().makeFailedFuture(Error.nullExecutor)
     }
 
-    public func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
-        false
-    }
-
     enum Error: Swift.Error {
         case nullExecutor
-    }
-
-    public func perform<ActionType: FXAction, P: Predicate>(
-        action: ActionType,
-        with executable: LLBFuture<FXExecutableID>,
-        requirements: P,
-        _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
-        return ctx.group.any().makeFailedFuture(Error.nullExecutor)
     }
 }
