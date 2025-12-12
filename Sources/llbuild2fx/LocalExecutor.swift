@@ -8,57 +8,12 @@
 
 import NIOCore
 
-extension FXActionExecutionEnvironment {
-    private final class ContextKey {}
-    private static let key = ContextKey()
-    public var isLocal: Bool {
-        get {
-            guard let value = self[ObjectIdentifier(Self.key), as: Bool.self] else {
-                return false
-            }
-
-            return value
-        }
-        set {
-            self[ObjectIdentifier(Self.key)] = newValue
-        }
-    }
-}
-
-extension FXActionExecutionEnvironment {
-    public static var local: EqualityPredicate<KeyPathExpression<Self, Bool>, ConstantExpression<Self, Bool>> {
-        EqualityPredicate(
-            leftExpression: KeyPathExpression(keyPath: \FXActionExecutionEnvironment.isLocal),
-            rightExpression: ConstantExpression(value: true)
-        )
-    }
-}
-
 public final class FXLocalExecutor: FXExecutor {
-    private let environment: FXActionExecutionEnvironment
-
-    public init(environment: FXActionExecutionEnvironment = .init()) {
-        var env = environment
-        env.isLocal = true
-        self.environment = env
-    }
+    public init() {}
 
     public func perform<ActionType: FXAction>(
         _ action: ActionType, requirements: FXActionRequirements?, _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType> {
         return action.run(ctx)
-    }
-
-    public func canSatisfy<P: Predicate>(requirements: P) -> Bool where P.EvaluatedType == FXActionExecutionEnvironment {
-        requirements.evaluate(with: environment)
-    }
-
-    public func perform<ActionType: FXAction, P: Predicate>(
-        action: ActionType,
-        with executable: LLBFuture<FXExecutableID>,
-        requirements: P,
-        _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> where P.EvaluatedType == FXActionExecutionEnvironment {
-        action.run(ctx)
     }
 }

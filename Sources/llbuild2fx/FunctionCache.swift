@@ -10,7 +10,7 @@ import Logging
 import NIOCore
 import TSCUtility
 
-public protocol FXKeyProperties {
+public protocol FXKeyProperties: Sendable {
     var volatile: Bool { get }
 
     var cachePath: String { get }
