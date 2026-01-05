@@ -71,6 +71,8 @@ public protocol FXRulesetPackage {
     ) async throws -> [FXResource]
 
     static func createErrorClassifier() -> FXErrorClassifier?
+
+    static var supportsNamedMounts: Bool { get }
 }
 
 extension FXRulesetPackage {
@@ -85,5 +87,9 @@ extension FXRulesetPackage {
 
     public static func createErrorClassifier() -> FXErrorClassifier? {
         return nil
+    }
+
+    public static var supportsNamedMounts: Bool {
+        return false
     }
 }
