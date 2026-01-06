@@ -12,6 +12,8 @@ import TSCBasic
 import TSCUtility
 
 public protocol FXTreeMaterializer {
+    var mountPath: AbsolutePath? { get }
+
     func materialize(tree: FXTreeID) async throws -> AbsolutePath?
 }
 
