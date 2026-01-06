@@ -17,6 +17,12 @@ public protocol FXTreeMaterializer {
     func materialize(tree: FXTreeID) async throws -> AbsolutePath?
 }
 
+extension FXTreeMaterializer {
+    public var mountPath: AbsolutePath? {
+        return nil
+    }
+}
+
 private class ContextTreeMaterializer {}
 
 extension Context {
