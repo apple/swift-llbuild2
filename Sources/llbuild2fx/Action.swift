@@ -11,8 +11,9 @@ import NIOCore
 import TSCUtility
 import TSFFutures
 
-public enum FXActionWorkerSize: Codable, Equatable {
+public enum FXActionWorkerSize: Codable, Equatable, Sendable {
     case small
+    case medium
     case large
 }
 
