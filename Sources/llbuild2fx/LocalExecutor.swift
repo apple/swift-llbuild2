@@ -17,7 +17,7 @@ public final class FXLocalExecutor: FXExecutor {
         return action.run(ctx)
     }
 
-    public func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions) async throws {
+    public func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions, _ ctx: Context) async throws {
         // FIXME: Implement
     }
 }

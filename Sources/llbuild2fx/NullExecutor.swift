@@ -19,7 +19,11 @@ public final class FXNullExecutor: FXExecutor {
         return ctx.group.any().makeFailedFuture(Error.nullExecutor)
     }
 
-    public func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions) async throws {
+    public func cancel(
+        _ buildID: FXBuildID,
+        options: FXExecutorCancellationOptions,
+        _ ctx: Context
+    ) async throws {
         throw Error.nullExecutor
     }
 
