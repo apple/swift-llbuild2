@@ -17,7 +17,11 @@ public protocol FXExecutor: Sendable {
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType>
 
-    func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions) async throws
+    func cancel(
+        _ buildID: FXBuildID,
+        options: FXExecutorCancellationOptions,
+        _ ctx: Context
+    ) async throws
 }
 
 extension FXExecutor {
