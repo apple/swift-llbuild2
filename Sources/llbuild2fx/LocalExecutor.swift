@@ -16,4 +16,8 @@ public final class FXLocalExecutor: FXExecutor {
     ) -> LLBFuture<ActionType.ValueType> {
         return action.run(ctx)
     }
+
+    public func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions) async throws {
+        // FIXME: Implement
+    }
 }
