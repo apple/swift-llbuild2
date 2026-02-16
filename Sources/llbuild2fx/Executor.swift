@@ -16,6 +16,8 @@ public protocol FXExecutor: Sendable {
         requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> LLBFuture<ActionType.ValueType>
+
+    func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions) async throws
 }
 
 extension FXExecutor {
@@ -31,5 +33,13 @@ public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
     public let dataID: LLBDataID
     public init(dataID: LLBDataID) {
         self.dataID = dataID
+    }
+}
+
+public struct FXExecutorCancellationOptions {
+    public var collectSysdiagnosis: Bool
+
+    public init(collectSysdiagnosis: Bool = false) {
+        self.collectSysdiagnosis = collectSysdiagnosis
     }
 }

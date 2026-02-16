@@ -19,6 +19,10 @@ public final class FXNullExecutor: FXExecutor {
         return ctx.group.any().makeFailedFuture(Error.nullExecutor)
     }
 
+    public func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions) async throws {
+        throw Error.nullExecutor
+    }
+
     enum Error: Swift.Error {
         case nullExecutor
     }
