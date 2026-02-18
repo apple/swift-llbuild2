@@ -11,6 +11,7 @@ import TSFFutures
 public protocol FXEntrypoint: FXKey {
     init(withEntrypointPayload casObject: LLBCASObject) throws
     init(withEntrypointPayload buffer: LLBByteBuffer) throws
+    func createAuthorizationKey(_ ctx: Context) async throws -> (any FXAuthorizationKey)?
 }
 
 public class FXRuleset {
