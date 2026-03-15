@@ -54,7 +54,7 @@ extension FXError: CustomDebugStringConvertible {
     }
 }
 
-func unwrapFXError(_ error: Swift.Error) -> Swift.Error {
+public func unwrapFXError(_ error: Swift.Error) -> Swift.Error {
     guard
         case FXError.valueComputationError(
             keyPrefix: _,
@@ -71,7 +71,7 @@ func unwrapFXError(_ error: Swift.Error) -> Swift.Error {
 }
 
 /// Overall result that this error implies
-public enum FXErrorStatus: Sendable, Equatable {
+public enum FXErrorStatus: Sendable, Equatable, Codable {
     /// A non-terminal error
     case warning
 
@@ -82,7 +82,7 @@ public enum FXErrorStatus: Sendable, Equatable {
     case custom(String)
 }
 
-public enum FXErrorClassification: String, Sendable, Equatable {
+public enum FXErrorClassification: String, Sendable, Equatable, Codable {
     /// A user caused failure (such as bad input, config, etc.)
     case user
 
@@ -90,7 +90,7 @@ public enum FXErrorClassification: String, Sendable, Equatable {
     case infrastructure
 }
 
-public struct FXErrorDetails: Sendable, Equatable {
+public struct FXErrorDetails: Sendable, Equatable, Codable {
     public var status: FXErrorStatus
     public var classification: FXErrorClassification
     public var details: String
