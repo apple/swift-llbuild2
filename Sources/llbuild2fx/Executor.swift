@@ -31,6 +31,14 @@ extension FXExecutor {
     ) -> LLBFuture<ActionType.ValueType> {
         return perform(action, requirements: nil, ctx)
     }
+
+    public func cancel(
+        _ buildID: FXBuildID,
+        options: FXExecutorCancellationOptions,
+        _ ctx: Context
+    ) async throws {
+        // Do nothing by default.
+    }
 }
 
 public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
