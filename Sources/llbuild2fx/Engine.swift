@@ -9,10 +9,8 @@
 import FXAsyncSupport
 import Dispatch
 import Foundation
-import Instrumentation
 import Logging
 import NIOCore
-import Tracing
 
 public protocol FXStablyHashable: Sendable {
     var stableHashValue: FXDataID { get }
@@ -78,6 +76,7 @@ internal protocol EngineInternalProtocol<DataID>: AnyObject & Sendable {
     var resources: [ResourceKey: FXResource] { get }
     var cacheRequestOnly: Bool { get }
     var buildID: FXBuildID { get }
+    var delegate: (any FXEngineDelegate)? { get }
 
     /// Create an ``InternalKey`` for the given key, capturing the typed
     /// engine in the function factory closure.
@@ -128,6 +127,10 @@ public final class FXEngine<DB: FXTypedCASDatabase>: Sendable {
     internal let keyOverrides: FXKeyOverrideRegistry?
     internal let cacheRequestOnly: Bool
 
+    /// Delegate providing service-specific engine behavior (context preparation,
+    /// telemetry hooks).
+    public let delegate: (any FXEngineDelegate)?
+
     fileprivate let pendingResults: LLBEventualResultsCache<HashableKey, InternalResult>
     internal let keyDependencyGraph = FXKeyDependencyGraph()
 
@@ -144,7 +147,8 @@ public final class FXEngine<DB: FXTypedCASDatabase>: Sendable {
         stats: FXBuildEngineStats? = nil,
         logger: Logger? = nil,
         partialResultExpiration: DispatchTimeInterval = .seconds(300),
-        keyOverrides: FXKeyOverrideRegistry? = nil
+        keyOverrides: FXKeyOverrideRegistry? = nil,
+        delegate: (any FXEngineDelegate)? = nil
     ) {
         self.group = group
         self.db = db
@@ -155,6 +159,7 @@ public final class FXEngine<DB: FXTypedCASDatabase>: Sendable {
         self.stats = stats ?? .init()
         self.logger = logger
         self.keyOverrides = keyOverrides
+        self.delegate = delegate
 
         self.pendingResults = LLBEventualResultsCache<HashableKey, InternalResult>(group: group, partialResultExpiration: partialResultExpiration)
 

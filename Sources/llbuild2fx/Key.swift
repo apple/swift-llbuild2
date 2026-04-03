@@ -11,7 +11,6 @@ import Logging
 import NIOConcurrencyHelpers
 import NIOCore
 import TSCUtility
-import Tracing
 
 public protocol FXKey: Encodable, FXVersioning {
     associatedtype ValueType: FXValue
@@ -23,6 +22,9 @@ public protocol FXKey: Encodable, FXVersioning {
     // A concise, human readable contents summary that may be used in otherwise
     // hashed contexts (i.e. when stored in caches, etc.)
     var hint: String? { get }
+
+    /// Human-readable label for telemetry spans. Defaults to "KeyName/Version".
+    var telemetryLabel: String { get }
 
     func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<ValueType>
 
@@ -36,6 +38,8 @@ extension FXKey {
     public static var recomputeOnCacheFailure: Bool { true }
 
     public var hint: String? { nil }
+
+    public var telemetryLabel: String { "\(Self.name)/\(Self.version)" }
 
     public func validateCache(cached: ValueType) -> Bool {
         return true
@@ -358,6 +362,7 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
         let keyData = try! FXEncoder().encode(actualKey)
         let encodedKey = String(bytes: keyData, encoding: .utf8)!
         let keyPrefix = FXCacheKeyPrefixMemoizer.get(for: actualKey)
+        let telemetryLabel = actualKey.telemetryLabel
 
         fi.engine.stats.add(key: key.name)
 
@@ -366,11 +371,19 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
         childContext.parentUUID = ctx.selfUUID
         childContext.selfUUID = UUID().uuidString
 
-        let span = startSpan(keyPrefix, ofKind: .client)
+        fi.engine.delegate?.prepareChildContext(&childContext)
 
-        span.attributes["trace.span_id"] = childContext.selfUUID
-        span.attributes["trace.parent_id"] = childContext.parentUUID
-        span.attributes["trace.trace_id"] = ctx.traceID
+        // Emit start event so traces show parent spans before children complete
+        let startEvent = FXKeyEvaluationStartEvent(
+            keyPrefix: keyPrefix,
+            encodedKey: encodedKey,
+            spanID: childContext.selfUUID ?? UUID().uuidString,
+            parentSpanID: childContext.parentUUID,
+            telemetryLabel: telemetryLabel
+        )
+        fi.engine.delegate?.keyEvaluationStarted(startEvent, childContext)
+
+        let startTime = DispatchTime.now()
 
         return actualKey.computeValue(fxfi, childContext).flatMapError { underlyingError in
             let augmentedError: Swift.Error
@@ -381,19 +394,36 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
                 error: underlyingError,
                 requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
             )
-            span.recordError(underlyingError)
 
             return ctx.group.next().makeFailedFuture(augmentedError)
         }.map { value in
-            span.attributes["value"] = "\(value)"
-
             return InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
-        }.always { _ in
-            span.attributes["keyPrefix"] = keyPrefix.description
-            span.attributes["key"] = encodedKey.description
-
+        }.always { result in
             fi.engine.stats.remove(key: key.name)
-            span.end()
+
+            let endTime = DispatchTime.now()
+            let durationNs = endTime.uptimeNanoseconds - startTime.uptimeNanoseconds
+            let durationMs = Int(durationNs / 1_000_000)
+
+            let status: String
+            switch result {
+            case .success:
+                status = "success"
+            case .failure:
+                status = "failure"
+            }
+
+            let event = FXKeyEvaluationEvent(
+                keyPrefix: keyPrefix,
+                encodedKey: encodedKey,
+                spanID: childContext.selfUUID ?? UUID().uuidString,
+                parentSpanID: childContext.parentUUID,
+                durationMs: durationMs,
+                status: status,
+                startTime: Date(timeIntervalSinceNow: -Double(durationNs) / 1_000_000_000),
+                telemetryLabel: telemetryLabel
+            )
+            fi.engine.delegate?.keyEvaluationCompleted(event, childContext)
         }
     }
 

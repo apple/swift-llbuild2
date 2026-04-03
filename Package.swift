@@ -16,7 +16,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-atomics.git", from: "1.2.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms.git", from: "1.0.4"),
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.1.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
@@ -85,8 +84,6 @@ let package = Package(
                 "FXAsyncSupport",
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "Logging", package: "swift-log"),
-                .product(name: "Tracing", package: "swift-distributed-tracing"),
-                .product(name: "Instrumentation", package: "swift-distributed-tracing"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "_NIOFileSystem", package: "swift-nio"),
             ]
