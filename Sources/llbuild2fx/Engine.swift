@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -94,6 +94,7 @@ public final class FXEngine: Sendable {
     internal let stats: FXBuildEngineStats
     internal let logger: Logger?
 
+    internal let keyOverrides: FXKeyOverrideRegistry?
     internal let cacheRequestOnly: Bool
 
     fileprivate let pendingResults: LLBEventualResultsCache<HashableKey, FXResult>
@@ -110,7 +111,8 @@ public final class FXEngine: Sendable {
         buildID: FXBuildID = FXBuildID(),
         stats: FXBuildEngineStats? = nil,
         logger: Logger? = nil,
-        partialResultExpiration: DispatchTimeInterval = .seconds(300)
+        partialResultExpiration: DispatchTimeInterval = .seconds(300),
+        keyOverrides: FXKeyOverrideRegistry? = nil
     ) {
         self.group = group
         self.db = db
@@ -119,6 +121,7 @@ public final class FXEngine: Sendable {
         self.executor = executor
         self.stats = stats ?? .init()
         self.logger = logger
+        self.keyOverrides = keyOverrides
 
         self.pendingResults = LLBEventualResultsCache<HashableKey, FXResult>(group: group, partialResultExpiration: partialResultExpiration)
 

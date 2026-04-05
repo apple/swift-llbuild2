@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -298,6 +298,17 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         InternalValue<K.ValueType>
     > {
         let actualKey = key.key
+
+        // Check for test override before normal evaluation
+        if let override = fi.engine.keyOverrides?.findOverride(for: K.self) {
+            return ctx.group.any().makeFutureWithTask {
+                let anyValue = try await override(actualKey)
+                guard let value = anyValue as? K.ValueType else {
+                    throw FXError.invalidValueType("Override for \(K.self) returned wrong type")
+                }
+                return InternalValue(value, requestedCacheKeyPaths: FXSortedSet<String>())
+            }
+        }
 
         let fxfi = FXFunctionInterface(actualKey, fi)
 
