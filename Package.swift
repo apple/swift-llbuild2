@@ -10,6 +10,7 @@ let package = Package(
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),
         .library(name: "llbuild2fx", targets: ["llbuild2fx"]),
+        .library(name: "llbuild2Testing", targets: ["llbuild2Testing"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
@@ -39,6 +40,16 @@ let package = Package(
         ),
         .testTarget(
             name: "llbuild2fxTests",
+            dependencies: ["llbuild2fx"]
+        ),
+        .testTarget(
+            name: "FXExampleRulesetTests",
+            dependencies: ["llbuild2fx", "llbuild2Testing"]
+        ),
+
+        // Testing support module
+        .target(
+            name: "llbuild2Testing",
             dependencies: ["llbuild2fx"]
         ),
 
