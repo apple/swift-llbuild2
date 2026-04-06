@@ -8,14 +8,13 @@
 
 import NIOCore
 import TSCUtility
-import TSFFutures
 
 public protocol FXExecutor: Sendable {
     func perform<ActionType: FXAction>(
         _ action: ActionType,
         requirements: FXActionRequirements?,
         _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType>
+    ) -> FXFuture<ActionType.ValueType>
 
     func cancel(
         _ buildID: FXBuildID,
@@ -28,7 +27,7 @@ extension FXExecutor {
     func perform<ActionType: FXAction>(
         _ action: ActionType,
         _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> {
+    ) -> FXFuture<ActionType.ValueType> {
         return perform(action, requirements: nil, ctx)
     }
 
@@ -42,8 +41,8 @@ extension FXExecutor {
 }
 
 public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
-    public let dataID: LLBDataID
-    public init(dataID: LLBDataID) {
+    public let dataID: FXDataID
+    public init(dataID: FXDataID) {
         self.dataID = dataID
     }
 }

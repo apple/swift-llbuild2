@@ -6,13 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import AsyncAlgorithms
 import Foundation
 import NIOCore
 import TSCBasic
 import TSCUtility
-import TSFAsyncProcess
-import TSFFutures
 import _NIOFileSystem
 
 public struct ProcessTerminationError: Error {
@@ -247,7 +246,7 @@ public struct ProcessSpec: Codable, Sendable {
 }
 
 struct ProcessInputTree: FXTreeID {
-    let dataID: LLBDataID
+    let dataID: FXDataID
 }
 
 extension SpawnProcess: AsyncFXAction {
@@ -258,10 +257,10 @@ extension SpawnProcess: AsyncFXAction {
         case tooManyRefs
     }
 
-    public var refs: [LLBDataID] { [inputTree.dataID] }
+    public var refs: [FXDataID] { [inputTree.dataID] }
     public var codableValue: ProcessSpec { spec }
 
-    public init(refs: [LLBDataID], codableValue: ProcessSpec) throws {
+    public init(refs: [FXDataID], codableValue: ProcessSpec) throws {
         guard !refs.isEmpty else {
             throw SpawnProcessError.emptyRefs
         }
@@ -293,7 +292,7 @@ public struct SpawnProcess {
     }
 
     public enum FXSpawnError: Error {
-        case failure(outputTree: LLBDataID, underlyingError: Error)
+        case failure(outputTree: FXDataID, underlyingError: Error)
         case recoveryUploadFailure(uploadError: Error, originalError: Error)
     }
 
@@ -306,19 +305,23 @@ public struct SpawnProcess {
     }
 
     private func run(outputPath: AbsolutePath, tmpDir: AbsolutePath, _ ctx: Context) async throws -> SpawnProcessResult {
-        try await inputTree.materialize(ctx) { inputPath in
+        guard let treeService = ctx.fxCASTreeService else {
+            throw FXError.missingCASTreeService
+        }
+
+        return try await inputTree.materialize(ctx) { inputPath in
             if let initialOutputTree = initialOutputTree {
-                try await LLBCASFileTree.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, stats: LLBCASFileTree.ExportProgressStatsInt64(), ctx).get()
+                try await treeService.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, ctx)
             }
 
             do {
                 let exitCode = try await spec.process(inputPath: inputPath, outputPath: outputPath, tmpDir: tmpDir, ctx).asShellExitCode
-                let treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
+                let treeID = try await treeService.importTree(path: outputPath, to: ctx.db, ctx)
                 return SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: Int32(truncatingIfNeeded: exitCode))
             } catch (let error) {
-                let treeID: LLBDataID
+                let treeID: FXDataID
                 do {
-                    treeID = try await LLBCASFileTree.import(path: outputPath, to: ctx.db, ctx).get()
+                    treeID = try await treeService.importTree(path: outputPath, to: ctx.db, ctx)
                 } catch (let uploadError) {
                     throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
                 }
@@ -331,15 +334,15 @@ public struct SpawnProcess {
 extension SpawnProcess: Encodable {}
 
 public struct ProcessInputTreeID: FXSingleDataIDValue, FXTreeID {
-    public let dataID: LLBDataID
-    public init(dataID: LLBDataID) {
+    public let dataID: FXDataID
+    public init(dataID: FXDataID) {
         self.dataID = dataID
     }
 }
 
 public struct ProcessOutputTreeID: FXSingleDataIDValue, FXTreeID {
-    public let dataID: LLBDataID
-    public init(dataID: LLBDataID) {
+    public let dataID: FXDataID
+    public init(dataID: FXDataID) {
         self.dataID = dataID
     }
 }
@@ -353,11 +356,11 @@ public struct SpawnProcessResult: FXValue, FXTreeID {
         self.exitCode = exitCode
     }
 
-    public var dataID: LLBDataID {
+    public var dataID: FXDataID {
         treeID.dataID
     }
 
-    public var refs: [LLBDataID] {
+    public var refs: [FXDataID] {
         [
             dataID
         ]
@@ -372,7 +375,7 @@ public struct SpawnProcessResult: FXValue, FXTreeID {
         case tooManyRefs
     }
 
-    public init(refs: [LLBDataID], codableValue: Int32) throws {
+    public init(refs: [FXDataID], codableValue: Int32) throws {
         guard !refs.isEmpty else {
             throw Error.notEnoughRefs
         }

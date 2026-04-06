@@ -6,16 +6,16 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import Dispatch
 import Foundation
 import Instrumentation
 import Logging
 import NIOCore
-@preconcurrency import TSFFutures
 import Tracing
 
 public protocol FXStablyHashable: Sendable {
-    var stableHashValue: LLBDataID { get }
+    var stableHashValue: FXDataID { get }
 }
 
 public protocol FXRequestKey: FXStablyHashable {
@@ -36,7 +36,7 @@ extension FXRequestKey {
 }
 
 
-public protocol FXResult: LLBCASObjectRepresentable {}
+public protocol FXResult: FXCASObjectRepresentable {}
 
 internal struct HashableKey {
     let key: FXRequestKey
@@ -55,7 +55,7 @@ internal protocol CallableKey {
     func function() -> GenericFunction
 }
 internal protocol GenericFunction {
-    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<FXResult>
+    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<FXResult>
 }
 
 internal final class FunctionInterface: Sendable {
@@ -69,7 +69,7 @@ internal final class FunctionInterface: Sendable {
         self.key = key
     }
 
-    func request<V: FXResult>(_ key: FXRequestKey, as type: V.Type = V.self, _ ctx: Context) -> LLBFuture<V> {
+    func request<V: FXResult>(_ key: FXRequestKey, as type: V.Type = V.self, _ ctx: Context) -> FXFuture<V> {
         do {
             try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
         } catch {
@@ -86,8 +86,8 @@ internal final class FunctionInterface: Sendable {
 public typealias FXBuildID = Foundation.UUID
 
 public final class FXEngine: Sendable {
-    internal let group: LLBFuturesDispatchGroup
-    internal let db: LLBCASDatabase
+    internal let group: FXFuturesDispatchGroup
+    internal let db: FXCASDatabase
     @usableFromInline internal let cache: FXFunctionCache
     internal let resources: [ResourceKey: FXResource]
     internal let executor: FXExecutor
@@ -103,8 +103,8 @@ public final class FXEngine: Sendable {
     public let buildID: FXBuildID
 
     public init(
-        group: LLBFuturesDispatchGroup,
-        db: LLBCASDatabase,
+        group: FXFuturesDispatchGroup,
+        db: FXCASDatabase,
         functionCache: FXFunctionCache?,
         executor: FXExecutor,
         resources: [ResourceKey: FXResource] = [:],
@@ -150,7 +150,7 @@ public final class FXEngine: Sendable {
         return ctx
     }
 
-    internal func build(key: FXRequestKey, _ ctx: Context) -> LLBFuture<FXResult> {
+    internal func build(key: FXRequestKey, _ ctx: Context) -> FXFuture<FXResult> {
         let ctx = engineContext(ctx)
         return self.pendingResults.value(for: HashableKey(key: key)) { _ in
             guard let ikey = key as? CallableKey else {
@@ -162,7 +162,7 @@ public final class FXEngine: Sendable {
         }
     }
 
-    internal func build<V: FXResult>(key: FXRequestKey, as: V.Type, _ ctx: Context) -> LLBFuture<V> {
+    internal func build<V: FXResult>(key: FXRequestKey, as: V.Type, _ ctx: Context) -> FXFuture<V> {
         return self.build(key: key, ctx).flatMapThrowing {
             guard let value = $0 as? V else {
                 throw FXError.invalidValueType("Expected value of type \(V.self)")
@@ -174,7 +174,7 @@ public final class FXEngine: Sendable {
     public func build<K: FXKey>(
         key: K,
         _ ctx: Context
-    ) -> LLBFuture<K.ValueType> {
+    ) -> FXFuture<K.ValueType> {
         let ctx = engineContext(ctx)
         return self.build(key: key.internalKey(self, ctx), as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
             internalValue.value

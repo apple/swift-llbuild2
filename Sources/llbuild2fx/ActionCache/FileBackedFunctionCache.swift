@@ -16,13 +16,13 @@ public final class FXFileBackedFunctionCache: FXFunctionCache {
     public let path: AbsolutePath
 
     /// Threads capable of running futures.
-    public let group: LLBFuturesDispatchGroup
+    public let group: FXFuturesDispatchGroup
 
     let threadPool: NIOThreadPool
     let fileIO: NonBlockingFileIO
 
     /// Create an in-memory database.
-    public init(group: LLBFuturesDispatchGroup, path: AbsolutePath, version: String = "default") {
+    public init(group: FXFuturesDispatchGroup, path: AbsolutePath, version: String = "default") {
         self.group = group
         self.threadPool = NIOThreadPool(numberOfThreads: 6)
         threadPool.start()
@@ -39,13 +39,13 @@ public final class FXFileBackedFunctionCache: FXFunctionCache {
         return path.appending(component: "\(key.stableHashValue)")
     }
 
-    public func get(key: FXRequestKey, props: any FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?> {
+    public func get(key: FXRequestKey, props: any FXKeyProperties, _ ctx: Context) -> FXFuture<FXDataID?> {
         let file = filePath(key: key)
         let handleAndRegion = fileIO.openFile(
             path: file.pathString, eventLoop: group.next()
         )
 
-        let data: LLBFuture<LLBByteBuffer> = handleAndRegion.flatMap { (handle, region) in
+        let data: FXFuture<FXByteBuffer> = handleAndRegion.flatMap { (handle, region) in
             let allocator = ByteBufferAllocator()
             return self.fileIO.read(
                 fileRegion: region,
@@ -56,13 +56,13 @@ public final class FXFileBackedFunctionCache: FXFunctionCache {
 
         return handleAndRegion.and(data).flatMapThrowing { (handle, data) in
             try handle.0.close()
-            return try LLBDataID(from: data)
+            return try FXDataID(from: data)
         }.recover { _ in
             return nil
         }
     }
 
-    public func update(key: FXRequestKey, props: any FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
+    public func update(key: FXRequestKey, props: any FXKeyProperties, value: FXDataID, _ ctx: Context) -> FXFuture<Void> {
         let file = filePath(key: key)
         let handle = fileIO.openFile(
             path: file.pathString,
@@ -71,7 +71,7 @@ public final class FXFileBackedFunctionCache: FXFunctionCache {
             eventLoop: group.next()
         )
 
-        let result = handle.flatMap { handle -> LLBFuture<Void> in
+        let result = handle.flatMap { handle -> FXFuture<Void> in
             do {
                 return self.fileIO.write(
                     fileHandle: handle,

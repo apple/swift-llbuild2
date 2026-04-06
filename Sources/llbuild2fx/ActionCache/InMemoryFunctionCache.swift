@@ -8,29 +8,28 @@
 
 import NIOConcurrencyHelpers
 import NIOCore
-import TSFFutures
 
 /// A simple in-memory implementation of the `FXFunctionCache` protocol.
 public final class FXInMemoryFunctionCache: FXFunctionCache {
     /// The cache.
-    private let cache = NIOLockedValueBox([HashableKey: LLBDataID]())
+    private let cache = NIOLockedValueBox([HashableKey: FXDataID]())
 
     /// Threads capable of running futures.
-    public let group: LLBFuturesDispatchGroup
+    public let group: FXFuturesDispatchGroup
 
     /// The lock protecting content.
     let lock = NIOConcurrencyHelpers.NIOLock()
 
     /// Create an in-memory database.
-    public init(group: LLBFuturesDispatchGroup) {
+    public init(group: FXFuturesDispatchGroup) {
         self.group = group
     }
 
-    public func get(key: FXRequestKey, props: any FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?> {
+    public func get(key: FXRequestKey, props: any FXKeyProperties, _ ctx: Context) -> FXFuture<FXDataID?> {
         return group.next().makeSucceededFuture(cache.withLockedValue { $0[HashableKey(key: key)] })
     }
 
-    public func update(key: FXRequestKey, props: any FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
+    public func update(key: FXRequestKey, props: any FXKeyProperties, value: FXDataID, _ ctx: Context) -> FXFuture<Void> {
         return group.next().makeSucceededFuture(cache.withLockedValue { $0[HashableKey(key: key)] = value })
     }
 }

@@ -9,14 +9,13 @@
 import Foundation
 import NIOConcurrencyHelpers
 import SwiftProtobuf
-import TSFUtility
 
 // MARK:- PolymorphicSerializable -
 
 /// Types conforming to LLBPolymorphicSerializable are allowed to be serialized into
 /// LLBAnySerializable. They need to be registered in order to be deserialized
 /// at runtime without compile-time type information.
-public protocol LLBPolymorphicSerializable: LLBSerializable {
+public protocol LLBPolymorphicSerializable: FXSerializable {
     static var polymorphicIdentifier: String { get }
 }
 
@@ -41,12 +40,12 @@ extension LLBAnySerializable {
 
 // MARK:- SerializableRegistry -
 
-public protocol LLBSerializableLookup {
+public protocol FXSerializableLookup {
     func lookupType(identifier: String) -> LLBPolymorphicSerializable.Type?
 }
 
 /// Container for mapping registered identifiers to their runtime types.
-public class LLBSerializableRegistry: LLBSerializableLookup {
+public class FXSerializableRegistry: FXSerializableLookup {
     /// Types registered at runtime that are allowed to be deserialized.
     private var registeredTypes: [String: LLBPolymorphicSerializable.Type] = [:]
 
@@ -79,13 +78,13 @@ public enum LLBAnySerializableError: Swift.Error {
 }
 
 extension LLBAnySerializable {
-    public func deserialize<T>(registry: LLBSerializableLookup) throws -> T {
+    public func deserialize<T>(registry: FXSerializableLookup) throws -> T {
         guard let serializableType = registry.lookupType(identifier: typeIdentifier) else {
             throw LLBAnySerializableError.unknownType(typeIdentifier)
         }
 
         // FIXME: this extra buffer copy is unfortunate
-        let buffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(serializedBytes))
+        let buffer = FXByteBuffer.withBytes(ArraySlice<UInt8>(serializedBytes))
         guard let deserialized = try serializableType.init(from: buffer) as? T else {
             throw LLBAnySerializableError.typeMismatch("\(typeIdentifier) not convertible to \(T.Type.self)")
         }
@@ -97,40 +96,40 @@ extension LLBAnySerializable {
 
 // MARK:- CASObjectRepresentable for any Serializable via AnySerializable
 
-extension LLBAnySerializable: LLBSerializable {}
+extension LLBAnySerializable: FXSerializable {}
 
 extension LLBPolymorphicSerializable {
-    init(from casObject: LLBCASObject, registry: LLBSerializableLookup) throws {
+    init(from casObject: FXCASObject, registry: FXSerializableLookup) throws {
         let any = try LLBAnySerializable(from: casObject.data)
         guard let objType = registry.lookupType(identifier: any.typeIdentifier) else {
             throw LLBAnySerializableError.unknownType(any.typeIdentifier)
         }
         // FIXME: this extra buffer copy is unfortunate
-        let buffer = LLBByteBuffer.withBytes(ArraySlice<UInt8>(any.serializedBytes))
+        let buffer = FXByteBuffer.withBytes(ArraySlice<UInt8>(any.serializedBytes))
         self = try objType.init(from: buffer) as! Self
     }
 }
 
-extension LLBCASObjectRepresentable where Self: LLBPolymorphicSerializable {
-    public func asCASObject() throws -> LLBCASObject {
+extension FXCASObjectRepresentable where Self: LLBPolymorphicSerializable {
+    public func asCASObject() throws -> FXCASObject {
         let any = try LLBAnySerializable(from: self)
-        return LLBCASObject(refs: [], data: try any.toBytes())
+        return FXCASObject(refs: [], data: try any.toBytes())
     }
 }
 
-extension LLBCASObjectRepresentable where Self: LLBSerializable {
-    public func asCASObject() throws -> LLBCASObject {
-        return LLBCASObject(refs: [], data: try self.toBytes())
+extension FXCASObjectRepresentable where Self: FXSerializable {
+    public func asCASObject() throws -> FXCASObject {
+        return FXCASObject(refs: [], data: try self.toBytes())
     }
 }
-extension LLBCASObjectConstructable where Self: LLBSerializable {
-    public init(from casObject: LLBCASObject) throws {
+extension FXCASObjectConstructable where Self: FXSerializable {
+    public init(from casObject: FXCASObject) throws {
         try self.init(from: casObject.data)
     }
 }
 
-extension LLBAnySerializable: LLBCASObjectConstructable {
-    public init(from casObject: LLBCASObject) throws {
+extension LLBAnySerializable: FXCASObjectConstructable {
+    public init(from casObject: FXCASObject) throws {
         self = try LLBAnySerializable.init(from: casObject.data)
     }
 }

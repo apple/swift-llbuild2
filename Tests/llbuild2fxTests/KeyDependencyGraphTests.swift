@@ -10,12 +10,12 @@ import XCTest
 import llbuild2fx
 
 extension Int: @retroactive FXRequestKey {
-    public var stableHashValue: LLBDataID {
+    public var stableHashValue: FXDataID {
         var v = self
         let s: Int = MemoryLayout<Int>.size
         return withUnsafePointer(to: &v) { p in
             p.withMemoryRebound(to: UInt8.self, capacity: s) { pb in
-                LLBDataID(directHash: Array(UnsafeBufferPointer(start: pb, count: s)))
+                FXDataID(directHash: Array(UnsafeBufferPointer(start: pb, count: s)))
             }
         }
     }

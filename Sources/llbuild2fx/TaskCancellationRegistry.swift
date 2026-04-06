@@ -42,7 +42,7 @@ public final class TaskCancellationRegistry {
         }
     }
 
-    static func makeCancellableTask<ValueType>(_ fn: @escaping () async throws -> ValueType, _ ctx: Context) -> LLBFuture<ValueType> {
+    static func makeCancellableTask<ValueType>(_ fn: @escaping () async throws -> ValueType, _ ctx: Context) -> FXFuture<ValueType> {
         let promise = ctx.group.any().makePromise(of: ValueType.self)
 
         // This creates a new unstrcutured Task context which will not be cancelled when our potentially parent Task context is cancelled. Capture the task here and register it with task cancellation registery so clients can explicitly handle cancellation of the unstrcutured Task created.

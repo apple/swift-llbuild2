@@ -9,8 +9,8 @@
 import NIOCore
 
 public struct FXDiagnostics: FXThinEncodedSingleDataIDValue, FXTreeID {
-    public let dataID: LLBDataID
-    public init(dataID: LLBDataID) {
+    public let dataID: FXDataID
+    public init(dataID: FXDataID) {
         self.dataID = dataID
     }
 }

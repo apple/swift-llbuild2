@@ -21,6 +21,7 @@ public enum FXError: Swift.Error {
     case unexpectedKeyType(String)
     case inconsistentValue(String)
     case resourceNotFound(ResourceKey)
+    case missingCASTreeService
 }
 
 extension FXError: CustomDebugStringConvertible {
@@ -50,6 +51,8 @@ extension FXError: CustomDebugStringConvertible {
             return "Inconsistent value: \(message)"
         case .resourceNotFound(let resourceKey):
             return "Resource not found: \(resourceKey)"
+        case .missingCASTreeService:
+            return "No FXCASTreeService configured in context"
         }
     }
 }

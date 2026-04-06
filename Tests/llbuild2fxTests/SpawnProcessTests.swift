@@ -6,8 +6,11 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import TSCBasic
 import XCTest
+
+import llbuild2Testing
 import llbuild2fx
 
 final class SpawnProcessTests: XCTestCase {
@@ -16,7 +19,9 @@ final class SpawnProcessTests: XCTestCase {
 
     override func setUp() {
         ctx = Context()
-        ctx.db = LLBInMemoryCASDatabase(group: LLBMakeDefaultDispatchGroup())
+        ctx.db = FXInMemoryCASDatabase(group: FXMakeDefaultDispatchGroup())
+        ctx.group = ctx.db.group
+        ctx.fxCASTreeService = FXLocalCASTreeService()
         streamAccumulator = StreamAccumulator()
         ctx.streamingLogHandler = streamAccumulator
     }
@@ -156,7 +161,7 @@ final class SpawnProcessTests: XCTestCase {
     func testGathersDiagnosticsWhenCancelled() async throws {
         let process = try await makeProcess("/bin/sleep", ["1d"])
         ctx.fxDeadline = Date(timeIntervalSinceNow: 0.1)
-        let diagnosticsDataId = try await ctx.db.put(data: LLBByteBuffer(string: "example diagnostics"), ctx).get()
+        let diagnosticsDataId = try await ctx.db.put(data: FXByteBuffer(string: "example diagnostics"), ctx).get()
         ctx.fxDiagnosticsGatherer = MockDiagnosticsGatherer(returnValue: FXDiagnostics(dataID: diagnosticsDataId))
         do {
             _ = try await process.run(ctx)
@@ -211,7 +216,7 @@ final class SpawnProcessTests: XCTestCase {
 class StreamAccumulator: StreamingLogHandler {
     var accumulatedLogs: [String: String] = [:]
 
-    func streamLog(channel: String, _ data: LLBByteBuffer) {
+    func streamLog(channel: String, _ data: FXByteBuffer) {
         accumulatedLogs[channel, default: ""].append(String(buffer: data))
     }
 }
@@ -233,7 +238,7 @@ func makeProcess(
     try await withTemporaryDirectory(removeTreeOnDeinit: true) { tempDir in
         let stdinPath = try tempDir.appending(RelativePath(validating: "stdin.txt"))
         try await stdinContents.write(toFileAt: .init(stdinPath.pathString))
-        let inputTreeId = ProcessInputTreeID(dataID: try await LLBCASFileTree.import(path: tempDir, to: ctx.db, ctx).get())
+        let inputTreeId = ProcessInputTreeID(dataID: try await ctx.fxCASTreeService!.importTree(path: tempDir, to: ctx.db, ctx))
 
         let processSpec = try ProcessSpec(
             executable: .absolutePath(.init(validating: executable)),

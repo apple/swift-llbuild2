@@ -11,15 +11,15 @@ import NIOCore
 import SwiftProtobuf
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message.
-extension LLBSerializableOut where Self: SwiftProtobuf.Message {
-    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+extension FXSerializableOut where Self: SwiftProtobuf.Message {
+    public func toBytes(into buffer: inout FXByteBuffer) throws {
         buffer.writeBytes(try self.serializedData())
     }
 }
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message.
-extension LLBSerializableIn where Self: SwiftProtobuf.Message {
-    public init(from bytes: LLBByteBuffer) throws {
+extension FXSerializableIn where Self: SwiftProtobuf.Message {
+    public init(from bytes: FXByteBuffer) throws {
         let data = Data(bytes.readableBytesView)
         self = try Self.init(serializedBytes: data)
     }
@@ -27,7 +27,7 @@ extension LLBSerializableIn where Self: SwiftProtobuf.Message {
 
 /// Convenience implementation for types that extend SwiftProtobuf.Message
 extension FXRequestKey where Self: SwiftProtobuf.Message {
-    public var stableHashValue: LLBDataID {
-        return LLBDataID(blake3hash: ArraySlice(try! self.serializedData()))
+    public var stableHashValue: FXDataID {
+        return FXDataID(blake3hash: ArraySlice(try! self.serializedData()))
     }
 }

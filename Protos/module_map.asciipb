@@ -1,10 +1,10 @@
 mapping {
-    module_name: "TSFCAS"
+    module_name: "FXCore"
     proto_file_path: "CASProtocol/cas_object.proto"
     proto_file_path: "CASProtocol/data_id.proto"
 }
 mapping {
-    module_name: "TSFCASFileTree"
+    module_name: "llbuild2Testing"
     proto_file_path: "CASFileTreeProtocol/file_tree.proto"
 }
 mapping {

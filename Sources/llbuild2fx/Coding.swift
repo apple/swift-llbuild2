@@ -45,7 +45,7 @@ extension Encoder {
     func encodeHash(of data: ArraySlice<UInt8>) throws {
         var container = singleValueContainer()
 
-        let hash = LLBDataID(blake3hash: data)
+        let hash = FXDataID(blake3hash: data)
         // We don't need the whole ID to avoid key collisions.
         let str = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
         try container.encode(str)
@@ -74,16 +74,16 @@ extension Decodable where Self: SwiftProtobuf.Message {
 }
 
 // Convenience constraint so that SwiftProtobuf serialization is preferred over Codable.
-extension LLBSerializableIn where Self: Decodable, Self: SwiftProtobuf.Message {
-    public init(from bytes: LLBByteBuffer) throws {
+extension FXSerializableIn where Self: Decodable, Self: SwiftProtobuf.Message {
+    public init(from bytes: FXByteBuffer) throws {
         let data = Data(bytes.readableBytesView)
         self = try Self.init(serializedBytes: data)
     }
 }
 
 // Convenience constraint so that SwiftProtobuf serialization is preferred over Codable.
-extension LLBSerializableOut where Self: Encodable, Self: SwiftProtobuf.Message {
-    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+extension FXSerializableOut where Self: Encodable, Self: SwiftProtobuf.Message {
+    public func toBytes(into buffer: inout FXByteBuffer) throws {
         buffer.writeBytes(try self.serializedData())
     }
 }
