@@ -2,36 +2,37 @@
 
 This document contains information on how to develop `llbuild2`.
 
-# RE2 Server
+## Building
 
-`llbuild2` can perform execution on build servers that implement [Bazel's RE2 APIs](https://github.com/bazelbuild/remote-apis). There are [many](https://github.com/bazelbuild/remote-apis#servers) OSS build servers that you can stand up for development. 
-
-[Buildbarn](https://github.com/buildbarn) is one such build server which can be run locally with Docker. Follow the instructions on [this](https://github.com/buildbarn/bb-deployments#recommended-setup) page to setup your server for development and then test the connection using [`retool`](./retool.md):
-
-```sh
-$ swift run llcastool capabilities --url bazel://localhost:8980/remote-execution
-
-BazelRemoteAPI.Build_Bazel_Remote_Execution_V2_ServerCapabilities:
-cache_capabilities {
-  digest_function: [MD5, SHA1, SHA256, SHA384, SHA512]
-  action_cache_update_capabilities {
-  }
-  symlink_absolute_path_strategy: ALLOWED
-}
-execution_capabilities {
-  digest_function: SHA256
-  exec_enabled: true
-  execution_priority_capabilities {
-    priorities {
-      min_priority: -2147483648
-      max_priority: 2147483647
-    }
-  }
-}
-low_api_version {
-  major: 2
-}
-high_api_version {
-  major: 2
-}
+```bash
+swift build                          # Debug build
+swift build -c release               # Release build
+swift test                           # Run all tests
+swift test --filter llbuild2fxTests  # Run specific test target
+swift test --filter "EngineTests"    # Run a specific test class
+swift test --filter "EngineTests/testBasicKey"  # Run a single test method
 ```
+
+## Protobuf Regeneration
+
+Generated protobuf sources are checked in. Regenerate only when proto definitions change:
+
+```bash
+make generate          # Regenerate all protobuf sources
+make proto-toolchain   # Build protoc toolchain first if needed
+make update            # Clone/update external proto repos
+```
+
+## Code Style
+
+Follow [Swift project guidelines for contributing code](https://swift.org/contributing/#contributing-code). All public
+types use the `FX` prefix.
+
+New files use `// Copyright (c) <current_year> Apple Inc. and the Swift project authors`. When modifying an existing
+file, update its copyright to a year range ending at the current year.
+
+### Error Handling
+
+Prefer `throw` over `fatalError` wherever possible. If a function can throw, use a thrown error (e.g. an `FXError`
+case) instead of crashing the process. Reserve `fatalError` / `preconditionFailure` only for true programming errors
+that indicate a logic bug (e.g. unreachable code paths).

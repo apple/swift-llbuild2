@@ -1,126 +1,67 @@
-# llbuild2's Action Graph
+# Dependency Graph and Caching
 
-This document explains how the action graph is modeled in llbuild2. There are 2
-important pieces in the action graph, `Artifact`s and `ActionKey`s.
+This document explains how llbuild2 models dependencies and uses caching to avoid redundant work.
 
-## `Artifact`
+## Keys and Values
 
-Artifacts represent a handle to a file system entity expected to be produced,
-consumed, or both, during the execution of a build. In llbuild2, there are 2
-main categories for artifacts: source artifacts and derived artifacts.
+In llbuild2, the dependency graph is implicit in the relationships between `FXKey` evaluations. There is no separate
+graph data structure — instead, keys declare their dependencies through the `FXVersioning` protocol and discover
+concrete dependencies at evaluation time via `FXFunctionInterface.request()`.
 
-Source artifacts refer to the artifacts that are inputs into the build, and may
-be any kind of file system entity that is part of your project. Some examples
-for source artifacts include source code, like `.swift` files; resources, like
-`xcassets` bundles; or in general, any kind of entity that would be checked in
-into a git repository that can't be derived in any way. Source artifacts in
-llbuild2 are represented by the CAS data ID as returned by a CAS database. This
-data ID acts as both a uniqueness identifier (2 artifacts with the same dataID
-contain the same contents) and as a handle to retrieve the data from the
-database (`database.get(dataID) -> data`).
+### `FXKey`
 
-Derived artifacts on the other hand, are artifacts that are produced during the
-build, which may be the final artifacts that you expect from the build (like a
-compiled and linked executable) or intermediate artifacts that are not as useful
-by themselves, but are combined into other derived artifacts to produce more
-useful results. In llbuild2, most derived artifacts are represented by the
-dataID of the producing entity, like an ActionKey.
+An `FXKey` is a unit of evaluation that produces an `FXValue`. During evaluation, a key's `computeValue()` method
+receives an `FXFunctionInterface` through which it can:
 
-## `ActionKey`
+- **`request()`** another `FXKey`, establishing a dependency and returning its value.
+- **`spawn()`** an `FXAction`, dispatching work to an `FXExecutor` and returning the action's result.
+- **`resource()`** to access an `FXResource` (e.g. a compiler or SDK).
 
-Action keys represent the transformation of an arbitrary set of artifacts inputs
-into a new set of artifact outputs. llbuild2 currently supports command line
-based action keys, where the transformation is effectively the execution of a
-command line invocation on some execution environment, but action keys are
-designed in an extensible manner to allow other types of transformations.
+These dependency relationships are tracked at runtime by `KeyDependencyGraph`, which detects cycles.
 
-## Action Graph
+### `FXAction`
 
-In llbuild2, there are no specialized graph data structures to manage the action
-graph, instead, it is the relationships between `Artifact` and `ActionKey` that
-make up an implicit action graph. Because artifacts and action keys are
-serialized into CAS databases, the scalability of the action graph is determined
-by the available CAS database storage.
+An `FXAction` represents a unit of work that may need a specific execution environment. Actions declare
+`FXActionRequirements` (worker size, network access, custom key-value pairs) and implement a `run()` method. The
+`FXExecutor` is responsible for dispatching actions to an appropriate environment.
 
-Take for example the following action graph:
+## Versioning and Cache Keys
 
-```
-            +------------+
-            | executable |
-            +------------+
-                  |
-           +--------------+
-           | Link  Action |
-           +--------------+
-            |            |
-      +--------+      +--------+
-      | main.o |      | shrd.o |
-      +--------+      +--------+
-            |            |
-     +----------+    +----------+
-     | Compiler |    | Compiler |
-     +----------+    +----------+
-            |            |
-      +--------+      +--------+
-      | main.c |      | shrd.c |
-      +--------+      +--------+
-```
+llbuild2 uses a versioning system (`FXVersioning`) to generate stable cache keys. Each key type declares:
 
-In llbuild2, this action graph would be represented as:
+- **`version`** — An integer version that should be incremented when the key's computation logic changes.
+- **`versionDependencies`** — Other `FXVersioning` types this key depends on.
+- **`actionDependencies`** — `FXAction` types this key may spawn.
+- **`configurationKeys`** — Configuration inputs that affect this key's evaluation.
+- **`resourceEntitlements`** — `FXResource`s this key needs access to.
 
-```
-                             +------------+
-                             |  Artifact  | .derived(0~abc...)
-                             +------------+
-                                   |
-                            +--------------+
-                            |  Action Key  | 0~abc...
-                            +--------------+
-                             |            |
-                      +----------+    +----------+
-.derived(0~xnu..., 0) | Artifact |    | Artifact |  .derived(0~blm..., 0)
-                      +----------+    +----------+
-                             |            |
-                    +------------+    +------------+
-           0~xnu... | Action Key |    | Action Key | 0~blm...
-                    +------------+    +------------+
-                             |            |
-                      +----------+    +----------+
-    .source(0~llb...) | Artifact |    | Artifact | .source(0~ahb)
-                      +----------+    +----------+
-```
+The versioning system aggregates across the full dependency graph: a key's `cacheKeyPrefix` includes the sum of all
+transitive dependency versions. This means changing the version of any key in the dependency chain automatically
+invalidates all downstream caches.
 
-Where the derived artifacts have a data ID pointer to the action key that
-produces the artifact, and the action keys have artifact pointers to the input
-artifacts. It is interesting to notice that since the graph references are data
-IDs, which represent a digest of the contents of the graphs' nodes, the action
-graph actually represents a Merkle tree.
+Cache paths are computed from the key type name, aggregated version, and the key's encoded contents (via
+`CommandLineArgsEncoder` for short keys, JSON for medium keys, or a BLAKE3 hash for long keys). Resource versions and
+configuration inputs are appended when present.
 
-If for example main.c has changed, then it's data ID would necessarily be
-different, and that would result in a completely new action graph with a new
-root. But since the sub-graph that depends on shrd.c hasn't changed, that
-sub-graph would be shared among the old and the new action graphs. This allows
-for minimizing the CAS storage usage since we only need to store the pieces that
-have changed, and not a completely new action graph.
+## Cache Lookup Flow
 
-## Action execution
+When `FXEngine` evaluates a key:
 
-There is another aspect of the action graph which is its computation in order
-to build the requested artifact. Since any source change invalidates all of the
-ActionKeys that transitively depend on it, that would mean that the ActionKeys
-for downstream dependents would also be evaluated during a build. In order to
-avoid reëxecuting actions excessively, the `ActionFunction` requests the
-evaluation of all the inputs for the action, and constructs an
-`ActionExecutionKey`, in which the inputs are specified as the actual data ID
-for the contents of the artifact.
+1. Compute the key's cache path (type name + aggregated version + encoded contents).
+2. Look up the cache path in `FXFunctionCache`.
+3. **Cache hit**: Retrieve the `FXCASObject` from the CAS database, deserialize the value, and validate it via the
+   key's `validateCache()` method. If validation fails, attempt `fixCached()` before falling back to recomputation.
+4. **Cache miss**: Call `computeValue()`, store the result in the CAS and function cache.
 
-At this stage, llbuild2 can check its cache to check whether that particular
-`ActionExecutionKey` has been evaluated before, and return the cached results if
-so. This architecture allows llbuild2 to avoid excessive recomputations of the
-inputs for an action haven't changed.
+The `FXFunctionCache` protocol has two built-in implementations:
+- **`InMemoryFunctionCache`** — A simple in-process cache (the default).
+- **`FileBackedFunctionCache`** — Persistent cache backed by on-disk storage.
 
-As an example, if we modify `main.c` above to add a comment, the newly compiled
-`main.o` would be no different from the previosly compiled `main.o` (assuming
-the compilation action is deterministic). That would mean that the
-`ActionExecutionKey`s being evaluated downstream would effectively be cached,
-resulting in faster builds.
+## Avoiding Redundant Work
+
+Because cache keys incorporate the full content of the key (not just its identity), llbuild2 naturally avoids redundant
+work. If an upstream change produces the same output as before, downstream keys will have the same cache key and hit
+the cache, even though the upstream key was re-evaluated.
+
+The engine also deduplicates concurrent requests for the same key using `LLBEventualResultsCache`, ensuring that if
+multiple consumers request the same key simultaneously, only one evaluation occurs.
