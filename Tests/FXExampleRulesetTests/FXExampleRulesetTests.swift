@@ -6,22 +6,23 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import NIOCore
-import TSFCAS
-import TSFFutures
 import XCTest
 
-@testable import llbuild2fx
+import llbuild2Testing
+import FXExampleRuleset
+import llbuild2fx
 
 final class FXExampleRulesetTests: XCTestCase {
 
     private func makeEngine(
         resources: [ResourceKey: FXResource] = [:],
         functionCache: FXFunctionCache? = nil,
-        group: LLBFuturesDispatchGroup? = nil
-    ) -> (FXEngine, LLBFuturesDispatchGroup) {
-        let group = group ?? LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        group: FXFuturesDispatchGroup? = nil
+    ) -> (FXEngine, FXFuturesDispatchGroup) {
+        let group = group ?? FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let engine = FXEngine(
             group: group,
@@ -56,8 +57,8 @@ final class FXExampleRulesetTests: XCTestCase {
     }
 
     func testResourceChangesPrefix() throws {
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = FXInMemoryFunctionCache(group: group)
         let ctx = Context()
@@ -108,7 +109,7 @@ final class FXExampleRulesetTests: XCTestCase {
     }
 
     func testCachingBehavior() throws {
-        let group = LLBMakeDefaultDispatchGroup()
+        let group = FXMakeDefaultDispatchGroup()
         let functionCache = FXInMemoryFunctionCache(group: group)
         let (engine, _) = makeEngine(functionCache: functionCache, group: group)
         let ctx = Context()

@@ -6,13 +6,13 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import NIOCore
-import TSFCAS
-import TSFFutures
 import XCTest
 
-@testable import llbuild2fx
 import llbuild2Testing
+import FXExampleRuleset
+import llbuild2fx
 
 final class FXExampleRulesetIsolationTests: XCTestCase {
 

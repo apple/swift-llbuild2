@@ -9,7 +9,6 @@
 import Foundation
 import NIOCore
 import TSCUtility
-import TSFFutures
 
 public enum FXActionWorkerSize: Codable, Equatable, Sendable {
     case small
@@ -41,7 +40,7 @@ public protocol FXAction: FXValue {
 
     var requirements: FXActionRequirements { get }
 
-    func run(_ ctx: Context) -> LLBFuture<ValueType>
+    func run(_ ctx: Context) -> FXFuture<ValueType>
 }
 
 extension FXAction {
@@ -60,7 +59,7 @@ public protocol AsyncFXAction: FXAction {
 }
 
 extension AsyncFXAction {
-    public func run(_ ctx: Context) -> LLBFuture<ValueType> {
+    public func run(_ ctx: Context) -> FXFuture<ValueType> {
         TaskCancellationRegistry.makeCancellableTask({
             try await self.run(ctx)
         }, ctx)

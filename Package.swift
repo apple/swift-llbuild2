@@ -13,54 +13,124 @@ let package = Package(
         .library(name: "llbuild2Testing", targets: ["llbuild2Testing"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto.git", "1.1.4"..<"4.0.0"),
+        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.2.0"),
+        .package(url: "https://github.com/apple/swift-async-algorithms.git", from: "1.0.4"),
+        .package(url: "https://github.com/apple/swift-collections.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.1.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
-        .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.38.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
+        .package(url: "https://github.com/apple/swift-system.git", from: "1.1.1"),
         .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.17.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
-        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.4.1"),
     ],
     targets: [
+        // Vendored BLAKE3 C implementation
+        .target(
+            name: "FXCBLAKE3",
+            dependencies: [],
+            exclude: ["impl", "LICENSE"],
+            cSettings: [
+                .headerSearchPath("./")
+            ]
+        ),
+
+        // Vendored process spawn sync C implementation
+        .target(
+            name: "FXCProcessSpawnSync",
+            dependencies: [],
+            cSettings: [
+                .define("_GNU_SOURCE")
+            ]
+        ),
+
+        // FXCore: public client-facing types (CAS protocols, data types, NIO typealiases)
+        .target(
+            name: "FXCore",
+            dependencies: [
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOFoundationCompat", package: "swift-nio"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+            ]
+        ),
+
+        // FXAsyncSupport: package-scoped internals (file trees, process executor, futures utilities)
+        .target(
+            name: "FXAsyncSupport",
+            dependencies: [
+                "FXCore",
+                "FXCBLAKE3",
+                "FXCProcessSpawnSync",
+                .product(name: "Atomics", package: "swift-atomics"),
+                .product(name: "NIO", package: "swift-nio"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
+                .product(name: "NIOPosix", package: "swift-nio"),
+                .product(name: "NIOFoundationCompat", package: "swift-nio"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SystemPackage", package: "swift-system"),
+                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "DequeModule", package: "swift-collections"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+            ]
+        ),
+
         // FX build engine
         .target(
             name: "llbuild2fx",
             dependencies: [
+                "FXCore",
+                "FXAsyncSupport",
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-                .product(name: "SwiftToolsSupportAsync", package: "swift-tools-support-async"),
-                .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
                 .product(name: "Instrumentation", package: "swift-distributed-tracing"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "_NIOFileSystem", package: "swift-nio"),
             ]
         ),
         .testTarget(
             name: "llbuild2fxTests",
-            dependencies: ["llbuild2fx"]
+            dependencies: ["llbuild2fx", "llbuild2Testing"]
+        ),
+        .testTarget(
+            name: "FXCoreTests",
+            dependencies: ["FXCore", "FXAsyncSupport"]
+        ),
+        .testTarget(
+            name: "FXAsyncSupportTests",
+            dependencies: [
+                "FXAsyncSupport",
+                .product(name: "NIO", package: "swift-nio"),
+                .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
+                .product(name: "Atomics", package: "swift-atomics"),
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+            ]
+        ),
+        .testTarget(
+            name: "llbuild2TestingTests",
+            dependencies: ["llbuild2Testing", "FXAsyncSupport"]
         ),
         .testTarget(
             name: "FXExampleRulesetTests",
-            dependencies: ["llbuild2fx", "llbuild2Testing"]
+            dependencies: ["FXExampleRuleset", "llbuild2Testing"]
+        ),
+
+        // Example ruleset (not part of the library — for testing and reference only)
+        .target(
+            name: "FXExampleRuleset",
+            dependencies: ["llbuild2fx"]
         ),
 
         // Testing support module
         .target(
             name: "llbuild2Testing",
-            dependencies: ["llbuild2fx"]
-        ),
-
-        // Bazel RemoteAPI Protocol
-        .target(
-            name: "BazelRemoteAPI",
             dependencies: [
-                .product(name: "GRPC", package: "grpc-swift"),
-                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
-                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-                .product(name: "SwiftProtobufPluginLibrary", package: "swift-protobuf"),
+                "llbuild2fx",
+                "FXAsyncSupport",
             ]
         ),
 
@@ -70,35 +140,14 @@ let package = Package(
             dependencies: ["llbuild2fx"]
         ),
 
-        // Bazel CAS/Execution Backend
-        .target(
-            name: "LLBBazelBackend",
+        // Interop test: verifies TSFCAS types can bridge to FXCASDatabase
+        .testTarget(
+            name: "FXInteropTests",
             dependencies: [
-                "BazelRemoteAPI",
-                .product(name: "Crypto", package: "swift-crypto"),
-                .product(name: "GRPC", package: "grpc-swift"),
-                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
+                "llbuild2fx",
+                "llbuild2Testing",
                 .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
             ]
-        ),
-
-        // llcastool implementation
-        .target(
-            name: "LLBCASTool",
-            dependencies: [
-                .product(name: "GRPC", package: "grpc-swift"),
-                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
-                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
-                "BazelRemoteAPI",
-                "LLBBazelBackend",
-            ]
-        ),
-
-        // `llcastool` executable.
-        .executableTarget(
-            name: "llcastool",
-            dependencies: ["LLBCASTool", .product(name: "ArgumentParser", package: "swift-argument-parser")],
-            path: "Sources/Tools/llcastool"
         ),
     ]
 )

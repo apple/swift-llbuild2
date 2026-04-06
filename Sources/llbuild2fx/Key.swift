@@ -24,10 +24,10 @@ public protocol FXKey: Encodable, FXVersioning {
     // hashed contexts (i.e. when stored in caches, etc.)
     var hint: String? { get }
 
-    func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType>
+    func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<ValueType>
 
     func validateCache(cached: ValueType) -> Bool
-    func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?>
+    func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<ValueType?>
 }
 
 extension FXKey {
@@ -41,7 +41,7 @@ extension FXKey {
         return true
     }
 
-    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?> {
+    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<ValueType?> {
         return ctx.group.next().makeSucceededFuture(nil)
     }
 }
@@ -75,7 +75,7 @@ internal final class InternalKey<K: FXKey> {
     let name: String
     let key: K
     private let ctx: Context
-    let stableHashValue: LLBDataID
+    let stableHashValue: FXDataID
     let cachePath: String
 
     init(_ key: K, _ engine: FXEngine, _ ctx: Context) {
@@ -84,7 +84,7 @@ internal final class InternalKey<K: FXKey> {
         self.ctx = ctx
         let cachePath = Self.calculateCachePath(key: key, engine: engine, ctx: ctx)
         let hashData = Array(cachePath.utf8)
-        self.stableHashValue = LLBDataID(blake3hash: hashData[...])
+        self.stableHashValue = FXDataID(blake3hash: hashData[...])
         self.cachePath = cachePath
     }
 }
@@ -114,7 +114,7 @@ extension InternalKey: FXKeyProperties {
                 return [basePath, String(decoding: json, as: UTF8.self)].joined(separator: "/")
             }
 
-            let hash = LLBDataID(blake3hash: ArraySlice<UInt8>(json))
+            let hash = FXDataID(blake3hash: ArraySlice<UInt8>(json))
             let hashStr = ArraySlice(hash.bytes.dropFirst().prefix(9)).base64URL()
             let str: String
             if let hint = key.hint {
@@ -226,7 +226,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         case notCachePathProvider(FXRequestKey)
     }
 
-    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<FXResult> {
+    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<FXResult> {
         return ctx.group.any().makeFutureWithTask {
             return try await self.computeAndUpdate(key: key, fi, ctx)
         }
@@ -245,12 +245,12 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         return value
     }
 
-    private func unpack(_ object: LLBCASObject, _ fi: FunctionInterface) throws -> InternalValue<K.ValueType> {
+    private func unpack(_ object: FXCASObject, _ fi: FunctionInterface) throws -> InternalValue<K.ValueType> {
         return try InternalValue<K.ValueType>.init(from: object)
     }
 
     @_disfavoredOverload
-    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<FXResult> {
+    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<FXResult> {
         return ctx.group.any().makeFutureWithTask {
             return try await self.compute(key: key, fi, ctx)
         }
@@ -294,7 +294,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
     }
 
 
-    func compute(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<
+    func compute(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<
         InternalValue<K.ValueType>
     > {
         let actualKey = key.key
@@ -358,7 +358,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         return key.key.validateCache(cached: cached.value)
     }
 
-    func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: FunctionInterface, _ ctx: Context) -> LLBFuture<InternalValue<K.ValueType>?> {
+    func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<InternalValue<K.ValueType>?> {
         let actualKey = key.key
 
         let fxfi = FXFunctionInterface(actualKey, fi)
@@ -372,13 +372,13 @@ public protocol AsyncFXKey: FXKey {
 }
 
 extension AsyncFXKey {
-    public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType> {
+    public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<ValueType> {
         TaskCancellationRegistry.makeCancellableTask({
             try await self.computeValue(fi, ctx)
         }, ctx)
     }
 
-    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<ValueType?> {
+    public func fixCached(value: ValueType, _ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<ValueType?> {
         ctx.group.any().makeFutureWithTask {
             try await fixCached(value: value, fi, ctx)
         }

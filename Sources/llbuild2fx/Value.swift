@@ -11,16 +11,16 @@ import Foundation
 public protocol FXValue: Sendable {
     associatedtype CodableValueType: Codable
 
-    var refs: [LLBDataID] { get }
+    var refs: [FXDataID] { get }
     var codableValue: CodableValueType { get }
 
-    init(refs: [LLBDataID], codableValue: CodableValueType) throws
+    init(refs: [FXDataID], codableValue: CodableValueType) throws
 }
 
 extension FXValue where Self: Codable {
-    public var refs: [LLBDataID] { [] }
+    public var refs: [FXDataID] { [] }
     public var codableValue: Self { self }
-    public init(refs: [LLBDataID], codableValue: Self) {
+    public init(refs: [FXDataID], codableValue: Self) {
         self = codableValue
     }
 }
@@ -33,7 +33,7 @@ public final class CASCodableOptional<T: Codable>: Codable {
 }
 
 extension Optional: FXValue where Wrapped: FXValue {
-    public var refs: [LLBDataID] {
+    public var refs: [FXDataID] {
         switch self {
         case .none:
             return []
@@ -51,7 +51,7 @@ extension Optional: FXValue where Wrapped: FXValue {
         }
     }
 
-    public init(refs: [LLBDataID], codableValue: CASCodableOptional<Wrapped.CodableValueType>) throws {
+    public init(refs: [FXDataID], codableValue: CASCodableOptional<Wrapped.CodableValueType>) throws {
         guard let value: Wrapped.CodableValueType = codableValue.codableValue else {
             self = .none
             return
@@ -72,7 +72,7 @@ public class CASCodableElement<T: Codable>: Codable {
 }
 
 extension FXSortedSet: FXValue where Element: FXValue {
-    public var refs: [LLBDataID] {
+    public var refs: [FXDataID] {
         map { $0.refs }.flatMap { $0 }
     }
 
@@ -80,7 +80,7 @@ extension FXSortedSet: FXValue where Element: FXValue {
         map { CASCodableElement(refsCount: $0.refs.count, codable: $0.codableValue) }
     }
 
-    public init(refs: [LLBDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
+    public init(refs: [FXDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
         let refsCountSum = codableValue.map { $0.refsCount }.reduce(0, +)
         assert(refs.count == refsCountSum)
 
@@ -93,8 +93,8 @@ extension FXSortedSet: FXValue where Element: FXValue {
 
         let elements: [Element] = try codableValue.enumerated().map { (idx, element) in
             let range: Range<Int> = refRanges[idx]
-            let slice: ArraySlice<LLBDataID> = refs[range]
-            let objRefs: [LLBDataID] = [LLBDataID](slice)
+            let slice: ArraySlice<FXDataID> = refs[range]
+            let objRefs: [FXDataID] = [FXDataID](slice)
             return try Element(refs: objRefs, codableValue: element.codable)
         }
 
@@ -103,7 +103,7 @@ extension FXSortedSet: FXValue where Element: FXValue {
 }
 
 extension Array: FXValue where Element: FXValue {
-    public var refs: [LLBDataID] {
+    public var refs: [FXDataID] {
         self.map { $0.refs }.flatMap { $0 }
     }
 
@@ -111,7 +111,7 @@ extension Array: FXValue where Element: FXValue {
         self.map { CASCodableElement(refsCount: $0.refs.count, codable: $0.codableValue) }
     }
 
-    public init(refs: [LLBDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
+    public init(refs: [FXDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
         let refsCountSum = codableValue.map { $0.refsCount }.reduce(0, +)
         assert(refs.count == refsCountSum)
 
@@ -124,23 +124,23 @@ extension Array: FXValue where Element: FXValue {
 
         self = try codableValue.enumerated().map { (idx, element) in
             let range: Range<Int> = refRanges[idx]
-            let slice: ArraySlice<LLBDataID> = refs[range]
-            let objRefs: [LLBDataID] = [LLBDataID](slice)
+            let slice: ArraySlice<FXDataID> = refs[range]
+            let objRefs: [FXDataID] = [FXDataID](slice)
             return try Element(refs: objRefs, codableValue: element.codable)
         }
     }
 }
 
-extension FXValue /* LLBCASObjectRepresentable */ {
-    public func asCASObject() throws -> LLBCASObject {
+extension FXValue /* FXCASObjectRepresentable */ {
+    public func asCASObject() throws -> FXCASObject {
         let data = try FXEncoder().encode(codableValue)
-        let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
-        return LLBCASObject(refs: refs, data: buffer)
+        let buffer = FXByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
+        return FXCASObject(refs: refs, data: buffer)
     }
 }
 
-extension FXValue /* LLBCASObjectConstructable */ {
-    public init(from casObject: LLBCASObject) throws {
+extension FXValue /* FXCASObjectConstructable */ {
+    public init(from casObject: FXCASObject) throws {
         let data = Data(casObject.data.readableBytesView)
         let codable = try FXDecoder().decode(CodableValueType.self, from: data)
 
@@ -151,16 +151,16 @@ extension FXValue /* LLBCASObjectConstructable */ {
 private struct IgnoredCodable: Codable {}
 
 private struct IgnoredValue: FXValue {
-    let refs: [LLBDataID]
+    let refs: [FXDataID]
     let codableValue: IgnoredCodable
 
-    init(refs: [LLBDataID], codableValue: CodableValueType) {
+    init(refs: [FXDataID], codableValue: CodableValueType) {
         self.refs = refs
         self.codableValue = codableValue
     }
 }
 
-public func FXRequestedCacheKeyPaths(for cachedValue: LLBCASObject) throws -> FXSortedSet<String> {
+public func FXRequestedCacheKeyPaths(for cachedValue: FXCASObject) throws -> FXSortedSet<String> {
     let internalValue = try InternalValue<IgnoredValue>(from: cachedValue)
     guard let keyPaths = internalValue.metadata.requestedCacheKeyPaths else {
         return []
@@ -204,17 +204,17 @@ private final class CodableInternalValue<V: FXValue>: Codable {
     }
 }
 
-extension InternalValue: LLBCASObjectRepresentable {
-    func asCASObject() throws -> LLBCASObject {
+extension InternalValue: FXCASObjectRepresentable {
+    func asCASObject() throws -> FXCASObject {
         let codable = CodableInternalValue(value, metadata: metadata)
         let data = try FXEncoder().encode(codable)
-        let buffer = LLBByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
-        return LLBCASObject(refs: value.refs, data: buffer)
+        let buffer = FXByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
+        return FXCASObject(refs: value.refs, data: buffer)
     }
 }
 
-extension InternalValue: LLBCASObjectConstructable {
-    convenience init(from casObject: LLBCASObject) throws {
+extension InternalValue: FXCASObjectConstructable {
+    convenience init(from casObject: FXCASObject) throws {
         let data = Data(casObject.data.readableBytesView)
         let codable = try FXDecoder().decode(CodableInternalValue<V>.self, from: data)
         let value = try V(refs: casObject.refs, codableValue: codable.value)

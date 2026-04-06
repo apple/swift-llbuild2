@@ -7,10 +7,9 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOConcurrencyHelpers
-import TSFFutures
 
 public class FXService: FXErrorClassifier {
-    public let group: LLBFuturesDispatchGroup
+    public let group: FXFuturesDispatchGroup
 
     public enum Error: Swift.Error {
         case duplicateResource(String)
@@ -20,7 +19,7 @@ public class FXService: FXErrorClassifier {
     private let _rulesets = NIOLockedValueBox([String: FXRuleset]())
     private let _errorClassifiers = NIOLockedValueBox([FXErrorClassifier]())
 
-    public init(group: LLBFuturesDispatchGroup) {
+    public init(group: FXFuturesDispatchGroup) {
         self.group = group
     }
 

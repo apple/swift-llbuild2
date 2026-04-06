@@ -14,11 +14,11 @@ struct ExampleActionResult: Codable, Sendable {
 
 extension ExampleActionResult: FXValue {
     public typealias CodableValueType = String
-    public var refs: [TSFCAS.LLBDataID] { [] }
+    public var refs: [FXDataID] { [] }
 
     public var codableValue: String { return String() }
 
-    public init(refs: [TSFCAS.LLBDataID], codableValue: String) throws {
+    public init(refs: [FXDataID], codableValue: String) throws {
     }
 }
 
@@ -32,11 +32,11 @@ struct ExampleAction: AsyncFXAction {
 
 extension ExampleAction: FXValue {
     typealias CodableValueType = String
-    var refs: [TSFCAS.LLBDataID] { [] }
+    var refs: [FXDataID] { [] }
 
     var codableValue: String { return String() }
 
-    public init(refs: [TSFCAS.LLBDataID], codableValue: String) throws {
+    public init(refs: [FXDataID], codableValue: String) throws {
     }
 }
 

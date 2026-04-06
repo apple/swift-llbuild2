@@ -23,7 +23,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
         self.fi = fi
     }
 
-    public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) -> LLBFuture<X.ValueType> {
+    public func request<X: FXKey>(_ x: X, requireCacheHit: Bool = false, _ ctx: Context) -> FXFuture<X.ValueType> {
         do {
             let realX = x.internalKey(fi.engine, ctx)
 
@@ -41,7 +41,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
                 return
             }
 
-            let cacheCheck: LLBFuture<Void>
+            let cacheCheck: FXFuture<Void>
             if requireCacheHit {
                 cacheCheck = self.fi.engine.cache.get(key: realX, props: realX, ctx).flatMapThrowing { maybeValue in
                     guard maybeValue != nil else {
@@ -68,7 +68,7 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
         _ action: ActionType,
         requirements: FXActionRequirements? = nil,
         _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> {
+    ) -> FXFuture<ActionType.ValueType> {
         guard K.actionDependencies.contains(where: { $0 == ActionType.self }) else {
             return ctx.group.any().makeFailedFuture(
                 FXError.unexpressedKeyDependency(

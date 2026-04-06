@@ -6,11 +6,11 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import NIOCore
-import TSFCAS
-import TSFFutures
 import XCTest
 
+import llbuild2Testing
 @testable import llbuild2fx
 
 public struct SumInput: Codable, Sendable {
@@ -31,14 +31,14 @@ public struct SumOutput: Codable {
 }
 
 extension SumOutput: FXValue {
-    public var refs: [LLBDataID] { [] }
+    public var refs: [FXDataID] { [] }
 }
 
 extension SumAction: FXAction {
-    public var refs: [LLBDataID] { [] }
+    public var refs: [FXDataID] { [] }
     public var codableValue: SumInput { input }
 
-    public init(refs: [LLBDataID], codableValue: SumInput) throws {
+    public init(refs: [FXDataID], codableValue: SumInput) throws {
         self.init(codableValue)
     }
 }
@@ -51,7 +51,7 @@ public struct SumAction {
         self.input = input
     }
 
-    public func run(_ ctx: Context) -> LLBFuture<SumOutput> {
+    public func run(_ ctx: Context) -> FXFuture<SumOutput> {
         let total = input.values.reduce(0) { $0 + $1 }
         return ctx.group.next().makeSucceededFuture(SumOutput(total: total))
     }
@@ -71,7 +71,7 @@ public struct Sum: FXKey {
         self.values = values
     }
 
-    public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<SumAction.ValueType> {
+    public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<SumAction.ValueType> {
         let action = SumAction(SumInput(values: self.values))
         return fi.spawn(action, ctx)
     }
@@ -110,25 +110,25 @@ public struct AbsoluteSum: AsyncFXKey {
 }
 
 actor TestFunctionCache {
-    private var cache: [String: LLBDataID] = [:]
+    private var cache: [String: FXDataID] = [:]
 
-    func get(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) async -> LLBDataID? {
+    func get(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) async -> FXDataID? {
         return cache[props.cachePath]
     }
 
-    func update(key: FXRequestKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) async {
+    func update(key: FXRequestKey, props: FXKeyProperties, value: FXDataID, _ ctx: Context) async {
         cache[props.cachePath] = value
     }
 }
 
 extension TestFunctionCache: FXFunctionCache {
-    nonisolated func get(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) -> LLBFuture<LLBDataID?> {
+    nonisolated func get(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) -> FXFuture<FXDataID?> {
         return ctx.group.any().makeFutureWithTask {
             return await self.get(key: key, props: props, ctx)
         }
     }
 
-    nonisolated func update(key: FXRequestKey, props: FXKeyProperties, value: LLBDataID, _ ctx: Context) -> LLBFuture<Void> {
+    nonisolated func update(key: FXRequestKey, props: FXKeyProperties, value: FXDataID, _ ctx: Context) -> FXFuture<Void> {
         return ctx.group.any().makeFutureWithTask {
             _ = await self.update(key: key, props: props, value: value, ctx)
         }
@@ -140,8 +140,8 @@ extension Int: @retroactive FXValue {}
 final class EngineTests: XCTestCase {
     func testBasicMath() throws {
         let ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
 
         let engine = FXEngine(group: group, db: db, functionCache: nil, executor: executor)
@@ -152,8 +152,8 @@ final class EngineTests: XCTestCase {
 
     func testWeirdMath() async throws {
         var ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = TestFunctionCache()
         ctx.db = db
@@ -173,8 +173,8 @@ final class EngineTests: XCTestCase {
 
     func testCycle() async throws {
         let ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
 
         struct CyclicKey: FXKey {
@@ -187,7 +187,7 @@ final class EngineTests: XCTestCase {
                 self.value = value
             }
 
-            public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<Int> {
+            public func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<Int> {
                 return fi.request(CyclicKey(value: value * -1), ctx)
             }
         }

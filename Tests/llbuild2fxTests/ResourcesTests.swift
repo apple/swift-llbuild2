@@ -6,12 +6,12 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import NIOCore
 import TSCBasic
-import TSFCAS
-import TSFFutures
 import XCTest
 
+import llbuild2Testing
 @testable import llbuild2fx
 
 class StatefulResource<T>: FXResource {
@@ -51,8 +51,8 @@ final class ResourcesTests: XCTestCase {
         }
 
         let ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = FXInMemoryFunctionCache(group: group)
 
@@ -91,8 +91,8 @@ final class ResourcesTests: XCTestCase {
         }
 
         let ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = FXInMemoryFunctionCache(group: group)
 
@@ -130,8 +130,8 @@ final class ResourcesTests: XCTestCase {
         }
 
         let ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = FXInMemoryFunctionCache(group: group)
 
@@ -179,8 +179,8 @@ final class ResourcesTests: XCTestCase {
         }
 
         let ctx = Context()
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = FXInMemoryFunctionCache(group: group)
 

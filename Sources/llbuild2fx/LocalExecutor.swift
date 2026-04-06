@@ -13,7 +13,7 @@ public final class FXLocalExecutor: FXExecutor {
 
     public func perform<ActionType: FXAction>(
         _ action: ActionType, requirements: FXActionRequirements?, _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> {
+    ) -> FXFuture<ActionType.ValueType> {
         return action.run(ctx)
     }
 

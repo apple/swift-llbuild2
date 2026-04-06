@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOCore
-import TSFUtility
 
 // LLBCodable support for common types used in llbuild2. Should be expanded as more types are needed. This is not
 // meant ot be a full featured serialization library support, so there's no need to be eager and add support for most of
@@ -15,14 +14,14 @@ import TSFUtility
 // request support of.
 
 extension String: LLBPolymorphicSerializable {
-    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+    public func toBytes(into buffer: inout FXByteBuffer) throws {
         buffer.writeString(self)
     }
 
-    public init(from bytes: LLBByteBuffer) throws {
+    public init(from bytes: FXByteBuffer) throws {
         var mutableBytes = bytes
         guard let decoded = mutableBytes.readString(length: bytes.readableBytes) else {
-            throw LLBSerializableError.unknownError("could not decode String bytes")
+            throw FXSerializableError.unknownError("could not decode String bytes")
         }
         self = decoded
 
@@ -32,14 +31,14 @@ extension String: LLBPolymorphicSerializable {
 // Int currently support doesn't handle endian-ness. These are mostly used as basic data types for testing on local
 // systems. For more complex data types that use Ints, each type should account for the serialization mechanism.
 extension Int: LLBPolymorphicSerializable {
-    public func toBytes(into buffer: inout LLBByteBuffer) throws {
+    public func toBytes(into buffer: inout FXByteBuffer) throws {
         buffer.writeInteger(self)
     }
 
-    public init(from bytes: LLBByteBuffer) throws {
+    public init(from bytes: FXByteBuffer) throws {
         var mutableBytes = bytes
         guard let decoded: Int = mutableBytes.readInteger() else {
-            throw LLBSerializableError.unknownError("could not decode Int bytes")
+            throw FXSerializableError.unknownError("could not decode Int bytes")
         }
         self = decoded
     }

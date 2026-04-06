@@ -11,19 +11,19 @@ import llbuild2fx
 
 final class FXKeyTests: XCTestCase {
     private struct TestValue: FXSingleDataIDValue {
-        let dataID: LLBDataID
+        let dataID: FXDataID
     }
 
     func testDataIDKeyEncoding() throws {
         struct TestKey: FXKey {
-            let dataID: LLBDataID
-            func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<TestValue> {
+            let dataID: FXDataID
+            func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<TestValue> {
                 ctx.group.next().makeSucceededFuture(TestValue(dataID))
             }
         }
 
         let sensitive = "0~AA=="
-        let key = TestKey(dataID: LLBDataID(string: sensitive)!)
+        let key = TestKey(dataID: FXDataID(string: sensitive)!)
 
         let encoded = try CommandLineArgsEncoder().encode(key)
 
@@ -33,13 +33,13 @@ final class FXKeyTests: XCTestCase {
     func testWrappedKeyEncoding() throws {
         struct TestKey: FXKey {
             let value: TestValue
-            func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> LLBFuture<TestValue> {
+            func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<TestValue> {
                 ctx.group.next().makeSucceededFuture(value)
             }
         }
 
         let sensitive = "0~AA=="
-        let key = TestKey(value: TestValue(LLBDataID(string: sensitive)!))
+        let key = TestKey(value: TestValue(FXDataID(string: sensitive)!))
 
         let encoded = try CommandLineArgsEncoder().encode(key)
 

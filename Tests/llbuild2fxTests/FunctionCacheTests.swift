@@ -11,13 +11,13 @@ import XCTest
 import llbuild2fx
 
 extension String: @retroactive FXRequestKey {
-    public var stableHashValue: LLBDataID {
-        return LLBDataID(blake3hash: self)
+    public var stableHashValue: FXDataID {
+        return FXDataID(blake3hash: self)
     }
 }
 
 final class FunctionCacheTests: XCTestCase {
-    let group = LLBMakeDefaultDispatchGroup()
+    let group = FXMakeDefaultDispatchGroup()
 
     /// ${TMPDIR} or just "/tmp", expressed as AbsolutePath
     private var temporaryPath: AbsolutePath {
@@ -34,7 +34,7 @@ final class FunctionCacheTests: XCTestCase {
         let ctx = Context()
         XCTAssertNil(try cache.get(key: "key1", props: p, ctx).wait())
 
-        let id1 = LLBDataID(blake3hash: LLBByteBuffer.withBytes(ArraySlice("value1".utf8)), refs: [])
+        let id1 = FXDataID(blake3hash: FXByteBuffer.withBytes(ArraySlice("value1".utf8)), refs: [])
         try cache.update(key: "key1", props: p, value: id1, ctx).wait()
         XCTAssertEqual(id1, try cache.get(key: "key1", props: p, ctx).wait())
     }

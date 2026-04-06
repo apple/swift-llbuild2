@@ -52,12 +52,12 @@ The framework implements a **functional build system**:
 
 | Module | Purpose |
 |---|---|
-| `llbuild2fx` | Core engine: `FXEngine`, keys, actions, executors, caching, dependency graph |
+| `FXCore` | Public client-facing types: `LLBDataID`, `FXCASDatabase`, `FXCASObject`, NIO typealiases |
+| `FXAsyncSupport` | Package-scoped internals: file trees, process executor, futures utilities, CAS implementations |
+| `llbuild2fx` | Core engine: `FXEngine`, keys, actions, executors, caching, dependency graph. Re-exports `FXCore` |
 | `llbuild2` | Convenience wrapper that reexports `llbuild2fx` |
-| `BazelRemoteAPI` | Generated protobuf/gRPC bindings for Bazel Remote Execution V2 |
-| `LLBBazelBackend` | Bazel CAS database integration and digest utilities |
-| `LLBCASTool` | CAS tool library implementation |
-| `llcastool` | CLI executable for CAS operations |
+| `llbuild2Testing` | Test utilities: `FXTestingEngine`, `FXLocalCASTreeService`, `FXKeyTestOverride` |
+| `FXExampleRuleset` | Example ruleset for testing and reference (not part of the library) |
 
 ### Engine Flow
 
@@ -75,6 +75,10 @@ Both NIO futures (`FXKey`) and Swift async/await (`AsyncFXKey`, `AsyncFXAction`)
 ## Code Style
 
 Follow [Swift project guidelines for contributing code](https://swift.org/contributing/#contributing-code). All public types use the `FX` prefix.
+
+### Error Handling
+
+Prefer `throw` over `fatalError` wherever possible. If a function can throw, use a thrown error (e.g. an `FXError` case) instead of crashing the process. Reserve `fatalError` / `preconditionFailure` only for true programming errors that indicate a logic bug (e.g. unreachable code paths).
 
 ### Copyright Headers
 

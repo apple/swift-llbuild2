@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import FXAsyncSupport
 import NIOCore
-import TSFCAS
 import llbuild2fx
 
 public struct FXTestingEngine {
@@ -17,8 +17,8 @@ public struct FXTestingEngine {
         overrides: [any FXKeyOverrideProtocol] = [],
         resources: [ResourceKey: FXResource] = [:]
     ) {
-        let group = LLBMakeDefaultDispatchGroup()
-        let db = LLBInMemoryCASDatabase(group: group)
+        let group = FXMakeDefaultDispatchGroup()
+        let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let registry = overrides.isEmpty ? nil : FXKeyOverrideRegistry(overrides)
         self.engine = FXEngine(
@@ -32,6 +32,10 @@ public struct FXTestingEngine {
     }
 
     public func build<K: FXKey>(key: K, _ ctx: Context) async throws -> K.ValueType {
+        var ctx = ctx
+        if ctx.fxCASTreeService == nil {
+            ctx.fxCASTreeService = FXLocalCASTreeService()
+        }
         return try await engine.build(key: key, ctx).get()
     }
 }

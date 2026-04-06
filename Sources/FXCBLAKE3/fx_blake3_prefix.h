@@ -1,0 +1,24 @@
+// Rename all public BLAKE3 symbols to avoid conflicts with other
+// packages that also vendor BLAKE3 (e.g. swift-tools-support-async).
+#define blake3_hasher fx_blake3_hasher
+#define blake3_chunk_state fx_blake3_chunk_state
+#define blake3_hasher_init fx_blake3_hasher_init
+#define blake3_hasher_init_keyed fx_blake3_hasher_init_keyed
+#define blake3_hasher_init_derive_key fx_blake3_hasher_init_derive_key
+#define blake3_hasher_update fx_blake3_hasher_update
+#define blake3_hasher_finalize fx_blake3_hasher_finalize
+#define blake3_hasher_finalize_seek fx_blake3_hasher_finalize_seek
+#define blake3_compress_in_place fx_blake3_compress_in_place
+#define blake3_compress_xof fx_blake3_compress_xof
+#define blake3_hash_many fx_blake3_hash_many
+#define blake3_simd_degree fx_blake3_simd_degree
+#define blake3_compress_in_place_portable fx_blake3_compress_in_place_portable
+#define blake3_compress_xof_portable fx_blake3_compress_xof_portable
+#define blake3_hash_many_portable fx_blake3_hash_many_portable
+#define blake3_compress_in_place_sse41 fx_blake3_compress_in_place_sse41
+#define blake3_compress_xof_sse41 fx_blake3_compress_xof_sse41
+#define blake3_hash_many_sse41 fx_blake3_hash_many_sse41
+#define blake3_hash_many_avx2 fx_blake3_hash_many_avx2
+#define blake3_compress_in_place_avx512 fx_blake3_compress_in_place_avx512
+#define blake3_compress_xof_avx512 fx_blake3_compress_xof_avx512
+#define blake3_hash_many_avx512 fx_blake3_hash_many_avx512

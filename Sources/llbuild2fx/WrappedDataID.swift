@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -9,11 +9,11 @@
 import NIOCore
 
 public protocol FXWrappedDataID: Sendable {
-    var dataID: LLBDataID { get }
+    var dataID: FXDataID { get }
 }
 
 public protocol FXSingleDataIDValue: FXValue, FXWrappedDataID, Encodable, Hashable, Comparable {
-    init(dataID: LLBDataID)
+    init(dataID: FXDataID)
 }
 
 public protocol FXThinEncodedSingleDataIDValue: FXSingleDataIDValue {
@@ -21,7 +21,7 @@ public protocol FXThinEncodedSingleDataIDValue: FXSingleDataIDValue {
 }
 
 extension FXSingleDataIDValue {
-    public init(_ dataID: LLBDataID) {
+    public init(_ dataID: FXDataID) {
         self = Self(dataID: dataID)
     }
 }
@@ -29,9 +29,9 @@ extension FXSingleDataIDValue {
 public struct FXNullCodableValue: Codable {}
 
 extension FXSingleDataIDValue {
-    public var refs: [LLBDataID] { [dataID] }
+    public var refs: [FXDataID] { [dataID] }
     public var codableValue: FXNullCodableValue { FXNullCodableValue() }
-    public init(refs: [LLBDataID], codableValue: FXNullCodableValue) {
+    public init(refs: [FXDataID], codableValue: FXNullCodableValue) {
         self.init(refs[0])
     }
 }
@@ -57,13 +57,12 @@ extension FXThinEncodedSingleDataIDValue {
     }
 }
 
-enum WrappedDataIDError: Swift.Error {
+package enum WrappedDataIDError: Swift.Error {
     case noRefs
-    case wrongNodeType(id: LLBDataID, expected: LLBFileType, actual: LLBFileType)
 }
 
 extension FXSingleDataIDValue {
-    public init(from casObject: LLBCASObject) throws {
+    public init(from casObject: FXCASObject) throws {
         let refs = casObject.refs
         guard !refs.isEmpty else {
             throw WrappedDataIDError.noRefs
@@ -76,75 +75,19 @@ extension FXSingleDataIDValue {
 }
 
 extension FXSingleDataIDValue {
-    public func asCASObject() throws -> LLBCASObject {
-        LLBCASObject(refs: [dataID], data: LLBByteBuffer())
+    public func asCASObject() throws -> FXCASObject {
+        FXCASObject(refs: [dataID], data: FXByteBuffer())
     }
 }
 
 public protocol FXNodeID: FXWrappedDataID {
-    func load(_ ctx: Context) -> LLBFuture<LLBCASFSNode>
-}
-
-extension FXNodeID {
-    public func load(_ ctx: Context) -> LLBFuture<LLBCASFSNode> {
-        let client = LLBCASFSClient(ctx.db)
-        return client.load(self.dataID, ctx)
-    }
 }
 
 public protocol FXTreeID: FXNodeID {
-    func load(_ ctx: Context) -> LLBFuture<LLBCASFileTree>
-}
-
-extension FXTreeID {
-    public func load(_ ctx: Context) -> LLBFuture<LLBCASFileTree> {
-        let client = LLBCASFSClient(ctx.db)
-        let dataID = self.dataID
-        return client.load(dataID, type: .directory, ctx).flatMapThrowing { node in
-            let type = node.type()
-            guard type == .directory else {
-                throw WrappedDataIDError.wrongNodeType(id: dataID, expected: .directory, actual: type)
-            }
-
-            return node.tree!
-        }
-    }
 }
 
 public protocol FXFileID: FXNodeID {
-    func load(_ ctx: Context) -> LLBFuture<LLBCASBlob>
-}
-
-extension FXFileID {
-    public func load(_ ctx: Context) -> LLBFuture<LLBCASBlob> {
-        let client = LLBCASFSClient(ctx.db)
-        let dataID = self.dataID
-        return client.load(dataID, type: .plainFile, ctx).flatMapThrowing { node in
-            let type = node.type()
-            guard type == .plainFile else {
-                throw WrappedDataIDError.wrongNodeType(id: dataID, expected: .plainFile, actual: type)
-            }
-
-            return node.blob!
-        }
-    }
 }
 
 public protocol FXExecutableFileID: FXNodeID {
-    func load(_ ctx: Context) -> LLBFuture<LLBCASBlob>
-}
-
-extension FXExecutableFileID {
-    public func load(_ ctx: Context) -> LLBFuture<LLBCASBlob> {
-        let client = LLBCASFSClient(ctx.db)
-        let dataID = self.dataID
-        return client.load(dataID, type: .executable, ctx).flatMapThrowing { node in
-            let type = node.type()
-            guard type == .executable else {
-                throw WrappedDataIDError.wrongNodeType(id: dataID, expected: .executable, actual: type)
-            }
-
-            return node.blob!
-        }
-    }
 }

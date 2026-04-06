@@ -15,7 +15,7 @@ public final class FXNullExecutor: FXExecutor {
         _ action: ActionType,
         requirements: FXActionRequirements?,
         _ ctx: Context
-    ) -> LLBFuture<ActionType.ValueType> {
+    ) -> FXFuture<ActionType.ValueType> {
         return ctx.group.any().makeFailedFuture(Error.nullExecutor)
     }
 

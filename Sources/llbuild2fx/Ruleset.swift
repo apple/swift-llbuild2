@@ -6,11 +6,10 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import TSFFutures
 
 public protocol FXEntrypoint: FXKey {
-    init(withEntrypointPayload casObject: LLBCASObject) throws
-    init(withEntrypointPayload buffer: LLBByteBuffer) throws
+    init(withEntrypointPayload casObject: FXCASObject) throws
+    init(withEntrypointPayload buffer: FXByteBuffer) throws
 }
 
 public class FXRuleset {
@@ -65,7 +64,7 @@ public protocol FXRulesetPackage {
     // using package(s) MUST call this method exactly once per process lifetime.
     static func createExternalResources(
         _ config: Config,
-        group: LLBFuturesDispatchGroup,
+        group: FXFuturesDispatchGroup,
         authenticator: FXResourceAuthenticator,
         _ ctx: Context
     ) async throws -> [FXResource]
@@ -78,7 +77,7 @@ public protocol FXRulesetPackage {
 extension FXRulesetPackage {
     public static func createExternalResources(
         _ config: Config,
-        group: LLBFuturesDispatchGroup,
+        group: FXFuturesDispatchGroup,
         authenticator: FXResourceAuthenticator,
         _ ctx: Context
     ) async throws -> [FXResource] {
