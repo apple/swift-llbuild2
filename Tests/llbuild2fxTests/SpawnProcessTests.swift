@@ -9,7 +9,6 @@
 import FXAsyncSupport
 import TSCBasic
 import XCTest
-
 import llbuild2Testing
 import llbuild2fx
 
@@ -174,25 +173,48 @@ final class SpawnProcessTests: XCTestCase {
         XCTFail("Process didn't throw a ProcessTerminationError when the deadline was reached.")
     }
 
+    func testRoundTripSerializes() async throws {
+        let original = try await makeProcess("/bin/sh", ["-c", "echo output"])
+        let copied = try SpawnProcess(from: original.asCASObject())
+
+        XCTAssertEqual(copied.inputTree, original.inputTree)
+        XCTAssertEqual(try copied.spec.fxEncodeJSON(), try original.spec.fxEncodeJSON())
+        XCTAssertEqual(copied.initialOutputTree, original.initialOutputTree)
+    }
+
+    func testRoundTripSerializesWithInitialOutputTree() async throws {
+        let original = try await makeProcess("/bin/sh", ["-c", "echo output"], initialOutputTree: LLBDeclFileTree.dir(["extraOutput.txt": .file("foo")]))
+        let copied = try SpawnProcess(from: original.asCASObject())
+
+        XCTAssertEqual(copied.inputTree, original.inputTree)
+        XCTAssertEqual(try copied.spec.fxEncodeJSON(), try original.spec.fxEncodeJSON())
+        XCTAssertEqual(copied.initialOutputTree, original.initialOutputTree)
+    }
+
     // MARK: - Helpers for creating SpawnProcess instances and asserting on their outputs.
 
     func makeProcess(
         _ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
-        stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
+        stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log", initialOutputTree: LLBDeclFileTree? = nil
     ) async throws
         -> SpawnProcess
     {
         try await llbuild2fxTests.makeProcess(
             ctx: ctx,
-            executable, arguments.map(ProcessSpec.RuntimeValue.literal), stdinContents: stdinContents, stdoutDestination: stdoutDestination, stderrDestination: stderrDestination,
-            stdoutStreamingDestination: stdoutStreamingDestination, stderrStreamingDestination: stderrStreamingDestination)
+            executable, arguments, stdinContents: stdinContents, stdoutDestination: stdoutDestination, stderrDestination: stderrDestination,
+            stdoutStreamingDestination: stdoutStreamingDestination, stderrStreamingDestination: stderrStreamingDestination, initialOutputTree: initialOutputTree)
     }
 
     func assert(outputFile: String, hasContents expectedContents: String, inResult result: SpawnProcessResult) async throws {
-        try await result.treeID.materialize(ctx) { rootPath in
-            let fileContents = try String(contentsOfFile: rootPath.appending(component: outputFile).pathString, encoding: .utf8)
-            try XCTAssertEqual(fileContents, expectedContents)
+        let fileTree = try await FXCASFileTree.load(id: result.treeID.dataID, from: ctx.db, ctx).get()
+        guard let file = fileTree.lookup(outputFile) else {
+            XCTFail("File \"\(outputFile)\" not found in spawn process result")
+            return
         }
+        let blob = try await FXCASBlob.parse(id: file.id, in: ctx.db, ctx).get().read(ctx).get()
+        let fileContents = String(bytes: blob, encoding: .utf8)
+
+        XCTAssertEqual(fileContents, expectedContents)
     }
     func assertLocalStdout(hasContents expectedContents: String, inResult result: SpawnProcessResult) async throws {
         return try await assert(outputFile: "stdout.txt", hasContents: expectedContents, inResult: result)
@@ -231,36 +253,37 @@ struct MockDiagnosticsGatherer: FXDiagnosticsGathering {
 
 func makeProcess(
     ctx: Context, _ executable: String, _ arguments: [ProcessSpec.RuntimeValue], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
-    stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
+    stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log", initialOutputTree: ProcessOutputTreeID? = nil
 ) async throws
     -> SpawnProcess
 {
-    try await withTemporaryDirectory(removeTreeOnDeinit: true) { tempDir in
-        let stdinPath = try tempDir.appending(RelativePath(validating: "stdin.txt"))
-        try await stdinContents.write(toFileAt: .init(stdinPath.pathString))
-        let inputTreeId = ProcessInputTreeID(dataID: try await ctx.fxCASTreeService!.importTree(path: tempDir, to: ctx.db, ctx))
+    let inputDeclTree = LLBDeclFileTree.dir(["stdin.txt": .file(stdinContents)])
+    let inputDataID: FXDataID = try await FXCASFSClient(ctx.db).store(inputDeclTree, ctx).get()
+    let inputTreeId = ProcessInputTreeID(dataID: inputDataID)
 
-        let processSpec = try ProcessSpec(
-            executable: .absolutePath(.init(validating: executable)),
-            arguments: arguments,
-            stdinSource: RelativePath(validating: "stdin.txt"),
-            stdoutDestination: RelativePath(validating: stdoutDestination),
-            stderrDestination: RelativePath(validating: stderrDestination),
-            stdoutStreamingDestination: stdoutStreamingDestination,
-            stderrStreamingDestination: stderrStreamingDestination)
+    let processSpec = try ProcessSpec(
+        executable: .absolutePath(.init(validating: executable)),
+        arguments: arguments,
+        stdinSource: RelativePath(validating: "stdin.txt"),
+        stdoutDestination: RelativePath(validating: stdoutDestination),
+        stderrDestination: RelativePath(validating: stderrDestination),
+        stdoutStreamingDestination: stdoutStreamingDestination,
+        stderrStreamingDestination: stderrStreamingDestination)
 
-        return SpawnProcess(inputTree: inputTreeId, spec: processSpec)
-    }
+    return SpawnProcess(inputTree: inputTreeId, spec: processSpec, initialOutputTree: initialOutputTree)
 }
 
 func makeProcess(
     ctx: Context, _ executable: String, _ arguments: [String], stdinContents: String = "", stdoutDestination: String = "stdout.txt", stderrDestination: String = "stderr.txt",
-    stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log"
+    stdoutStreamingDestination: String = "stdout.log", stderrStreamingDestination: String = "stderr.log", initialOutputTree: LLBDeclFileTree? = nil
 ) async throws
     -> SpawnProcess
 {
-    try await makeProcess(
+    let initialOutputTreeID: ProcessOutputTreeID? =
+        if let declTree = initialOutputTree { try await ProcessOutputTreeID(dataID: FXCASFSClient(ctx.db).store(declTree, ctx).get()) } else { nil }
+
+    return try await llbuild2fxTests.makeProcess(
         ctx: ctx,
         executable, arguments.map(ProcessSpec.RuntimeValue.literal), stdinContents: stdinContents, stdoutDestination: stdoutDestination, stderrDestination: stderrDestination,
-        stdoutStreamingDestination: stdoutStreamingDestination, stderrStreamingDestination: stderrStreamingDestination)
+        stdoutStreamingDestination: stdoutStreamingDestination, stderrStreamingDestination: stderrStreamingDestination, initialOutputTree: initialOutputTreeID)
 }
