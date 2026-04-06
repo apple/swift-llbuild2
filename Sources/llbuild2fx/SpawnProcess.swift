@@ -6,8 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-import FXAsyncSupport
 import AsyncAlgorithms
+import FXAsyncSupport
 import Foundation
 import NIOCore
 import TSCBasic
@@ -257,20 +257,21 @@ extension SpawnProcess: AsyncFXAction {
         case tooManyRefs
     }
 
-    public var refs: [FXDataID] { [inputTree.dataID] }
+    public var refs: [FXDataID] { [inputTree.dataID, initialOutputTree?.dataID].compactMap { $0 } }
     public var codableValue: ProcessSpec { spec }
 
     public init(refs: [FXDataID], codableValue: ProcessSpec) throws {
         guard !refs.isEmpty else {
             throw SpawnProcessError.emptyRefs
         }
-        guard refs.count == 1 else {
+        guard refs.count <= 2 else {
             throw SpawnProcessError.tooManyRefs
         }
 
-        let treeID = refs[0]
+        let inputTreeID = refs[0]
+        let initialOutputTreeID: FXDataID? = if refs.count >= 2 { refs[1] } else { nil }
 
-        self.init(inputTree: ProcessInputTreeID(dataID: treeID), spec: codableValue)
+        self.init(inputTree: ProcessInputTreeID(dataID: inputTreeID), spec: codableValue, initialOutputTree: initialOutputTreeID.map(ProcessOutputTreeID.init))
     }
 }
 
