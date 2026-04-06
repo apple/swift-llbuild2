@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift open source project
 //
-// Copyright (c) 2022-2025 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
@@ -23,7 +23,7 @@ import FXCProcessSpawnSync
     import Foundation
 #endif
 
-extension llb_ps_error_s {
+extension fx_ps_error_s {
     private func makeDescription() -> String {
         return """
             PSError(\
@@ -38,13 +38,13 @@ extension llb_ps_error_s {
 }
 
 #if compiler(>=6.0)
-    extension llb_ps_error_s: @retroactive CustomStringConvertible {
+    extension fx_ps_error_s: @retroactive CustomStringConvertible {
         public var description: String {
             return self.makeDescription()
         }
     }
 #else
-    extension llb_ps_error_s: CustomStringConvertible {
+    extension fx_ps_error_s: CustomStringConvertible {
         public var description: String {
             return self.makeDescription()
         }
@@ -221,13 +221,13 @@ package final class PSProcess: Sendable {
             stderrFDForChild = handle.fileDescriptor
         }
 
-        let psSetup: [llb_ps_fd_setup] = [
-            llb_ps_fd_setup(psfd_kind: PS_MAP_FD, psfd_parent_fd: stdinFDForChild),
-            llb_ps_fd_setup(psfd_kind: PS_MAP_FD, psfd_parent_fd: stdoutFDForChild),
-            llb_ps_fd_setup(psfd_kind: PS_MAP_FD, psfd_parent_fd: stderrFDForChild),
+        let psSetup: [fx_ps_fd_setup] = [
+            fx_ps_fd_setup(psfd_kind: PS_MAP_FD, psfd_parent_fd: stdinFDForChild),
+            fx_ps_fd_setup(psfd_kind: PS_MAP_FD, psfd_parent_fd: stdoutFDForChild),
+            fx_ps_fd_setup(psfd_kind: PS_MAP_FD, psfd_parent_fd: stderrFDForChild),
         ]
-        let (pid, error) = psSetup.withUnsafeBufferPointer { psSetupPtr -> (pid_t, llb_ps_error) in
-            var config = llb_ps_process_configuration_s(
+        let (pid, error) = psSetup.withUnsafeBufferPointer { psSetupPtr -> (pid_t, fx_ps_error) in
+            var config = fx_ps_process_configuration_s(
                 psc_path: path,
                 psc_argv: args,
                 psc_env: envs,
@@ -237,8 +237,8 @@ package final class PSProcess: Sendable {
                 psc_new_session: state.createNewSession,
                 psc_close_other_fds: state.closeOtherFileDescriptors
             )
-            var error = llb_ps_error()
-            let pid = llb_ps_spawn_process(&config, &error)
+            var error = fx_ps_error()
+            let pid = fx_ps_spawn_process(&config, &error)
             return (pid, error)
         }
         switch state.standardInput {
@@ -325,7 +325,7 @@ package final class PSProcess: Sendable {
                     var hasExited = false
                     var isExitCode = false
                     var code: CInt = 0
-                    llb_ps_convert_exit_status(status, &hasExited, &isExitCode, &code)
+                    fx_ps_convert_exit_status(status, &hasExited, &isExitCode, &code)
                     if hasExited {
                         return state.setNotRunning(
                             terminationStaus: (isExitCode ? .exit : .uncaughtSignal, code),
