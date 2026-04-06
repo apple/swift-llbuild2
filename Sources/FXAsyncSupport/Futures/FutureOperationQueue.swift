@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020-2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -10,6 +10,10 @@ import FXCore
 import Foundation
 import NIO
 import NIOConcurrencyHelpers
+
+enum FutureOperationQueueError: Error {
+    case eventLoopShutDown
+}
 
 /// A queue for future-producing operations, which limits how many can run
 /// concurrently.
@@ -102,6 +106,18 @@ package final class FXFutureOperationQueue: Sendable {
         let promise = loop.makePromise(of: T.self)
 
         func runBody() {
+            // Ensure we're on the event loop, fail the promise if not
+            guard loop.inEventLoop else {
+                promise.fail(FutureOperationQueueError.eventLoopShutDown)
+                self.scheduleMoreTasks { state in
+                    assert(state.numExecuting >= 1)
+                    assert(state.numSharesInFLight >= share)
+                    state.numExecuting -= 1
+                    state.numSharesInFLight -= share
+                }
+                return
+            }
+
             let f = body()
             f.whenComplete { _ in
                 self.scheduleMoreTasks { state in
