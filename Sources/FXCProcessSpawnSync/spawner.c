@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift open source project
 //
-// Copyright (c) 2022-2025 Apple Inc. and the Swift project authors
+// Copyright (c) 2022 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See https://swift.org/LICENSE.txt for license information
@@ -36,7 +36,7 @@ int close_range(unsigned int first, unsigned int last, int flags);
 #endif
 
 #define MAKE_PS_ERROR_FROM_ERRNO(__kind) \
-(llb_ps_error){ \
+(fx_ps_error){ \
     .pse_kind = (__kind), \
     .pse_code = errno, \
     .pse_file = __FILE__, \
@@ -49,7 +49,7 @@ int close_range(unsigned int first, unsigned int last, int flags);
 #  define PS_SIG_MAX 32
 #endif
 
-#define llb_ps_precondition(__cond) do { \
+#define fx_ps_precondition(__cond) do { \
     int eval = (__cond); \
     if (!eval) { \
         __builtin_trap(); \
@@ -57,9 +57,9 @@ int close_range(unsigned int first, unsigned int last, int flags);
 } while(0)
 
 #if defined(NDEBUG)
-#  define llb_ps_assert(__cond) do { } while(0)
+#  define fx_ps_assert(__cond) do { } while(0)
 #else
-#  define llb_ps_assert(__cond) do { \
+#  define fx_ps_assert(__cond) do { \
     int eval = (__cond); \
     if (!eval) { \
         __builtin_trap(); \
@@ -74,8 +74,8 @@ struct child_scratch {
     int duplicated_fd;
 };
 
-static void setup_and_execve_child(llb_ps_process_configuration *config, int error_pipe, struct child_scratch *scratch) {
-    llb_ps_error error = { 0 };
+static void setup_and_execve_child(fx_ps_process_configuration *config, int error_pipe, struct child_scratch *scratch) {
+    fx_ps_error error = { 0 };
     sigset_t sigset = { 0 };
     int err = -1;
 
@@ -115,7 +115,7 @@ static void setup_and_execve_child(llb_ps_process_configuration *config, int err
     }
 
     for (int child_fd=0; child_fd<config->psc_fd_setup_count; child_fd++) {
-        llb_ps_fd_setup setup = config->psc_fd_setup_instructions[child_fd];
+        fx_ps_fd_setup setup = config->psc_fd_setup_instructions[child_fd];
 
         switch (setup.psfd_kind) {
             case PS_MAP_FD:
@@ -130,15 +130,15 @@ static void setup_and_execve_child(llb_ps_process_configuration *config, int err
                 scratch[child_fd].duplicated_fd = -1;
                 break;
             default:
-                llb_ps_precondition(0);
+                fx_ps_precondition(0);
         }
     }
 
     for (int child_fd=0; child_fd<config->psc_fd_setup_count; child_fd++) {
-        llb_ps_fd_setup setup = config->psc_fd_setup_instructions[child_fd];
+        fx_ps_fd_setup setup = config->psc_fd_setup_instructions[child_fd];
         switch (setup.psfd_kind) {
             case PS_MAP_FD:
-                llb_ps_precondition(scratch[child_fd].duplicated_fd > child_fd);
+                fx_ps_precondition(scratch[child_fd].duplicated_fd > child_fd);
                 err = dup2(scratch[child_fd].duplicated_fd, child_fd);
                 if (err == -1) {
                     error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_DUP2);
@@ -147,11 +147,11 @@ static void setup_and_execve_child(llb_ps_process_configuration *config, int err
                 }
                 break;
             case PS_CLOSE_FD:
-                llb_ps_precondition(scratch[child_fd].duplicated_fd == -1);
+                fx_ps_precondition(scratch[child_fd].duplicated_fd == -1);
                 close(child_fd);
                 break;
             default:
-                llb_ps_precondition(0);
+                fx_ps_precondition(0);
         }
     }
 
@@ -202,14 +202,14 @@ static void setup_and_execve_child(llb_ps_process_configuration *config, int err
     _exit(253);
 }
 
-pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *out_error) {
+pid_t fx_ps_spawn_process(fx_ps_process_configuration *config, fx_ps_error *out_error) {
     pid_t pid = -1;
     sigset_t old_sigmask;
     struct child_scratch *scratch = NULL;
     int error_pid_fd[2] = { -1, -1 };
     int err = pipe(error_pid_fd);
     if (err) {
-        llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_PIPE);
+        fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_PIPE);
         if (out_error) {
             *out_error = error;
         }
@@ -218,7 +218,7 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
 
     err = fcntl(error_pid_fd[0], F_SETFD, FD_CLOEXEC);
     if (err) {
-        llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FCNTL);
+        fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FCNTL);
         if (out_error) {
             *out_error = error;
         }
@@ -227,7 +227,7 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
 
     err = fcntl(error_pid_fd[1], F_SETFD, FD_CLOEXEC);
     if (err) {
-        llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FCNTL);
+        fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FCNTL);
         if (out_error) {
             *out_error = error;
         }
@@ -238,12 +238,12 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
 
     // We need to protect the signal masking below (we unlock this in the parent only, child's gonna execve anyway).
     err = pthread_mutex_lock(&g_fork_lock);
-    llb_ps_precondition(err == 0);
+    fx_ps_precondition(err == 0);
 
     /* block all signals on this thread, don't want things to go wrong post-fork, pre-execve */
     err = block_everything_but_something_went_seriously_wrong_signals(&old_sigmask);
     if (err) {
-        llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_SIGMASK_THREAD);
+        fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_SIGMASK_THREAD);
         if (out_error) {
             *out_error = error;
         }
@@ -264,7 +264,7 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
         /* parent */
         err = pthread_sigmask(SIG_SETMASK, &old_sigmask, NULL); /* restore old sigmask */
         if (err) {
-            llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_SIGMASK_THREAD);
+            fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_SIGMASK_THREAD);
             if (out_error) {
                 *out_error = error;
             }
@@ -272,10 +272,10 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
         }
 
         err = pthread_mutex_unlock(&g_fork_lock);
-        llb_ps_precondition(err == 0);
+        fx_ps_precondition(err == 0);
 
         if (pid > 0) {
-            llb_ps_error child_error = { 0 };
+            fx_ps_error child_error = { 0 };
             close(error_pid_fd[1]);
             error_pid_fd[1] = -1;
 
@@ -290,7 +290,7 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
                     error_pid_fd[0] = -1;
                     return pid;
                 } else if (read_res > 0) {
-                    llb_ps_precondition(read_res == sizeof(child_error));
+                    fx_ps_precondition(read_res == sizeof(child_error));
                     if (out_error) {
                         *out_error = child_error;
                     }
@@ -298,10 +298,10 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
                     if (errno == EINTR) {
                         continue;
                     } else {
-                        llb_ps_assert(0);
+                        fx_ps_assert(0);
                         /* This is very bad (and unexpected), we forked a child but don't know its whereabouts */
                         kill(pid, SIGKILL); /* last ditch attempt to terminate the child process just in case it survived */
-                        llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_READ_FROM_CHILD);
+                        fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_READ_FROM_CHILD);
                         if (out_error) {
                             *out_error = error;
                         }
@@ -311,7 +311,7 @@ pid_t llb_ps_spawn_process(llb_ps_process_configuration *config, llb_ps_error *o
             }
         } else {
             pid = 0; /* nothing to waitpid on */
-            llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FCNTL);
+            fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FCNTL);
             if (out_error) {
                 *out_error = error;
             }
@@ -331,15 +331,15 @@ error_cleanup:
                     continue;
                 } else {
                     /* bad & unexpected */
-                    llb_ps_assert(0);
-                    llb_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FAILED_CHILD_WAITPID);
+                    fx_ps_assert(0);
+                    fx_ps_error error = MAKE_PS_ERROR_FROM_ERRNO(PS_ERROR_KIND_FAILED_CHILD_WAITPID);
                     if (out_error) {
                         *out_error = error;
                     }
                     break;
                 }
             } else {
-                llb_ps_precondition(0);
+                fx_ps_precondition(0);
             }
         }
     }
@@ -350,11 +350,11 @@ error_cleanup:
         close(error_pid_fd[1]);
     }
     free(scratch);
-    llb_ps_precondition((!out_error) || (out_error->pse_kind != 0));
+    fx_ps_precondition((!out_error) || (out_error->pse_kind != 0));
     return 0;
 }
 
-void llb_ps_convert_exit_status(int in_status, bool *out_has_exited, bool *out_is_exit_code, int *out_code) {
+void fx_ps_convert_exit_status(int in_status, bool *out_has_exited, bool *out_is_exit_code, int *out_code) {
     if (WIFEXITED(in_status)) {
         *out_has_exited = true;
         *out_is_exit_code = true;
