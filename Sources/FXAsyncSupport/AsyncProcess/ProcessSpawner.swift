@@ -105,7 +105,7 @@ package final class PSProcess: Sendable {
         var standardError: OptionallySet<FileHandle> = .notSet
         var terminationHandler: (@Sendable (PSProcess) -> Void)? = nil
         private(set) var procecesIdentifier: pid_t? = nil
-        private(set) var terminationStatus: (Process.TerminationReason, CInt)? = nil
+        private(set) var terminationStatus: (Foundation.Process.TerminationReason, CInt)? = nil
 
         mutating func setRunning(pid: pid_t, isRunningApproximation: ManagedAtomic<Bool>) {
             assert(self.pidWhenRunning == nil)
@@ -115,7 +115,7 @@ package final class PSProcess: Sendable {
         }
 
         mutating func setNotRunning(
-            terminationStaus: (Process.TerminationReason, CInt),
+            terminationStaus: (Foundation.Process.TerminationReason, CInt),
             isRunningApproximation: ManagedAtomic<Bool>
         ) -> @Sendable (PSProcess) -> Void {
             assert(self.pidWhenRunning != nil)
@@ -291,7 +291,7 @@ package final class PSProcess: Sendable {
         }
     }
 
-    package var terminationReason: Process.TerminationReason {
+    package var terminationReason: Foundation.Process.TerminationReason {
         return self.state.withLockedValue { state in
             state.terminationStatus!.0
         }
