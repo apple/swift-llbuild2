@@ -14,7 +14,7 @@ import Foundation
 /// ``FXDataID`` type conforms to this protocol.
 public protocol FXDataIDProtocol: Codable, Comparable, Hashable, Sendable {
     /// The raw bytes of the digest.
-    var bytes: Data { get }
+    var bytes: [UInt8] { get }
 
     /// Create from raw bytes, returning nil if the bytes are invalid.
     init?(bytes: [UInt8])

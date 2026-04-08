@@ -47,16 +47,19 @@ extension FXDataID: Hashable, CustomDebugStringConvertible {
         ])
     }
 
+    /// The raw bytes of the digest as a `[UInt8]` array.
+    public var bytes: [UInt8] { Array(rawBytes) }
+
     public init?(bytes: [UInt8]) {
         let data = Data(bytes)
         guard DataIDKind(from: data) != nil else {
             return nil
         }
-        self.bytes = data
+        self.rawBytes = data
     }
 
     public init(directHash bytes: [UInt8]) {
-        self.bytes = Data([DataIDKind.directHash.rawValue] + bytes)
+        self.rawBytes = Data([DataIDKind.directHash.rawValue] + bytes)
     }
 
     /// Initialize from the string form.
@@ -79,7 +82,7 @@ extension FXDataID: Hashable, CustomDebugStringConvertible {
             return nil
         }
 
-        self.bytes = Data(completeBytes)
+        self.rawBytes = Data(completeBytes)
     }
 }
 

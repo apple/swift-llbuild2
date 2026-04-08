@@ -15,14 +15,14 @@ import llbuild2Testing
 extension FXDataID {
     init(fromTSF tsfID: LLBDataID) {
         self.init()
-        self.bytes = tsfID.bytes
+        self.rawBytes = tsfID.bytes
     }
 }
 
 extension LLBDataID {
     init(fromFX fxID: FXDataID) {
         self.init()
-        self.bytes = fxID.bytes
+        self.bytes = Data(fxID.bytes)
     }
 }
 
