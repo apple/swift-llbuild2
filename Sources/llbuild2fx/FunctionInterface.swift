@@ -43,7 +43,7 @@ internal struct ConcreteActionSpawner<DB: FXTypedCASDatabase>: ActionSpawner {
 // MARK: - FXFunctionInterface
 
 public final class FXFunctionInterface<K: FXKey>: Sendable {
-    private let _db: any Sendable
+    public let _db: any Sendable
     private let key: K
     private let fi: FunctionInterface<K.ValueType.DataID>
     private let treeService: (any FXTypedCASTreeService<K.ValueType.DataID>)?
