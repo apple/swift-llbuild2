@@ -9,7 +9,7 @@
 /// Provides typed access to the CAS database and optional tree service.
 /// Analogous to ``FXFunctionInterface`` for keys.
 public struct FXActionInterface<DataID: FXDataIDProtocol>: Sendable {
-    private let _db: any Sendable
+    public let _db: any Sendable
     public let treeService: (any FXTypedCASTreeService<DataID>)?
 
     internal init<DB: FXTypedCASDatabase>(db: DB, treeService: (any FXTypedCASTreeService<DataID>)? = nil) where DB.DataID == DataID {
