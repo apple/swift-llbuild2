@@ -9,11 +9,12 @@
 import NIOCore
 
 public protocol FXWrappedDataID: Sendable {
-    var dataID: FXDataID { get }
+    associatedtype DataID: FXDataIDProtocol = FXDataID
+    var dataID: DataID { get }
 }
 
 public protocol FXSingleDataIDValue: FXValue, FXWrappedDataID, Encodable, Hashable, Comparable {
-    init(dataID: FXDataID)
+    init(dataID: DataID)
 }
 
 public protocol FXThinEncodedSingleDataIDValue: FXSingleDataIDValue {
@@ -21,7 +22,7 @@ public protocol FXThinEncodedSingleDataIDValue: FXSingleDataIDValue {
 }
 
 extension FXSingleDataIDValue {
-    public init(_ dataID: FXDataID) {
+    public init(_ dataID: DataID) {
         self = Self(dataID: dataID)
     }
 }
@@ -29,9 +30,9 @@ extension FXSingleDataIDValue {
 public struct FXNullCodableValue: Codable {}
 
 extension FXSingleDataIDValue {
-    public var refs: [FXDataID] { [dataID] }
+    public var refs: [DataID] { [dataID] }
     public var codableValue: FXNullCodableValue { FXNullCodableValue() }
-    public init(refs: [FXDataID], codableValue: FXNullCodableValue) {
+    public init(refs: [DataID], codableValue: FXNullCodableValue) {
         self.init(refs[0])
     }
 }
@@ -61,7 +62,7 @@ package enum WrappedDataIDError: Swift.Error {
     case noRefs
 }
 
-extension FXSingleDataIDValue {
+extension FXSingleDataIDValue where DataID == FXDataID {
     public init(from casObject: FXCASObject) throws {
         let refs = casObject.refs
         guard !refs.isEmpty else {
@@ -74,9 +75,26 @@ extension FXSingleDataIDValue {
     }
 }
 
-extension FXSingleDataIDValue {
+extension FXSingleDataIDValue where DataID == FXDataID {
     public func asCASObject() throws -> FXCASObject {
         FXCASObject(refs: [dataID], data: FXByteBuffer())
+    }
+}
+
+extension FXSingleDataIDValue {
+    public init<O: FXCASObjectProtocol>(from casObject: O) throws where O.DataID == DataID {
+        let refs = casObject.refs
+        guard !refs.isEmpty else {
+            throw WrappedDataIDError.noRefs
+        }
+
+        let dataID = refs[0]
+
+        self = Self(dataID)
+    }
+
+    public func asCASObject<O: FXCASObjectProtocol>() throws -> O where O.DataID == DataID {
+        O(refs: [dataID], data: FXByteBuffer())
     }
 }
 

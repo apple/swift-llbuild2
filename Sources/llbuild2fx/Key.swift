@@ -48,8 +48,10 @@ extension FXKey {
 
 
 extension FXKey {
-    func internalKey(_ engine: FXEngine, _ ctx: Context) -> InternalKey<Self> {
-        InternalKey(self, engine, ctx)
+    func internalKey<DB: FXTypedCASDatabase>(_ engine: FXEngine<DB>, _ ctx: Context) -> InternalKey<Self>
+        where Self.ValueType.DataID == DB.DataID
+    {
+        InternalKey(self, engine: engine, ctx: ctx)
     }
 }
 
@@ -71,21 +73,36 @@ private struct FXCacheKeyPrefixMemoizer {
 
 }
 
-internal final class InternalKey<K: FXKey> {
+internal final class InternalKey<K: FXKey>: @unchecked Sendable {
     let name: String
     let key: K
     private let ctx: Context
     let stableHashValue: FXDataID
     let cachePath: String
+    private let _function: @Sendable () -> any GenericFunction<K.ValueType.DataID>
 
-    init(_ key: K, _ engine: FXEngine, _ ctx: Context) {
+    init<DB: FXTypedCASDatabase>(
+        _ key: K, engine: FXEngine<DB>, ctx: Context
+    ) where K.ValueType.DataID == DB.DataID {
         self.name = String(describing: K.self)
         self.key = key
         self.ctx = ctx
-        let cachePath = Self.calculateCachePath(key: key, engine: engine, ctx: ctx)
+        let cachePath = Self.calculateCachePath(
+            key: key,
+            cacheRequestOnly: engine.cacheRequestOnly,
+            buildID: engine.buildID,
+            resources: engine.resources,
+            ctx: ctx
+        )
         let hashData = Array(cachePath.utf8)
         self.stableHashValue = FXDataID(blake3hash: hashData[...])
         self.cachePath = cachePath
+        // Capture the typed engine in the function factory closure so
+        // TypedFunction can access the native DB and cache.
+        let db = engine.db
+        let cache = engine.cache
+        let treeService = engine.treeService
+        self._function = { TypedFunction<K, DB>(db: db, cache: cache, treeService: treeService) }
     }
 }
 
@@ -94,7 +111,13 @@ extension InternalKey: FXKeyProperties {
         K.volatile
     }
 
-    static func calculateCachePath(key: K, engine: FXEngine, ctx: Context) -> String {
+    static func calculateCachePath(
+        key: K,
+        cacheRequestOnly: Bool,
+        buildID: FXBuildID,
+        resources: [ResourceKey: FXResource],
+        ctx: Context
+    ) -> String {
         func cachePathWithoutConfig() -> String {
             let basePath = FXCacheKeyPrefixMemoizer.get(for: key)
             let keyLengthLimit = 250
@@ -126,8 +149,8 @@ extension InternalKey: FXKeyProperties {
         }
 
         let prefix: String
-        if engine.cacheRequestOnly {
-            prefix = [engine.buildID.uuidString, cachePathWithoutConfig()].joined(separator: "/")
+        if cacheRequestOnly {
+            prefix = [buildID.uuidString, cachePathWithoutConfig()].joined(separator: "/")
         } else {
             prefix = cachePathWithoutConfig()
         }
@@ -139,7 +162,7 @@ extension InternalKey: FXKeyProperties {
             path.append(try! StringsEncoder().encode(config)[""]!)
         }
 
-        let res = ResourceVersions<K>(resources: engine.resources)
+        let res = ResourceVersions<K>(resources: resources)
         if !res.isNoop() {
             path.append(try! StringsEncoder().encode(res)[""]!)
         }
@@ -165,8 +188,10 @@ extension InternalKey: FXRequestKey {
 }
 
 extension InternalKey: CallableKey {
-    func function() -> GenericFunction {
-        TypedFunction<K>()
+    typealias DataID = K.ValueType.DataID
+
+    func function() -> any GenericFunction<K.ValueType.DataID> {
+        _function()
     }
 }
 
@@ -219,20 +244,33 @@ extension Context {
     }
 }
 
-final class TypedFunction<K: FXKey>: GenericFunction {
+final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
+    where K.ValueType.DataID == DB.DataID
+{
+    typealias DataID = DB.DataID
+    let db: DB
+    let cache: any FXFunctionCache<DB.DataID>
+    let treeService: (any FXTypedCASTreeService<DB.DataID>)?
+
+    init(db: DB, cache: any FXFunctionCache<DB.DataID>, treeService: (any FXTypedCASTreeService<DB.DataID>)?) {
+        self.db = db
+        self.cache = cache
+        self.treeService = treeService
+    }
+
     var recomputeOnCacheFailure: Bool { K.recomputeOnCacheFailure }
 
     enum Error: Swift.Error {
         case notCachePathProvider(FXRequestKey)
     }
 
-    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<FXResult> {
+    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) -> FXFuture<InternalResult> {
         return ctx.group.any().makeFutureWithTask {
             return try await self.computeAndUpdate(key: key, fi, ctx)
         }
     }
 
-    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) async throws -> FXResult {
+    private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) async throws -> InternalResult {
         defer { ctx.logger?.trace("    evaluated \(key.logDescription())") }
 
         let value = try await self.compute(key: key, fi, ctx).get()
@@ -240,36 +278,39 @@ final class TypedFunction<K: FXKey>: GenericFunction {
             throw FXError.inconsistentValue("\(String(describing: type(of: key))) evaluated to a value that does not pass its own validateCache() check!")
         }
 
-        let resultID = try await ctx.db.put(try value.asCASObject(), ctx).get()
-        _ = try await fi.engine.cache.update(key: key, props: key, value: resultID, ctx).get()
+        let casObject: DB.CASObject = try value.asCASObject()
+        let resultID = try await db.put(casObject, ctx).get()
+        _ = try await cache.update(key: key, props: key, value: resultID, ctx).get()
         return value
     }
 
-    private func unpack(_ object: FXCASObject, _ fi: FunctionInterface) throws -> InternalValue<K.ValueType> {
-        return try InternalValue<K.ValueType>.init(from: object)
+    private func unpack(_ object: DB.CASObject) throws -> InternalValue<K.ValueType> {
+        return try InternalValue<K.ValueType>(from: object)
     }
 
     @_disfavoredOverload
-    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<FXResult> {
+    func compute(key: FXRequestKey, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) -> FXFuture<InternalResult> {
         return ctx.group.any().makeFutureWithTask {
             return try await self.compute(key: key, fi, ctx)
         }
     }
 
     @_disfavoredOverload
-    func compute(key untypedKey: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) async throws -> FXResult {
+    func compute(key untypedKey: FXRequestKey, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) async throws -> InternalResult {
         guard let key = untypedKey as? InternalKey<K> else {
             throw FXError.unexpectedKeyType(String(describing: type(of: untypedKey)))
         }
 
         ctx.logger?.trace("evaluating \(key.logDescription())")
 
-        guard let resultID = try await fi.engine.cache.get(key: key, props: key, ctx).get(), let object = try await ctx.db.get(resultID, ctx).get() else {
+        guard let resultID = try await cache.get(key: key, props: key, ctx).get(),
+              let object: DB.CASObject = try await db.get(resultID, ctx).get()
+        else {
             return try await self.computeAndUpdate(key: key, fi, ctx).get()
         }
 
         do {
-            let value: InternalValue<K.ValueType> = try self.unpack(object, fi)
+            let value: InternalValue<K.ValueType> = try self.unpack(object)
             ctx.logger?.trace("    cached \(key.logDescription())")
 
             guard validateCache(key: key, cached: value) else {
@@ -278,8 +319,9 @@ final class TypedFunction<K: FXKey>: GenericFunction {
                     throw FXError.invalidValueType("failed to validate cache for \(String(describing: type(of: key))), and fixCached() was not able to solve the problem")
                 }
 
-                let newResultID = try await ctx.db.put(try newValue.asCASObject(), ctx).get()
-                _ = try await fi.engine.cache.update(key: key, props: key, value: newResultID, ctx).get()
+                let newCASObject: DB.CASObject = try newValue.asCASObject()
+                let newResultID = try await db.put(newCASObject, ctx).get()
+                _ = try await cache.update(key: key, props: key, value: newResultID, ctx).get()
                 return newValue
             }
 
@@ -294,7 +336,7 @@ final class TypedFunction<K: FXKey>: GenericFunction {
     }
 
 
-    func compute(key: InternalKey<K>, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<
+    func compute(key: InternalKey<K>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) -> FXFuture<
         InternalValue<K.ValueType>
     > {
         let actualKey = key.key
@@ -310,7 +352,8 @@ final class TypedFunction<K: FXKey>: GenericFunction {
             }
         }
 
-        let fxfi = FXFunctionInterface(actualKey, fi)
+        let spawner = ConcreteActionSpawner(db: self.db, treeService: self.treeService, executor: fi.engine.executor, stats: fi.engine.stats)
+        let fxfi = FXFunctionInterface(actualKey, fi, db: self.db, treeService: self.treeService, spawner: spawner, keyDescription: key.logDescription())
 
         let keyData = try! FXEncoder().encode(actualKey)
         let encodedKey = String(bytes: keyData, encoding: .utf8)!
@@ -358,10 +401,11 @@ final class TypedFunction<K: FXKey>: GenericFunction {
         return key.key.validateCache(cached: cached.value)
     }
 
-    func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<InternalValue<K.ValueType>?> {
+    func fixCached(key: InternalKey<K>, value: InternalValue<K.ValueType>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) -> FXFuture<InternalValue<K.ValueType>?> {
         let actualKey = key.key
 
-        let fxfi = FXFunctionInterface(actualKey, fi)
+        let spawner = ConcreteActionSpawner(db: self.db, treeService: self.treeService, executor: fi.engine.executor, stats: fi.engine.stats)
+        let fxfi = FXFunctionInterface(actualKey, fi, db: self.db, treeService: self.treeService, spawner: spawner, keyDescription: key.logDescription())
         return actualKey.fixCached(value: value.value, fxfi, ctx).map { maybeFixed in maybeFixed.map { InternalValue($0, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot) } }
     }
 }

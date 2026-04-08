@@ -156,7 +156,7 @@ extension FXCASFileTree {
     )
     package static func export(
         _ id: FXDataID,
-        from db: FXCASDatabase,
+        from db: any FXCASDatabase,
         to exportPathPrefix: AbsolutePath,
         materializer: LLBFilesystemObjectMaterializer = LLBRealFilesystemMaterializer(),
         storageBatcher: LLBBatchingFutureOperationQueue? = nil,
@@ -177,7 +177,7 @@ extension FXCASFileTree {
     ///   - materializer:   How to save files [to disk].
     package static func export(
         _ id: FXDataID,
-        from db: FXCASDatabase,
+        from db: any FXCASDatabase,
         to exportPathPrefix: AbsolutePath,
         materializer: LLBFilesystemObjectMaterializer = LLBRealFilesystemMaterializer(),
         storageBatcher: LLBBatchingFutureOperationQueue? = nil,
@@ -197,7 +197,7 @@ extension FXCASFileTree {
 }
 
 private final class CASFileTreeWalkerDelegate: RetrieveChildrenProtocol {
-    let db: FXCASDatabase
+    let db: any FXCASDatabase
     let exportPathPrefix: AbsolutePath
     let materializer: LLBFilesystemObjectMaterializer
     let stats: FXCASFileTree.ExportProgressStatsInt64
@@ -212,7 +212,7 @@ private final class CASFileTreeWalkerDelegate: RetrieveChildrenProtocol {
     let allocator = FXByteBufferAllocator()
 
     init(
-        from db: FXCASDatabase, to exportPathPrefix: AbsolutePath,
+        from db: any FXCASDatabase, to exportPathPrefix: AbsolutePath,
         materializer: LLBFilesystemObjectMaterializer,
         storageBatcher: LLBBatchingFutureOperationQueue?,
         stats: FXCASFileTree.ExportProgressStatsInt64

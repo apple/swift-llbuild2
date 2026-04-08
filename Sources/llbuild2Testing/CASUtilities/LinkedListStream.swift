@@ -21,7 +21,7 @@ extension String {
 /// and refs[0] always points to the dataID of the data chunk and refs[1] has the data ID for the next node in the
 /// chain, if it's not the last node. This implementation is not thread safe.
 package struct LLBLinkedListStreamWriter {
-    private let db: FXCASDatabase
+    private let db: any FXCASDatabase
     private let ext: String
 
     private var latestData: FXFuture<(id: FXDataID, aggregateSize: Int)>?
@@ -30,7 +30,7 @@ package struct LLBLinkedListStreamWriter {
         latestData?.map { $0.id }
     }
 
-    package init(_ db: FXCASDatabase, ext: String? = nil) {
+    package init(_ db: any FXCASDatabase, ext: String? = nil) {
         self.db = db
         self.ext = ext?.prepending(".") ?? ""
     }

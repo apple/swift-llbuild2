@@ -12,6 +12,7 @@ import TSCUtility
 public protocol FXExecutor: Sendable {
     func perform<ActionType: FXAction>(
         _ action: ActionType,
+        ai: FXActionInterface<ActionType.DataID>,
         requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> FXFuture<ActionType.ValueType>
@@ -24,13 +25,6 @@ public protocol FXExecutor: Sendable {
 }
 
 extension FXExecutor {
-    func perform<ActionType: FXAction>(
-        _ action: ActionType,
-        _ ctx: Context
-    ) -> FXFuture<ActionType.ValueType> {
-        return perform(action, requirements: nil, ctx)
-    }
-
     public func cancel(
         _ buildID: FXBuildID,
         options: FXExecutorCancellationOptions,
@@ -40,9 +34,9 @@ extension FXExecutor {
     }
 }
 
-public struct FXExecutableID: FXSingleDataIDValue, FXFileID {
-    public let dataID: FXDataID
-    public init(dataID: FXDataID) {
+public struct FXExecutableID<DataID: FXDataIDProtocol>: FXSingleDataIDValue, FXFileID {
+    public let dataID: DataID
+    public init(dataID: DataID) {
         self.dataID = dataID
     }
 }

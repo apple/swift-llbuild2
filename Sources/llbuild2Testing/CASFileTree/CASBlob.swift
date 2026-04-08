@@ -42,7 +42,7 @@ package struct FXCASBlob {
     }
 
     /// The database to access within.
-    package let db: FXCASDatabase
+    package let db: any FXCASDatabase
 
     /// ID as it came in.
     internal let receivedId: TypedID
@@ -62,7 +62,7 @@ package struct FXCASBlob {
     /// Split big binaries to chunks of this size
     static let maxChunkSize = 8 * 1024 * 1024
 
-    package static func parse(id: FXDataID, in db: FXCASDatabase, _ ctx: Context) -> FXFuture<
+    package static func parse(id: FXDataID, in db: any FXCASDatabase, _ ctx: Context) -> FXFuture<
         FXCASBlob
     > {
         return db.get(id, ctx).flatMapThrowing { object in
@@ -73,7 +73,7 @@ package struct FXCASBlob {
     }
 
     internal init(
-        db: FXCASDatabase, receivedId: TypedID, type: LLBFileType,
+        db: any FXCASDatabase, receivedId: TypedID, type: LLBFileType,
         posixDetails: LLBPosixFileDetails? = nil, size: Int, contents: Contents
     ) {
         self.db = db
@@ -84,12 +84,12 @@ package struct FXCASBlob {
         self.contents = contents
     }
 
-    package init(db: FXCASDatabase, id: FXDataID, object: FXCASObject, _ ctx: Context) throws {
+    package init(db: any FXCASDatabase, id: FXDataID, object: FXCASObject, _ ctx: Context) throws {
         self = try Self(db: db, id: id, type: .plainFile, object: object, ctx)
     }
 
     internal init(
-        db: FXCASDatabase, id: FXDataID, type advertisedType: LLBFileType, object: FXCASObject,
+        db: any FXCASDatabase, id: FXDataID, type advertisedType: LLBFileType, object: FXCASObject,
         _ ctx: Context
     ) throws {
         self.db = db
@@ -246,7 +246,7 @@ package struct FXCASBlob {
     /// Since CASFSNode can't represent a single file yet, this will
     /// return a DataID of the file info object directly.
     package static func `import`(
-        data: FXByteBuffer, isExecutable: Bool = false, in db: FXCASDatabase,
+        data: FXByteBuffer, isExecutable: Bool = false, in db: any FXCASDatabase,
         posixDetails: LLBPosixFileDetails? = nil, options: FXCASFileTree.ImportOptions? = nil,
         _ ctx: Context
     ) -> FXFuture<FXCASBlob> {

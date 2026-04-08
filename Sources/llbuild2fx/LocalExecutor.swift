@@ -12,9 +12,9 @@ public final class FXLocalExecutor: FXExecutor {
     public init() {}
 
     public func perform<ActionType: FXAction>(
-        _ action: ActionType, requirements: FXActionRequirements?, _ ctx: Context
+        _ action: ActionType, ai: FXActionInterface<ActionType.DataID>, requirements: FXActionRequirements?, _ ctx: Context
     ) -> FXFuture<ActionType.ValueType> {
-        return action.run(ctx)
+        return action.run(ai, ctx)
     }
 
     public func cancel(_ buildID: FXBuildID, options: FXExecutorCancellationOptions, _ ctx: Context) async throws {

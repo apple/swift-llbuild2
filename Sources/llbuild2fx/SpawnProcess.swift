@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -14,8 +14,13 @@ import TSCBasic
 import TSCUtility
 import _NIOFileSystem
 
-public struct ProcessTerminationError: Error {
-    public var diagnostics: Result<FXDiagnostics, Error>?
+public struct ProcessTerminationError<DataID: FXDataIDProtocol>: Error {
+    public var diagnostics: Result<FXDiagnostics<DataID>, Error>?
+}
+
+private enum ProcessWhoReturned<DataID: FXDataIDProtocol> {
+    case run(ProcessExitReason)
+    case deadline(Result<FXDiagnostics<DataID>, Error>?)
 }
 
 public struct ProcessSpec: Codable, Sendable {
@@ -81,7 +86,12 @@ public struct ProcessSpec: Codable, Sendable {
         self.temporaryDirectoryBase = temporaryDirectoryBase
     }
 
-    fileprivate func process(inputPath: AbsolutePath, outputPath: AbsolutePath, tmpDir: AbsolutePath, _ ctx: Context) async throws -> ProcessExitReason {
+    fileprivate func process<DataID: FXDataIDProtocol>(
+        _: DataID.Type = DataID.self,
+        inputPath: AbsolutePath, outputPath: AbsolutePath, tmpDir: AbsolutePath,
+        diagnosticsGatherer: (any FXDiagnosticsGathering<DataID>)?,
+        _ ctx: Context
+    ) async throws -> ProcessExitReason {
         @Sendable func runtimeValueMapper(_ value: RuntimeValue) -> String {
             switch value {
             case .literal(let v):
@@ -126,12 +136,8 @@ public struct ProcessSpec: Codable, Sendable {
                 standardError: .stream,
                 logger: ctx.logger ?? ProcessExecutor.disableLogging)
 
-            enum WhoReturned {
-                case run(ProcessExitReason)
-                case deadline(Result<FXDiagnostics, Error>?)
-            }
 
-            return try await withThrowingTaskGroup(of: WhoReturned.self) { group in
+            return try await withThrowingTaskGroup(of: ProcessWhoReturned<DataID>.self) { group in
                 ctx.logger?.debug("Running process: \(exe)")
                 defer { ctx.logger?.debug("Finished running process: \(exe)") }
 
@@ -165,10 +171,10 @@ public struct ProcessSpec: Codable, Sendable {
                         }
 
                         // If we don't have a diagnostics gatherer, just return a signal that the deadline was reached.
-                        guard let gatherer = ctx.fxDiagnosticsGatherer else { return .deadline(nil) }
+                        guard let gatherer = diagnosticsGatherer else { return .deadline(nil) }
 
                         // Gather diagnostics about the potentially-hung task.
-                        let diagnostics: Result<FXDiagnostics, Error>  // Workaround for lack of async initializer on `Result`.
+                        let diagnostics: Result<FXDiagnostics<DataID>, Error>  // Workaround for lack of async initializer on `Result`.
                         do { diagnostics = .success(try await gatherer.gatherDiagnostics(pid: exe.bestEffortProcessIdentifier, ctx)) } catch { diagnostics = .failure(error) }
                         return .deadline(diagnostics)
                     }
@@ -184,7 +190,7 @@ public struct ProcessSpec: Codable, Sendable {
                     ctx.logger?.debug("Process timed out: \(exe)")
                     // Timeout triggered and gathered diagnostics; cancel the running process and throw an error containing the diagnostics.
                     group.cancelAll()
-                    throw ProcessTerminationError(diagnostics: diagnostics)
+                    throw ProcessTerminationError<DataID>(diagnostics: diagnostics)
                 case .none:
                     fatalError("unreachable")
                 }
@@ -245,22 +251,18 @@ public struct ProcessSpec: Codable, Sendable {
     }
 }
 
-struct ProcessInputTree: FXTreeID {
-    let dataID: FXDataID
-}
-
-extension SpawnProcess: AsyncFXAction {
-    public typealias ValueType = SpawnProcessResult
+extension SpawnProcess: FXValue {
+    public typealias CodableValueType = ProcessSpec
 
     private enum SpawnProcessError: Swift.Error {
         case emptyRefs
         case tooManyRefs
     }
 
-    public var refs: [FXDataID] { [inputTree.dataID, initialOutputTree?.dataID].compactMap { $0 } }
+    public var refs: [DataID] { [inputTree.dataID, initialOutputTree?.dataID].compactMap { $0 } }
     public var codableValue: ProcessSpec { spec }
 
-    public init(refs: [FXDataID], codableValue: ProcessSpec) throws {
+    public init(refs: [DataID], codableValue: ProcessSpec) throws {
         guard !refs.isEmpty else {
             throw SpawnProcessError.emptyRefs
         }
@@ -269,23 +271,36 @@ extension SpawnProcess: AsyncFXAction {
         }
 
         let inputTreeID = refs[0]
-        let initialOutputTreeID: FXDataID? = if refs.count >= 2 { refs[1] } else { nil }
+        let initialOutputTreeID: DataID? = if refs.count >= 2 { refs[1] } else { nil }
 
-        self.init(inputTree: ProcessInputTreeID(dataID: inputTreeID), spec: codableValue, initialOutputTree: initialOutputTreeID.map(ProcessOutputTreeID.init))
+        self.init(inputTree: ProcessInputTree(dataID: inputTreeID), spec: codableValue, initialOutputTree: initialOutputTreeID.map(ProcessOutputTree.init))
     }
 }
 
-public struct SpawnProcess {
-    public let inputTree: ProcessInputTreeID
+extension SpawnProcess: FXAction {
+    public typealias ValueType = SpawnProcessResult<DataID>
+}
+
+extension SpawnProcess: AsyncFXAction {
+    public func run(_ ai: FXActionInterface<DataID>, _ ctx: Context) async throws -> SpawnProcessResult<DataID> {
+        guard let treeService = ai.treeService else {
+            throw FXSpawnError.missingTreeService
+        }
+        return try await run(treeService: treeService, ctx)
+    }
+}
+
+public struct SpawnProcess<DataID: FXDataIDProtocol> {
+    public let inputTree: ProcessInputTree<DataID>
 
     public let spec: ProcessSpec
 
-    public let initialOutputTree: ProcessOutputTreeID?
+    public let initialOutputTree: ProcessOutputTree<DataID>?
 
     public init(
-        inputTree: ProcessInputTreeID,
+        inputTree: ProcessInputTree<DataID>,
         spec: ProcessSpec,
-        initialOutputTree: ProcessOutputTreeID? = nil
+        initialOutputTree: ProcessOutputTree<DataID>? = nil
     ) {
         self.inputTree = inputTree
         self.spec = spec
@@ -293,40 +308,37 @@ public struct SpawnProcess {
     }
 
     public enum FXSpawnError: Error {
-        case failure(outputTree: FXDataID, underlyingError: Error)
+        case failure(outputTree: DataID, underlyingError: Error)
         case recoveryUploadFailure(uploadError: Error, originalError: Error)
+        case missingTreeService
     }
 
-    public func run(_ ctx: Context) async throws -> SpawnProcessResult {
+    public func run<TS: FXTypedCASTreeService>(
+        treeService: TS,
+        diagnosticsGatherer: (any FXDiagnosticsGathering<DataID>)? = nil,
+        _ ctx: Context
+    ) async throws -> SpawnProcessResult<DataID> where TS.DataID == DataID {
         try await withTemporaryDirectory(dir: self.spec.temporaryDirectoryBase, ctx) { tmpDir in
             try await withTemporaryDirectory(dir: self.spec.temporaryDirectoryBase, ctx) { outputPath in
-                return try await run(outputPath: outputPath, tmpDir: tmpDir, ctx)
-            }
-        }
-    }
+                return try await inputTree.materialize(treeService, ctx) { inputPath in
+                    if let initialOutputTree = initialOutputTree {
+                        try await treeService.export(initialOutputTree.dataID, to: outputPath, ctx)
+                    }
 
-    private func run(outputPath: AbsolutePath, tmpDir: AbsolutePath, _ ctx: Context) async throws -> SpawnProcessResult {
-        guard let treeService = ctx.fxCASTreeService else {
-            throw FXError.missingCASTreeService
-        }
-
-        return try await inputTree.materialize(ctx) { inputPath in
-            if let initialOutputTree = initialOutputTree {
-                try await treeService.export(initialOutputTree.dataID, from: ctx.db, to: outputPath, ctx)
-            }
-
-            do {
-                let exitCode = try await spec.process(inputPath: inputPath, outputPath: outputPath, tmpDir: tmpDir, ctx).asShellExitCode
-                let treeID = try await treeService.importTree(path: outputPath, to: ctx.db, ctx)
-                return SpawnProcessResult(treeID: .init(dataID: treeID), exitCode: Int32(truncatingIfNeeded: exitCode))
-            } catch (let error) {
-                let treeID: FXDataID
-                do {
-                    treeID = try await treeService.importTree(path: outputPath, to: ctx.db, ctx)
-                } catch (let uploadError) {
-                    throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
+                    do {
+                        let exitCode = try await spec.process(DataID.self, inputPath: inputPath, outputPath: outputPath, tmpDir: tmpDir, diagnosticsGatherer: diagnosticsGatherer, ctx).asShellExitCode
+                        let treeID = try await treeService.importTree(path: outputPath, ctx)
+                        return SpawnProcessResult<DataID>(treeID: .init(dataID: treeID), exitCode: Int32(truncatingIfNeeded: exitCode))
+                    } catch (let error) {
+                        let treeID: DataID
+                        do {
+                            treeID = try await treeService.importTree(path: outputPath, ctx)
+                        } catch (let uploadError) {
+                            throw FXSpawnError.recoveryUploadFailure(uploadError: uploadError, originalError: error)
+                        }
+                        throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
+                    }
                 }
-                throw FXSpawnError.failure(outputTree: treeID, underlyingError: error)
             }
         }
     }
@@ -334,34 +346,34 @@ public struct SpawnProcess {
 
 extension SpawnProcess: Encodable {}
 
-public struct ProcessInputTreeID: FXSingleDataIDValue, FXTreeID {
-    public let dataID: FXDataID
-    public init(dataID: FXDataID) {
+public struct ProcessInputTree<DataID: FXDataIDProtocol>: FXSingleDataIDValue, FXTreeID {
+    public let dataID: DataID
+    public init(dataID: DataID) {
         self.dataID = dataID
     }
 }
 
-public struct ProcessOutputTreeID: FXSingleDataIDValue, FXTreeID {
-    public let dataID: FXDataID
-    public init(dataID: FXDataID) {
+public struct ProcessOutputTree<DataID: FXDataIDProtocol>: FXSingleDataIDValue, FXTreeID {
+    public let dataID: DataID
+    public init(dataID: DataID) {
         self.dataID = dataID
     }
 }
 
-public struct SpawnProcessResult: FXValue, FXTreeID {
-    public let treeID: ProcessOutputTreeID
+public struct SpawnProcessResult<DataID: FXDataIDProtocol>: FXValue, FXTreeID {
+    public let treeID: ProcessOutputTree<DataID>
     public let exitCode: Int32
 
-    public init(treeID: ProcessOutputTreeID, exitCode: Int32) {
+    public init(treeID: ProcessOutputTree<DataID>, exitCode: Int32) {
         self.treeID = treeID
         self.exitCode = exitCode
     }
 
-    public var dataID: FXDataID {
+    public var dataID: DataID {
         treeID.dataID
     }
 
-    public var refs: [FXDataID] {
+    public var refs: [DataID] {
         [
             dataID
         ]
@@ -376,7 +388,7 @@ public struct SpawnProcessResult: FXValue, FXTreeID {
         case tooManyRefs
     }
 
-    public init(refs: [FXDataID], codableValue: Int32) throws {
+    public init(refs: [DataID], codableValue: Int32) throws {
         guard !refs.isEmpty else {
             throw Error.notEnoughRefs
         }
@@ -385,7 +397,7 @@ public struct SpawnProcessResult: FXValue, FXTreeID {
             throw Error.tooManyRefs
         }
 
-        treeID = ProcessOutputTreeID(dataID: refs[0])
+        treeID = ProcessOutputTree<DataID>(dataID: refs[0])
         exitCode = codableValue
     }
 }

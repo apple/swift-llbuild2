@@ -190,11 +190,6 @@ final class FXErrorTests: XCTestCase {
         XCTAssert(err.debugDescription.contains("myResource"))
     }
 
-    func testMissingCASTreeService() {
-        let err = FXError.missingCASTreeService
-        XCTAssert(err.debugDescription.contains("FXCASTreeService"))
-    }
-
     func testMissingRequiredCacheEntry() {
         let err = FXError.missingRequiredCacheEntry(cachePath: "/some/path")
         XCTAssert(err.debugDescription.contains("/some/path"))
@@ -354,10 +349,10 @@ final class NullExecutorTests: XCTestCase {
         let db = FXInMemoryCASDatabase(group: group)
         var ctx = Context()
         ctx.group = group
-        ctx.db = db
 
         let action = SumAction(SumInput(values: [1, 2]))
-        XCTAssertThrowsError(try executor.perform(action, requirements: nil, ctx).wait())
+        let ai = FXActionInterface(db: db)
+        XCTAssertThrowsError(try executor.perform(action, ai: ai, requirements: nil, ctx).wait())
     }
 
     func testCancelFails() async {

@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2021 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -9,15 +9,16 @@
 import Foundation
 
 public protocol FXValue: Sendable {
+    associatedtype DataID: FXDataIDProtocol = FXDataID
     associatedtype CodableValueType: Codable
 
-    var refs: [FXDataID] { get }
+    var refs: [DataID] { get }
     var codableValue: CodableValueType { get }
 
-    init(refs: [FXDataID], codableValue: CodableValueType) throws
+    init(refs: [DataID], codableValue: CodableValueType) throws
 }
 
-extension FXValue where Self: Codable {
+extension FXValue where Self: Codable, DataID == FXDataID {
     public var refs: [FXDataID] { [] }
     public var codableValue: Self { self }
     public init(refs: [FXDataID], codableValue: Self) {
@@ -33,7 +34,7 @@ public final class CASCodableOptional<T: Codable>: Codable {
 }
 
 extension Optional: FXValue where Wrapped: FXValue {
-    public var refs: [FXDataID] {
+    public var refs: [Wrapped.DataID] {
         switch self {
         case .none:
             return []
@@ -51,7 +52,7 @@ extension Optional: FXValue where Wrapped: FXValue {
         }
     }
 
-    public init(refs: [FXDataID], codableValue: CASCodableOptional<Wrapped.CodableValueType>) throws {
+    public init(refs: [Wrapped.DataID], codableValue: CASCodableOptional<Wrapped.CodableValueType>) throws {
         guard let value: Wrapped.CodableValueType = codableValue.codableValue else {
             self = .none
             return
@@ -72,7 +73,7 @@ public class CASCodableElement<T: Codable>: Codable {
 }
 
 extension FXSortedSet: FXValue where Element: FXValue {
-    public var refs: [FXDataID] {
+    public var refs: [Element.DataID] {
         map { $0.refs }.flatMap { $0 }
     }
 
@@ -80,7 +81,7 @@ extension FXSortedSet: FXValue where Element: FXValue {
         map { CASCodableElement(refsCount: $0.refs.count, codable: $0.codableValue) }
     }
 
-    public init(refs: [FXDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
+    public init(refs: [Element.DataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
         let refsCountSum = codableValue.map { $0.refsCount }.reduce(0, +)
         assert(refs.count == refsCountSum)
 
@@ -93,8 +94,8 @@ extension FXSortedSet: FXValue where Element: FXValue {
 
         let elements: [Element] = try codableValue.enumerated().map { (idx, element) in
             let range: Range<Int> = refRanges[idx]
-            let slice: ArraySlice<FXDataID> = refs[range]
-            let objRefs: [FXDataID] = [FXDataID](slice)
+            let slice: ArraySlice<Element.DataID> = refs[range]
+            let objRefs: [Element.DataID] = [Element.DataID](slice)
             return try Element(refs: objRefs, codableValue: element.codable)
         }
 
@@ -103,7 +104,7 @@ extension FXSortedSet: FXValue where Element: FXValue {
 }
 
 extension Array: FXValue where Element: FXValue {
-    public var refs: [FXDataID] {
+    public var refs: [Element.DataID] {
         self.map { $0.refs }.flatMap { $0 }
     }
 
@@ -111,7 +112,7 @@ extension Array: FXValue where Element: FXValue {
         self.map { CASCodableElement(refsCount: $0.refs.count, codable: $0.codableValue) }
     }
 
-    public init(refs: [FXDataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
+    public init(refs: [Element.DataID], codableValue: [CASCodableElement<Element.CodableValueType>]) throws {
         let refsCountSum = codableValue.map { $0.refsCount }.reduce(0, +)
         assert(refs.count == refsCountSum)
 
@@ -124,14 +125,14 @@ extension Array: FXValue where Element: FXValue {
 
         self = try codableValue.enumerated().map { (idx, element) in
             let range: Range<Int> = refRanges[idx]
-            let slice: ArraySlice<FXDataID> = refs[range]
-            let objRefs: [FXDataID] = [FXDataID](slice)
+            let slice: ArraySlice<Element.DataID> = refs[range]
+            let objRefs: [Element.DataID] = [Element.DataID](slice)
             return try Element(refs: objRefs, codableValue: element.codable)
         }
     }
 }
 
-extension FXValue /* FXCASObjectRepresentable */ {
+extension FXValue where DataID == FXDataID /* FXCASObjectRepresentable */ {
     public func asCASObject() throws -> FXCASObject {
         let data = try FXEncoder().encode(codableValue)
         let buffer = FXByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
@@ -139,8 +140,25 @@ extension FXValue /* FXCASObjectRepresentable */ {
     }
 }
 
-extension FXValue /* FXCASObjectConstructable */ {
+extension FXValue /* Generic CASObject conversion */ {
+    public func asCASObject<O: FXCASObjectProtocol>() throws -> O where O.DataID == DataID {
+        let data = try FXEncoder().encode(codableValue)
+        let buffer = FXByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
+        return O(refs: refs, data: buffer)
+    }
+}
+
+extension FXValue where DataID == FXDataID /* FXCASObjectConstructable */ {
     public init(from casObject: FXCASObject) throws {
+        let data = Data(casObject.data.readableBytesView)
+        let codable = try FXDecoder().decode(CodableValueType.self, from: data)
+
+        self = try Self(refs: casObject.refs, codableValue: codable)
+    }
+}
+
+extension FXValue /* Generic CASObject construction */ {
+    public init<O: FXCASObjectProtocol>(from casObject: O) throws where O.DataID == DataID {
         let data = Data(casObject.data.readableBytesView)
         let codable = try FXDecoder().decode(CodableValueType.self, from: data)
 
@@ -150,24 +168,25 @@ extension FXValue /* FXCASObjectConstructable */ {
 
 private struct IgnoredCodable: Codable {}
 
-private struct IgnoredValue: FXValue {
-    let refs: [FXDataID]
+private struct IgnoredValue<DataID: FXDataIDProtocol>: FXValue {
+    let refs: [DataID]
     let codableValue: IgnoredCodable
 
-    init(refs: [FXDataID], codableValue: CodableValueType) {
+    init(refs: [DataID], codableValue: CodableValueType) {
         self.refs = refs
         self.codableValue = codableValue
     }
 }
 
-public func FXRequestedCacheKeyPaths(for cachedValue: FXCASObject) throws -> FXSortedSet<String> {
-    let internalValue = try InternalValue<IgnoredValue>(from: cachedValue)
+public func FXRequestedCacheKeyPaths<O: FXCASObjectProtocol>(for cachedValue: O) throws -> FXSortedSet<String> {
+    let internalValue = try InternalValue<IgnoredValue<O.DataID>>(from: cachedValue)
     guard let keyPaths = internalValue.metadata.requestedCacheKeyPaths else {
         return []
     }
 
     return keyPaths
 }
+
 
 struct FXValueMetadata: Codable {
     let requestedCacheKeyPaths: FXSortedSet<String>?
@@ -179,7 +198,9 @@ struct FXValueMetadata: Codable {
     }
 }
 
-final class InternalValue<V: FXValue>: FXResult {
+internal protocol InternalResult: AnyObject, Sendable {}
+
+final class InternalValue<V: FXValue>: InternalResult {
     let value: V
     let metadata: FXValueMetadata
 
@@ -204,7 +225,7 @@ private final class CodableInternalValue<V: FXValue>: Codable {
     }
 }
 
-extension InternalValue: FXCASObjectRepresentable {
+extension InternalValue: FXCASObjectRepresentable where V.DataID == FXDataID {
     func asCASObject() throws -> FXCASObject {
         let codable = CodableInternalValue(value, metadata: metadata)
         let data = try FXEncoder().encode(codable)
@@ -213,7 +234,16 @@ extension InternalValue: FXCASObjectRepresentable {
     }
 }
 
-extension InternalValue: FXCASObjectConstructable {
+extension InternalValue {
+    func asCASObject<O: FXCASObjectProtocol>() throws -> O where O.DataID == V.DataID {
+        let codable = CodableInternalValue(value, metadata: metadata)
+        let data = try FXEncoder().encode(codable)
+        let buffer = FXByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
+        return O(refs: value.refs, data: buffer)
+    }
+}
+
+extension InternalValue: FXCASObjectConstructable where V.DataID == FXDataID {
     convenience init(from casObject: FXCASObject) throws {
         let data = Data(casObject.data.readableBytesView)
         let codable = try FXDecoder().decode(CodableInternalValue<V>.self, from: data)
@@ -221,3 +251,14 @@ extension InternalValue: FXCASObjectConstructable {
         self.init(value, metadata: codable.metadata)
     }
 }
+
+extension InternalValue {
+    convenience init<O: FXCASObjectProtocol>(from casObject: O) throws where O.DataID == V.DataID {
+        let data = Data(casObject.data.readableBytesView)
+        let codable = try FXDecoder().decode(CodableInternalValue<V>.self, from: data)
+        let value = try V(refs: casObject.refs, codableValue: codable.value)
+        self.init(value, metadata: codable.metadata)
+    }
+}
+
+extension InternalValue: FXResult where V.DataID == FXDataID {}

@@ -22,7 +22,7 @@ package class LLBBufferedStreamWriter {
     }
 
     /// Creates a new buffered writer, with a default buffer size of 512kb to optimize for roundtrip read time.
-    package init(_ db: FXCASDatabase, bufferSize: Int = 1 << 19) {
+    package init(_ db: any FXCASDatabase, bufferSize: Int = 1 << 19) {
         self.outputWriter = LLBLinkedListStreamWriter(db)
         self.bufferSize = bufferSize
         self.currentBuffer = FXByteBufferAllocator.init().buffer(capacity: bufferSize)

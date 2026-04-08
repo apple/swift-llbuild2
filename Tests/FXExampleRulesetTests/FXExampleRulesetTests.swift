@@ -18,9 +18,9 @@ final class FXExampleRulesetTests: XCTestCase {
 
     private func makeEngine(
         resources: [ResourceKey: FXResource] = [:],
-        functionCache: FXFunctionCache? = nil,
+        functionCache: (any FXFunctionCache<FXDataID>)? = nil,
         group: FXFuturesDispatchGroup? = nil
-    ) -> (FXEngine, FXFuturesDispatchGroup) {
+    ) -> (FXEngine<FXInMemoryCASDatabase>, FXFuturesDispatchGroup) {
         let group = group ?? FXMakeDefaultDispatchGroup()
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
@@ -60,7 +60,7 @@ final class FXExampleRulesetTests: XCTestCase {
         let group = FXMakeDefaultDispatchGroup()
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
-        let functionCache = FXInMemoryFunctionCache(group: group)
+        let functionCache = FXInMemoryFunctionCache<FXDataID>(group: group)
         let ctx = Context()
 
         // Build LookupPrefixKey with "Dear" prefix, version 1
@@ -110,7 +110,7 @@ final class FXExampleRulesetTests: XCTestCase {
 
     func testCachingBehavior() throws {
         let group = FXMakeDefaultDispatchGroup()
-        let functionCache = FXInMemoryFunctionCache(group: group)
+        let functionCache = FXInMemoryFunctionCache<FXDataID>(group: group)
         let (engine, _) = makeEngine(functionCache: functionCache, group: group)
         let ctx = Context()
 

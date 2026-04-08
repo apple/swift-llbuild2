@@ -14,8 +14,8 @@ import TSCUtility
 public protocol FXTreeMaterializer {
     var mountPath: AbsolutePath? { get }
 
-    func materialize(tree: FXTreeID) async throws -> AbsolutePath?
-    func materialize(file: FXFileID, filename: String, _ ctx: Context) async throws -> AbsolutePath?
+    func materialize(tree: any FXTreeID) async throws -> AbsolutePath?
+    func materialize(file: any FXFileID, filename: String, _ ctx: Context) async throws -> AbsolutePath?
 }
 
 extension FXTreeMaterializer {
@@ -57,52 +57,31 @@ public func withTemporaryDirectory<R>(dir: AbsolutePath? = nil, _ ctx: Context, 
     return try await TSCBasic.withTemporaryDirectory(dir: dir, removeTreeOnDeinit: true, body)
 }
 
-extension FXFileID {
-    public func materialize<R>(filename: String, _ ctx: Context, _ body: @escaping (AbsolutePath) -> FXFuture<R>) -> FXFuture<R> {
-        return ctx.group.any().makeFutureWithTask {
-            try await self.materialize(filename: filename, ctx) { path in
-                try await body(path).get()
-            }
-        }
-    }
+// MARK: - Generic materialization with explicit tree service
 
-    public func materialize<R>(filename: String, _ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
+extension FXFileID {
+    public func materialize<R, TS: FXTypedCASTreeService>(filename: String, treeService: TS, _ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R where TS.DataID == DataID {
         if let dirPath = try await ctx.fxTreeMaterializer?.materialize(file: self, filename: filename, ctx) {
             return try await body(dirPath.appending(component: filename))
         }
 
-        guard let treeService = ctx.fxCASTreeService else {
-            throw FXError.missingCASTreeService
-        }
-
         return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
-            try await treeService.exportFile(self.dataID, filename: filename, from: ctx.db, to: tmp, ctx)
+            try await treeService.exportFile(self.dataID, filename: filename, to: tmp, ctx)
             return try await body(tmp.appending(component: filename))
         }
     }
 }
 
 extension FXTreeID {
-    public func materialize<R>(_ ctx: Context, _ body: @escaping (AbsolutePath) -> FXFuture<R>) -> FXFuture<R> {
-        return ctx.group.any().makeFutureWithTask {
-            try await self.materialize(ctx) { path in
-                try await body(path).get()
-            }
-        }
-    }
-
-    public func materialize<R>(_ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R {
+    public func materialize<R, TS: FXTypedCASTreeService>(_ treeService: TS, _ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R where TS.DataID == DataID {
         if let path = try await ctx.fxTreeMaterializer?.materialize(tree: self) {
             return try await body(path)
         }
 
-        guard let treeService = ctx.fxCASTreeService else {
-            throw FXError.missingCASTreeService
-        }
-
         return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
-            try await treeService.export(self.dataID, from: ctx.db, to: tmp, ctx)
+            try await treeService.export(self.dataID, to: tmp, ctx)
             return try await body(tmp)
         }
     }
 }
+

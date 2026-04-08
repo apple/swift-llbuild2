@@ -25,7 +25,8 @@ extension ExampleActionResult: FXValue {
 struct ExampleAction: AsyncFXAction {
     typealias ValueType = ExampleActionResult
 
-    func run(_ ctx: Context) async throws -> ExampleActionResult {
+    func run(_ ai: FXActionInterface<FXDataID>, _ ctx: Context) async throws -> ExampleActionResult
+    {
         return ExampleActionResult()
     }
 }

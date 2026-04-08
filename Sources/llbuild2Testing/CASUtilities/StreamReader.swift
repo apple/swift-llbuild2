@@ -16,9 +16,9 @@ import TSCUtility
 /// implemented. This should be the unified API to read streaming content, so that readers do not need to understand
 /// which writer was used to store the data.
 package struct FXCASStreamReader {
-    private let db: FXCASDatabase
+    private let db: any FXCASDatabase
 
-    package init(_ db: FXCASDatabase) {
+    package init(_ db: any FXCASDatabase) {
         self.db = db
     }
 
