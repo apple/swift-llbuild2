@@ -17,12 +17,12 @@ import TSCUtility
 package final class TSCCASFileSystem: FileSystem {
 
     let rootTree: FXCASFileTree
-    let db: FXCASDatabase
+    let db: any FXCASDatabase
     let client: FXCASFSClient
     let ctx: Context
 
     package init(
-        db: FXCASDatabase,
+        db: any FXCASDatabase,
         rootTree: FXCASFileTree,
         _ ctx: Context
     ) {

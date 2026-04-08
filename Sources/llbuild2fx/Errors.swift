@@ -21,7 +21,6 @@ public enum FXError: Swift.Error {
     case unexpectedKeyType(String)
     case inconsistentValue(String)
     case resourceNotFound(ResourceKey)
-    case missingCASTreeService
 }
 
 extension FXError: CustomDebugStringConvertible {
@@ -31,7 +30,7 @@ extension FXError: CustomDebugStringConvertible {
             return "Non-callable key"
         case .cycleDetected(let keys):
             return "Cycle detected in dependency graph: \(keys)"
-        case .valueComputationError(let keyPrefix, let key, let error, let requestedCacheKeyPaths):
+        case .valueComputationError(let keyPrefix, _, let error, let requestedCacheKeyPaths):
             return "Value computation failed, key: \(keyPrefix), error: \(error)"
         case .keyEncodingError(let keyPrefix, let encodingError, let underlyingError):
             return "Key encoding error for \(keyPrefix), encoding error: \(encodingError), underlying error: \(underlyingError)"
@@ -51,8 +50,6 @@ extension FXError: CustomDebugStringConvertible {
             return "Inconsistent value: \(message)"
         case .resourceNotFound(let resourceKey):
             return "Resource not found: \(resourceKey)"
-        case .missingCASTreeService:
-            return "No FXCASTreeService configured in context"
         }
     }
 }

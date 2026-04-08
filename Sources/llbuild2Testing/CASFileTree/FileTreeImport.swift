@@ -281,7 +281,7 @@ extension FXCASFileTree {
     //          way to get the contents of a symbolic link.
     package static func `import`(
         path importPath: AbsolutePath,
-        to db: FXCASDatabase,
+        to db: any FXCASDatabase,
         options optionsTemplate: FXCASFileTree.ImportOptions? = nil,
         stats providedStats: FXCASFileTree.ImportProgressStats? = nil,
         _ ctx: Context
@@ -403,7 +403,7 @@ private final class CASTreeImport: Sendable {
     }
 
     init(
-        importPath: AbsolutePath, to db: FXCASDatabase, options: FXCASFileTree.ImportOptions,
+        importPath: AbsolutePath, to db: any FXCASDatabase, options: FXCASFileTree.ImportOptions,
         stats: FXCASFileTree.ImportProgressStats, netConcurrency: Int
     ) {
         let loop = db.group.next()

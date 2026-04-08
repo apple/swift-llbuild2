@@ -21,15 +21,15 @@ package struct FXCASFSNode {
         case blob(FXCASBlob)
     }
 
-    package let db: FXCASDatabase
+    package let db: any FXCASDatabase
     package let value: NodeContent
 
-    package init(tree: FXCASFileTree, db: FXCASDatabase) {
+    package init(tree: FXCASFileTree, db: any FXCASDatabase) {
         self.db = db
         self.value = NodeContent.tree(tree)
     }
 
-    package init(blob: FXCASBlob, db: FXCASDatabase) {
+    package init(blob: FXCASBlob, db: any FXCASDatabase) {
         self.db = db
         self.value = NodeContent.blob(blob)
     }

@@ -200,21 +200,6 @@ final class CASFeaturesTests: XCTestCase {
 }
 
 final class ContextDatabaseTests: XCTestCase {
-    func testContextWithDB() {
-        let group = FXMakeDefaultDispatchGroup()
-        let db = FXInMemoryCASDatabase(group: group)
-        let ctx = Context.with(db)
-        XCTAssert(ctx.db === db)
-    }
-
-    func testContextDBSetGet() {
-        let group = FXMakeDefaultDispatchGroup()
-        let db = FXInMemoryCASDatabase(group: group)
-        var ctx = Context()
-        ctx.db = db
-        XCTAssert(ctx.db === db)
-    }
-
     func testContextWithGroup() {
         let group = FXMakeDefaultDispatchGroup()
         let ctx = Context.with(group)

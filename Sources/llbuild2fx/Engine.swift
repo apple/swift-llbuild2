@@ -51,25 +51,53 @@ extension HashableKey: Hashable {
     }
 }
 
-internal protocol CallableKey {
-    func function() -> GenericFunction
+internal protocol CallableKey<DataID> {
+    associatedtype DataID: FXDataIDProtocol
+    func function() -> any GenericFunction<DataID>
 }
-internal protocol GenericFunction {
-    func compute(key: FXRequestKey, _ fi: FunctionInterface, _ ctx: Context) -> FXFuture<FXResult>
+internal protocol GenericFunction<DataID> {
+    associatedtype DataID: FXDataIDProtocol
+    func compute(key: FXRequestKey, _ fi: FunctionInterface<DataID>, _ ctx: Context) -> FXFuture<InternalResult>
 }
 
-internal final class FunctionInterface: Sendable {
+// MARK: - EngineInternalProtocol
+
+/// Type-erased interface for engine internals. Used by ``FunctionInterface``
+/// and ``FXFunctionInterface`` so they don't need to be generic over the
+/// database type.
+internal protocol EngineInternalProtocol<DataID>: AnyObject & Sendable {
+    associatedtype DataID: FXDataIDProtocol
+    func build(key: FXRequestKey, _ ctx: Context) -> FXFuture<InternalResult>
+    func build<V: InternalResult>(key: FXRequestKey, as: V.Type, _ ctx: Context) -> FXFuture<V>
+    var keyDependencyGraph: FXKeyDependencyGraph { get }
+    func cacheContains(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) -> FXFuture<Bool>
+    var stats: FXBuildEngineStats { get }
+    var logger: Logger? { get }
+    var keyOverrides: FXKeyOverrideRegistry? { get }
+    var executor: FXExecutor { get }
+    var resources: [ResourceKey: FXResource] { get }
+    var cacheRequestOnly: Bool { get }
+    var buildID: FXBuildID { get }
+
+    /// Create an ``InternalKey`` for the given key, capturing the typed
+    /// engine in the function factory closure.
+    func makeInternalKey<K: FXKey>(_ key: K, _ ctx: Context) -> InternalKey<K> where K.ValueType.DataID == DataID
+}
+
+// MARK: - FunctionInterface
+
+internal final class FunctionInterface<DataID: FXDataIDProtocol>: Sendable {
     @usableFromInline
-    let engine: FXEngine
+    let engine: any EngineInternalProtocol<DataID>
 
     let key: FXRequestKey
 
-    init(engine: FXEngine, key: FXRequestKey) {
+    init(engine: any EngineInternalProtocol<DataID>, key: FXRequestKey) {
         self.engine = engine
         self.key = key
     }
 
-    func request<V: FXResult>(_ key: FXRequestKey, as type: V.Type = V.self, _ ctx: Context) -> FXFuture<V> {
+    func request<V: InternalResult>(_ key: FXRequestKey, as type: V.Type = V.self, _ ctx: Context) -> FXFuture<V> {
         do {
             try engine.keyDependencyGraph.addEdge(from: self.key, to: key)
         } catch {
@@ -83,30 +111,34 @@ internal final class FunctionInterface: Sendable {
     }
 }
 
+// MARK: - FXEngine
+
 public typealias FXBuildID = Foundation.UUID
 
-public final class FXEngine: Sendable {
+public final class FXEngine<DB: FXTypedCASDatabase>: Sendable {
     internal let group: FXFuturesDispatchGroup
-    internal let db: FXCASDatabase
-    @usableFromInline internal let cache: FXFunctionCache
+    internal let db: DB
+    @usableFromInline internal let cache: any FXFunctionCache<DB.DataID>
     internal let resources: [ResourceKey: FXResource]
     internal let executor: FXExecutor
+    internal let treeService: (any FXTypedCASTreeService<DB.DataID>)?
     internal let stats: FXBuildEngineStats
     internal let logger: Logger?
 
     internal let keyOverrides: FXKeyOverrideRegistry?
     internal let cacheRequestOnly: Bool
 
-    fileprivate let pendingResults: LLBEventualResultsCache<HashableKey, FXResult>
-    fileprivate let keyDependencyGraph = FXKeyDependencyGraph()
+    fileprivate let pendingResults: LLBEventualResultsCache<HashableKey, InternalResult>
+    internal let keyDependencyGraph = FXKeyDependencyGraph()
 
     public let buildID: FXBuildID
 
     public init(
         group: FXFuturesDispatchGroup,
-        db: FXCASDatabase,
-        functionCache: FXFunctionCache?,
+        db: DB,
+        functionCache: (any FXFunctionCache<DB.DataID>)? = nil,
         executor: FXExecutor,
+        treeService: (any FXTypedCASTreeService<DB.DataID>)? = nil,
         resources: [ResourceKey: FXResource] = [:],
         buildID: FXBuildID = FXBuildID(),
         stats: FXBuildEngineStats? = nil,
@@ -116,14 +148,15 @@ public final class FXEngine: Sendable {
     ) {
         self.group = group
         self.db = db
-        self.cache = functionCache ?? FXInMemoryFunctionCache(group: group)
+        self.cache = functionCache ?? FXInMemoryFunctionCache<DB.DataID>(group: group)
         self.resources = resources
         self.executor = executor
+        self.treeService = treeService
         self.stats = stats ?? .init()
         self.logger = logger
         self.keyOverrides = keyOverrides
 
-        self.pendingResults = LLBEventualResultsCache<HashableKey, FXResult>(group: group, partialResultExpiration: partialResultExpiration)
+        self.pendingResults = LLBEventualResultsCache<HashableKey, InternalResult>(group: group, partialResultExpiration: partialResultExpiration)
 
         self.buildID = buildID
 
@@ -137,11 +170,10 @@ public final class FXEngine: Sendable {
         self.cacheRequestOnly = cacheRequestOnly
     }
 
-    /// Populate context with engine provided values
+    /// Populate context with engine provided values.
     private func engineContext(_ ctx: Context) -> Context {
         var ctx = ctx
         ctx.group = self.group
-        ctx.db = self.db
 
         if let logger = self.logger {
             ctx.logger = logger
@@ -149,20 +181,39 @@ public final class FXEngine: Sendable {
 
         return ctx
     }
+}
 
-    internal func build(key: FXRequestKey, _ ctx: Context) -> FXFuture<FXResult> {
+// MARK: - EngineInternalProtocol conformance
+
+extension FXEngine: EngineInternalProtocol {
+    typealias DataID = DB.DataID
+
+    public func build<K: FXKey>(
+        key: K,
+        _ ctx: Context
+    ) -> FXFuture<K.ValueType>
+        where K.ValueType.DataID == DB.DataID
+    {
+        let ctx = engineContext(ctx)
+        let ikey = key.internalKey(self, ctx)
+        return self.build(key: ikey, as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
+            internalValue.value
+        }
+    }
+
+    internal func build(key: FXRequestKey, _ ctx: Context) -> FXFuture<InternalResult> {
         let ctx = engineContext(ctx)
         return self.pendingResults.value(for: HashableKey(key: key)) { _ in
-            guard let ikey = key as? CallableKey else {
+            guard let ikey = key as? any CallableKey<DB.DataID> else {
                 return ctx.group.any().makeFailedFuture(FXError.nonCallableKey)
             }
             let fn = ikey.function()
-            let fi = FunctionInterface(engine: self, key: key)
+            let fi = FunctionInterface<DB.DataID>(engine: self, key: key)
             return fn.compute(key: key, fi, ctx)
         }
     }
 
-    internal func build<V: FXResult>(key: FXRequestKey, as: V.Type, _ ctx: Context) -> FXFuture<V> {
+    internal func build<V: InternalResult>(key: FXRequestKey, as: V.Type, _ ctx: Context) -> FXFuture<V> {
         return self.build(key: key, ctx).flatMapThrowing {
             guard let value = $0 as? V else {
                 throw FXError.invalidValueType("Expected value of type \(V.self)")
@@ -171,13 +222,11 @@ public final class FXEngine: Sendable {
         }
     }
 
-    public func build<K: FXKey>(
-        key: K,
-        _ ctx: Context
-    ) -> FXFuture<K.ValueType> {
-        let ctx = engineContext(ctx)
-        return self.build(key: key.internalKey(self, ctx), as: InternalValue<K.ValueType>.self, ctx).map { internalValue in
-            internalValue.value
-        }
+    internal func cacheContains(key: FXRequestKey, props: FXKeyProperties, _ ctx: Context) -> FXFuture<Bool> {
+        cache.get(key: key, props: props, ctx).map { $0 != nil }
+    }
+
+    internal func makeInternalKey<K: FXKey>(_ key: K, _ ctx: Context) -> InternalKey<K> where K.ValueType.DataID == DB.DataID {
+        key.internalKey(self, ctx)
     }
 }

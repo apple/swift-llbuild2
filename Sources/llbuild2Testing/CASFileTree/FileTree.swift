@@ -110,7 +110,7 @@ package final class FXCASFileTree {
     /// decode redundantly.
     package static func create(
         files inputFiles: [LLBDirectoryEntryID],
-        in db: FXCASDatabase,
+        in db: any FXCASDatabase,
         posixDetails: LLBPosixFileDetails? = nil,
         options: FXCASFileTree.ImportOptions? = nil,
         _ ctx: Context
@@ -156,7 +156,7 @@ package final class FXCASFileTree {
     }
 
     /// Try load CASTree from DataID
-    package static func load(id: FXDataID, from db: FXCASDatabase, _ ctx: Context) -> FXFuture<
+    package static func load(id: FXDataID, from db: any FXCASDatabase, _ ctx: Context) -> FXFuture<
         FXCASFileTree
     > {
         return db.get(id, ctx).flatMapThrowing { object -> FXCASFileTree in
@@ -204,7 +204,7 @@ package final class FXCASFileTree {
     /// - Parameters:
     ///   - tree: The tree to merge with.
     ///   - db: The database to create any new objects in.
-    package func merge(with tree: FXCASFileTree, in db: FXCASDatabase, _ ctx: Context)
+    package func merge(with tree: FXCASFileTree, in db: any FXCASDatabase, _ ctx: Context)
         -> FXFuture<FXCASFileTree>
     {
         // Enumerate the LHS and RHS file lists simultaneously.
@@ -304,7 +304,7 @@ package final class FXCASFileTree {
     /// - Parameters:
     ///   - trees: The trees to merge.
     ///   - db: The database to create any new objects in.
-    package static func merge(trees: [FXCASFileTree], in db: FXCASDatabase, _ ctx: Context)
+    package static func merge(trees: [FXCASFileTree], in db: any FXCASDatabase, _ ctx: Context)
         -> FXFuture<FXCASFileTree>
     {
         // Handle degenerate cases.
@@ -323,7 +323,7 @@ package final class FXCASFileTree {
     }
 
     private static func _merge(
-        reversedTrees: [FXCASFileTree], in db: FXCASDatabase, _ ctx: Context
+        reversedTrees: [FXCASFileTree], in db: any FXCASDatabase, _ ctx: Context
     ) -> FXFuture<FXCASFileTree> {
         assert(reversedTrees.count > 1)
 
@@ -420,7 +420,7 @@ package final class FXCASFileTree {
     /// - Returns: The entry at the given path, if it exists. If any of the
     ///   intermediate path components do not refer to a directory, a nil result
     ///   is returned.
-    package func lookup(path: AbsolutePath, in db: FXCASDatabase, _ ctx: Context) -> FXFuture<
+    package func lookup(path: AbsolutePath, in db: any FXCASDatabase, _ ctx: Context) -> FXFuture<
         (id: FXDataID, info: LLBDirectoryEntry)?
     > {
         // Resolve the parent tree.
@@ -466,7 +466,7 @@ package final class FXCASFileTree {
     ///     created, if it does not exist. Any existing non-directory traversed
     ///     by `path` will be replaced with a directory, if necessary.
     package func merge(
-        with tree: FXCASFileTree, in db: FXCASDatabase, at path: AbsolutePath, _ ctx: Context
+        with tree: FXCASFileTree, in db: any FXCASDatabase, at path: AbsolutePath, _ ctx: Context
     ) -> FXFuture<FXCASFileTree> {
         // Create a new tree with `tree` nested at `path`, then merge.
         var rerootedTree: FXFuture<FXCASFileTree> = db.group.next().makeSucceededFuture(tree)
@@ -488,13 +488,13 @@ package final class FXCASFileTree {
         }
     }
 
-    package func remove(path: AbsolutePath, in db: FXCASDatabase, _ ctx: Context) -> FXFuture<
+    package func remove(path: AbsolutePath, in db: any FXCASDatabase, _ ctx: Context) -> FXFuture<
         FXCASFileTree
     > {
         return remove(components: path.components.dropFirst(), in: db, ctx)
     }
 
-    package func remove(components: ArraySlice<String>, in db: FXCASDatabase, _ ctx: Context)
+    package func remove(components: ArraySlice<String>, in db: any FXCASDatabase, _ ctx: Context)
         -> FXFuture<FXCASFileTree>
     {
         guard !components.isEmpty else {
@@ -534,7 +534,7 @@ package final class FXCASFileTree {
     }
 
     // Removes component from the current tree
-    package func remove(component: String, in db: FXCASDatabase, _ ctx: Context) -> FXFuture<
+    package func remove(component: String, in db: any FXCASDatabase, _ ctx: Context) -> FXFuture<
         FXCASFileTree
     > {
         let indexOpt = lookupIndex(component)

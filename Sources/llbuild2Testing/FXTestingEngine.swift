@@ -11,7 +11,7 @@ import NIOCore
 import llbuild2fx
 
 public struct FXTestingEngine {
-    private let engine: FXEngine
+    private let engine: FXEngine<FXInMemoryCASDatabase>
 
     public init(
         overrides: [any FXKeyOverrideProtocol] = [],
@@ -26,16 +26,15 @@ public struct FXTestingEngine {
             db: db,
             functionCache: nil,
             executor: executor,
+            treeService: FXLocalCASTreeService(db: db),
             resources: resources,
             keyOverrides: registry
         )
     }
 
-    public func build<K: FXKey>(key: K, _ ctx: Context) async throws -> K.ValueType {
-        var ctx = ctx
-        if ctx.fxCASTreeService == nil {
-            ctx.fxCASTreeService = FXLocalCASTreeService()
-        }
+    public func build<K: FXKey>(key: K, _ ctx: Context) async throws -> K.ValueType
+        where K.ValueType.DataID == FXDataID
+    {
         return try await engine.build(key: key, ctx).get()
     }
 }

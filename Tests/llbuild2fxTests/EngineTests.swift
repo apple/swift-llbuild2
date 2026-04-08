@@ -51,7 +51,8 @@ public struct SumAction {
         self.input = input
     }
 
-    public func run(_ ctx: Context) -> FXFuture<SumOutput> {
+    public func run(_ ai: FXActionInterface<FXDataID>, _ ctx: Context) -> FXFuture<SumOutput>
+    {
         let total = input.values.reduce(0) { $0 + $1 }
         return ctx.group.next().makeSucceededFuture(SumOutput(total: total))
     }
@@ -156,11 +157,10 @@ final class EngineTests: XCTestCase {
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
         let functionCache = TestFunctionCache()
-        ctx.db = db
         ctx.group = group
 
         let cachedOutput = SumOutput(total: -9)
-        let cacheID = try await ctx.db.put(try cachedOutput.asCASObject(), ctx).get()
+        let cacheID = try await db.put(try cachedOutput.asCASObject(), ctx).get()
 
         let engine = FXEngine(group: group, db: db, functionCache: functionCache, executor: executor)
 

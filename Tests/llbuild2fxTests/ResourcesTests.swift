@@ -54,7 +54,7 @@ final class ResourcesTests: XCTestCase {
         let group = FXMakeDefaultDispatchGroup()
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
-        let functionCache = FXInMemoryFunctionCache(group: group)
+        let functionCache = FXInMemoryFunctionCache<FXDataID>(group: group)
 
         let resource = StatefulResource<Int>(initialState: 10, lifetime: .idempotent, name: "testresource")
         let resources: [ResourceKey: FXResource] = [.external(resource.name): resource]
@@ -94,7 +94,7 @@ final class ResourcesTests: XCTestCase {
         let group = FXMakeDefaultDispatchGroup()
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
-        let functionCache = FXInMemoryFunctionCache(group: group)
+        let functionCache = FXInMemoryFunctionCache<FXDataID>(group: group)
 
         let resource = StatefulResource<Int>(initialState: 10, lifetime: .idempotent, name: "testresource")
         let resources: [ResourceKey: FXResource] = [.external(resource.name): resource]
@@ -133,7 +133,7 @@ final class ResourcesTests: XCTestCase {
         let group = FXMakeDefaultDispatchGroup()
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
-        let functionCache = FXInMemoryFunctionCache(group: group)
+        let functionCache = FXInMemoryFunctionCache<FXDataID>(group: group)
 
         let resource = StatefulResource<Int>(initialState: 10, lifetime: .versioned, version: 1, name: "testresource")
         let resources: [ResourceKey: FXResource] = [.external(resource.name): resource]
@@ -182,7 +182,7 @@ final class ResourcesTests: XCTestCase {
         let group = FXMakeDefaultDispatchGroup()
         let db = FXInMemoryCASDatabase(group: group)
         let executor = FXLocalExecutor()
-        let functionCache = FXInMemoryFunctionCache(group: group)
+        let functionCache = FXInMemoryFunctionCache<FXDataID>(group: group)
 
         let resource = StatefulResource<Int>(initialState: 10, lifetime: .requestOnly, name: "testresource")
         let resources: [ResourceKey: FXResource] = [.external(resource.name): resource]

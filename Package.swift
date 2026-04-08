@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "llbuild2",
     platforms: [
-        .macOS(.v10_15)
+        .macOS(.v13)
     ],
     products: [
         .library(name: "llbuild2", targets: ["llbuild2"]),

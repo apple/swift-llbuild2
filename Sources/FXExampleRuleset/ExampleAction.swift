@@ -25,7 +25,8 @@ public struct UppercaseAction: AsyncFXAction, Encodable, Sendable {
         self.input = input
     }
 
-    public func run(_ ctx: Context) async throws -> UppercaseValue {
+    public func run(_ ai: FXActionInterface<FXDataID>, _ ctx: Context) async throws -> UppercaseValue
+    {
         return UppercaseValue(text: input.uppercased())
     }
 

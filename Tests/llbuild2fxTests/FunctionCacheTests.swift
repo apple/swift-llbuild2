@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -16,6 +16,11 @@ extension String: @retroactive FXRequestKey {
     }
 }
 
+private struct FakeProps: FXKeyProperties {
+    var volatile: Bool = false
+    var cachePath: String = "keypath"
+}
+
 final class FunctionCacheTests: XCTestCase {
     let group = FXMakeDefaultDispatchGroup()
 
@@ -24,11 +29,7 @@ final class FunctionCacheTests: XCTestCase {
         return try! AbsolutePath(validating: ProcessInfo.processInfo.environment["TMPDIR", default: "/tmp"])
     }
 
-    func doFunctionCacheTests(cache: FXFunctionCache) throws {
-        struct FakeProps: FXKeyProperties {
-            var volatile: Bool = false
-            var cachePath: String = "keypath"
-        }
+    func doFunctionCacheTests<C: FXFunctionCache>(cache: C) throws where C.DataID == FXDataID {
         let p = FakeProps()
 
         let ctx = Context()
@@ -40,7 +41,7 @@ final class FunctionCacheTests: XCTestCase {
     }
 
     func testInMemoryFunctionCache() throws {
-        let cache = FXInMemoryFunctionCache(group: group)
+        let cache = FXInMemoryFunctionCache<FXDataID>(group: group)
         try doFunctionCacheTests(cache: cache)
     }
 

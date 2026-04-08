@@ -31,22 +31,14 @@ private struct TestFileID: FXSingleDataIDValue, FXFileID {
 
 final class TreeMaterializationTests: XCTestCase {
     var ctx: Context!
+    var db: FXInMemoryCASDatabase!
+    var treeService: FXLocalCASTreeService!
 
     override func setUp() {
         ctx = Context()
-        ctx.db = FXInMemoryCASDatabase(group: FXMakeDefaultDispatchGroup())
-        ctx.group = ctx.db.group
-        ctx.fxCASTreeService = FXLocalCASTreeService()
-    }
-
-    // MARK: - FXCASTreeService Context Property
-
-    func testCASTreeServiceContextProperty() {
-        var emptyCtx = Context()
-        XCTAssertNil(emptyCtx.fxCASTreeService)
-
-        emptyCtx.fxCASTreeService = FXLocalCASTreeService()
-        XCTAssertNotNil(emptyCtx.fxCASTreeService)
+        db = FXInMemoryCASDatabase(group: FXMakeDefaultDispatchGroup())
+        ctx.group = db.group
+        treeService = FXLocalCASTreeService(db: db)
     }
 
     // MARK: - Tree Import and Export via CASTreeService
@@ -58,11 +50,11 @@ final class TreeMaterializationTests: XCTestCase {
             try "data".write(toFile: srcDir.appending(component: "info.txt").pathString, atomically: true, encoding: .utf8)
 
             // Import the tree into CAS
-            let treeID = try await ctx.fxCASTreeService!.importTree(path: srcDir, to: ctx.db, ctx)
+            let treeID = try await treeService.importTree(path: srcDir, ctx)
 
             // Export it back to a new directory
             try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true) { dstDir in
-                try await ctx.fxCASTreeService!.export(treeID, from: ctx.db, to: dstDir, ctx)
+                try await treeService.export(treeID, to: dstDir, ctx)
 
                 let greeting = try String(contentsOfFile: dstDir.appending(component: "greeting.txt").pathString, encoding: .utf8)
                 XCTAssertEqual(greeting, "hello world")
@@ -79,7 +71,7 @@ final class TreeMaterializationTests: XCTestCase {
         let treeID = try await importSingleFileTree(filename: "test.txt", content: "tree content")
         let testTree = TestTreeID(treeID)
 
-        try await testTree.materialize(ctx) { rootPath in
+        try await testTree.materialize(treeService, ctx) { rootPath in
             let content = try String(contentsOfFile: rootPath.appending(component: "test.txt").pathString, encoding: .utf8)
             XCTAssertEqual(content, "tree content")
         }
@@ -90,10 +82,10 @@ final class TreeMaterializationTests: XCTestCase {
             try "aaa".write(toFile: srcDir.appending(component: "a.txt").pathString, atomically: true, encoding: .utf8)
             try "bbb".write(toFile: srcDir.appending(component: "b.txt").pathString, atomically: true, encoding: .utf8)
 
-            let treeID = try await ctx.fxCASTreeService!.importTree(path: srcDir, to: ctx.db, ctx)
+            let treeID = try await treeService.importTree(path: srcDir, ctx)
             let testTree = TestTreeID(treeID)
 
-            try await testTree.materialize(ctx) { rootPath in
+            try await testTree.materialize(treeService, ctx) { rootPath in
                 let a = try String(contentsOfFile: rootPath.appending(component: "a.txt").pathString, encoding: .utf8)
                 let b = try String(contentsOfFile: rootPath.appending(component: "b.txt").pathString, encoding: .utf8)
                 XCTAssertEqual(a, "aaa")
@@ -108,10 +100,9 @@ final class TreeMaterializationTests: XCTestCase {
         let treeID = try await importSingleFileTree(filename: "future.txt", content: "futures!")
         let testTree = TestTreeID(treeID)
 
-        let result: String = try testTree.materialize(ctx) { (rootPath: AbsolutePath) -> FXFuture<String> in
-            let content = try! String(contentsOfFile: rootPath.appending(component: "future.txt").pathString, encoding: .utf8)
-            return self.ctx.group.next().makeSucceededFuture(content)
-        }.wait()
+        let result: String = try await testTree.materialize(treeService, ctx) { rootPath in
+            try String(contentsOfFile: rootPath.appending(component: "future.txt").pathString, encoding: .utf8)
+        }
 
         XCTAssertEqual(result, "futures!")
     }
@@ -122,7 +113,7 @@ final class TreeMaterializationTests: XCTestCase {
         let fileID = try await importSingleFile(filename: "single.txt", content: "file content")
         let testFile = TestFileID(fileID)
 
-        try await testFile.materialize(filename: "single.txt", ctx) { filePath in
+        try await testFile.materialize(filename: "single.txt", treeService: treeService, ctx) { filePath in
             let content = try String(contentsOfFile: filePath.pathString, encoding: .utf8)
             XCTAssertEqual(content, "file content")
         }
@@ -134,53 +125,11 @@ final class TreeMaterializationTests: XCTestCase {
         let fileID = try await importSingleFile(filename: "nio.txt", content: "nio content")
         let testFile = TestFileID(fileID)
 
-        let result: String = try testFile.materialize(filename: "nio.txt", ctx) { (filePath: AbsolutePath) -> FXFuture<String> in
-            let content = try! String(contentsOfFile: filePath.pathString, encoding: .utf8)
-            return self.ctx.group.next().makeSucceededFuture(content)
-        }.wait()
+        let result: String = try await testFile.materialize(filename: "nio.txt", treeService: treeService, ctx) { filePath in
+            try String(contentsOfFile: filePath.pathString, encoding: .utf8)
+        }
 
         XCTAssertEqual(result, "nio content")
-    }
-
-    // MARK: - Missing CASTreeService Error
-
-    func testTreeMaterializeWithoutServiceThrows() async {
-        var bareCtx = Context()
-        bareCtx.group = ctx.group
-        bareCtx.db = ctx.db
-        // Intentionally do NOT set fxCASTreeService
-
-        let treeID = try! await importSingleFileTree(filename: "x.txt", content: "x")
-        let testTree = TestTreeID(treeID)
-
-        do {
-            try await testTree.materialize(bareCtx) { (_: AbsolutePath) in }
-            XCTFail("Expected missingCASTreeService error")
-        } catch {
-            guard case FXError.missingCASTreeService = error else {
-                XCTFail("Expected missingCASTreeService, got \(error)")
-                return
-            }
-        }
-    }
-
-    func testFileMaterializeWithoutServiceThrows() async {
-        var bareCtx = Context()
-        bareCtx.group = ctx.group
-        bareCtx.db = ctx.db
-
-        let fileID = try! await importSingleFile(filename: "x.txt", content: "x")
-        let testFile = TestFileID(fileID)
-
-        do {
-            try await testFile.materialize(filename: "x.txt", bareCtx) { (_: AbsolutePath) in }
-            XCTFail("Expected missingCASTreeService error")
-        } catch {
-            guard case FXError.missingCASTreeService = error else {
-                XCTFail("Expected missingCASTreeService, got \(error)")
-                return
-            }
-        }
     }
 
     // MARK: - FXTreeMaterializer Context Property
@@ -214,14 +163,14 @@ final class TreeMaterializationTests: XCTestCase {
     private func importSingleFileTree(filename: String, content: String) async throws -> FXDataID {
         return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true) { tmpDir in
             try content.write(toFile: tmpDir.appending(component: filename).pathString, atomically: true, encoding: .utf8)
-            return try await ctx.fxCASTreeService!.importTree(path: tmpDir, to: ctx.db, ctx)
+            return try await treeService.importTree(path: tmpDir, ctx)
         }
     }
 
     /// Import a single file into CAS as a blob and return its data ID.
     private func importSingleFile(filename: String, content: String) async throws -> FXDataID {
         let data = FXByteBuffer.withBytes(Array(content.utf8))
-        let blob = try await FXCASBlob.import(data: data, isExecutable: false, in: ctx.db, ctx).get()
+        let blob = try await FXCASBlob.import(data: data, isExecutable: false, in: db, ctx).get()
         return try await blob.export(ctx).get()
     }
 }

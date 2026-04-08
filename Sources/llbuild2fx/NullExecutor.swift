@@ -13,6 +13,7 @@ public final class FXNullExecutor: FXExecutor {
 
     public func perform<ActionType: FXAction>(
         _ action: ActionType,
+        ai: FXActionInterface<ActionType.DataID>,
         requirements: FXActionRequirements?,
         _ ctx: Context
     ) -> FXFuture<ActionType.ValueType> {

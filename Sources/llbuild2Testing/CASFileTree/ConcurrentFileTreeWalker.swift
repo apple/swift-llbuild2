@@ -49,7 +49,7 @@ final class ConcurrentHierarchyWalker<Item> {
 }
 
 package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
-    let db: FXCASDatabase
+    let db: any FXCASDatabase
     let client: FXCASFSClient
     let filterCallback: (FilterArgument) -> Bool
 
@@ -84,7 +84,7 @@ package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
         }
     }
 
-    package init(db: FXCASDatabase, _ filter: @escaping (FilterArgument) -> Bool) {
+    package init(db: any FXCASDatabase, _ filter: @escaping (FilterArgument) -> Bool) {
         self.db = db
         self.client = FXCASFSClient(db)
         self.filterCallback = filter

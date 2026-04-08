@@ -10,18 +10,23 @@ import llbuild2fx
 
 /// A CAS tree service backed by FXCASFileTree from FXAsyncSupport.
 /// Use this in tests and anywhere a simple local tree service is needed.
-public struct FXLocalCASTreeService: FXCASTreeService {
-    public init() {}
+public struct FXLocalCASTreeService: FXTypedCASTreeService {
+    public typealias DataID = FXDataID
+    private let db: any FXCASDatabase
 
-    public func export(_ treeID: FXDataID, from db: FXCASDatabase, to path: AbsolutePath, _ ctx: Context) async throws {
+    public init(db: any FXCASDatabase) {
+        self.db = db
+    }
+
+    public func export(_ treeID: FXDataID, to path: AbsolutePath, _ ctx: Context) async throws {
         try await FXCASFileTree.export(treeID, from: db, to: path, stats: FXCASFileTree.ExportProgressStatsInt64(), ctx).get()
     }
 
-    public func importTree(path: AbsolutePath, to db: FXCASDatabase, _ ctx: Context) async throws -> FXDataID {
-        return try await FXCASFileTree.import(path: path, to: db, ctx).get()
+    public func importTree(path: AbsolutePath, _ ctx: Context) async throws -> FXDataID {
+        try await FXCASFileTree.import(path: path, to: db, ctx).get()
     }
 
-    public func exportFile(_ fileID: FXDataID, filename: String, from db: FXCASDatabase, to path: AbsolutePath, _ ctx: Context) async throws {
+    public func exportFile(_ fileID: FXDataID, filename: String, to path: AbsolutePath, _ ctx: Context) async throws {
         let client = FXCASFSClient(db)
         let node = try await client.load(fileID, type: .plainFile, ctx).get()
         guard let blob = node.blob else {

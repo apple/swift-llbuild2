@@ -9,32 +9,18 @@ import TSCBasic
 
 /// Protocol for CAS-backed file tree types.
 public protocol FXCASTree: Sendable {
-    var id: FXDataID { get }
+    associatedtype DataID: FXDataIDProtocol = FXDataID
+    var id: DataID { get }
 }
 
-/// Service protocol for CAS tree import/export operations.
-/// Clients must configure a concrete implementation via `ctx.fxCASTreeService`.
-public protocol FXCASTreeService: Sendable {
-    func export(_ treeID: FXDataID, from db: FXCASDatabase, to path: AbsolutePath, _ ctx: Context) async throws
-    func importTree(path: AbsolutePath, to db: FXCASDatabase, _ ctx: Context) async throws -> FXDataID
+/// Generic service protocol for CAS tree import/export operations.
+/// Clients with custom DataID types implement this directly.
+public protocol FXTypedCASTreeService<DataID>: Sendable {
+    associatedtype DataID: FXDataIDProtocol
 
-    /// Export a single file to `path/filename`. The implementation is responsible for
-    /// wrapping the file into a tree if needed for its CAS backend.
-    func exportFile(_ fileID: FXDataID, filename: String, from db: FXCASDatabase, to path: AbsolutePath, _ ctx: Context) async throws
+    func export(_ treeID: DataID, to path: AbsolutePath, _ ctx: Context) async throws
+    func importTree(path: AbsolutePath, _ ctx: Context) async throws -> DataID
+    func exportFile(_ fileID: DataID, filename: String, to path: AbsolutePath, _ ctx: Context) async throws
 }
 
-private class ContextCASTreeService {}
 
-extension Context {
-    public var fxCASTreeService: FXCASTreeService? {
-        get {
-            guard let value = self[ObjectIdentifier(ContextCASTreeService.self), as: FXCASTreeService.self] else {
-                return nil
-            }
-            return value
-        }
-        set {
-            self[ObjectIdentifier(ContextCASTreeService.self)] = newValue
-        }
-    }
-}

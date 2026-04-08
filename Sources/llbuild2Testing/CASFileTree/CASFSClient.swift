@@ -15,7 +15,7 @@ import TSCUtility
 
 /// A main API struct
 package struct FXCASFSClient: Sendable {
-    package let db: FXCASDatabase
+    package let db: any FXCASDatabase
 
     /// Errors produced by CASClient
     package enum Error: Swift.Error {
@@ -26,7 +26,7 @@ package struct FXCASFSClient: Sendable {
     }
 
     /// Remembers db
-    package init(_ db: FXCASDatabase) {
+    package init(_ db: any FXCASDatabase) {
         self.db = db
     }
 

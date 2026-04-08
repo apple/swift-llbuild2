@@ -40,7 +40,7 @@ public protocol FXAction: FXValue {
 
     var requirements: FXActionRequirements { get }
 
-    func run(_ ctx: Context) -> FXFuture<ValueType>
+    func run(_ ai: FXActionInterface<DataID>, _ ctx: Context) -> FXFuture<ValueType>
 }
 
 extension FXAction {
@@ -55,13 +55,13 @@ extension FXAction {
 }
 
 public protocol AsyncFXAction: FXAction {
-    func run(_ ctx: Context) async throws -> ValueType
+    func run(_ ai: FXActionInterface<DataID>, _ ctx: Context) async throws -> ValueType
 }
 
 extension AsyncFXAction {
-    public func run(_ ctx: Context) -> FXFuture<ValueType> {
+    public func run(_ ai: FXActionInterface<DataID>, _ ctx: Context) -> FXFuture<ValueType> {
         TaskCancellationRegistry.makeCancellableTask({
-            try await self.run(ctx)
+            try await self.run(ai, ctx)
         }, ctx)
     }
 }
