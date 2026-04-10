@@ -45,7 +45,7 @@ package struct FXCASFSNode {
     }
 
     /// Gives CASFSNode type (meaningful for files)
-    package func type() -> LLBFileType {
+    package func type() -> FXFileType {
         switch value {
         case .tree(_):
             return .directory
@@ -70,7 +70,7 @@ package struct FXCASFSNode {
         return blob
     }
 
-    package func asDirectoryEntry(filename: String) -> LLBDirectoryEntryID {
+    package func asDirectoryEntry(filename: String) -> FXDirectoryEntryID {
         switch value {
         case .tree(let tree):
             return tree.asDirectoryEntry(filename: filename)

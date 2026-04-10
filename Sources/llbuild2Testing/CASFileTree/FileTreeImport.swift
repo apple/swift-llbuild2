@@ -530,12 +530,12 @@ private final class CASTreeImport: Sendable {
                 currentPhase: .CheckIfUploaded, currentPhaseSteps: nextStepFutures)
         }.map {
             nextSteps -> (
-                directoryPaths: [(AbsolutePath, LLBPosixFileDetails?)],
+                directoryPaths: [(AbsolutePath, FXPosixFileDetails?)],
                 completeFiles: [AbsolutePath: SingleFileInfo]
             ) in
             self.set(phase: .UploadingDirs)
             var completeFiles = [AbsolutePath: SingleFileInfo]()
-            var directoryPaths = [(AbsolutePath, LLBPosixFileDetails?)]()
+            var directoryPaths = [(AbsolutePath, FXPosixFileDetails?)]()
             for step in nextSteps {
                 switch step {
                 case .skipped, .partialFileChunk:
@@ -565,7 +565,7 @@ private final class CASTreeImport: Sendable {
 
             let udpLock = NIOConcurrencyHelpers.NIOLock()
             var uploadedDirectoryPaths_ = [
-                AbsolutePath: FXFuture<(FXDataID, LLBDirectoryEntry)?>
+                AbsolutePath: FXFuture<(FXDataID, FXDirectoryEntry)?>
             ]()
 
             // Now we have to add all the directories; we do so serially and in
@@ -574,13 +574,13 @@ private final class CASTreeImport: Sendable {
             let dirFutures: [FXFuture<Void>] = directoryPaths.map { arguments in
                 let (path, pathPosixDetails) = arguments
                 let dirLoop = self._db.group.next()
-                let directoryPromise: FXPromise<(FXDataID, LLBDirectoryEntry)?>
+                let directoryPromise: FXPromise<(FXDataID, FXDirectoryEntry)?>
                 directoryPromise = dirLoop.makePromise()
                 udpLock.withLockVoid {
                     uploadedDirectoryPaths_[path] = directoryPromise.futureResult
                 }
 
-                let dirFuture: FXFuture<(FXDataID, LLBDirectoryEntry)?>
+                let dirFuture: FXFuture<(FXDataID, FXDirectoryEntry)?>
                 dirFuture = self.execute(on: self.netQueue, loop: dirLoop, size: 1024, default: nil)
                 {
                     // Get the list of all subpaths.
@@ -596,13 +596,13 @@ private final class CASTreeImport: Sendable {
                     }
 
                     // Build the finalized directory file list.
-                    let subpathsFutures: [FXFuture<(FXDataID, LLBDirectoryEntry)?>]
+                    let subpathsFutures: [FXFuture<(FXDataID, FXDirectoryEntry)?>]
                     subpathsFutures = directoryListing.compactMap {
-                        filename -> FXFuture<(FXDataID, LLBDirectoryEntry)?> in
+                        filename -> FXFuture<(FXDataID, FXDirectoryEntry)?> in
                         let subpath = path.appending(component: filename)
 
                         if let info = completeFiles[subpath] {
-                            var dirEntry = LLBDirectoryEntry()
+                            var dirEntry = FXDirectoryEntry()
                             dirEntry.name = filename
                             dirEntry.type = info.type
                             dirEntry.size = info.size
@@ -613,7 +613,7 @@ private final class CASTreeImport: Sendable {
                         }) {
                             return dirInfoFuture.map { idInfo in
                                 guard let (id, info) = idInfo else { return nil }
-                                var dirEntry = LLBDirectoryEntry()
+                                var dirEntry = FXDirectoryEntry()
                                 dirEntry.name = filename
                                 dirEntry.type = info.type
                                 dirEntry.size = info.size
@@ -639,7 +639,7 @@ private final class CASTreeImport: Sendable {
                             ).map { id in
                                 stats.uploadedMetadataBytes_.wrappingIncrement(
                                     by: dirData.readableBytes, ordering: .relaxed)
-                                var dirEntry = LLBDirectoryEntry()
+                                var dirEntry = FXDirectoryEntry()
                                 dirEntry.name = path.pathString
                                 dirEntry.type = .directory
                                 dirEntry.size = aggregateSize
@@ -756,9 +756,9 @@ private final class CASTreeImport: Sendable {
     struct SingleFileInfo {
         let path: AbsolutePath
         let id: FXDataID
-        let type: LLBFileType
+        let type: FXFileType
         let size: UInt64
-        let posixDetails: LLBPosixFileDetails
+        let posixDetails: FXPosixFileDetails
     }
 
     struct AnnotatedSegment {
@@ -810,7 +810,7 @@ private final class CASTreeImport: Sendable {
         // Final step: information about the file.
         case singleFile(SingleFileInfo)
         // Final step: information about the directory.
-        case gotDirectory(path: AbsolutePath, posixDetails: LLBPosixFileDetails?)
+        case gotDirectory(path: AbsolutePath, posixDetails: FXPosixFileDetails?)
         // Intermediate step: not earlier than in the given phase.
         case execute(in: FXCASFileTree.ImportPhase, run: () -> FXFuture<NextStep>)
         // This future has to be picked up in the given phase.
@@ -909,15 +909,15 @@ private final class CASTreeImport: Sendable {
         let stats = self.stats
 
         let segmentDescriptors: [SegmentDescriptor]  // Information about segments of file, possibly after compression.
-        let type: LLBFileType
+        let type: FXFileType
         let allSegmentsUncompressedDataSize: Int
         enum ObjectToImport {
             case link(target: LLBFastData)
-            case file(file: FileSegmenter, posixDetails: LLBPosixFileDetails)
-            var posixDetails: LLBPosixFileDetails {
+            case file(file: FileSegmenter, posixDetails: FXPosixFileDetails)
+            var posixDetails: FXPosixFileDetails {
                 switch self {
                 case .link:
-                    return LLBPosixFileDetails()
+                    return FXPosixFileDetails()
                 case .file(_, let posixDetails):
                     return posixDetails
                 }
@@ -948,13 +948,13 @@ private final class CASTreeImport: Sendable {
                     id: _db.identify(refs: [], data: target.toByteBuffer(), ctx))
             ]
         case .DIR:
-            let posixDetails: LLBPosixFileDetails?
+            let posixDetails: FXPosixFileDetails?
 
             // Read the permissions and ownership information, if requested.
             if options.preservePosixDetails.preservationEnabled {
                 var sb = stat()
                 if lstat(path.pathString, &sb) == 0, (sb.st_mode & S_IFMT) == S_IFDIR {
-                    posixDetails = LLBPosixFileDetails(from: sb)
+                    posixDetails = FXPosixFileDetails(from: sb)
                 } else {
                     posixDetails = nil
                 }
@@ -979,7 +979,7 @@ private final class CASTreeImport: Sendable {
             }
 
             type = (file.statInfo.st_mode & 0o111 == 0) ? .plainFile : .executable
-            importObject = .file(file: file, posixDetails: LLBPosixFileDetails(from: file.statInfo))
+            importObject = .file(file: file, posixDetails: FXPosixFileDetails(from: file.statInfo))
             segmentDescriptors = try describeAllSegments(of: file, ctx)
             allSegmentsUncompressedDataSize = segmentDescriptors.reduce(0) {
                 $0 + $1.uncompressedSize
@@ -1056,7 +1056,7 @@ private final class CASTreeImport: Sendable {
                                 return loop.makeSucceededFuture(encodeNextStep(for: blobId))
                             }
 
-                            var fileInfo = LLBFileInfo()
+                            var fileInfo = FXFileInfo()
                             // Each segment (if not a single segment) is encoded as a plain
                             // file and doesn't have any other metadata (e.g. permissions).
                             if isSingleChunk {
@@ -1214,7 +1214,7 @@ private final class CASTreeImport: Sendable {
                             return id
                         }
 
-                        var fileInfo = LLBFileInfo()
+                        var fileInfo = FXFileInfo()
                         fileInfo.type = type
                         fileInfo.size = UInt64(allSegmentsUncompressedDataSize)
                         // The top is not compressed when chunks are present.
@@ -1267,7 +1267,7 @@ private final class CASTreeImport: Sendable {
 
     /// Construct the bytes representing the directory contents.
     func constructDirectoryContents(
-        _ subpaths: [(FXDataID, LLBDirectoryEntry)?], wireFormat: FXCASFileTree.WireFormat
+        _ subpaths: [(FXDataID, FXDirectoryEntry)?], wireFormat: FXCASFileTree.WireFormat
     ) throws -> (refs: [FXDataID], dirData: FXByteBuffer, aggregateSize: UInt64) {
         var refs = [FXDataID]()
         let dirData: FXByteBuffer
@@ -1278,7 +1278,7 @@ private final class CASTreeImport: Sendable {
             /// We don't employ compression for directory entries yet,
             /// so both .binary and .compression just use the
             /// NamedDirectoryEntries encoded using the Protobuf encoding.
-            var dirEntries = LLBDirectoryEntries()
+            var dirEntries = FXDirectoryEntries()
             dirEntries.entries = subpaths.compactMap { args in
                 guard let (id, info) = args else { return nil }
                 refs.append(id)
@@ -1289,7 +1289,7 @@ private final class CASTreeImport: Sendable {
                 return info
             }
 
-            var dirNode = LLBFileInfo()
+            var dirNode = FXFileInfo()
             dirNode.type = .directory
             dirNode.size = aggregateSize
             dirNode.compression = .none
@@ -1425,11 +1425,11 @@ extension AbsolutePath {
     }
 }
 
-extension LLBPosixFileDetails {
+extension FXPosixFileDetails {
     /// Return details only if details are not entirely predictable
     /// from file type and other context.
     func normalized(expectedMode: mode_t, options: FXCASFileTree.ImportOptions?)
-        -> LLBPosixFileDetails?
+        -> FXPosixFileDetails?
     {
 
         var details = self
@@ -1445,7 +1445,7 @@ extension LLBPosixFileDetails {
             details.group = 0
         }
 
-        if details == LLBPosixFileDetails() {
+        if details == FXPosixFileDetails() {
             return nil
         } else {
             return details
@@ -1454,9 +1454,9 @@ extension LLBPosixFileDetails {
 
 }
 
-extension LLBFileInfo {
+extension FXFileInfo {
 
-    mutating func update(posixDetails: LLBPosixFileDetails, options: FXCASFileTree.ImportOptions?)
+    mutating func update(posixDetails: FXPosixFileDetails, options: FXCASFileTree.ImportOptions?)
     {
         if let details = posixDetails.normalized(
             expectedMode: type.expectedPosixMode, options: options)
@@ -1469,10 +1469,10 @@ extension LLBFileInfo {
 
 }
 
-extension LLBDirectoryEntry {
+extension FXDirectoryEntry {
 
     package mutating func update(
-        posixDetails: LLBPosixFileDetails, options: FXCASFileTree.ImportOptions?
+        posixDetails: FXPosixFileDetails, options: FXCASFileTree.ImportOptions?
     ) {
         if let details = posixDetails.normalized(
             expectedMode: type.expectedPosixMode, options: options)

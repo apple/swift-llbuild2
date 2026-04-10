@@ -12,7 +12,7 @@ import Foundation
 import NIOCore
 import SwiftProtobuf
 
-extension LLBFileInfo: FXSerializable {
+extension FXFileInfo: FXSerializable {
     /// Decode the given block back into a message.
     @inlinable
     package init(from rawBytes: FXByteBuffer) throws {
@@ -26,7 +26,7 @@ extension LLBFileInfo: FXSerializable {
     }
 }
 
-extension LLBFileInfo {
+extension FXFileInfo {
     @inlinable
     package static func deserialize(from array: [UInt8]) throws -> Self {
         return try array.withUnsafeBufferPointer { try deserialize(from: $0) }

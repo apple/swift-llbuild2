@@ -575,7 +575,7 @@ final class AnySerializableTests: XCTestCase {
         registry.register(type: String.self)
 
         let original = "hello world"
-        let any = try LLBAnySerializable(from: original as LLBPolymorphicSerializable)
+        let any = try FXAnySerializable(from: original as FXPolymorphicSerializable)
 
         let restored: String = try any.deserialize(registry: registry)
         XCTAssertEqual(restored, "hello world")
@@ -586,7 +586,7 @@ final class AnySerializableTests: XCTestCase {
         registry.register(type: Int.self)
 
         let original = 42
-        let any = try LLBAnySerializable(from: original as LLBPolymorphicSerializable)
+        let any = try FXAnySerializable(from: original as FXPolymorphicSerializable)
 
         let restored: Int = try any.deserialize(registry: registry)
         XCTAssertEqual(restored, 42)
@@ -594,12 +594,12 @@ final class AnySerializableTests: XCTestCase {
 
     func testDeserializeUnknownType() throws {
         let registry = FXSerializableRegistry()
-        let any = try LLBAnySerializable(from: "test" as LLBPolymorphicSerializable)
+        let any = try FXAnySerializable(from: "test" as FXPolymorphicSerializable)
 
         XCTAssertThrowsError(try {
             let _: String = try any.deserialize(registry: registry)
         }()) { error in
-            guard case LLBAnySerializableError.unknownType = error else {
+            guard case FXAnySerializableError.unknownType = error else {
                 XCTFail("Expected unknownType error, got: \(error)")
                 return
             }
@@ -911,13 +911,13 @@ final class ProtobufExtensionsTests: XCTestCase {
         XCTAssertEqual(original.data, restored.data)
     }
 
-    func testLLBAnySerializableProtobufSerialization() throws {
-        // LLBAnySerializable is a protobuf message — test its FXSerializable conformance
-        let any = try LLBAnySerializable(from: "hello" as LLBPolymorphicSerializable)
+    func testFXAnySerializableProtobufSerialization() throws {
+        // FXAnySerializable is a protobuf message — test its FXSerializable conformance
+        let any = try FXAnySerializable(from: "hello" as FXPolymorphicSerializable)
         let buffer = try any.toBytes()
         XCTAssertTrue(buffer.readableBytes > 0)
 
-        let restored = try LLBAnySerializable(from: buffer)
+        let restored = try FXAnySerializable(from: buffer)
         XCTAssertEqual(restored.typeIdentifier, "String")
     }
 }
@@ -1113,11 +1113,11 @@ final class AnySerializableExtendedTests: XCTestCase {
 
     func testAnySerializableCASObjectRoundTrip() throws {
         let original = "test string"
-        let any = try LLBAnySerializable(from: original as LLBPolymorphicSerializable)
+        let any = try FXAnySerializable(from: original as FXPolymorphicSerializable)
         // Serialize to bytes then construct from CAS object
         let buffer = try any.toBytes()
         let casObj = FXCASObject(refs: [], data: buffer)
-        let restored = try LLBAnySerializable(from: casObj)
+        let restored = try FXAnySerializable(from: casObj)
         XCTAssertEqual(restored.typeIdentifier, "String")
     }
 
@@ -1125,13 +1125,13 @@ final class AnySerializableExtendedTests: XCTestCase {
         let registry = FXSerializableRegistry()
         registry.register(type: String.self)
 
-        let any = try LLBAnySerializable(from: "test" as LLBPolymorphicSerializable)
+        let any = try FXAnySerializable(from: "test" as FXPolymorphicSerializable)
 
         // Try to deserialize as Int when it's actually a String
         XCTAssertThrowsError(try {
             let _: Int = try any.deserialize(registry: registry)
         }()) { error in
-            guard case LLBAnySerializableError.typeMismatch = error else {
+            guard case FXAnySerializableError.typeMismatch = error else {
                 XCTFail("Expected typeMismatch error, got: \(error)")
                 return
             }

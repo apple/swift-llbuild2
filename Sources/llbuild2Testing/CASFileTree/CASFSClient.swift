@@ -37,7 +37,7 @@ package struct FXCASFSClient: Sendable {
 
     /// Load CASFSNode from CAS
     /// If object doesn't exist future fails with noEntry
-    package func load(_ id: FXDataID, type hint: LLBFileType? = nil, _ ctx: Context) -> FXFuture<
+    package func load(_ id: FXDataID, type hint: FXFileType? = nil, _ ctx: Context) -> FXFuture<
         FXCASFSNode
     > {
         return db.get(id, ctx).flatMapThrowing { objectOpt in
@@ -69,7 +69,7 @@ package struct FXCASFSClient: Sendable {
     }
 
     /// Save ByteBuffer to CAS
-    package func store(_ data: FXByteBuffer, type: LLBFileType = .plainFile, _ ctx: Context)
+    package func store(_ data: FXByteBuffer, type: FXFileType = .plainFile, _ ctx: Context)
         -> FXFuture<FXCASFSNode>
     {
         FXCASBlob.import(data: data, isExecutable: type == .executable, in: db, ctx).map {
@@ -78,7 +78,7 @@ package struct FXCASFSClient: Sendable {
     }
 
     /// Save ArraySlice to CAS
-    package func store(_ data: ArraySlice<UInt8>, type: LLBFileType = .plainFile, _ ctx: Context)
+    package func store(_ data: ArraySlice<UInt8>, type: FXFileType = .plainFile, _ ctx: Context)
         -> FXFuture<FXCASFSNode>
     {
         FXCASBlob.import(
@@ -87,7 +87,7 @@ package struct FXCASFSClient: Sendable {
     }
 
     /// Save Data to CAS
-    package func store(_ data: Data, type: LLBFileType = .plainFile, _ ctx: Context) -> FXFuture<
+    package func store(_ data: Data, type: FXFileType = .plainFile, _ ctx: Context) -> FXFuture<
         FXCASFSNode
     > {
         FXCASBlob.import(
@@ -98,7 +98,7 @@ package struct FXCASFSClient: Sendable {
 }
 
 extension FXCASFSClient {
-    package func store(_ data: FXByteBuffer, type: LLBFileType = .plainFile, _ ctx: Context)
+    package func store(_ data: FXByteBuffer, type: FXFileType = .plainFile, _ ctx: Context)
         -> FXFuture<FXDataID>
     {
         FXCASBlob.import(data: data, isExecutable: type == .executable, in: db, ctx).flatMap {
@@ -106,7 +106,7 @@ extension FXCASFSClient {
         }
     }
 
-    package func store(_ data: ArraySlice<UInt8>, type: LLBFileType = .plainFile, _ ctx: Context)
+    package func store(_ data: ArraySlice<UInt8>, type: FXFileType = .plainFile, _ ctx: Context)
         -> FXFuture<FXDataID>
     {
         FXCASBlob.import(
@@ -114,7 +114,7 @@ extension FXCASFSClient {
         ).flatMap { $0.export(ctx) }
     }
 
-    package func store(_ data: Data, type: LLBFileType = .plainFile, _ ctx: Context) -> FXFuture<
+    package func store(_ data: Data, type: FXFileType = .plainFile, _ ctx: Context) -> FXFuture<
         FXDataID
     > {
         FXCASBlob.import(

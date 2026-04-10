@@ -79,7 +79,7 @@ package final class TSCCASFileSystem: FileSystem {
         return false
     }
 
-    private func fileType(of path: AbsolutePath) -> LLBFileType? {
+    private func fileType(of path: AbsolutePath) -> FXFileType? {
         if path.isRoot { return .directory }
         let fileType = try? self.rootTree.lookup(path: path, in: self.db, ctx).wait()
         return fileType?.info.type

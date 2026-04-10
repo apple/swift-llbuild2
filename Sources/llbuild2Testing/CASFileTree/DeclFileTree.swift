@@ -59,13 +59,13 @@ extension FXCASFSClient {
         guard case .directory(files: let files) = declTree else {
             return loop.makeFailedFuture(Error.invalidUse)
         }
-        let infosFutures: [FXFuture<LLBDirectoryEntryID>] = files.map { arg in
+        let infosFutures: [FXFuture<FXDirectoryEntryID>] = files.map { arg in
             let (key, value) = arg
             switch value {
             case .directory:
                 let treeFuture = storeDir(value, ctx)
                 return treeFuture.map { tree in
-                    LLBDirectoryEntryID(
+                    FXDirectoryEntryID(
                         info: .init(name: key, type: .directory, size: tree.aggregateSize),
                         id: tree.id)
                 }

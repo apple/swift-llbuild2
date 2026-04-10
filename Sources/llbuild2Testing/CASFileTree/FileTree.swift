@@ -22,16 +22,16 @@ package enum FXCASFileTreeError: Error {
     case notDirectory
 }
 
-package struct LLBDirectoryEntryID {
-    package let info: LLBDirectoryEntry
+package struct FXDirectoryEntryID {
+    package let info: FXDirectoryEntry
     package let id: FXDataID
 
-    package init(info: LLBDirectoryEntry, id: FXDataID) {
+    package init(info: FXDirectoryEntry, id: FXDataID) {
         self.info = info
         self.id = id
     }
 
-    package init(_ info: LLBDirectoryEntry, _ id: FXDataID) {
+    package init(_ info: FXDirectoryEntry, _ id: FXDataID) {
         self.info = info
         self.id = id
     }
@@ -55,10 +55,10 @@ package final class FXCASFileTree {
     package let object: FXCASObject
 
     /// Permissions and ownership data.
-    package let posixDetails: LLBPosixFileDetails?
+    package let posixDetails: FXPosixFileDetails?
 
     /// NOTE: At some point, we may want a way of lazily loading this information.
-    package let files: [LLBDirectoryEntry]
+    package let files: [FXDirectoryEntry]
 
     package var aggregateSize: Int {
         return Int(clamping: files.reduce(0) { $0 + $1.size })
@@ -89,7 +89,7 @@ package final class FXCASFileTree {
         self.posixDetails = fsObject.posixDetails
 
         self.files = others.map {
-            LLBDirectoryEntry(
+            FXDirectoryEntry(
                 name: $0.path.basename, type: $0.kind.type,
                 size: Int(clamping: $0.kind.overestimatedSize),
                 posixDetails: $0.kind.posixDetails.normalized(
@@ -109,16 +109,16 @@ package final class FXCASFileTree {
     /// NOTE: This is a fairly inefficient method, as it will encode and then
     /// decode redundantly.
     package static func create(
-        files inputFiles: [LLBDirectoryEntryID],
+        files inputFiles: [FXDirectoryEntryID],
         in db: any FXCASDatabase,
-        posixDetails: LLBPosixFileDetails? = nil,
+        posixDetails: FXPosixFileDetails? = nil,
         options: FXCASFileTree.ImportOptions? = nil,
         _ ctx: Context
     ) -> FXFuture<FXCASFileTree> {
 
         var refs = [FXDataID]()
         var aggregateSize: UInt64 = 0
-        var dirEntries = LLBDirectoryEntries()
+        var dirEntries = FXDirectoryEntries()
         dirEntries.entries = inputFiles.sorted { $0.info.name < $1.info.name }.map { entry in
             refs.append(entry.id)
             let (partial, overflow) = aggregateSize.addingReportingOverflow(entry.info.size)
@@ -128,7 +128,7 @@ package final class FXCASFileTree {
             return entry.info
         }
 
-        var dirNode = LLBFileInfo()
+        var dirNode = FXFileInfo()
         dirNode.type = .directory
         dirNode.size = aggregateSize
         dirNode.compression = .none
@@ -168,10 +168,10 @@ package final class FXCASFileTree {
     }
 
     /// Perform a lookup of a single file.
-    package func lookup(_ name: String) -> (id: FXDataID, info: LLBDirectoryEntry)? {
+    package func lookup(_ name: String) -> (id: FXDataID, info: FXDirectoryEntry)? {
 
         guard name != "." else {
-            let entry = LLBDirectoryEntry(
+            let entry = FXDirectoryEntry(
                 name: ".", type: .directory, size: aggregateSize, posixDetails: self.posixDetails)
             return (id: self.id, info: entry)
         }
@@ -208,12 +208,12 @@ package final class FXCASFileTree {
         -> FXFuture<FXCASFileTree>
     {
         // Enumerate the LHS and RHS file lists simultaneously.
-        var files: [LLBDirectoryEntryID] = []
+        var files: [FXDirectoryEntryID] = []
         var futures:
             [FXFuture<
                 (
                     index: Int, name: String, result: FXCASFileTree,
-                    posixDetails: LLBPosixFileDetails?
+                    posixDetails: FXPosixFileDetails?
                 )
             >] = []
         for (a, b) in orderedZip(
@@ -273,7 +273,7 @@ package final class FXCASFileTree {
                     })
                 files.append(
                     .init(
-                        info: LLBDirectoryEntry(
+                        info: FXDirectoryEntry(
                             name: b.0.name, type: .directory, size: b.0.size,
                             posixDetails: b.0.posixDetails), id: b.1))
 
@@ -285,7 +285,7 @@ package final class FXCASFileTree {
         return FXFuture.whenAllSucceed(futures, on: db.group.next()).flatMap { mergedEntries in
             for (idx, name, result, posixDetails) in mergedEntries {
                 files[idx] = .init(
-                    info: LLBDirectoryEntry(
+                    info: FXDirectoryEntry(
                         name: name, type: .directory, size: result.aggregateSize,
                         posixDetails: posixDetails), id: result.id)
             }
@@ -334,10 +334,10 @@ package final class FXCASFileTree {
             [FXFuture<
                 (
                     index: Int, name: String, result: FXCASFileTree,
-                    posixDetails: LLBPosixFileDetails?
+                    posixDetails: FXPosixFileDetails?
                 )
             >] = []
-        var files: [LLBDirectoryEntryID] = []
+        var files: [FXDirectoryEntryID] = []
         files.reserveCapacity(treeFileAndIDPairs.count)
         for children in orderedZip(
             sequences: treeFileAndIDPairs,
@@ -399,14 +399,14 @@ package final class FXCASFileTree {
                     )
                 })
             files.append(
-                .init(info: LLBDirectoryEntry(name: "", type: .directory, size: -1), id: primary.1))
+                .init(info: FXDirectoryEntry(name: "", type: .directory, size: -1), id: primary.1))
         }
 
         // Wait for all the outstanding submerges.
         return FXFuture.whenAllSucceed(futures, on: db.group.next()).flatMap { mergedEntries in
             for (idx, name, result, posixDetails) in mergedEntries {
                 files[idx] = .init(
-                    info: LLBDirectoryEntry(
+                    info: FXDirectoryEntry(
                         name: name, type: .directory, size: result.aggregateSize,
                         posixDetails: posixDetails), id: result.id)
             }
@@ -421,7 +421,7 @@ package final class FXCASFileTree {
     ///   intermediate path components do not refer to a directory, a nil result
     ///   is returned.
     package func lookup(path: AbsolutePath, in db: any FXCASDatabase, _ ctx: Context) -> FXFuture<
-        (id: FXDataID, info: LLBDirectoryEntry)?
+        (id: FXDataID, info: FXDirectoryEntry)?
     > {
         // Resolve the parent tree.
         var tree: FXFuture<FXCASFileTree?> = db.group.next().makeSucceededFuture(self)
@@ -475,7 +475,7 @@ package final class FXCASFileTree {
                 return FXCASFileTree.create(
                     files: [
                         .init(
-                            info: LLBDirectoryEntry(
+                            info: FXDirectoryEntry(
                                 name: component, type: .directory, size: tree.aggregateSize,
                                 posixDetails: tree.posixDetails),
                             id: tree.id)
@@ -552,11 +552,11 @@ package final class FXCASFileTree {
             posixDetails: self.posixDetails, ctx)
     }
 
-    package func asDirectoryEntry(filename: String) -> LLBDirectoryEntryID {
+    package func asDirectoryEntry(filename: String) -> FXDirectoryEntryID {
         assert(filename.contains("/") == false)
-        let info = LLBDirectoryEntry(
+        let info = FXDirectoryEntry(
             name: filename, type: .directory, size: aggregateSize, posixDetails: self.posixDetails)
-        return LLBDirectoryEntryID(info, id)
+        return FXDirectoryEntryID(info, id)
     }
 }
 

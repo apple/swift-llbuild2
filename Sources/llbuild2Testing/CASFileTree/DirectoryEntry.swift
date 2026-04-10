@@ -9,26 +9,26 @@
 import FXAsyncSupport
 import Foundation
 
-extension LLBDirectoryEntry {
+extension FXDirectoryEntry {
     package init(
-        name: String, type: LLBFileType, size: Int, posixDetails: LLBPosixFileDetails? = nil
+        name: String, type: FXFileType, size: Int, posixDetails: FXPosixFileDetails? = nil
     ) {
         self.init(name: name, type: type, size: UInt64(clamping: size), posixDetails: posixDetails)
     }
 
     package init(
-        name: String, type: LLBFileType, size: UInt64, posixDetails: LLBPosixFileDetails? = nil
+        name: String, type: FXFileType, size: UInt64, posixDetails: FXPosixFileDetails? = nil
     ) {
         self.name = name
         self.type = type
         self.size = size
-        if let pd = posixDetails, pd != LLBPosixFileDetails() {
+        if let pd = posixDetails, pd != FXPosixFileDetails() {
             self.posixDetails = pd
         }
     }
 }
 
-extension LLBFileType {
+extension FXFileType {
     package var expectedPosixMode: mode_t {
         switch self {
         case .plainFile:

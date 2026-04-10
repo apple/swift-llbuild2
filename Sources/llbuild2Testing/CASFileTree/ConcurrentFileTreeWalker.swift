@@ -55,7 +55,7 @@ package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
 
     package struct FilterArgument: CustomDebugStringConvertible {
         package let path: AbsolutePath?
-        package let type: LLBFileType
+        package let type: FXFileType
         package let size: Int
     }
 
@@ -105,7 +105,7 @@ package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
 
     /// Get the children of a (directory) item.
     package func children(of item: Item, _ ctx: Context) -> FXFuture<[Item]> {
-        let typeHint: LLBFileType?
+        let typeHint: FXFileType?
         switch item.arg.type {
         case .UNRECOGNIZED(.min):
             typeHint = nil

@@ -28,7 +28,7 @@ struct CASFileTreeParser {
         switch kind?.type {
         case nil:
             do {
-                let info = try LLBFileInfo.deserialize(from: casObject.data)
+                let info = try FXFileInfo.deserialize(from: casObject.data)
                 return try parseCASObject(
                     id: id, path: path, casObject: casObject,
                     kind: .init(type: info.type, posixDetails: .init(from: info)))
@@ -87,7 +87,7 @@ struct CASFileTreeParser {
         }
 
         // Complex file. Parse it.
-        let info = try LLBFileInfo.deserialize(from: casObject.data)
+        let info = try FXFileInfo.deserialize(from: casObject.data)
 
         guard info.type == kind.type else {
             // Directory said it is some kind of file but it is not that file.
@@ -110,7 +110,7 @@ struct CASFileTreeParser {
                 let download = AnnotatedCASTreeChunk(
                     casObject.refs[0], path,
                     kind: .init(
-                        type: info.type, posixDetails: LLBPosixFileDetails(from: info),
+                        type: info.type, posixDetails: FXPosixFileDetails(from: info),
                         compressed: compressed, saveOffset: kind.saveOffset,
                         overestimatedSize: max(info.size, chunkSize)))
                 return (LLBFilesystemObject(), [download])
@@ -124,7 +124,7 @@ struct CASFileTreeParser {
 
             let prepareEmptyFile = LLBFilesystemObject(
                 path, .empty(size: max(info.size, atLeastSize), executable: exe),
-                posixDetails: LLBPosixFileDetails(from: info))
+                posixDetails: FXPosixFileDetails(from: info))
 
             let chunks: [AnnotatedCASTreeChunk]
             let eachChunkType = info.type == .executable ? .plainFile : info.type
@@ -159,9 +159,9 @@ struct CASFileTreeParser {
         LLBFilesystemObject, [AnnotatedCASTreeChunk]
     ) {
 
-        let posixDetails: LLBPosixFileDetails?
-        let dirContents: [LLBDirectoryEntry]
-        let dirInfo = try LLBFileInfo.deserialize(from: casObject.data)
+        let posixDetails: FXPosixFileDetails?
+        let dirContents: [FXDirectoryEntry]
+        let dirInfo = try FXFileInfo.deserialize(from: casObject.data)
         guard dirInfo.type == .directory else {
             throw FXCASFileTreeFormatError.formatError(reason: "\(id): object is not a directory")
         }
@@ -170,7 +170,7 @@ struct CASFileTreeParser {
                 reason: "\(id): directory doesn't specify children")
         }
         dirContents = children.entries
-        posixDetails = LLBPosixFileDetails(from: dirInfo)
+        posixDetails = FXPosixFileDetails(from: dirInfo)
 
         if casObject.refs.count < dirContents.count {
             throw FXCASFileTreeFormatError.unexpectedDirectoryData(id)
@@ -189,7 +189,7 @@ struct CASFileTreeParser {
             }
 
             let kind = AnnotatedCASTreeChunk.ItemKind(
-                type: info.type, posixDetails: LLBPosixFileDetails(from: info),
+                type: info.type, posixDetails: FXPosixFileDetails(from: info),
                 overestimatedSize: info.size)
             return AnnotatedCASTreeChunk(id, path.appending(component: info.name), kind: kind)
         }
@@ -270,21 +270,21 @@ struct AnnotatedCASTreeChunk {
     package let kind: ItemKind
 
     package struct ItemKind {
-        package let type: LLBFileType
-        package let posixDetails: LLBPosixFileDetails
+        package let type: FXFileType
+        package let posixDetails: FXPosixFileDetails
         let compressed: Bool
         let saveOffset: UInt64?
         package let overestimatedSize: UInt64
 
         package init(
-            type: LLBFileType, posixDetails: LLBPosixFileDetails?, compressed: Bool = false,
+            type: FXFileType, posixDetails: FXPosixFileDetails?, compressed: Bool = false,
             saveOffset: UInt64? = nil, overestimatedSize: UInt64 = 0
         ) {
             self.type = type
             self.compressed = compressed
             self.saveOffset = saveOffset
             self.overestimatedSize = overestimatedSize
-            self.posixDetails = posixDetails ?? LLBPosixFileDetails()
+            self.posixDetails = posixDetails ?? FXPosixFileDetails()
         }
     }
 

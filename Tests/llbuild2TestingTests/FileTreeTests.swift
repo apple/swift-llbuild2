@@ -32,9 +32,9 @@ class FXCASFileTreeTests: XCTestCase {
         let db = FXInMemoryCASDatabase(group: group)
         let ctx = Context()
 
-        let aInfo = LLBDirectoryEntry(name: "a", type: .plainFile, size: 1)
+        let aInfo = FXDirectoryEntry(name: "a", type: .plainFile, size: 1)
         let aID = try db.put(data: FXByteBuffer.withBytes(ArraySlice("a".utf8)), ctx).wait()
-        let bInfoExec = LLBDirectoryEntry(name: "b", type: .executable, size: 1)
+        let bInfoExec = FXDirectoryEntry(name: "b", type: .executable, size: 1)
         let bID = try db.put(data: FXByteBuffer.withBytes(ArraySlice("b".utf8)), ctx).wait()
         let tree1 = try FXCASFileTree.create(
             files: [.init(info: aInfo, id: aID), .init(info: bInfoExec, id: bID)], in: db, ctx
@@ -55,9 +55,9 @@ class FXCASFileTreeTests: XCTestCase {
         let db = FXInMemoryCASDatabase(group: group)
         let ctx = Context()
 
-        let aInfo = LLBDirectoryEntry(name: "a", type: .plainFile, size: 1)
+        let aInfo = FXDirectoryEntry(name: "a", type: .plainFile, size: 1)
         let aID = try db.put(data: FXByteBuffer.withBytes(ArraySlice("a".utf8)), ctx).wait()
-        let bInfoExec = LLBDirectoryEntry(name: "b", type: .executable, size: 1)
+        let bInfoExec = FXDirectoryEntry(name: "b", type: .executable, size: 1)
         let bID = try db.put(data: FXByteBuffer.withBytes(ArraySlice("b".utf8)), ctx).wait()
         let tree1 = try FXCASFileTree.create(
             files: [.init(info: aInfo, id: aID), .init(info: bInfoExec, id: bID)], in: db, ctx
@@ -74,7 +74,7 @@ class FXCASFileTreeTests: XCTestCase {
         let ctx = Context()
 
         for N in [0, 1, 2, 5, 11, 100] {
-            let files = (0..<N).map { LLBDirectoryEntry(name: "f\($0)", type: .plainFile, size: 0) }
+            let files = (0..<N).map { FXDirectoryEntry(name: "f\($0)", type: .plainFile, size: 0) }
             let fileData = try db.put(data: FXByteBuffer.withBytes([]), ctx).wait()
             let tree = try FXCASFileTree.create(
                 files: files.map { .init(info: $0, id: fileData) }, in: db, ctx
@@ -102,7 +102,7 @@ class FXCASFileTreeTests: XCTestCase {
             in: .dir(["a": .file([1])]),
             is: (
                 FXDataID(blake3hash: FXByteBuffer.withBytes([1]), refs: []),
-                LLBDirectoryEntry(name: "a", type: .plainFile, size: 1)
+                FXDirectoryEntry(name: "a", type: .plainFile, size: 1)
             ))
         try checkLookupPath(
             of: AbsolutePath(validating: "/a/b"),
@@ -113,7 +113,7 @@ class FXCASFileTreeTests: XCTestCase {
             ]),
             is: (
                 FXDataID(blake3hash: FXByteBuffer.withBytes([1]), refs: []),
-                LLBDirectoryEntry(name: "b", type: .plainFile, size: 1)
+                FXDirectoryEntry(name: "b", type: .plainFile, size: 1)
             ))
         try checkLookupPath(
             of: AbsolutePath(validating: "/a/b/c"),
@@ -138,7 +138,7 @@ class FXCASFileTreeTests: XCTestCase {
             ]),
             is: (
                 testSubtree.id,
-                LLBDirectoryEntry(name: "a", type: .directory, size: testSubtree.aggregateSize)
+                FXDirectoryEntry(name: "a", type: .directory, size: testSubtree.aggregateSize)
             ))
     }
 
@@ -356,7 +356,7 @@ class FXCASFileTreeTests: XCTestCase {
     }
     private func checkLookupPath(
         of path: AbsolutePath, in declTree: LLBDeclFileTree,
-        is expected: (id: FXDataID, info: LLBDirectoryEntry)?, file: StaticString = #file,
+        is expected: (id: FXDataID, info: FXDirectoryEntry)?, file: StaticString = #file,
         line: UInt = #line
     ) throws {
         let db = FXInMemoryCASDatabase(group: group)
