@@ -58,7 +58,7 @@ package struct LLBLinkedListStreamWriter {
                 db.put(data: data, ctx).flatMap { [db, ext] contentID in
 
                     var entries = [
-                        LLBDirectoryEntryID(
+                        FXDirectoryEntryID(
                             info: .init(
                                 name: "\(channel)\(ext)", type: .plainFile, size: data.readableBytes
                             ),
@@ -69,7 +69,7 @@ package struct LLBLinkedListStreamWriter {
                     let aggregateSize: Int
                     if let (prevID, prevSize) = previousData {
                         entries.append(
-                            LLBDirectoryEntryID(
+                            FXDirectoryEntryID(
                                 info: .init(name: "prev", type: .directory, size: prevSize),
                                 id: prevID
                             )

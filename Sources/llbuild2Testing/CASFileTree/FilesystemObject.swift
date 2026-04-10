@@ -18,7 +18,7 @@ package protocol LLBFilesystemObjectMaterializer: AnyObject {
 package struct LLBFilesystemObject {
     package let path: AbsolutePath
     package let content: Content
-    package let posixDetails: LLBPosixFileDetails?
+    package let posixDetails: FXPosixFileDetails?
 
     package enum Content {
         /// Not an actual filesystem content, a placeholder.
@@ -41,7 +41,7 @@ package struct LLBFilesystemObject {
         self.posixDetails = nil
     }
 
-    package init(_ path: AbsolutePath, _ content: Content, posixDetails: LLBPosixFileDetails? = nil)
+    package init(_ path: AbsolutePath, _ content: Content, posixDetails: FXPosixFileDetails? = nil)
     {
         self.path = path
         self.content = content
@@ -80,15 +80,15 @@ extension LLBFilesystemObject {
 
 }
 
-extension LLBPosixFileDetails {
+extension FXPosixFileDetails {
     init(from info: stat) {
-        self = LLBPosixFileDetails()
+        self = FXPosixFileDetails()
         mode = UInt32(exactly: info.st_mode & 0o7777) ?? 0
         owner = UInt32(exactly: info.st_uid) ?? 0
         group = UInt32(exactly: info.st_gid) ?? 0
     }
 
-    init?(from info: LLBFileInfo) {
+    init?(from info: FXFileInfo) {
         guard info.hasPosixDetails else {
             return nil
         }
@@ -97,7 +97,7 @@ extension LLBPosixFileDetails {
         self = posixDetails
     }
 
-    init?(from info: LLBDirectoryEntry) {
+    init?(from info: FXDirectoryEntry) {
         guard info.hasPosixDetails else {
             return nil
         }

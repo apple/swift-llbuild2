@@ -51,10 +51,10 @@ package struct FXCASBlob {
     package let size: Int
 
     /// The type of the blob.
-    internal let type: LLBFileType
+    internal let type: FXFileType
 
     /// POSIX permissions and ownership.
-    internal let posixDetails: LLBPosixFileDetails?
+    internal let posixDetails: FXPosixFileDetails?
 
     /// The parsed information on the object.
     private let contents: Contents
@@ -73,8 +73,8 @@ package struct FXCASBlob {
     }
 
     internal init(
-        db: any FXCASDatabase, receivedId: TypedID, type: LLBFileType,
-        posixDetails: LLBPosixFileDetails? = nil, size: Int, contents: Contents
+        db: any FXCASDatabase, receivedId: TypedID, type: FXFileType,
+        posixDetails: FXPosixFileDetails? = nil, size: Int, contents: Contents
     ) {
         self.db = db
         self.receivedId = receivedId
@@ -89,7 +89,7 @@ package struct FXCASBlob {
     }
 
     internal init(
-        db: any FXCASDatabase, id: FXDataID, type advertisedType: LLBFileType, object: FXCASObject,
+        db: any FXCASDatabase, id: FXDataID, type advertisedType: FXFileType, object: FXCASObject,
         _ ctx: Context
     ) throws {
         self.db = db
@@ -107,7 +107,7 @@ package struct FXCASBlob {
 
         // Otherwise, we must have a complex object, which will be described by
         // the `FileInformation` type.
-        let info = try LLBFileInfo.deserialize(from: object.data)
+        let info = try FXFileInfo.deserialize(from: object.data)
         self.size = Int(info.size)
 
         self.type = info.type
@@ -218,9 +218,9 @@ package struct FXCASBlob {
 
             // Otherwise, it is an annotated item; current, we expect this only
             // happens when compression is enabled.
-            let info: LLBFileInfo
+            let info: FXFileInfo
             do {
-                info = try LLBFileInfo.deserialize(from: object.data)
+                info = try FXFileInfo.deserialize(from: object.data)
             } catch {
                 return self.db.group.next().makeFailedFuture(error)
             }
@@ -247,13 +247,13 @@ package struct FXCASBlob {
     /// return a DataID of the file info object directly.
     package static func `import`(
         data: FXByteBuffer, isExecutable: Bool = false, in db: any FXCASDatabase,
-        posixDetails: LLBPosixFileDetails? = nil, options: FXCASFileTree.ImportOptions? = nil,
+        posixDetails: FXPosixFileDetails? = nil, options: FXCASFileTree.ImportOptions? = nil,
         _ ctx: Context
     ) -> FXFuture<FXCASBlob> {
 
         let testId = FXDataID(blake3hash: data, refs: [])
 
-        var fileInfo = LLBFileInfo()
+        var fileInfo = FXFileInfo()
         fileInfo.type = isExecutable ? .executable : .plainFile
         fileInfo.size = UInt64(data.readableBytes)
         fileInfo.compression = .none
@@ -318,7 +318,7 @@ package struct FXCASBlob {
             if let chunk = chunks.first, chunks.count == 1, type == .plainFile {
                 return db.group.next().makeSucceededFuture(chunk)
             }
-            var fileInfo = LLBFileInfo()
+            var fileInfo = FXFileInfo()
             fileInfo.type = type
             fileInfo.size = UInt64(size)
             fileInfo.compression = .none
@@ -331,17 +331,17 @@ package struct FXCASBlob {
         }
     }
 
-    package func asDirectoryEntry(filename: String) -> LLBDirectoryEntryID {
+    package func asDirectoryEntry(filename: String) -> FXDirectoryEntryID {
         let chunks = chunkIDs()
         if let chunk = chunks.first, chunks.count == 1 {
-            return LLBDirectoryEntryID(
+            return FXDirectoryEntryID(
                 info: .init(
                     name: filename, type: type, size: size, posixDetails: self.posixDetails),
                 id: chunk)
         }
         switch receivedId {
         case .outer(let id):
-            return LLBDirectoryEntryID(
+            return FXDirectoryEntryID(
                 info: .init(
                     name: filename, type: type, size: size, posixDetails: self.posixDetails), id: id
             )

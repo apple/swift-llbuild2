@@ -12,26 +12,26 @@ import SwiftProtobuf
 
 // MARK:- PolymorphicSerializable -
 
-/// Types conforming to LLBPolymorphicSerializable are allowed to be serialized into
-/// LLBAnySerializable. They need to be registered in order to be deserialized
+/// Types conforming to FXPolymorphicSerializable are allowed to be serialized into
+/// FXAnySerializable. They need to be registered in order to be deserialized
 /// at runtime without compile-time type information.
-public protocol LLBPolymorphicSerializable: FXSerializable {
+public protocol FXPolymorphicSerializable: FXSerializable {
     static var polymorphicIdentifier: String { get }
 }
 
-/// Make all LLBSerializbles automatically conform to this by retrieving it's
+/// Make all FXSerializables automatically conform to this by retrieving its
 /// described type. This is not ideal since it doesn't return the module name.
 /// Later on, we might be able to migrate this logic to use _mangledTypeName
 /// instead to make this more robust.
-extension LLBPolymorphicSerializable {
+extension FXPolymorphicSerializable {
     public static var polymorphicIdentifier: String {
         return String(describing: Self.self)
     }
 }
 
 // Convenience internal initializer.
-extension LLBAnySerializable {
-    public init(from polymorphicSerializable: LLBPolymorphicSerializable) throws {
+extension FXAnySerializable {
+    public init(from polymorphicSerializable: FXPolymorphicSerializable) throws {
         self.typeIdentifier = type(of: polymorphicSerializable).polymorphicIdentifier
         self.serializedBytes = try Data(polymorphicSerializable.toBytes().readableBytesView)
     }
@@ -41,13 +41,13 @@ extension LLBAnySerializable {
 // MARK:- SerializableRegistry -
 
 public protocol FXSerializableLookup {
-    func lookupType(identifier: String) -> LLBPolymorphicSerializable.Type?
+    func lookupType(identifier: String) -> FXPolymorphicSerializable.Type?
 }
 
 /// Container for mapping registered identifiers to their runtime types.
 public class FXSerializableRegistry: FXSerializableLookup {
     /// Types registered at runtime that are allowed to be deserialized.
-    private var registeredTypes: [String: LLBPolymorphicSerializable.Type] = [:]
+    private var registeredTypes: [String: FXPolymorphicSerializable.Type] = [:]
 
     public init() {}
 
@@ -57,14 +57,14 @@ public class FXSerializableRegistry: FXSerializableLookup {
     /// made.
     ///
     /// CONCURRENCY: *NOT* Thread-safe
-    public func register(type: LLBPolymorphicSerializable.Type) {
+    public func register(type: FXPolymorphicSerializable.Type) {
         if registeredTypes[type.polymorphicIdentifier] == nil {
             registeredTypes[type.polymorphicIdentifier] = type
         }
     }
 
     /// Lookup the register runtime type for a given type identifier
-    public func lookupType(identifier: String) -> LLBPolymorphicSerializable.Type? {
+    public func lookupType(identifier: String) -> FXPolymorphicSerializable.Type? {
         return registeredTypes[identifier]
     }
 }
@@ -72,21 +72,21 @@ public class FXSerializableRegistry: FXSerializableLookup {
 
 // MARK:- AnySerializable deserialization support -
 
-public enum LLBAnySerializableError: Swift.Error {
+public enum FXAnySerializableError: Swift.Error {
     case unknownType(String)
     case typeMismatch(String)
 }
 
-extension LLBAnySerializable {
+extension FXAnySerializable {
     public func deserialize<T>(registry: FXSerializableLookup) throws -> T {
         guard let serializableType = registry.lookupType(identifier: typeIdentifier) else {
-            throw LLBAnySerializableError.unknownType(typeIdentifier)
+            throw FXAnySerializableError.unknownType(typeIdentifier)
         }
 
         // FIXME: this extra buffer copy is unfortunate
         let buffer = FXByteBuffer.withBytes(ArraySlice<UInt8>(serializedBytes))
         guard let deserialized = try serializableType.init(from: buffer) as? T else {
-            throw LLBAnySerializableError.typeMismatch("\(typeIdentifier) not convertible to \(T.Type.self)")
+            throw FXAnySerializableError.typeMismatch("\(typeIdentifier) not convertible to \(T.Type.self)")
         }
 
         return deserialized
@@ -96,13 +96,13 @@ extension LLBAnySerializable {
 
 // MARK:- CASObjectRepresentable for any Serializable via AnySerializable
 
-extension LLBAnySerializable: FXSerializable {}
+extension FXAnySerializable: FXSerializable {}
 
-extension LLBPolymorphicSerializable {
+extension FXPolymorphicSerializable {
     init(from casObject: FXCASObject, registry: FXSerializableLookup) throws {
-        let any = try LLBAnySerializable(from: casObject.data)
+        let any = try FXAnySerializable(from: casObject.data)
         guard let objType = registry.lookupType(identifier: any.typeIdentifier) else {
-            throw LLBAnySerializableError.unknownType(any.typeIdentifier)
+            throw FXAnySerializableError.unknownType(any.typeIdentifier)
         }
         // FIXME: this extra buffer copy is unfortunate
         let buffer = FXByteBuffer.withBytes(ArraySlice<UInt8>(any.serializedBytes))
@@ -110,9 +110,9 @@ extension LLBPolymorphicSerializable {
     }
 }
 
-extension FXCASObjectRepresentable where Self: LLBPolymorphicSerializable {
+extension FXCASObjectRepresentable where Self: FXPolymorphicSerializable {
     public func asCASObject() throws -> FXCASObject {
-        let any = try LLBAnySerializable(from: self)
+        let any = try FXAnySerializable(from: self)
         return FXCASObject(refs: [], data: try any.toBytes())
     }
 }
@@ -128,8 +128,8 @@ extension FXCASObjectConstructable where Self: FXSerializable {
     }
 }
 
-extension LLBAnySerializable: FXCASObjectConstructable {
+extension FXAnySerializable: FXCASObjectConstructable {
     public init(from casObject: FXCASObject) throws {
-        self = try LLBAnySerializable.init(from: casObject.data)
+        self = try FXAnySerializable.init(from: casObject.data)
     }
 }

@@ -10,7 +10,7 @@ syntax = "proto3";
 
 option java_package = "com.apple.CASFileTreeProtocol";
 
-enum LLBFileType {
+enum FXFileType {
     /// A plain file.
     PLAIN_FILE = 0x0;
 
@@ -24,7 +24,7 @@ enum LLBFileType {
     SYMLINK = 0x3;
 }
 
-message LLBPosixFileDetails {
+message FXPosixFileDetails {
     /// The POSIX permissions (&0o7777). Masking is useful when storing entries
     /// with very restricted permissions (such as (perm & 0o0007) == 0).
     uint32 mode = 1;
@@ -38,36 +38,36 @@ message LLBPosixFileDetails {
     uint32 group = 3;
 }
 
-message LLBDirectoryEntry {
+message FXDirectoryEntry {
     /// The name of the directory entry.
     string name = 1;
 
     /// The type of the directory entry.
-    LLBFileType type = 2;
+    FXFileType type = 2;
 
     /// The (aggregate) size of the directory entry.
     uint64 size = 3;
 
     /// Mode and permissions. _Can_ optionally be present in the
     /// directory entry because the file can be just a direct blob reference.
-    LLBPosixFileDetails posixDetails = 4;
+    FXPosixFileDetails posixDetails = 4;
 }
 
 /// The list of file names and associated information, of a directory.
 ///  * The children are sorted by name.
 ///  * FIXME: collation rules or UTF-8 normalization guarantees?
-message LLBDirectoryEntries {
-    repeated LLBDirectoryEntry entries = 1;
+message FXDirectoryEntries {
+    repeated FXDirectoryEntry entries = 1;
 }
 
-enum LLBFileDataCompressionMethod {
+enum FXFileDataCompressionMethod {
     /// No compression is applied.
     NONE = 0x0;
 }
 
-message LLBFileInfo {
+message FXFileInfo {
     /// The type of the CASTree entry.
-    LLBFileType type = 1;
+    FXFileType type = 1;
 
     /// The file data size or the aggregate directory data size (recursive).
     /// Whether directory data includes the size of the directory catalogs
@@ -82,10 +82,10 @@ message LLBFileInfo {
     /// Whether and what compression is applied to file data.
     ///  * Compression ought not to be applied to symlinks.
     ///  * Compression is applied after chunking, to retain seekability.
-    LLBFileDataCompressionMethod compression = 4;
+    FXFileDataCompressionMethod compression = 4;
 
     /// Permission info useful for POSIX filesystems.
-    LLBPosixFileDetails posixDetails = 5;
+    FXPosixFileDetails posixDetails = 5;
 
     oneof payload {
         /// Files and symlinks:
@@ -96,7 +96,7 @@ message LLBFileInfo {
 
         /// Directories:
         ///  * Directory entries are represented inline.
-        LLBDirectoryEntries inlineChildren = 12;
+        FXDirectoryEntries inlineChildren = 12;
 
         /// Directories:
         ///  * Directory entries are represented as a reference to a B-tree.

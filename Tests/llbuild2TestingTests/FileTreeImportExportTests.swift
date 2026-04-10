@@ -65,8 +65,8 @@ class ImportExportTests: XCTestCase {
             XCTAssertEqual(
                 tree.files,
                 [
-                    LLBDirectoryEntry(name: "a.txt", type: .plainFile, size: 2),
-                    LLBDirectoryEntry(name: "dir", type: .directory, size: 10),
+                    FXDirectoryEntry(name: "a.txt", type: .plainFile, size: 2),
+                    FXDirectoryEntry(name: "dir", type: .directory, size: 10),
                 ])
 
             // Export the results.
@@ -133,8 +133,8 @@ class ImportExportTests: XCTestCase {
                 XCTAssertEqual(
                     tree.files,
                     [
-                        LLBDirectoryEntry(name: "a.txt", type: .plainFile, size: 2),
-                        LLBDirectoryEntry(name: "dir", type: .directory, size: 10),
+                        FXDirectoryEntry(name: "a.txt", type: .plainFile, size: 2),
+                        FXDirectoryEntry(name: "dir", type: .directory, size: 10),
                     ])
 
                 // Export the results.
@@ -208,7 +208,7 @@ class ImportExportTests: XCTestCase {
             XCTAssertEqual(
                 tree.files,
                 [
-                    LLBDirectoryEntry(name: "コカコーラ", type: .symlink, size: target.utf8.count)
+                    FXDirectoryEntry(name: "コカコーラ", type: .symlink, size: target.utf8.count)
                 ])
         }
 
