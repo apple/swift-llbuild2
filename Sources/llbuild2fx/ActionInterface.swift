@@ -12,7 +12,7 @@ public struct FXActionInterface<DataID: FXDataIDProtocol>: Sendable {
     public let _db: any Sendable
     public let treeService: (any FXTypedCASTreeService<DataID>)?
 
-    internal init<DB: FXTypedCASDatabase>(db: DB, treeService: (any FXTypedCASTreeService<DataID>)? = nil) where DB.DataID == DataID {
+    public init<DB: FXTypedCASDatabase>(db: DB, treeService: (any FXTypedCASTreeService<DataID>)? = nil) where DB.DataID == DataID {
         self._db = db
         self.treeService = treeService
     }
