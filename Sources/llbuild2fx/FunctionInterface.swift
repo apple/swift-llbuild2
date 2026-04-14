@@ -6,6 +6,8 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
+import Dispatch
+import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
 
@@ -136,7 +138,35 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
 
         ctx.logger?.debug("Will perform action: \(action)")
 
-        return spawner.spawn(action, requirements: requirements, ctx)
+        let startTime = DispatchTime.now()
+
+        return spawner.spawn(action, requirements: requirements, ctx).always { outcome in
+            if let delegate = self.fi.engine.delegate {
+                let spanID = UUID().uuidString
+                let parentSpanID = ctx.selfUUID
+                let endTime = DispatchTime.now()
+                let durationNs = endTime.uptimeNanoseconds - startTime.uptimeNanoseconds
+                let durationMs = Int(durationNs / 1_000_000)
+
+                let status: String
+                switch outcome {
+                case .success:
+                    status = "success"
+                case .failure:
+                    status = "failure"
+                }
+
+                let event = FXActionEvaluationEvent(
+                    actionName: ActionType.name,
+                    spanID: spanID,
+                    parentSpanID: parentSpanID,
+                    durationMs: durationMs,
+                    status: status,
+                    startTime: Date(timeIntervalSinceNow: -Double(durationNs) / 1_000_000_000)
+                )
+                delegate.actionEvaluationCompleted(event, ctx)
+            }
+        }
     }
 
 
