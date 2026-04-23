@@ -108,6 +108,35 @@ internal final class InternalKey<K: FXKey>: @unchecked Sendable {
         let treeService = engine.treeService
         self._function = { TypedFunction<K, DB>(db: db, cache: cache, treeService: treeService) }
     }
+
+    /// Creates an InternalKey without proving the `DataID` constraint at
+    /// compile time. The caller guarantees `K.ValueType.DataID == DB.DataID`
+    /// holds at runtime. Used by ``FXEngine/buildUnchecked(key:_:)`` for
+    /// existential key dispatch.
+    init<DB: FXTypedCASDatabase>(
+        unchecked key: K, engine: FXEngine<DB>, ctx: Context
+    ) {
+        self.name = String(describing: K.self)
+        self.key = key
+        self.ctx = ctx
+        let cachePath = Self.calculateCachePath(
+            key: key,
+            cacheRequestOnly: engine.cacheRequestOnly,
+            buildID: engine.buildID,
+            resources: engine.resources,
+            ctx: ctx
+        )
+        let hashData = Array(cachePath.utf8)
+        self.stableHashValue = FXDataID(blake3hash: hashData[...])
+        self.cachePath = cachePath
+        let db = engine.db
+        let cache = engine.cache
+        let treeService = engine.treeService
+        // TypedFunction<K, DB> requires K.ValueType.DataID == DB.DataID at the
+        // type level. At runtime this is always true for keys dispatched through
+        // buildUnchecked. We use _makeUncheckedFunction to bypass the constraint.
+        self._function = { _makeUncheckedFunction(K.self, db: db, cache: cache, treeService: treeService) }
+    }
 }
 
 extension InternalKey: FXKeyProperties {
@@ -245,6 +274,44 @@ extension Context {
         set {
             self[ObjectIdentifier(TraceIDKey.self)] = newValue
         }
+    }
+}
+
+/// Constructs a `GenericFunction` for key type `K` using database `DB`,
+/// without requiring `K.ValueType.DataID == DB.DataID` at the call site.
+/// The caller must guarantee the types match at runtime.
+///
+/// We can't construct TypedFunction<K, DB> directly (it carries the where
+/// clause). Instead we construct TypedFunction<_AnyKey<DB.DataID>, DB> —
+/// which satisfies the constraint trivially — and unsafeBitCast the result.
+/// This is safe because TypedFunction's stored properties (db, cache,
+/// treeService) only depend on DB, and its methods dispatch through the
+/// key's FXKey conformance which is resolved at runtime.
+private func _makeUncheckedFunction<K: FXKey, DB: FXTypedCASDatabase>(
+    _ keyType: K.Type,
+    db: DB,
+    cache: any FXFunctionCache<DB.DataID>,
+    treeService: (any FXTypedCASTreeService<DB.DataID>)?
+) -> any GenericFunction<K.ValueType.DataID> {
+    let fn: any GenericFunction<DB.DataID> = TypedFunction<_AnyKey<DB.DataID>, DB>(
+        db: db, cache: cache, treeService: treeService
+    )
+    return unsafeBitCast(fn, to: (any GenericFunction<K.ValueType.DataID>).self)
+}
+
+/// Minimal FXKey stub whose ValueType.DataID matches a given DataID.
+/// Used only by `_makeUncheckedFunction` to satisfy TypedFunction's
+/// where clause at construction time.
+private struct _AnyKey<DID: FXDataIDProtocol>: FXKey {
+    struct Value: FXValue, Codable {
+        typealias DataID = DID
+        var refs: [DID] { [] }
+        var codableValue: Value { self }
+        init(refs: [DID], codableValue: Value) { self = codableValue }
+    }
+    typealias ValueType = Value
+    func computeValue(_ fi: FXFunctionInterface<Self>, _ ctx: Context) -> FXFuture<Value> {
+        fatalError("_AnyKey should never be evaluated")
     }
 }
 
