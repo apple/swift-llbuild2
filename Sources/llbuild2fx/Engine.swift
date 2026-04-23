@@ -206,6 +206,36 @@ extension FXEngine: EngineInternalProtocol {
         }
     }
 
+    /// Build a type-erased key and return its serialized CAS representation.
+    ///
+    /// Use when the concrete `FXKey` type is only known at runtime (e.g. after
+    /// opening an existential metatype). The key must have `ValueType.DataID ==
+    /// DB.DataID`; this is checked at runtime via the `CallableKey` cast.
+    public func buildUnchecked(key: any FXKey, _ ctx: Context) -> FXFuture<FXCASObject> {
+        let ctx = engineContext(ctx)
+        func _doBuild<K: FXKey>(_ key: K) -> FXFuture<FXCASObject> {
+            let ikey = InternalKey(unchecked: key, engine: self, ctx: ctx)
+            return self.buildInternal(key: ikey, ctx).flatMapThrowing { result in
+                guard let iv = result as? InternalValue<K.ValueType> else {
+                    throw FXError.invalidValueType("Expected InternalValue<\(K.ValueType.self)>")
+                }
+                // Encode the value to CAS representation manually.
+                // InternalValue.asCASObject() requires DataID == FXDataID
+                // which we can't prove here, but the encoding doesn't
+                // depend on DataID — refs are cast through [UInt8].
+                let data = try FXEncoder().encode(iv.value.codableValue)
+                let buffer = FXByteBufferAllocator().buffer(bytes: ArraySlice<UInt8>(data))
+                let refs = iv.value.refs.map { FXDataID(bytes: [UInt8]($0.bytes))! }
+                return FXCASObject(refs: refs, data: buffer)
+            }
+        }
+        return _openExistential(key, do: _doBuild)
+    }
+
+    internal func buildInternal(key: FXRequestKey, _ ctx: Context) -> FXFuture<InternalResult> {
+        return build(key: key, ctx)
+    }
+
     internal func build(key: FXRequestKey, _ ctx: Context) -> FXFuture<InternalResult> {
         let ctx = engineContext(ctx)
         return self.pendingResults.value(for: HashableKey(key: key)) { _ in
