@@ -20,7 +20,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/apple/swift-system.git", from: "1.1.1"),
-        .package(url: "https://github.com/apple/swift-tools-support-async.git", from: "0.17.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
     ],
     targets: [
@@ -135,16 +134,6 @@ let package = Package(
         .target(
             name: "llbuild2",
             dependencies: ["llbuild2fx"]
-        ),
-
-        // Interop test: verifies TSFCAS types can bridge to FXCASDatabase
-        .testTarget(
-            name: "FXInteropTests",
-            dependencies: [
-                "llbuild2fx",
-                "llbuild2Testing",
-                .product(name: "SwiftToolsSupportCAS", package: "swift-tools-support-async"),
-            ]
         ),
     ]
 )

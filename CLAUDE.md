@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow
+
+Any code changes in this repository must be made in a git worktree, not directly on `main`. Start by entering a worktree before editing files.
+
 ## Project Overview
 
 llbuild2 is an experimental, Swift-native, fully async, NIO futures-based low-level build system framework. It is not a build system itself — it provides abstractions for building custom build systems with functional evaluation, CAS-backed caching, and remote execution support.
