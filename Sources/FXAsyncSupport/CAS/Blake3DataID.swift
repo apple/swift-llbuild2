@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -11,7 +11,7 @@ import FXCBLAKE3
 import NIOCore
 
 extension FXDataID {
-    package init(blake3hash buffer: FXByteBuffer, refs: [FXDataID] = []) {
+    public init(blake3hash buffer: FXByteBuffer, refs: [FXDataID] = []) {
         var hasher = fx_blake3_hasher()
         fx_blake3_hasher_init(&hasher)
 
@@ -32,14 +32,14 @@ extension FXDataID {
         self.init(directHash: hash)
     }
 
-    package init(blake3hash data: [UInt8], refs: [FXDataID] = []) {
+    public init(blake3hash data: [UInt8], refs: [FXDataID] = []) {
         self.init(blake3hash: ArraySlice(data))
     }
-    package init(blake3hash string: String, refs: [FXDataID] = []) {
+    public init(blake3hash string: String, refs: [FXDataID] = []) {
         self.init(blake3hash: ArraySlice(string.utf8))
     }
 
-    package init(blake3hash slice: ArraySlice<UInt8>, refs: [FXDataID] = []) {
+    public init(blake3hash slice: ArraySlice<UInt8>, refs: [FXDataID] = []) {
         var hasher = fx_blake3_hasher()
         fx_blake3_hasher_init(&hasher)
 
