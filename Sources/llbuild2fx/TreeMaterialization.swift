@@ -61,8 +61,8 @@ public func withTemporaryDirectory<R>(dir: AbsolutePath? = nil, _ ctx: Context, 
 
 extension FXFileID {
     public func materialize<R, TS: FXTypedCASTreeService>(filename: String, treeService: TS, _ ctx: Context, _ body: (AbsolutePath) async throws -> R) async throws -> R where TS.DataID == DataID {
-        if let dirPath = try await ctx.fxTreeMaterializer?.materialize(file: self, filename: filename, ctx) {
-            return try await body(dirPath.appending(component: filename))
+        if let filePath = try await ctx.fxTreeMaterializer?.materialize(file: self, filename: filename, ctx) {
+            return try await body(filePath)
         }
 
         return try await TSCBasic.withTemporaryDirectory(removeTreeOnDeinit: true) { tmp in
