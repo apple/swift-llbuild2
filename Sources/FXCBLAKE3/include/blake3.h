@@ -1,7 +1,7 @@
 #ifndef FXCBLAKE3_WRAPPER_H
 #define FXCBLAKE3_WRAPPER_H
 
-#include "../fx_blake3_prefix.h"
+#include "fx_blake3_prefix.h"
 
 #ifndef BLAKE3_H
 #define BLAKE3_H
