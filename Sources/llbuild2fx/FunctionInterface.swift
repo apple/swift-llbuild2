@@ -95,23 +95,20 @@ public final class FXFunctionInterface<K: FXKey>: Sendable {
                 return
             }
 
-            let cacheCheck: FXFuture<Void>
             if requireCacheHit {
-                cacheCheck = fi.engine.cacheContains(key: realX, props: realX, ctx).flatMapThrowing { exists in
+                return fi.engine.cacheContains(key: realX, props: realX, ctx).flatMapThrowing { exists in
                     guard exists else {
                         throw FXError.missingRequiredCacheEntry(cachePath: realX.cachePath)
                     }
-
                     return
+                }.flatMap {
+                    // This assumes cache entries and their CAS objects are never deleted. Otherwise
+                    // there's potential for a TOCTOU bug, since the object could be deleted between
+                    // the `cacheContains` and `fi.request` calls.
+                    return self.fi.request(realX, as: InternalValue<X.ValueType>.self, ctx).map { $0.value }
                 }
             } else {
-                cacheCheck = ctx.group.next().makeSucceededFuture(())
-            }
-
-            return cacheCheck.flatMap {
-                self.fi.request(realX, as: InternalValue<X.ValueType>.self, ctx)
-            }.map { internalValue in
-                internalValue.value
+                return fi.request(realX, as: InternalValue<X.ValueType>.self, ctx).map { $0.value }
             }
         } catch {
             return ctx.group.next().makeFailedFuture(error)

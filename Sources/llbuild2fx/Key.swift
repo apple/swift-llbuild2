@@ -402,9 +402,18 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
             fi.engine.delegate?.keyEvaluationCompleted(event, childContext)
         }
 
+        let interceptors = fi.engine.keyInterceptors
+
         let value: K.ValueType
         do {
-            value = try await actualKey.computeValue(fxfi, childContext).get()
+            var next: (FXKeyInput<K>) async throws -> K.ValueType = { input in
+                try await actualKey.computeValue(fxfi, input.context).get()
+            }
+            for interceptor in interceptors.reversed() {
+                let inner = next
+                next = { try await interceptor.computeValue(input: $0, next: inner) }
+            }
+            value = try await next(FXKeyInput(key: actualKey, context: childContext))
             status = "success"
         } catch {
             status = "failure"
