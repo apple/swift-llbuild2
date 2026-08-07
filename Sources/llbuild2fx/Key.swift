@@ -277,7 +277,7 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
     private func computeAndUpdate(key: InternalKey<K>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) async throws -> InternalResult {
         defer { ctx.logger?.trace("    evaluated \(key.logDescription())") }
 
-        let value = try await self.compute(key: key, fi, ctx).get()
+        let value = try await self.compute(key: key, fi, ctx)
         guard self.validateCache(key: key, cached: value) else {
             throw FXError.inconsistentValue("\(String(describing: type(of: key))) evaluated to a value that does not pass its own validateCache() check!")
         }
@@ -340,20 +340,16 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
     }
 
 
-    func compute(key: InternalKey<K>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) -> FXFuture<
-        InternalValue<K.ValueType>
-    > {
+    func compute(key: InternalKey<K>, _ fi: FunctionInterface<DB.DataID>, _ ctx: Context) async throws -> InternalValue<K.ValueType> {
         let actualKey = key.key
 
         // Check for test override before normal evaluation
         if let override = fi.engine.keyOverrides?.findOverride(for: K.self) {
-            return ctx.group.any().makeFutureWithTask {
-                let anyValue = try await override(actualKey)
-                guard let value = anyValue as? K.ValueType else {
-                    throw FXError.invalidValueType("Override for \(K.self) returned wrong type")
-                }
-                return InternalValue(value, requestedCacheKeyPaths: FXSortedSet<String>())
+            let anyValue = try await override(actualKey)
+            guard let value = anyValue as? K.ValueType else {
+                throw FXError.invalidValueType("Override for \(K.self) returned wrong type")
             }
+            return InternalValue(value, requestedCacheKeyPaths: FXSortedSet<String>())
         }
 
         let spawner = ConcreteActionSpawner(db: self.db, treeService: self.treeService, executor: fi.engine.executor, stats: fi.engine.stats)
@@ -385,33 +381,13 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
 
         let startTime = DispatchTime.now()
 
-        return actualKey.computeValue(fxfi, childContext).flatMapError { underlyingError in
-            let augmentedError: Swift.Error
-
-            augmentedError = FXError.valueComputationError(
-                keyPrefix: keyPrefix,
-                key: encodedKey,
-                error: underlyingError,
-                requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
-            )
-
-            return ctx.group.next().makeFailedFuture(augmentedError)
-        }.map { value in
-            return InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
-        }.always { result in
+        let status: String
+        defer {
             fi.engine.stats.remove(key: key.name)
 
             let endTime = DispatchTime.now()
             let durationNs = endTime.uptimeNanoseconds - startTime.uptimeNanoseconds
             let durationMs = Int(durationNs / 1_000_000)
-
-            let status: String
-            switch result {
-            case .success:
-                status = "success"
-            case .failure:
-                status = "failure"
-            }
 
             let event = FXKeyEvaluationEvent(
                 keyPrefix: keyPrefix,
@@ -425,6 +401,22 @@ final class TypedFunction<K: FXKey, DB: FXTypedCASDatabase>: GenericFunction
             )
             fi.engine.delegate?.keyEvaluationCompleted(event, childContext)
         }
+
+        let value: K.ValueType
+        do {
+            value = try await actualKey.computeValue(fxfi, childContext).get()
+            status = "success"
+        } catch {
+            status = "failure"
+            throw FXError.valueComputationError(
+                keyPrefix: keyPrefix,
+                key: encodedKey,
+                error: error,
+                requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot
+            )
+        }
+
+        return InternalValue(value, requestedCacheKeyPaths: fxfi.requestedCacheKeyPathsSnapshot)
     }
 
     func validateCache(key: InternalKey<K>, cached: InternalValue<K.ValueType>) -> Bool {
