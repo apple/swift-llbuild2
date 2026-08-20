@@ -12,11 +12,20 @@ import Dispatch
 import FXAsyncSupport
 import TSCBasic
 import FXAsyncSupport
-import TSCUtility
 import FXAsyncSupport
 import llbuild2Testing
 import FXAsyncSupport
 import XCTest
+
+#if canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#elseif canImport(Android)
+    import Android
+#elseif canImport(Darwin)
+    import Darwin
+#endif
 
 class ImportExportTests: XCTestCase {
 

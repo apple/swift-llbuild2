@@ -10,7 +10,6 @@ import FXCore
 import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
-import TSCUtility
 
 /// A simple in-memory implementation of the `FXCASDatabase` protocol.
 package final class FXInMemoryCASDatabase: Sendable {

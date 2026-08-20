@@ -12,7 +12,6 @@ import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
 import TSCBasic
-import TSCUtility
 
 protocol RetrieveChildrenProtocol: AnyObject {
     associatedtype Item

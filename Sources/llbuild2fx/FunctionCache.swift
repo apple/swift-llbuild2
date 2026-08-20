@@ -8,7 +8,6 @@
 
 import Logging
 import NIOCore
-import TSCUtility
 
 public protocol FXKeyProperties: Sendable {
     var volatile: Bool { get }

@@ -21,6 +21,16 @@ import FXCProcessSpawnSync
     #error("Process and fork() unavailable")
 #else
     import Foundation
+
+    #if canImport(Glibc)
+        import Glibc
+    #elseif canImport(Musl)
+        import Musl
+    #elseif canImport(Android)
+        import Android
+    #elseif canImport(Darwin)
+        import Darwin
+    #endif
 #endif
 
 extension fx_ps_error_s {

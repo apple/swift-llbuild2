@@ -24,14 +24,18 @@
 #include <limits.h>
 #include <pthread.h>
 #include <sys/wait.h>
-#if __has_include(<linux/close_range.h>)
+// Bionic's kernel UAPI header exists independent of libc's actual `close_range()`
+// export, which only landed in API level 34; probe the libc feature macro instead
+// of the header to decide whether the wrapper function is actually linkable.
+#if __has_include(<linux/close_range.h>) && !(defined(__ANDROID__) && __ANDROID_API__ < 34)
+#define HAVE_CLOSE_RANGE 1
 #include <linux/close_range.h>
 #endif
 #include <ps-api.h>
 
 #include "internal-helpers.h"
 
-#if __has_include(<linux/close_range.h>)
+#if HAVE_CLOSE_RANGE
 int close_range(unsigned int first, unsigned int last, int flags);
 #endif
 
@@ -158,7 +162,7 @@ static void setup_and_execve_child(fx_ps_process_configuration *config, int erro
     if (config->psc_close_other_fds) {
         int close_range_err = -1;
         errno = ENOSYS;
-#if __has_include(<linux/close_range.h>)
+#if HAVE_CLOSE_RANGE
         if (error_pipe > config->psc_fd_setup_count) {
             // We mustn't close `error_pipe`.
             close_range_err = close_range(config->psc_fd_setup_count, error_pipe - 1, 0);

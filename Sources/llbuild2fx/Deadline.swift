@@ -8,7 +8,6 @@
 
 import Foundation
 import NIO
-import TSCUtility
 
 private class DeadlineKey {}
 

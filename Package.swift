@@ -49,7 +49,7 @@ let package = Package(
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+                .product(name: "TSCBasic", package: "swift-tools-support-core"),
             ]
         ),
 
@@ -68,7 +68,7 @@ let package = Package(
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "SystemPackage", package: "swift-system"),
-                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+                .product(name: "TSCBasic", package: "swift-tools-support-core"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "DequeModule", package: "swift-collections"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),

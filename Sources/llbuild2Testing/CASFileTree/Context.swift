@@ -7,7 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import FXAsyncSupport
-import TSCUtility
+import FXCore
 
 private final class ContextKey {}
 

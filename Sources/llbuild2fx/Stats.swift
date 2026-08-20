@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOConcurrencyHelpers
-import TSCUtility
 
 public struct FXBuildEngineStatsSnapshot {
     public let currentKeys: [String: Int]

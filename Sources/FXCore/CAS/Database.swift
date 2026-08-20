@@ -8,7 +8,6 @@
 
 import Foundation
 import NIOCore
-import TSCUtility
 
 /// Error wrappers that implementations may use to communicate desired higher
 /// level responses.

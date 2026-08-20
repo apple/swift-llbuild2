@@ -10,6 +10,16 @@ import FXAsyncSupport
 import Foundation
 import TSCBasic
 
+#if canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#elseif canImport(Android)
+    import Android
+#elseif canImport(Darwin)
+    import Darwin
+#endif
+
 package protocol LLBFilesystemObjectMaterializer: AnyObject {
     func materialize(object: LLBFilesystemObject) throws
 }

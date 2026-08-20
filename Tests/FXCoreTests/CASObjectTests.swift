@@ -9,7 +9,6 @@
 import Foundation
 import FXCore
 import FXAsyncSupport
-import TSCUtility
 import XCTest
 
 final class CASObjectTests: XCTestCase {

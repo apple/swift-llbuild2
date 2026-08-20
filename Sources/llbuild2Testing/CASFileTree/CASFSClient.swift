@@ -11,7 +11,6 @@ import FXCore
 import Foundation
 import NIOCore
 import TSCBasic
-import TSCUtility
 
 /// A main API struct
 package struct FXCASFSClient: Sendable {

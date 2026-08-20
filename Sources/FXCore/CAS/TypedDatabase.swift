@@ -7,7 +7,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import NIOCore
-import TSCUtility
 
 /// A content-addressable database protocol parameterized over its identity
 /// and object types.

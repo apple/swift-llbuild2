@@ -8,7 +8,6 @@
 
 import NIO
 import TSCBasic
-import TSCUtility
 
 public typealias FXFuture<T> = NIO.EventLoopFuture<T>
 public typealias FXPromise<T> = NIO.EventLoopPromise<T>

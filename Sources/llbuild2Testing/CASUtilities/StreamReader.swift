@@ -9,7 +9,6 @@
 import FXAsyncSupport
 import FXCore
 import NIOCore
-import TSCUtility
 
 /// Implements the reading logic to read any kind of streaming data storage implemented. Currently it's hardcoded to
 /// read the LinkedList stream contents, but could get extended in the future when new storage structures are
