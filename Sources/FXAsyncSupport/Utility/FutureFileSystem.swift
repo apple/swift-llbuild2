@@ -11,6 +11,18 @@ import Foundation
 import NIOCore
 import TSCBasic
 
+#if canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#elseif canImport(Android)
+    import Android
+#elseif canImport(Darwin)
+    import Darwin
+#elseif canImport(WinSDK)
+    import WinSDK
+#endif
+
 /// Asynchronous file system interface integrated with `Future`s.
 package struct FXFutureFileSystem {
 

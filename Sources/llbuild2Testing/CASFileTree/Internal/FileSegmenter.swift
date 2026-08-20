@@ -13,6 +13,16 @@ import Foundation
 import NIOConcurrencyHelpers
 import TSCBasic
 
+#if canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#elseif canImport(Android)
+    import Android
+#elseif canImport(Darwin)
+    import Darwin
+#endif
+
 /// FileSegmenter is to facilitate slicing the file into fixed chunks
 /// in a way that optimizes for memory and file descriptors' usage
 /// and removes data consistency race conditions.
@@ -154,8 +164,15 @@ internal final class FileSegmenter {
         }
 
         // This is a large file, mmap it and retain the mapping until EOL.
-        let mmapReturnValue = mmap(nil, reportedSize, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0)
-        guard let basePointer = mmapReturnValue, basePointer != MAP_FAILED else {
+        let mmapReturnValue: UnsafeMutableRawPointer? = mmap(
+            nil, reportedSize, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0)
+        #if canImport(Android)
+            // Bionic defines `MAP_FAILED` via a macro Swift can't import as a value.
+            let mapFailed = UnsafeMutableRawPointer(bitPattern: -1)
+        #else
+            let mapFailed = MAP_FAILED
+        #endif
+        guard let basePointer = mmapReturnValue, basePointer != mapFailed else {
             throw FileSystemError(errno: errno, path)
         }
 
