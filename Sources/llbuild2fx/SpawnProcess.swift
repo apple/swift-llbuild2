@@ -27,6 +27,7 @@ public struct ProcessSpec: Codable, Sendable {
     public enum Executable: Codable, Sendable {
         case absolutePath(AbsolutePath)
         case inputPath(RelativePath)
+        case stringPath(String)
     }
 
     public enum RuntimeValue: Codable, Equatable, Sendable {
@@ -116,6 +117,8 @@ public struct ProcessSpec: Codable, Sendable {
             exePath = path
         case .inputPath(let path):
             exePath = inputPath.appending(path)
+        case .stringPath(let path):
+            exePath = try AbsolutePath(validating: path)
         }
 
         let stdinPath: String
