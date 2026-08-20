@@ -8,7 +8,6 @@
 
 import Foundation
 import NIOCore
-import TSCUtility
 
 public enum FXActionWorkerSize: Codable, Equatable, Sendable {
     case small

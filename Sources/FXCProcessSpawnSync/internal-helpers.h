@@ -45,6 +45,13 @@ static int positive_int_parse(const char *str) {
 #if defined(__linux__) || defined(__APPLE__)
 // Platform-specific version that uses syscalls directly and doesn't allocate heap memory.
 // Safe to use after vfork() and before execve()
+#if defined(__linux__) && !defined(__ANDROID__) && !defined(__GLIBC__)
+// musl doesn't define `struct dirent64`; musl's plain `struct dirent` already
+// matches what `SYS_getdents64` fills in.
+#define fx_ps_dirent64 dirent
+#else
+#define fx_ps_dirent64 dirent64
+#endif
 static int highest_possibly_open_fd_dir_syscall(const char *fd_dir) {
     int highest_fd_so_far = 0;
     int dir_fd = open(fd_dir, O_RDONLY);
@@ -65,9 +72,9 @@ static int highest_possibly_open_fd_dir_syscall(const char *fd_dir) {
     while ((
 #if defined(__linux__)
 #  if defined(__GLIBC__) && __GLIBC__ == 2 && defined(__GLIBC_MINOR__) && __GLIBC_MINOR__ >= 30
-        bytes_read = getdents64(dir_fd, (struct dirent64 *)buffer, sizeof(buffer))
+        bytes_read = getdents64(dir_fd, (struct fx_ps_dirent64 *)buffer, sizeof(buffer))
 #  else
-        bytes_read = syscall(SYS_getdents64, dir_fd, (struct dirent64 *)buffer, sizeof(buffer))
+        bytes_read = syscall(SYS_getdents64, dir_fd, (struct fx_ps_dirent64 *)buffer, sizeof(buffer))
 #  endif
 #elif defined(__APPLE__)
         bytes_read = __getdirentries64(dir_fd, buffer, sizeof(buffer), &os_controlled_seek_pos)
@@ -85,7 +92,7 @@ static int highest_possibly_open_fd_dir_syscall(const char *fd_dir) {
         long offset = 0;
         while (offset < bytes_read) {
 #if defined(__linux__)
-            struct dirent64 *entry = (struct dirent64 *)(buffer + offset);
+            struct fx_ps_dirent64 *entry = (struct fx_ps_dirent64 *)(buffer + offset);
 #elif defined(__APPLE__)
             struct dirent *entry = (struct dirent *)(buffer + offset);
 #endif
@@ -112,12 +119,12 @@ static int highest_possibly_open_fd(void) {
 #if defined(__APPLE__)
     int hi = highest_possibly_open_fd_dir_syscall("/dev/fd");
     if (hi < 0) {
-        hi = getdtablesize();
+        hi = (int)sysconf(_SC_OPEN_MAX);
     }
 #elif defined(__linux__)
     int hi = highest_possibly_open_fd_dir_syscall("/proc/self/fd");
     if (hi < 0) {
-        hi = getdtablesize();
+        hi = (int)sysconf(_SC_OPEN_MAX);
     }
 #else
     int hi = 1024;

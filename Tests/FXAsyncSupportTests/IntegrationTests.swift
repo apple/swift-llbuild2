@@ -2144,7 +2144,7 @@ private func highestOpenFD() -> CInt? {
         guard let dirPtr = opendir("/dev/fd") else {
             return nil
         }
-    #elseif os(Linux)
+    #elseif os(Linux) || os(Android)
         guard let dirPtr = opendir("/proc/self/fd") else {
             return nil
         }

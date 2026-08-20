@@ -9,7 +9,6 @@
 import FXCore
 import Foundation
 import NIOCore
-import TSCUtility
 
 /// Run the given computations on a given array in batches, exercising
 /// a specified amount of parallelism.
@@ -110,9 +109,24 @@ package struct LLBBatchingFutureOperationQueue: Sendable {
         _ args: [A], minStride: Int = 1, maxStride: Int = Int.max,
         _ body: @escaping (ArraySlice<A>) throws -> [T]
     ) -> [FXFuture<[T]>] {
-        let batches: [ArraySlice<A>] = args.tsc_sliceBy(
+        let batches: [ArraySlice<A>] = args.fx_sliceBy(
             maxStride: max(minStride, min(maxStride, args.count / maxOpCount)))
         return batches.map { arg in execute { try body(arg) } }
     }
 
+}
+
+extension Array {
+    /// Make several slices out of a given array.
+    /// - Returns:
+    ///   An array of slices of `maxStride` elements each.
+    @inlinable
+    @usableFromInline
+    func fx_sliceBy(maxStride: Int) -> [ArraySlice<Element>] {
+        let elementsCount = self.count
+        let groupsCount = (elementsCount + maxStride - 1) / maxStride
+        return (0..<groupsCount).map({ n in
+            self[n * maxStride..<Swift.min(elementsCount, (n + 1) * maxStride)]
+        })
+    }
 }

@@ -3,7 +3,6 @@ import FXCore
 import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
-import TSCUtility
 
 extension FXByteBuffer {
     fileprivate var availableCapacity: Int { capacity - readableBytes }

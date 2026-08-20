@@ -9,7 +9,6 @@
 import FXAsyncSupport
 import FXCore
 import TSCBasic
-import TSCUtility
 
 /// CAS backed FileSystem implementation rooted at the given CASTree.
 ///

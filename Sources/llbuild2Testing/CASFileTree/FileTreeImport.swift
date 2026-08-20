@@ -14,7 +14,6 @@ import NIO
 import NIOConcurrencyHelpers
 import TSCBasic
 import TSCLibc
-import TSCUtility
 
 package protocol FXCASFileTreeImportProgressStats: AnyObject {
     var toImportFiles: Int { get }

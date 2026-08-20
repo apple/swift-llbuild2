@@ -8,7 +8,6 @@
 
 import Foundation
 import NIOCore
-import TSCBasic
 
 // MARK:- DataID Extensions -
 

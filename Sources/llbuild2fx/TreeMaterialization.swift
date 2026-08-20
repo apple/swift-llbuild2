@@ -9,7 +9,6 @@
 import Foundation
 import NIOCore
 import TSCBasic
-import TSCUtility
 
 public protocol FXTreeMaterializer {
     var mountPath: AbsolutePath? { get }

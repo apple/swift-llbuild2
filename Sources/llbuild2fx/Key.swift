@@ -10,7 +10,6 @@ import Foundation
 import Logging
 import NIOConcurrencyHelpers
 import NIOCore
-import TSCUtility
 
 public protocol FXKey: Encodable, FXVersioning {
     associatedtype ValueType: FXValue

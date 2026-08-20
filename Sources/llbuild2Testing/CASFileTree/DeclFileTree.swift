@@ -9,7 +9,6 @@
 import FXAsyncSupport
 import FXCore
 import NIOCore
-import TSCUtility
 
 /// A declarative way to create a CASFileTree with content known upfront
 /// Usage example:

@@ -11,7 +11,6 @@ import FXAsyncSupport
 import Foundation
 import NIOCore
 import TSCBasic
-import TSCUtility
 import _NIOFileSystem
 
 public struct ProcessTerminationError<DataID: FXDataIDProtocol>: Error {

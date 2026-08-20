@@ -12,7 +12,6 @@ import FXCore
 import Foundation
 import NIOCore
 import TSCBasic
-import TSCUtility
 
 package enum FXCASFileTreeError: Error {
     case inconsistentFileData

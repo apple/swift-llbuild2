@@ -9,7 +9,6 @@
 import FXAsyncSupport
 import FXCore
 import NIOCore
-import TSCUtility
 
 extension String {
     fileprivate func prepending(_ prefix: String) -> String {

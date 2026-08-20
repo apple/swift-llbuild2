@@ -7,5 +7,3 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 @_exported import FXCore
-import TSCUtility
-@_exported import struct TSCUtility.Context
