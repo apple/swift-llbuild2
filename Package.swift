@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
         .package(url: "https://github.com/apple/swift-system.git", from: "1.1.1"),
-        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.8.0"),
     ],
     targets: [
         // Vendored BLAKE3 C implementation
