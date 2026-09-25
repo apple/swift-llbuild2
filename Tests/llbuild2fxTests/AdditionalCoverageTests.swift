@@ -676,6 +676,7 @@ final class FXServiceTests: XCTestCase {
         let group = FXMakeDefaultDispatchGroup()
         let service = FXService(group: group)
         XCTAssertNil(service.ruleset("nonexistent"))
+        XCTAssertEqual(service.rulesets.count, 0)
     }
 
     func testRegisterResource() throws {
@@ -1004,6 +1005,7 @@ final class FXServiceExtendedTests: XCTestCase {
 
         XCTAssertNotNil(service.ruleset("minimal"))
         XCTAssertNil(service.ruleset("other"))
+        XCTAssertEqual(service.rulesets.count, 1)
     }
 
     func testErrorClassifierAfterPackageRegistration() async throws {

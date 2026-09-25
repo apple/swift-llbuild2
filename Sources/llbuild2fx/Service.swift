@@ -27,6 +27,10 @@ public class FXService: FXErrorClassifier {
         return _rulesets.withLockedValue { $0[name] }
     }
 
+    public var rulesets: [FXRuleset] {
+        return _rulesets.withLockedValue { Array($0.values) }
+    }
+
     public func resources(for ruleset: FXRuleset) throws -> [ResourceKey: FXResource] {
         return try _resources.withLockedValue {
             return try ruleset.constrainResources($0)
