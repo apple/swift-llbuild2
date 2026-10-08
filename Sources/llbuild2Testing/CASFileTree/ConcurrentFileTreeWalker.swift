@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -14,20 +14,20 @@ import NIOCore
 import TSCBasic
 
 protocol RetrieveChildrenProtocol: AnyObject {
-    associatedtype Item
+    associatedtype Item: Sendable
 
     /// Get the item's children based on the item.
     func children(of: Item, _ ctx: Context) -> FXFuture<[Item]>
 }
 
 /// Walk the hierarchy with bounded concurrency.
-final class ConcurrentHierarchyWalker<Item> {
+final class ConcurrentHierarchyWalker<Item: Sendable>: Sendable {
 
     private let group: FXFuturesDispatchGroup
     private let futureOpQueue: FXFutureOperationQueue
-    private let getChildren: (_ of: Item, _ ctx: Context) -> FXFuture<[Item]>
+    private let getChildren: @Sendable (_ of: Item, _ ctx: Context) -> FXFuture<[Item]>
 
-    package init<Delegate: RetrieveChildrenProtocol>(
+    package init<Delegate: RetrieveChildrenProtocol & Sendable>(
         group: FXFuturesDispatchGroup, delegate: Delegate, maxConcurrentOperations: Int = 100
     ) where Delegate.Item == Item {
         self.group = group
@@ -47,18 +47,18 @@ final class ConcurrentHierarchyWalker<Item> {
     }
 }
 
-package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
+package final class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol, Sendable {
     let db: any FXCASDatabase
     let client: FXCASFSClient
-    let filterCallback: (FilterArgument) -> Bool
+    let filterCallback: @Sendable (FilterArgument) -> Bool
 
-    package struct FilterArgument: CustomDebugStringConvertible {
+    package struct FilterArgument: CustomDebugStringConvertible, Sendable {
         package let path: AbsolutePath?
         package let type: FXFileType
         package let size: Int
     }
 
-    package struct Item {
+    package struct Item: Sendable {
         /// The description of the current CAS filesystem entry.
         let arg: FilterArgument
 
@@ -70,20 +70,23 @@ package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
         let scanResult: ScanResult
     }
 
-    package class ScanResult {
-        let lock = NIOConcurrencyHelpers.NIOLock()
-        var collectedArguments = [FilterArgument]()
+    package final class ScanResult: Sendable {
+        private let _collectedArguments = NIOLockedValueBox<[FilterArgument]>([])
 
         package func reapResult() -> [FilterArgument] {
-            lock.withLock {
-                let result = collectedArguments
-                collectedArguments = []
+            _collectedArguments.withLockedValue { collected in
+                let result = collected
+                collected = []
                 return result
             }
         }
+
+        fileprivate func append(_ argument: FilterArgument) {
+            _collectedArguments.withLockedValue { $0.append(argument) }
+        }
     }
 
-    package init(db: any FXCASDatabase, _ filter: @escaping (FilterArgument) -> Bool) {
+    package init(db: any FXCASDatabase, _ filter: @escaping @Sendable (FilterArgument) -> Bool) {
         self.db = db
         self.client = FXCASFSClient(db)
         self.filterCallback = filter
@@ -166,9 +169,7 @@ package class LLBConcurrentFileTreeWalker: RetrieveChildrenProtocol {
             return false
         }
 
-        item.scanResult.lock.withLock {
-            item.scanResult.collectedArguments.append(item.arg)
-        }
+        item.scanResult.append(item.arg)
 
         return true
     }

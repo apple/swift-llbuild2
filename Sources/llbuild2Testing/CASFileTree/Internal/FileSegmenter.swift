@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -28,7 +28,12 @@ import TSCBasic
 /// and removes data consistency race conditions.
 ///
 /// The class is thread-safe.
-internal final class FileSegmenter {
+///
+/// Marked `@unchecked Sendable`: all stored properties are immutable after init, but
+/// `mappedAt` is a raw `mmap()` base pointer, which the compiler can never consider
+/// `Sendable` on its own merits even though the mapped memory is only read, never
+/// remapped or written, after initialization.
+internal final class FileSegmenter: @unchecked Sendable {
     /// Import path. FIXME: move logging itself out of this class.
     private let importPath: AbsolutePath
 

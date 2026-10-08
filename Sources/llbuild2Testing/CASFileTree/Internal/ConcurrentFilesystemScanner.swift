@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -27,7 +27,12 @@ import TSCBasic
 /// keeps open a file descriptor. The number of file descriptors required
 /// is the maximum depth of the directory multiplied by the maximum
 /// number of concurent accessors.
-class ConcurrentFilesystemScanner: Sequence {
+///
+/// Marked `@unchecked Sendable`: by design (per the doc comment above), all mutable state
+/// (`unprocessed`, `expanding`, `hasUnfinishedWork`) is only ever touched while holding
+/// `sharedLock`, making concurrent use across multiple scanning threads safe; the compiler
+/// can't verify this manual locking discipline.
+class ConcurrentFilesystemScanner: Sequence, @unchecked Sendable {
     package typealias Iterator = FilesystemIterator
     package typealias Element = (path: AbsolutePath, type: FilesystemObjectType)
 

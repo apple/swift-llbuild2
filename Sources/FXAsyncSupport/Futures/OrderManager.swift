@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -37,7 +37,7 @@ import NIOConcurrencyHelpers
 ///     3
 ///
 
-package class LLBOrderManager {
+package final class LLBOrderManager: Sendable {
 
     // A safety timer, not to be exceeded.
     private let cancelTimer = DispatchSource.makeTimerSource()
@@ -46,13 +46,23 @@ package class LLBOrderManager {
     private typealias WaitListElement = (
         order: Int, promise: FXPromise<Void>, file: String, line: Int
     )
-    private let lock = NIOConcurrencyHelpers.NIOLock()
-    private var waitlist = [WaitListElement]()
-    private var nextToRun = 1
+
+    private enum GroupDesignator: Sendable {
+        case managedGroup(FXFuturesDispatchGroup)
+        case externallySuppliedGroup(FXFuturesDispatchGroup)
+    }
+
+    private struct State: Sendable {
+        var waitlist = [WaitListElement]()
+        var nextToRun = 1
+        var groupDesignator: GroupDesignator
+    }
+
+    private let state: NIOLockedValueBox<State>
 
     private var eventLoop: EventLoop {
-        lock.withLock {
-            switch groupDesignator {
+        state.withLockedValue { state in
+            switch state.groupDesignator {
             case .managedGroup(let group):
                 return group.next()
             case .externallySuppliedGroup(let group):
@@ -61,18 +71,12 @@ package class LLBOrderManager {
         }
     }
 
-    private enum GroupDesignator {
-        case managedGroup(FXFuturesDispatchGroup)
-        case externallySuppliedGroup(FXFuturesDispatchGroup)
-    }
-    private var groupDesignator: GroupDesignator
-
     package enum Error: Swift.Error {
         case orderManagerReset(file: String, line: Int)
     }
 
     package init(on loop: EventLoop, timeout: DispatchTimeInterval = .seconds(60)) {
-        self.groupDesignator = GroupDesignator.externallySuppliedGroup(loop)
+        self.state = NIOLockedValueBox(State(groupDesignator: .externallySuppliedGroup(loop)))
         self.timeout = timeout
         restartInactivityTimer()
         cancelTimer.setEventHandler { [weak self] in
@@ -90,13 +94,13 @@ package class LLBOrderManager {
 
     /// Run a specified callback in a particular order.
     @discardableResult
-    package func order<T>(
-        _ n: Int, file: String = #file, line: Int = #line, _ callback: @escaping () throws -> T
+    package func order<T: Sendable>(
+        _ n: Int, file: String = #file, line: Int = #line, _ callback: @escaping @Sendable () throws -> T
     ) -> EventLoopFuture<T> {
         let promise = eventLoop.makePromise(of: Void.self)
 
-        lock.withLockVoid {
-            waitlist.append((order: n, promise: promise, file: file, line: line))
+        state.withLockedValue { state in
+            state.waitlist.append((order: n, promise: promise, file: file, line: line))
         }
 
         let future = promise.futureResult.flatMapThrowing {
@@ -104,9 +108,9 @@ package class LLBOrderManager {
         }
 
         future.whenComplete { _ in
-            self.lock.withLockVoid {
-                if n == self.nextToRun {
-                    self.nextToRun += 1
+            self.state.withLockedValue { state in
+                if n == state.nextToRun {
+                    state.nextToRun += 1
                 }
             }
             self.unblockWaiters()
@@ -122,12 +126,12 @@ package class LLBOrderManager {
     }
 
     private func unblockWaiters() {
-        let wakeup: [EventLoopPromise<Void>] = lock.withLock {
+        let wakeup: [EventLoopPromise<Void>] = state.withLockedValue { state in
             let wakeupPromises =
-                waitlist
-                .filter({ $0.order <= nextToRun })
+                state.waitlist
+                .filter({ $0.order <= state.nextToRun })
                 .map({ $0.promise })
-            waitlist = waitlist.filter({ $0.order > nextToRun })
+            state.waitlist = state.waitlist.filter({ $0.order > state.nextToRun })
             return wakeupPromises
         }
         wakeup.forEach { $0.succeed(()) }
@@ -137,25 +141,24 @@ package class LLBOrderManager {
     /// specified as argument to order(_:_), but failing the outcome.
     package func reset(file: String = #file, line: Int = #line) -> EventLoopFuture<Void> {
         restartInactivityTimer()
-        let lock = self.lock
 
         let futures = failPromises(file: file, line: line)
 
         return EventLoopFuture.whenAllSucceed(futures, on: eventLoop).map { [weak self] _ in
             guard let self = self else { return }
-            lock.withLockVoid {
-                assert(self.waitlist.isEmpty)
-                self.nextToRun = 1
+            self.state.withLockedValue { state in
+                assert(state.waitlist.isEmpty)
+                state.nextToRun = 1
             }
         }
     }
 
     @discardableResult
     private func failPromises(file: String = #file, line: Int = #line) -> [EventLoopFuture<Void>] {
-        let toCancel: [WaitListElement] = lock.withLock {
-            let cancelList = waitlist
-            waitlist = []
-            nextToRun = Int.max
+        let toCancel: [WaitListElement] = state.withLockedValue { state in
+            let cancelList = state.waitlist
+            state.waitlist = []
+            state.nextToRun = Int.max
             return cancelList
         }
         let error = Error.orderManagerReset(file: file, line: line)
@@ -171,7 +174,7 @@ package class LLBOrderManager {
 
         failPromises()
 
-        guard case .managedGroup(let group) = groupDesignator else {
+        guard case .managedGroup(let group) = state.withLockedValue({ $0.groupDesignator }) else {
             return
         }
 

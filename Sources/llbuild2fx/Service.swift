@@ -8,7 +8,7 @@
 
 import NIOConcurrencyHelpers
 
-public class FXService: FXErrorClassifier {
+public final class FXService: FXErrorClassifier, Sendable {
     public let group: FXFuturesDispatchGroup
 
     public enum Error: Swift.Error {

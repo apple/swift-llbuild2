@@ -10,7 +10,7 @@ import TSCBasic
 import XCTest
 import llbuild2fx
 
-extension String: @retroactive FXRequestKey {
+extension String: FXRequestKey {
     public var stableHashValue: FXDataID {
         return FXDataID(blake3hash: self)
     }

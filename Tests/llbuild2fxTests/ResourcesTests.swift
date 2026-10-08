@@ -1,12 +1,13 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2025 Apple Inc. and the Swift project authors
+// Copyright (c) 2025 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import FXAsyncSupport
+import NIOConcurrencyHelpers
 import NIOCore
 import TSCBasic
 import XCTest
@@ -14,16 +15,26 @@ import XCTest
 import llbuild2Testing
 @testable import llbuild2fx
 
-class StatefulResource<T>: FXResource {
-    var name: String
+final class StatefulResource<T: Sendable>: FXResource {
+    private let _name: NIOLockedValueBox<String>
     let version: Int?
     let lifetime: ResourceLifetime
 
-    var state: T
+    private let _state: NIOLockedValueBox<T>
+
+    var name: String {
+        get { _name.withLockedValue { $0 } }
+        set { _name.withLockedValue { $0 = newValue } }
+    }
+
+    var state: T {
+        get { _state.withLockedValue { $0 } }
+        set { _state.withLockedValue { $0 = newValue } }
+    }
 
     init(initialState: T, lifetime: ResourceLifetime, version: Int? = nil, name: String = "StatefulResource<\(String(describing: T.self))>") {
-        self.name = name
-        self.state = initialState
+        self._name = NIOLockedValueBox(name)
+        self._state = NIOLockedValueBox(initialState)
         self.lifetime = lifetime
         self.version = version
     }

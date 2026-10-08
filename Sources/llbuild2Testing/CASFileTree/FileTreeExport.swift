@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -72,7 +72,7 @@ package protocol FXCASFileTreeExportProgressStatsInt64: AnyObject {
 
 extension FXCASFileTree {
 
-    package final class ExportProgressStatsInt64: FXCASFileTreeExportProgressStatsInt64 {
+    package final class ExportProgressStatsInt64: FXCASFileTreeExportProgressStatsInt64, Sendable {
         /// Bytes moved over the wire
         internal let bytesDownloaded_ = ManagedAtomic<Int64>(0)
         /// Bytes logically copied over
@@ -195,14 +195,14 @@ extension FXCASFileTree {
     }
 }
 
-private final class CASFileTreeWalkerDelegate: RetrieveChildrenProtocol {
+private final class CASFileTreeWalkerDelegate: RetrieveChildrenProtocol, Sendable {
     let db: any FXCASDatabase
     let exportPathPrefix: AbsolutePath
     let materializer: LLBFilesystemObjectMaterializer
     let stats: FXCASFileTree.ExportProgressStatsInt64
     let storageBatcher: LLBBatchingFutureOperationQueue?
 
-    struct Item {
+    struct Item: Sendable {
         let id: FXDataID
         let exportPath: AbsolutePath
         let kindHint: AnnotatedCASTreeChunk.ItemKind?

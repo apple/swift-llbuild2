@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -8,6 +8,7 @@
 
 import FXCore
 import Foundation
+import NIOConcurrencyHelpers
 import NIOCore
 
 /// A scheme for specifying a CASDatabase.
@@ -29,16 +30,16 @@ package protocol FXCASDatabaseScheme {
 ///     mem://
 package struct FXCASDatabaseSpec {
     /// The map of registered schemes.
-    private static var registeredSchemes: [String: FXCASDatabaseScheme.Type] = [
+    private static let registeredSchemes = NIOLockedValueBox<[String: FXCASDatabaseScheme.Type]>([
         "mem": FXInMemoryCASDatabaseScheme.self,
-    ]
+    ])
 
     /// Register a content store scheme type.
-    ///
-    /// This method is *not* thread safe.
     package static func register(schemeType: FXCASDatabaseScheme.Type) {
-        precondition(registeredSchemes[schemeType.scheme] == nil)
-        registeredSchemes[schemeType.scheme] = schemeType
+        registeredSchemes.withLockedValue { schemes in
+            precondition(schemes[schemeType.scheme] == nil)
+            schemes[schemeType.scheme] = schemeType
+        }
     }
 
     /// The underlying URL.
@@ -67,7 +68,8 @@ package struct FXCASDatabaseSpec {
         }
 
         // If the scheme isn't known, this isn't a valid spec.
-        guard let schemeType = FXCASDatabaseSpec.registeredSchemes[scheme] else {
+        guard let schemeType = FXCASDatabaseSpec.registeredSchemes.withLockedValue({ $0[scheme] })
+        else {
             throw Error.urlError("Unknown URL scheme \"\(scheme)\" for a CAS Database at \(url)")
         }
 

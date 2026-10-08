@@ -59,11 +59,10 @@ extension FXKey {
 }
 
 private struct FXCacheKeyPrefixMemoizer {
-    private static let lock = NIOLock()
-    private static var prefixes: [ObjectIdentifier: String] = [:]
+    private static let prefixes = NIOLockedValueBox<[ObjectIdentifier: String]>([:])
 
     static func get<K: FXVersioning>(for key: K) -> String {
-        return lock.withLock {
+        return prefixes.withLockedValue { prefixes in
             let objID = ObjectIdentifier(K.self)
             if let prefix = prefixes[objID] {
                 return prefix
