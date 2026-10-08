@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2025 Apple Inc. and the Swift project authors
+// Copyright (c) 2025 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -36,7 +36,17 @@ final class ResourceVersions<K: FXVersioning>: Encodable {
         return versionedResources.isEmpty
     }
 
+    private struct Entry: Encodable {
+        let key: ResourceKey
+        let version: Int
+    }
+
     func encode(to encoder: Encoder) throws {
-        try encoder.fxEncodeHash(of: versionedResources.fxEncodeJSON())
+        // `versionedResources` is keyed by `ResourceKey`, which is neither `String` nor `Int`,
+        // so `Dictionary.encode(to:)` serializes it as a flat array of key/value pairs in the
+        // dictionary's (randomized, per-process) iteration order. Sort by key first so the
+        // resulting hash — and therefore the cache path — is stable across processes.
+        let sorted = versionedResources.sorted { $0.key < $1.key }.map { Entry(key: $0.key, version: $0.value) }
+        try encoder.fxEncodeHash(of: try sorted.fxEncodeJSON())
     }
 }

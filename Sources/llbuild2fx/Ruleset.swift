@@ -19,7 +19,7 @@ extension FXEntrypoint {
     }
 }
 
-public class FXRuleset {
+public final class FXRuleset: Sendable {
     public let name: String
     public let entrypoints: [String: any FXEntrypoint.Type]
     public let actionDependencies: [any FXAction.Type]

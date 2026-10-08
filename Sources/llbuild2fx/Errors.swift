@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2025 Apple Inc. and the Swift project authors
+// Copyright (c) 2025 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -106,6 +106,6 @@ public struct FXErrorDetails: Sendable, Equatable, Codable {
     }
 }
 
-public protocol FXErrorClassifier {
+public protocol FXErrorClassifier: Sendable {
     func tryClassifyError(_ error: Swift.Error) -> FXErrorDetails?
 }
