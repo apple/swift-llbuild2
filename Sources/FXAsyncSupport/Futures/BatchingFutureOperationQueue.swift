@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -71,7 +71,7 @@ package struct LLBBatchingFutureOperationQueue: Sendable {
     }
 
     @inlinable
-    package func execute<T>(_ body: @escaping () throws -> T) -> FXFuture<T> {
+    package func execute<T: Sendable>(_ body: @escaping @Sendable () throws -> T) -> FXFuture<T> {
         let promise = group.next().makePromise(of: T.self)
         operationQueue.addOperation {
             promise.fulfill(body)
@@ -80,7 +80,7 @@ package struct LLBBatchingFutureOperationQueue: Sendable {
     }
 
     @inlinable
-    package func execute<T>(_ body: @escaping () -> FXFuture<T>) -> FXFuture<T> {
+    package func execute<T: Sendable>(_ body: @escaping @Sendable () -> FXFuture<T>) -> FXFuture<T> {
         let promise = group.next().makePromise(of: T.self)
         operationQueue.addOperation {
             let f = body()
@@ -94,8 +94,8 @@ package struct LLBBatchingFutureOperationQueue: Sendable {
 
     /// Order-preserving parallel execution. Wait for everything to complete.
     @inlinable
-    package func execute<A, T>(
-        _ args: [A], minStride: Int = 1, _ body: @escaping (ArraySlice<A>) throws -> [T]
+    package func execute<A: Sendable, T: Sendable>(
+        _ args: [A], minStride: Int = 1, _ body: @escaping @Sendable (ArraySlice<A>) throws -> [T]
     ) -> FXFuture<[T]> {
         let futures: [FXFuture<[T]>] = executeNoWait(args, minStride: minStride, body)
         let loop = futures.first?.eventLoop ?? group.next()
@@ -105,9 +105,9 @@ package struct LLBBatchingFutureOperationQueue: Sendable {
     /// Order-preserving parallel execution.
     /// Do not wait for all executions to complete, returning individual futures.
     @inlinable
-    package func executeNoWait<A, T>(
+    package func executeNoWait<A: Sendable, T: Sendable>(
         _ args: [A], minStride: Int = 1, maxStride: Int = Int.max,
-        _ body: @escaping (ArraySlice<A>) throws -> [T]
+        _ body: @escaping @Sendable (ArraySlice<A>) throws -> [T]
     ) -> [FXFuture<[T]>] {
         let batches: [ArraySlice<A>] = args.fx_sliceBy(
             maxStride: max(minStride, min(maxStride, args.count / maxOpCount)))

@@ -53,7 +53,7 @@ class InMemoryCASDatabaseTests: XCTestCase {
         // We take care here to do this in a way that no references to the
         // object data is held (other than in the database).
         let allocator = FXByteBufferAllocator()
-        func makeData(i: Int, objectSize: Int = 16) -> FXByteBuffer {
+        @Sendable func makeData(i: Int, objectSize: Int = 16) -> FXByteBuffer {
             var buffer = allocator.buffer(capacity: objectSize)
             for j in 0..<objectSize {
                 buffer.writeInteger(UInt8((i + j) & 0xFF))

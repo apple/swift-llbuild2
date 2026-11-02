@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020-2021 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -562,10 +562,9 @@ private final class CASTreeImport: Sendable {
                 return loop.makeSucceededFuture(firstFile.id)
             }
 
-            let udpLock = NIOConcurrencyHelpers.NIOLock()
-            var uploadedDirectoryPaths_ = [
-                AbsolutePath: FXFuture<(FXDataID, FXDirectoryEntry)?>
-            ]()
+            let uploadedDirectoryPaths = NIOLockedValueBox<
+                [AbsolutePath: FXFuture<(FXDataID, FXDirectoryEntry)?>]
+            >([:])
 
             // Now we have to add all the directories; we do so serially and in
             // reverse order of depth, so we can guarantee the children are resolved
@@ -575,8 +574,8 @@ private final class CASTreeImport: Sendable {
                 let dirLoop = self._db.group.next()
                 let directoryPromise: FXPromise<(FXDataID, FXDirectoryEntry)?>
                 directoryPromise = dirLoop.makePromise()
-                udpLock.withLockVoid {
-                    uploadedDirectoryPaths_[path] = directoryPromise.futureResult
+                uploadedDirectoryPaths.withLockedValue {
+                    $0[path] = directoryPromise.futureResult
                 }
 
                 let dirFuture: FXFuture<(FXDataID, FXDirectoryEntry)?>
@@ -607,8 +606,8 @@ private final class CASTreeImport: Sendable {
                             dirEntry.size = info.size
                             dirEntry.update(posixDetails: info.posixDetails, options: self.options)
                             return dirLoop.makeSucceededFuture((info.id, dirEntry))
-                        } else if let dirInfoFuture = udpLock.withLock({
-                            uploadedDirectoryPaths_[subpath]
+                        } else if let dirInfoFuture = uploadedDirectoryPaths.withLockedValue({
+                            $0[subpath]
                         }) {
                             return dirInfoFuture.map { idInfo in
                                 guard let (id, info) = idInfo else { return nil }
@@ -656,7 +655,8 @@ private final class CASTreeImport: Sendable {
                 return dirFuture.map({ _ in () })
             }
 
-            guard let topDirFuture = udpLock.withLock({ uploadedDirectoryPaths_[importPath] })
+            guard
+                let topDirFuture = uploadedDirectoryPaths.withLockedValue({ $0[importPath] })
             else {
                 return loop.makeFailedFuture(ImportError.unreadableDirectory(importPath))
             }
@@ -803,7 +803,7 @@ private final class CASTreeImport: Sendable {
         }
     }
 
-    indirect enum NextStep {
+    indirect enum NextStep: Sendable {
         // Final step in a sequence: stop stepping through.
         case skipped
         // Final step: information about the file.
@@ -811,7 +811,7 @@ private final class CASTreeImport: Sendable {
         // Final step: information about the directory.
         case gotDirectory(path: AbsolutePath, posixDetails: FXPosixFileDetails?)
         // Intermediate step: not earlier than in the given phase.
-        case execute(in: FXCASFileTree.ImportPhase, run: () -> FXFuture<NextStep>)
+        case execute(in: FXCASFileTree.ImportPhase, run: @Sendable () -> FXFuture<NextStep>)
         // This future has to be picked up in the given phase.
         case wait(in: FXCASFileTree.ImportPhase, futures: [FXFuture<NextStep>])
         // Intermediate result.
@@ -910,7 +910,7 @@ private final class CASTreeImport: Sendable {
         let segmentDescriptors: [SegmentDescriptor]  // Information about segments of file, possibly after compression.
         let type: FXFileType
         let allSegmentsUncompressedDataSize: Int
-        enum ObjectToImport {
+        enum ObjectToImport: Sendable {
             case link(target: LLBFastData)
             case file(file: FileSegmenter, posixDetails: FXPosixFileDetails)
             var posixDetails: FXPosixFileDetails {
@@ -1010,7 +1010,7 @@ private final class CASTreeImport: Sendable {
         // Can happen if the file is a sole object to import.
         let topLevel = isSingleChunk && importPath == path
 
-        func assemblePartialNextSteps() -> [FXFuture<NextStep>] {
+        @Sendable func assemblePartialNextSteps() -> [FXFuture<NextStep>] {
             let cheapNextAndPartialStepFutures:
                 [(nextStepFuture: FXFuture<NextStep>, partialStepFuture: FXFuture<NextStep>)] =
                     segmentDescriptors.enumerated().map { (segmentOffset, segm) in
@@ -1022,7 +1022,7 @@ private final class CASTreeImport: Sendable {
                         let partialStepPromise = LLBCancellablePromise(
                             promise: loop.makePromise(of: NextStep.self))
 
-                        func encodeNextStep(for id: FXDataID) -> NextStep {
+                        @Sendable func encodeNextStep(for id: FXDataID) -> NextStep {
                             if isSingleChunk {
                                 return .singleFile(
                                     SingleFileInfo(
@@ -1036,7 +1036,7 @@ private final class CASTreeImport: Sendable {
 
                         // If the file has non-standard layout, upload it after we upload
                         // the binary blob.
-                        func uploadFileInfo(blobId: FXDataID, importSize: Int? = nil) -> FXFuture<
+                        @Sendable func uploadFileInfo(blobId: FXDataID, importSize: Int? = nil) -> FXFuture<
                             NextStep
                         > {
                             guard finalResultPromise.isCompleted == false else {
@@ -1299,7 +1299,7 @@ private final class CASTreeImport: Sendable {
         return (refs, dirData, aggregateSize)
     }
 
-    private func whenAllSucceed<Value>(
+    private func whenAllSucceed<Value: Sendable>(
         _ futures: [FXFuture<Value>], on loop: FXFuturesDispatchLoop? = nil
     ) -> FXFuture<[Value]> {
         let loop = loop ?? self.loop
@@ -1319,9 +1319,9 @@ private final class CASTreeImport: Sendable {
 
     /// Enqueue the callback unless the stop flag is in action.
     /// If stop flag is set, return the value specified in `then`.
-    private func execute<T>(
+    private func execute<T: Sendable>(
         on queue: LLBBatchingFutureOperationQueue, default stopValue: T,
-        _ body: @escaping () throws -> T
+        _ body: @escaping @Sendable () throws -> T
     ) -> FXFuture<T> {
         guard finalResultPromise.isCompleted == false else {
             return queue.group.next().makeSucceededFuture(stopValue)
@@ -1341,9 +1341,9 @@ private final class CASTreeImport: Sendable {
 
     /// Enqueue the callback unless the stop flag is in action.
     /// If stop flag is set, return the value specified in `then`.
-    private func execute<T>(
+    private func execute<T: Sendable>(
         on queue: FXFutureOperationQueue, loop: EventLoop? = nil, size: Int = 1,
-        default stopValue: T, _ body: @escaping () -> FXFuture<T>
+        default stopValue: T, _ body: @escaping @Sendable () -> FXFuture<T>
     ) -> FXFuture<T> {
         let loop = loop ?? self.loop
         guard finalResultPromise.isCompleted == false else {
@@ -1366,9 +1366,9 @@ private final class CASTreeImport: Sendable {
         message: "This method blocks indefinitely, don't use from 'async' or SwiftNIO EventLoops"
     )
     @available(*, deprecated, message: "This method blocks indefinitely and returns a future")
-    private func executeWithBackpressure<T>(
+    private func executeWithBackpressure<T: Sendable>(
         on queue: FXFutureOperationQueue, loop: FXFuturesDispatchLoop, size: Int = 1,
-        default stopValue: T, _ body: @escaping () -> FXFuture<T>
+        default stopValue: T, _ body: @escaping @Sendable () -> FXFuture<T>
     ) -> FXFuture<T> {
         guard finalResultPromise.isCompleted == false else {
             return loop.makeSucceededFuture(stopValue)

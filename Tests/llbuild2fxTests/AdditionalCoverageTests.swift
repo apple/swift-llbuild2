@@ -10,6 +10,7 @@ import FXAsyncSupport
 import FXCore
 import Foundation
 import Logging
+import NIOConcurrencyHelpers
 import NIOCore
 import XCTest
 
@@ -1186,10 +1187,11 @@ final class ContextLoggingExtendedTests: XCTestCase {
         XCTAssertEqual(sink.events.count, 1)
     }
 
-    class TestStreamingLog: StreamingLogHandler {
-        var logged: [(String, FXByteBuffer)] = []
+    final class TestStreamingLog: StreamingLogHandler {
+        private let _logged = NIOLockedValueBox<[(String, FXByteBuffer)]>([])
+        var logged: [(String, FXByteBuffer)] { _logged.withLockedValue { $0 } }
         func streamLog(channel: String, _ data: FXByteBuffer) async throws {
-            logged.append((channel, data))
+            _logged.withLockedValue { $0.append((channel, data)) }
         }
     }
 

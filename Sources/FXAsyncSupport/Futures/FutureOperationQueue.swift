@@ -32,11 +32,11 @@ package final class FXFutureOperationQueue: Sendable {
         var workQueue = NIO.CircularBuffer<WorkItem>()
     }
 
-    struct WorkItem {
+    struct WorkItem: Sendable {
         let loop: FXFuturesDispatchLoop
         let share: Int
         let notifyWhenScheduled: FXPromise<Void>?
-        let run: () -> Void
+        let run: @Sendable () -> Void
     }
 
     private let state: NIOLockedValueBox<State>
@@ -79,8 +79,8 @@ package final class FXFutureOperationQueue: Sendable {
         message: "This method blocks indefinitely, don't use from 'async' or SwiftNIO EventLoops"
     )
     @available(*, deprecated, message: "This method blocks indefinitely and returns a future")
-    package func enqueueWithBackpressure<T>(
-        on loop: FXFuturesDispatchLoop, share: Int = 1, body: @escaping () -> FXFuture<T>
+    package func enqueueWithBackpressure<T: Sendable>(
+        on loop: FXFuturesDispatchLoop, share: Int = 1, body: @escaping @Sendable () -> FXFuture<T>
     ) -> FXFuture<T> {
         let scheduled = loop.makePromise(of: Void.self)
 
@@ -99,13 +99,13 @@ package final class FXFutureOperationQueue: Sendable {
     /// The queue can support low number of high-share loads, or high number of
     /// low-share loads. Useful to model queue size in bytes.
     /// For such use cases, set share to the payload size in bytes.
-    package func enqueue<T>(
+    package func enqueue<T: Sendable>(
         on loop: FXFuturesDispatchLoop, share: Int = 1,
-        notifyWhenScheduled: FXPromise<Void>? = nil, body: @escaping () -> FXFuture<T>
+        notifyWhenScheduled: FXPromise<Void>? = nil, body: @escaping @Sendable () -> FXFuture<T>
     ) -> FXFuture<T> {
         let promise = loop.makePromise(of: T.self)
 
-        func runBody() {
+        let runBody: @Sendable () -> Void = {
             // Ensure we're on the event loop, fail the promise if not
             guard loop.inEventLoop else {
                 promise.fail(FutureOperationQueueError.eventLoopShutDown)

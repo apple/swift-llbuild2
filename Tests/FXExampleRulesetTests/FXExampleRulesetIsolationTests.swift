@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import FXAsyncSupport
+import NIOConcurrencyHelpers
 import NIOCore
 import XCTest
 
@@ -71,13 +72,13 @@ final class FXExampleRulesetIsolationTests: XCTestCase {
     func testOverrideReceivesCorrectKeyInstance() async throws {
         let expectation = XCTestExpectation(description: "Override called")
 
-        var capturedName: String?
-        var capturedStyle: String?
+        let capturedName = NIOLockedValueBox<String?>(nil)
+        let capturedStyle = NIOLockedValueBox<String?>(nil)
 
         let engine = FXTestingEngine(overrides: [
             FXKeyTestOverride(FormatGreetingKey.self) { key in
-                capturedName = key.name
-                capturedStyle = key.style
+                capturedName.withLockedValue { $0 = key.name }
+                capturedStyle.withLockedValue { $0 = key.style }
                 expectation.fulfill()
                 return GreetingValue(greeting: "test")
             },
@@ -86,7 +87,7 @@ final class FXExampleRulesetIsolationTests: XCTestCase {
         _ = try await engine.build(key: GreetingEntrypoint(name: "Charlie"), Context())
 
         await fulfillment(of: [expectation], timeout: 5)
-        XCTAssertEqual(capturedName, "Charlie")
-        XCTAssertEqual(capturedStyle, "casual")
+        XCTAssertEqual(capturedName.withLockedValue { $0 }, "Charlie")
+        XCTAssertEqual(capturedStyle.withLockedValue { $0 }, "casual")
     }
 }

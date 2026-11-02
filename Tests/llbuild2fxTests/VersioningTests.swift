@@ -41,7 +41,7 @@ extension ExampleAction: FXValue {
     }
 }
 
-extension String: @retroactive FXValue {
+extension String: FXValue {
 
 }
 

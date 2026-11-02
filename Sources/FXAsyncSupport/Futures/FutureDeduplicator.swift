@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -14,7 +14,11 @@ import NIOCore
 /// Deduplicate results of multiple requests for the same value.
 ///
 /// This cache coalesces requests and avoids re-obtaining values multiple times.
-package class FXFutureDeduplicator<Key: Hashable, Value> {
+///
+/// Marked `@unchecked Sendable`: all mutable state (`inFlightRequests`) is guarded by `lock`,
+/// but the class is non-final (subclassed by `LLBEventualResultsCache`) so the compiler cannot
+/// synthesize or verify a checked `Sendable` conformance.
+package class FXFutureDeduplicator<Key: Hashable & Sendable, Value: Sendable>: @unchecked Sendable {
     /// The futures group.
     @usableFromInline
     internal let group: FXFuturesDispatchGroup
@@ -34,7 +38,7 @@ package class FXFutureDeduplicator<Key: Hashable, Value> {
     /// Override expiration of erroneous result by the error type.
     /// By default erroneous results expire immediately.
     @usableFromInline
-    internal var expirationInterval: (_ for: Swift.Error) -> DispatchTimeInterval?
+    internal let expirationInterval: @Sendable (_ for: Swift.Error) -> DispatchTimeInterval?
 
     /// Return the number of entries in the cache.
     package var inFlightRequestCount: Int {
@@ -44,7 +48,7 @@ package class FXFutureDeduplicator<Key: Hashable, Value> {
     package init(
         group: FXFuturesDispatchGroup,
         partialResultExpiration: DispatchTimeInterval = .seconds(300),
-        expirationIntervalOverride: @escaping (_ for: Swift.Error) -> DispatchTimeInterval? = { _ in
+        expirationIntervalOverride: @escaping @Sendable (_ for: Swift.Error) -> DispatchTimeInterval? = { _ in
             nil
         }
     ) {

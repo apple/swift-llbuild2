@@ -11,11 +11,15 @@ import Foundation
 import NIOCore
 
 /// Something that exposes working withContiguousStorage
-package enum LLBFastData {
+///
+/// Marked `@unchecked Sendable`: the `.pointer` case wraps a raw, non-owning buffer pointer,
+/// which the compiler can never consider `Sendable` on its own merits; callers constructing
+/// that case are responsible for ensuring the referenced memory isn't mutated concurrently.
+package enum LLBFastData: @unchecked Sendable {
     case slice(ArraySlice<UInt8>)
     case view(FXByteBuffer)
     case data(Data)
-    case pointer(UnsafeRawBufferPointer, deallocator: (UnsafeRawBufferPointer) -> Void)
+    case pointer(UnsafeRawBufferPointer, deallocator: @Sendable (UnsafeRawBufferPointer) -> Void)
 
     package init(_ data: [UInt8]) { self = .slice(ArraySlice(data)) }
     package init(_ data: ArraySlice<UInt8>) { self = .slice(data) }
@@ -25,7 +29,7 @@ package enum LLBFastData {
         self = .data(data)
     }
     package init(
-        _ pointer: UnsafeRawBufferPointer, deallocator: @escaping (UnsafeRawBufferPointer) -> Void
+        _ pointer: UnsafeRawBufferPointer, deallocator: @escaping @Sendable (UnsafeRawBufferPointer) -> Void
     ) {
         self = .pointer(pointer, deallocator: deallocator)
     }

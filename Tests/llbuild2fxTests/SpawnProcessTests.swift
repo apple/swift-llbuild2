@@ -7,6 +7,7 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import FXAsyncSupport
+import NIOConcurrencyHelpers
 import TSCBasic
 import XCTest
 import llbuild2Testing
@@ -241,11 +242,15 @@ final class SpawnProcessTests: XCTestCase {
     }
 }
 
-class StreamAccumulator: StreamingLogHandler {
-    var accumulatedLogs: [String: String] = [:]
+final class StreamAccumulator: StreamingLogHandler {
+    private let _accumulatedLogs = NIOLockedValueBox<[String: String]>([:])
+
+    var accumulatedLogs: [String: String] {
+        _accumulatedLogs.withLockedValue { $0 }
+    }
 
     func streamLog(channel: String, _ data: FXByteBuffer) {
-        accumulatedLogs[channel, default: ""].append(String(buffer: data))
+        _accumulatedLogs.withLockedValue { $0[channel, default: ""].append(String(buffer: data)) }
     }
 }
 

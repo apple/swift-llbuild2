@@ -18,9 +18,9 @@ class FutureOperationQueueTests: XCTestCase {
         let p1 = loop.makePromise(of: Bool.self)
         let p2 = loop.makePromise(of: Bool.self)
         let p3 = loop.makePromise(of: Bool.self)
-        var p1Started = false
-        var p2Started = false
-        var p3Started = false
+        let p1Started = ManagedAtomic(false)
+        let p2Started = ManagedAtomic(false)
+        let p3Started = ManagedAtomic(false)
 
         let manager = LLBOrderManager(on: group.next())
 
@@ -28,13 +28,13 @@ class FutureOperationQueueTests: XCTestCase {
 
         // Start the first two operations, they should run immediately.
         _ = q.enqueue(on: loop) { () -> FXFuture<Bool> in
-            p1Started = true
+            p1Started.store(true, ordering: .relaxed)
             return manager.order(2).flatMap {
                 p1.futureResult
             }
         }
         _ = q.enqueue(on: loop) { () -> FXFuture<Bool> in
-            p2Started = true
+            p2Started.store(true, ordering: .relaxed)
             return manager.order(1).flatMap {
                 p2.futureResult
             }
@@ -42,23 +42,23 @@ class FutureOperationQueueTests: XCTestCase {
 
         // Start the third, it should queue.
         _ = q.enqueue(on: loop) { () -> FXFuture<Bool> in
-            p3Started = true
+            p3Started.store(true, ordering: .relaxed)
             return manager.order(4).flatMap {
                 p3.futureResult
             }
         }
 
         try manager.order(3).wait()
-        XCTAssertEqual(p1Started, true)
-        XCTAssertEqual(p2Started, true)
-        XCTAssertEqual(p3Started, false)
+        XCTAssertEqual(p1Started.load(ordering: .relaxed), true)
+        XCTAssertEqual(p2Started.load(ordering: .relaxed), true)
+        XCTAssertEqual(p3Started.load(ordering: .relaxed), false)
 
         // Complete the first.
         p1.succeed(true)
         try manager.order(5).wait()
 
         // Now p3 should have started.
-        XCTAssertEqual(p3Started, true)
+        XCTAssertEqual(p3Started.load(ordering: .relaxed), true)
         p2.succeed(true)
         p3.succeed(true)
 
@@ -75,8 +75,7 @@ class FutureOperationQueueTests: XCTestCase {
         let q = FXFutureOperationQueue(maxConcurrentOperations: 2)
 
         let atomic = ManagedAtomic(0)
-        var futures: [FXFuture<Bool>] = []
-        let lock = NIOConcurrencyHelpers.NIOLock()
+        let futures = NIOLockedValueBox<[FXFuture<Bool>]>([])
         DispatchQueue.concurrentPerform(iterations: 1_000) { i in
             let result = q.enqueue(on: group.next()) { () -> FXFuture<Bool> in
                 // Check that we aren't executing more operations than we would want.
@@ -96,13 +95,13 @@ class FutureOperationQueueTests: XCTestCase {
                 return p.futureResult
             }
 
-            lock.withLockVoid {
-                futures.append(result)
+            futures.withLockedValue {
+                $0.append(result)
             }
         }
 
-        lock.withLockVoid {
-            for future in futures {
+        futures.withLockedValue {
+            for future in $0 {
                 _ = try! future.wait()
             }
         }

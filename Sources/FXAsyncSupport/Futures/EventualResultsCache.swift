@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2020 Apple Inc. and the Swift project authors
+// Copyright (c) 2020 - 2026 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -13,7 +13,7 @@ import NIOCore
 /// Cache of keys to eventually obtainable values.
 ///
 /// This cache coalesces requests and avoids re-obtaining values multiple times.
-package final class LLBEventualResultsCache<Key: Hashable, Value>: FXFutureDeduplicator<Key, Value>
+package final class LLBEventualResultsCache<Key: Hashable & Sendable, Value: Sendable>: FXFutureDeduplicator<Key, Value>
 {
     /// The already cached keys.
     @usableFromInline

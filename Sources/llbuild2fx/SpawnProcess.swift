@@ -215,7 +215,7 @@ public struct ProcessSpec: Codable, Sendable {
     }
 
     /// No cleanup has to be done, so this isn't a `withStreamingWriter` function.
-    private func makeStreamingWriter(channel: String?, _ ctx: Context) -> ((ByteBuffer) async throws -> Void) {
+    private func makeStreamingWriter(channel: String?, _ ctx: Context) -> (@Sendable (ByteBuffer) async throws -> Void) {
         guard let streamingLogHandler = ctx.streamingLogHandler, let channel = channel else {
             return { _ in () }
         }
